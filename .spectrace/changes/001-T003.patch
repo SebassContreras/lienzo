@@ -1,0 +1,348 @@
+diff --git a/src/components/line.ts b/src/components/line.ts
+new file mode 100644
+index 0000000..35af43b
+--- /dev/null
++++ b/src/components/line.ts
+@@ -0,0 +1,153 @@
++import { animState, frac } from "../engine/anim.ts";
++import {
++  type PathSamples,
++  type Pt,
++  partialPath,
++  pointAtFraction,
++  resolveLine,
++  samplePath,
++} from "../engine/geometry.ts";
++import {
++  type Ctx,
++  dashFor,
++  rgba,
++  shadowOnly,
++  tracePolyline,
++} from "../engine/paint.ts";
++import type { Element, LineEl, Scene } from "../model/model.ts";
++
++export function drawLine(
++  ctx: Ctx,
++  el: LineEl,
++  scene: Scene,
++  t: number,
++  byId: Map<string, Element>,
++): void {
++  const st = animState(el.anim, t, scene.duration);
++  const s = samplePath(resolveLine(el, byId));
++  if (s.total < 1) return;
++  const progress = el.anim.kind === "draw" ? st.progress : 1;
++  if (progress <= 0) return;
++  const pts = partialPath(s, progress);
++
++  ctx.save();
++  ctx.globalAlpha *= st.alpha;
++  ctx.lineCap = "round";
++  ctx.lineJoin = "round";
++  ctx.lineWidth = el.width;
++  ctx.setLineDash(dashFor(el.style, el.width));
++
++  const stroke = () => {
++    tracePolyline(ctx, pts);
++    ctx.stroke();
++  };
++  if (el.glow.enabled) {
++    for (let i = 0; i < el.glow.strength; i++) {
++      shadowOnly(ctx, stroke, el.glow.color, el.glow.blur);
++    }
++  }
++  ctx.strokeStyle = rgba(el.color, el.opacity);
++  stroke();
++  ctx.setLineDash([]);
++
++  const arrowSize = 8 + el.width * 2.5;
++  ctx.fillStyle = rgba(el.color, Math.max(el.opacity, 0.9));
++  if (el.arrowEnd) {
++    const tip = pointAtFraction(s, progress);
++    drawArrow(ctx, tip.p, tip.angle, arrowSize);
++  }
++  if (el.arrowStart) {
++    const start = pointAtFraction(s, 0);
++    drawArrow(ctx, start.p, start.angle + Math.PI, arrowSize);
++  }
++
++  drawFlow(ctx, el, s, pts, progress, t / scene.duration);
++  ctx.restore();
++}
++
++function drawArrow(ctx: Ctx, p: Pt, angle: number, size: number): void {
++  ctx.save();
++  ctx.translate(p.x, p.y);
++  ctx.rotate(angle);
++  ctx.beginPath();
++  ctx.moveTo(size * 0.4, 0);
++  ctx.lineTo(-size, size * 0.65);
++  ctx.lineTo(-size * 0.6, 0);
++  ctx.lineTo(-size, -size * 0.65);
++  ctx.closePath();
++  ctx.fill();
++  ctx.restore();
++}
++
++/** Pulses, marching ants or comets travelling along the visible part of the line. */
++function drawFlow(
++  ctx: Ctx,
++  el: LineEl,
++  s: PathSamples,
++  pts: Pt[],
++  progress: number,
++  loopT: number,
++): void {
++  const { flow } = el;
++  if (flow.kind === "none") return;
++  const phase = loopT * flow.speed;
++  const dir = flow.reverse ? -1 : 1;
++  const k = Math.hypot(ctx.getTransform().a, ctx.getTransform().b);
++
++  ctx.save();
++  ctx.shadowColor = flow.color;
++  ctx.strokeStyle = flow.color;
++  ctx.fillStyle = flow.color;
++
++  if (flow.kind === "ants") {
++    const period = flow.size * 4;
++    ctx.lineWidth = Math.max(1, el.width);
++    ctx.shadowBlur = flow.size * 2 * k;
++    ctx.setLineDash([flow.size * 2, flow.size * 2]);
++    ctx.lineDashOffset = -dir * phase * period;
++    tracePolyline(ctx, pts);
++    ctx.stroke();
++  } else {
++    const count = Math.max(1, Math.round(flow.count));
++    for (let i = 0; i < count; i++) {
++      let head = frac(phase + i / count);
++      if (dir < 0) head = 1 - head;
++      if (flow.kind === "pulse") {
++        if (head > progress) continue;
++        const fade = Math.min(1, head * 12, (1 - head) * 12);
++        const { p } = pointAtFraction(s, head);
++        ctx.globalAlpha = fade;
++        ctx.shadowBlur = flow.size * 4 * k;
++        ctx.beginPath();
++        ctx.arc(p.x, p.y, flow.size, 0, Math.PI * 2);
++        ctx.fill();
++        ctx.beginPath();
++        ctx.fillStyle = "#ffffff";
++        ctx.arc(p.x, p.y, flow.size * 0.45, 0, Math.PI * 2);
++        ctx.fill();
++        ctx.fillStyle = flow.color;
++      } else {
++        const tail = 0.25;
++        const steps = 24;
++        ctx.lineCap = "round";
++        ctx.shadowBlur = flow.size * 3 * k;
++        for (let j = 0; j < steps; j++) {
++          const f0 = j / steps;
++          const f1 = (j + 1) / steps;
++          const u0 = head - dir * tail * (1 - f0);
++          const u1 = head - dir * tail * (1 - f1);
++          if (u0 < 0 || u1 < 0 || u0 > progress || u1 > progress) continue;
++          const p0 = pointAtFraction(s, u0).p;
++          const p1 = pointAtFraction(s, u1).p;
++          ctx.globalAlpha = f1 ** 1.6;
++          ctx.lineWidth = flow.size * (0.3 + 0.7 * f1);
++          ctx.beginPath();
++          ctx.moveTo(p0.x, p0.y);
++          ctx.lineTo(p1.x, p1.y);
++          ctx.stroke();
++        }
++      }
++    }
++  }
++  ctx.restore();
++}
+diff --git a/src/components/rect.ts b/src/components/rect.ts
+new file mode 100644
+index 0000000..53a3675
+--- /dev/null
++++ b/src/components/rect.ts
+@@ -0,0 +1,107 @@
++import { animState } from "../engine/anim.ts";
++import { boxOf, fontString, textLayout } from "../engine/geometry.ts";
++import {
++  type Ctx,
++  dashFor,
++  linearGradient,
++  rgba,
++  shadowOnly,
++  withTransform,
++} from "../engine/paint.ts";
++import type { RectEl, Scene } from "../model/model.ts";
++
++export function drawRect(ctx: Ctx, el: RectEl, scene: Scene, t: number): void {
++  const st = animState(el.anim, t, scene.duration);
++  const box = boxOf(el);
++  withTransform(ctx, box, st, () => {
++    const path = new Path2D();
++    path.roundRect(
++      el.x,
++      el.y,
++      el.w,
++      el.h,
++      Math.max(0, Math.min(el.radius, el.w / 2, el.h / 2)),
++    );
++
++    if (el.shadow.enabled) {
++      shadowOnly(
++        ctx,
++        () => ctx.fill(path),
++        rgba(el.shadow.color, el.shadow.opacity),
++        el.shadow.blur,
++        el.shadow.x,
++        el.shadow.y,
++      );
++    }
++    if (el.bgGlow.enabled) {
++      for (let i = 0; i < el.bgGlow.strength; i++) {
++        shadowOnly(
++          ctx,
++          () => ctx.fill(path),
++          el.bgGlow.color,
++          el.bgGlow.blur * st.glowMul,
++        );
++      }
++    }
++
++    ctx.save();
++    ctx.globalAlpha *= el.fill.opacity;
++    ctx.fillStyle = el.fill.gradient
++      ? linearGradient(ctx, box, el.fill.angle, el.fill.color, el.fill.color2)
++      : el.fill.color;
++    ctx.fill(path);
++    ctx.restore();
++
++    if (el.border.width > 0) {
++      const dash = dashFor(el.border.style, el.border.width);
++      const period = dash.reduce((a, b) => a + b, 0);
++      const stroke = () => {
++        ctx.lineWidth = el.border.width;
++        ctx.lineCap = "round";
++        ctx.setLineDash(dash);
++        ctx.lineDashOffset = -(t / scene.duration) * el.border.flow * period;
++        ctx.stroke(path);
++      };
++      if (el.borderGlow.enabled) {
++        for (let i = 0; i < el.borderGlow.strength; i++) {
++          shadowOnly(
++            ctx,
++            stroke,
++            el.borderGlow.color,
++            el.borderGlow.blur * st.glowMul,
++          );
++        }
++      }
++      ctx.save();
++      ctx.strokeStyle = rgba(el.border.color, el.border.opacity);
++      stroke();
++      ctx.restore();
++    }
++
++    if (el.label.text) drawLabel(ctx, el);
++  });
++}
++
++/** The rectangle's inner text, centred vertically. */
++function drawLabel(ctx: Ctx, el: RectEl): void {
++  const { label } = el;
++  const layout = textLayout(label);
++  ctx.save();
++  ctx.font = fontString(label);
++  ctx.letterSpacing = "0px";
++  ctx.textBaseline = "top";
++  ctx.fillStyle = label.color;
++  const top = el.y + (el.h - layout.h) / 2;
++  layout.lines.forEach((line, i) => {
++    const lw = layout.widths[i] as number;
++    const x =
++      label.align === "left"
++        ? el.x + label.padding
++        : label.align === "center"
++          ? el.x + (el.w - lw) / 2
++          : el.x + el.w - label.padding - lw;
++    const y = top + i * layout.lineStep + (layout.lineStep - label.size) / 2;
++    ctx.fillText(line, x, y);
++  });
++  ctx.restore();
++}
+diff --git a/src/components/text.ts b/src/components/text.ts
+new file mode 100644
+index 0000000..f2566ed
+--- /dev/null
++++ b/src/components/text.ts
+@@ -0,0 +1,43 @@
++import { animState } from "../engine/anim.ts";
++import { fontString, textLayout } from "../engine/geometry.ts";
++import {
++  type Ctx,
++  linearGradient,
++  shadowOnly,
++  withTransform,
++} from "../engine/paint.ts";
++import type { Scene, TextEl } from "../model/model.ts";
++
++export function drawText(ctx: Ctx, el: TextEl, scene: Scene, t: number): void {
++  const st = animState(el.anim, t, scene.duration);
++  const layout = textLayout(el);
++  const box = { x: el.x, y: el.y, w: layout.w, h: layout.h };
++  withTransform(ctx, box, st, () => {
++    ctx.font = fontString(el);
++    ctx.letterSpacing = `${el.letterSpacing}px`;
++    ctx.textBaseline = "top";
++    const paint = () => {
++      layout.lines.forEach((line, i) => {
++        const lw = layout.widths[i] as number;
++        const x =
++          el.align === "left"
++            ? el.x
++            : el.align === "center"
++              ? el.x + (layout.w - lw) / 2
++              : el.x + layout.w - lw;
++        const y = el.y + i * layout.lineStep + (layout.lineStep - el.size) / 2;
++        ctx.fillText(line, x, y);
++      });
++    };
++    if (el.glow.enabled) {
++      for (let i = 0; i < el.glow.strength; i++) {
++        shadowOnly(ctx, paint, el.glow.color, el.glow.blur * st.glowMul);
++      }
++    }
++    ctx.globalAlpha *= el.opacity;
++    ctx.fillStyle = el.gradient
++      ? linearGradient(ctx, box, 0, el.color, el.color2)
++      : el.color;
++    paint();
++  });
++}
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 6aca659..5b2a7bf 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,4 +1,8 @@
++import { drawLine } from "../components/line.ts";
++import { drawRect } from "../components/rect.ts";
++import { drawText } from "../components/text.ts";
+ import type { Background, Scene } from "../model/model.ts";
++import { indexById } from "./geometry.ts";
+ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+ 
+ /**
+@@ -7,7 +11,12 @@ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+  */
+ export function drawScene(ctx: Ctx, scene: Scene, t: number): void {
+   drawBackground(ctx, scene);
+-  void t;
++  const byId = indexById(scene);
++  for (const el of scene.elements) {
++    if (el.kind === "rect") drawRect(ctx, el, scene, t);
++    else if (el.kind === "text") drawText(ctx, el, scene, t);
++    else drawLine(ctx, el, scene, t, byId);
++  }
+ }
+ 
+ function drawBackground(ctx: Ctx, scene: Scene): void {

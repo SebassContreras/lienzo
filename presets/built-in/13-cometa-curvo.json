@@ -1,0 +1,23 @@
+{
+  "name": "Cometa curvo",
+  "kind": "line",
+  "traits": [
+    {
+      "use": "glow",
+      "color": "#8b5cf6",
+      "blur": 12
+    },
+    {
+      "use": "flow",
+      "kind": "comet",
+      "color": "#a78bfa",
+      "count": 1,
+      "size": 6
+    }
+  ],
+  "set": {
+    "bend": -60,
+    "opacity": 0.3,
+    "color": "#8b5cf6"
+  }
+}

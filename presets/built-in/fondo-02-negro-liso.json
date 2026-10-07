@@ -1,0 +1,10 @@
+{
+  "name": "Negro liso",
+  "kind": "background",
+  "traits": [
+    {
+      "use": "solid",
+      "color": "#000000"
+    }
+  ]
+}

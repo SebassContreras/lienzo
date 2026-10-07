@@ -1,0 +1,104 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index c23024d..f79f2c8 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -36,7 +36,7 @@ import {
+   type Element,
+   type Scene,
+ } from "../model/model.ts";
+-import { recipeFromElement } from "../presets/diff.ts";
++import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
+ import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+ import { SceneFiles } from "../presets/scene-files.tsx";
+ import { loadUserPresets, saveUserPreset } from "../presets/store.ts";
+@@ -448,6 +448,14 @@ export function App() {
+             scene={scene}
+             onChange={setScene}
+             focusBackground={backgroundFocus}
++            onSaveBackground={(name) =>
++              saveUserPreset(recipeFromBackground(name, scene.background))
++                .then(() => {
++                  setStatus(`Fondo «${name}» guardado`);
++                  refreshPresets();
++                })
++                .catch((error: unknown) => setStatus(`Error: ${error}`))
++            }
+           />
+         )}
+       </Panel>
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 15cb5b5..0bc7c4f 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -1067,12 +1067,15 @@ export function SceneInspector({
+   scene,
+   onChange,
+   focusBackground = 0,
++  onSaveBackground,
+ }: {
+   scene: Scene;
+   onChange: (s: Scene) => void;
+   /** Each time this number changes, the "Fondo" section opens and scrolls into view. */
+   focusBackground?: number;
++  onSaveBackground?: (name: string) => void;
+ }) {
++  const [backgroundName, setBackgroundName] = useState("");
+   const backgroundRef = useRef<HTMLDetailsElement>(null);
+   useEffect(() => {
+     const section = backgroundRef.current;
+@@ -1260,6 +1263,25 @@ export function SceneInspector({
+             />
+           </>
+         )}
++        {onSaveBackground && (
++          <div className="preset-save">
++            <input
++              placeholder="Nombre del fondo"
++              value={backgroundName}
++              onChange={(e) => setBackgroundName(e.target.value)}
++            />
++            <button
++              type="button"
++              title="Guardar fondo como preset"
++              onClick={() => {
++                onSaveBackground(backgroundName.trim() || "Mi fondo");
++                setBackgroundName("");
++              }}
++            >
++              <BookmarkPlus size={15} /> Guardar fondo como preset
++            </button>
++          </div>
++        )}
+       </Section>
+     </div>
+   );
+diff --git a/src/presets/diff.ts b/src/presets/diff.ts
+index 56406d3..8c1dbdc 100644
+--- a/src/presets/diff.ts
++++ b/src/presets/diff.ts
+@@ -1,4 +1,9 @@
+-import { defaultElement, type Element } from "../model/model.ts";
++import {
++  type Background,
++  defaultBackground,
++  defaultElement,
++  type Element,
++} from "../model/model.ts";
+ import type { DeepPartial, PresetRecipe } from "../model/preset.ts";
+ 
+ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+@@ -30,3 +35,14 @@ export function recipeFromElement(name: string, el: Element): PresetRecipe {
+   const set = deepDiff(own, base) as DeepPartial<Element> | undefined;
+   return { name, kind: el.kind, traits: [], ...(set ? { set } : {}) };
+ }
++
++/** A background recipe: no traits, only what differs from the default background. */
++export function recipeFromBackground(
++  name: string,
++  background: Background,
++): PresetRecipe {
++  const set = deepDiff(background, defaultBackground()) as
++    | DeepPartial<Background>
++    | undefined;
++  return { name, kind: "background", traits: [], ...(set ? { set } : {}) };
++}

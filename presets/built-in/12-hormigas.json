@@ -1,0 +1,17 @@
+{
+  "name": "Hormigas",
+  "kind": "line",
+  "traits": [
+    "no-glow",
+    {
+      "use": "flow",
+      "kind": "ants",
+      "color": "#22d3ee",
+      "speed": 12,
+      "count": 1
+    }
+  ],
+  "set": {
+    "opacity": 0.25
+  }
+}

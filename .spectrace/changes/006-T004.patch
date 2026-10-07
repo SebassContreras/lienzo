@@ -1,0 +1,168 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 127a2ba..c23024d 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -37,9 +37,14 @@ import {
+   type Scene,
+ } from "../model/model.ts";
+ import { recipeFromElement } from "../presets/diff.ts";
+-import { BUILT_IN_RECIPES } from "../presets/recipes.ts";
++import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+ import { SceneFiles } from "../presets/scene-files.tsx";
+ import { loadUserPresets, saveUserPreset } from "../presets/store.ts";
++import {
++  type BackgroundItem,
++  BackgroundLibrary,
++  backgroundItems,
++} from "./backgrounds.tsx";
+ import { ElementInspector, SceneInspector } from "./inspector.tsx";
+ import { Library, type LibraryItem, recipeItems } from "./library.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
+@@ -83,6 +88,7 @@ const BASICS: LibraryItem[] = [
+ const BASIC_ICONS = [Square, Type, Spline];
+ 
+ const BUILT_INS = recipeItems(BUILT_IN_RECIPES);
++const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(BUILT_IN_BACKGROUNDS);
+ 
+ export function App() {
+   const [scene, setSceneState] = useState<Scene>(loadInitialScene);
+@@ -96,6 +102,7 @@ export function App() {
+   const [status, setStatus] = useState("");
+   const [sceneName, setSceneName] = useState("mi-publicacion");
+   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
++  const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
+   const [backgroundFocus, setBackgroundFocus] = useState(0);
+ 
+   const setScene = useCallback((s: Scene) => {
+@@ -140,8 +147,15 @@ export function App() {
+ 
+   const refreshPresets = useCallback(() => {
+     loadUserPresets()
+-      .then((recipes) => setUserPresets(recipeItems(recipes)))
+-      .catch(() => setUserPresets([]));
++      .then((recipes) => {
++        const isBackground = (r: { kind: string }) => r.kind === "background";
++        setUserPresets(recipeItems(recipes.filter((r) => !isBackground(r))));
++        setUserBackgrounds(backgroundItems(recipes.filter(isBackground)));
++      })
++      .catch(() => {
++        setUserPresets([]);
++        setUserBackgrounds([]);
++      });
+   }, []);
+   useEffect(refreshPresets, [refreshPresets]);
+ 
+@@ -373,6 +387,13 @@ export function App() {
+           onAdd={(element) => addElement(element)}
+           empty="Selecciona un elemento y usa «Guardar como preset»."
+         />
++        <BackgroundLibrary
++          items={[...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds]}
++          onApply={(background) => {
++            checkpoint();
++            setScene({ ...sceneRef.current, background });
++          }}
++        />
+       </aside>
+       <main className="center">
+         <Stage
+diff --git a/src/editor/backgrounds.tsx b/src/editor/backgrounds.tsx
+new file mode 100644
+index 0000000..1d19495
+--- /dev/null
++++ b/src/editor/backgrounds.tsx
+@@ -0,0 +1,94 @@
++import { TriangleAlert } from "lucide-react";
++import { useEffect, useRef } from "react";
++import { drawScene } from "../engine/render.ts";
++import { type Background, defaultScene, type Scene } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { resolveBackground } from "../presets/resolve.ts";
++
++/** A background preset as the library lists it, or the reason its recipe cannot be built. */
++export type BackgroundItem =
++  | { name: string; background: Background }
++  | { name: string; error: string };
++
++export function backgroundItems(recipes: PresetRecipe[]): BackgroundItem[] {
++  return recipes.map((recipe) => ({
++    name: recipe.name,
++    ...resolveBackground(recipe),
++  }));
++}
++
++/** The "Fondos" library section: clicking a background applies a copy of it to the scene. */
++export function BackgroundLibrary({
++  items,
++  onApply,
++}: {
++  items: BackgroundItem[];
++  onApply: (background: Background) => void;
++}) {
++  return (
++    <section>
++      <h3>Fondos</h3>
++      <div className="grid">
++        {items.map((item, i) =>
++          "error" in item ? (
++            <button
++              type="button"
++              key={`${i}-${item.name}`}
++              className="item broken"
++              disabled
++              title={item.error}
++            >
++              <div className="broken-reason">
++                <TriangleAlert size={16} />
++                {item.error}
++              </div>
++              <span>{item.name}</span>
++            </button>
++          ) : (
++            <button
++              type="button"
++              key={`${i}-${item.name}`}
++              className="item background-item"
++              title="Clic para usar este fondo"
++              onClick={() => onApply(structuredClone(item.background))}
++            >
++              <BackgroundThumb background={item.background} />
++              <span>{item.name}</span>
++            </button>
++          ),
++        )}
++      </div>
++    </section>
++  );
++}
++
++const THUMB_W = 116;
++const THUMB_H = 72;
++
++/** The background alone on an empty scene, scaled into a small canvas. */
++function BackgroundThumb({ background }: { background: Background }) {
++  const ref = useRef<HTMLCanvasElement>(null);
++  useEffect(() => {
++    const canvas = ref.current;
++    const ctx = canvas?.getContext("2d");
++    if (!canvas || !ctx) return;
++    const scene: Scene = {
++      ...defaultScene(),
++      width: THUMB_W * 5,
++      height: THUMB_H * 5,
++      background,
++    };
++    const k = canvas.width / scene.width;
++    ctx.setTransform(k, 0, 0, k, 0, 0);
++    drawScene(ctx, scene, 0);
++  }, [background]);
++  const dpr = window.devicePixelRatio || 1;
++  return (
++    <canvas
++      ref={ref}
++      width={THUMB_W * dpr}
++      height={THUMB_H * dpr}
++      style={{ width: THUMB_W, height: THUMB_H }}
++    />
++  );
++}

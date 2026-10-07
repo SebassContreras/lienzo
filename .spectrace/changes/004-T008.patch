@@ -1,0 +1,174 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 2b7fa32..3465f16 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -35,16 +35,12 @@ import {
+   type Element,
+   type Scene,
+ } from "../model/model.ts";
++import { recipeFromElement } from "../presets/diff.ts";
+ import { BUILT_IN_RECIPES } from "../presets/recipes.ts";
+-import { resolvePreset } from "../presets/resolve.ts";
+ import { SceneFiles } from "../presets/scene-files.tsx";
+-import {
+-  loadUserPresets,
+-  type Preset,
+-  saveUserPreset,
+-} from "../presets/store.ts";
++import { loadUserPresets, saveUserPreset } from "../presets/store.ts";
+ import { ElementInspector, SceneInspector } from "./inspector.tsx";
+-import { Library, type LibraryItem } from "./library.tsx";
++import { Library, type LibraryItem, recipeItems } from "./library.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
+ 
+ /** Removes `ids` and leaves lines that were attached to them where they were drawn. */
+@@ -85,11 +81,7 @@ const BASICS: LibraryItem[] = [
+ ];
+ const BASIC_ICONS = [Square, Type, Spline];
+ 
+-/** Built-in presets, each resolved once from its recipe; dropping one adds a copy. */
+-const BUILT_INS: LibraryItem[] = BUILT_IN_RECIPES.flatMap((recipe) => {
+-  const r = resolvePreset(recipe);
+-  return "element" in r ? [{ name: recipe.name, element: r.element }] : [];
+-});
++const BUILT_INS = recipeItems(BUILT_IN_RECIPES);
+ 
+ export function App() {
+   const [scene, setSceneState] = useState<Scene>(loadInitialScene);
+@@ -102,7 +94,7 @@ export function App() {
+   const [, rerender] = useReducer((x: number) => x + 1, 0);
+   const [status, setStatus] = useState("");
+   const [sceneName, setSceneName] = useState("mi-publicacion");
+-  const [userPresets, setUserPresets] = useState<Preset[]>([]);
++  const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
+ 
+   const setScene = useCallback((s: Scene) => {
+     sceneRef.current = s;
+@@ -146,7 +138,7 @@ export function App() {
+ 
+   const refreshPresets = useCallback(() => {
+     loadUserPresets()
+-      .then(setUserPresets)
++      .then((recipes) => setUserPresets(recipeItems(recipes)))
+       .catch(() => setUserPresets([]));
+   }, []);
+   useEffect(refreshPresets, [refreshPresets]);
+@@ -161,7 +153,7 @@ export function App() {
+         element.a = { x: r.a.x, y: r.a.y };
+         element.b = { x: r.b.x, y: r.b.y };
+       }
+-      saveUserPreset({ name, element })
++      saveUserPreset(recipeFromElement(name, element))
+         .then(() => {
+           setStatus(`Preset «${name}» guardado`);
+           refreshPresets();
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+index 482b672..af34676 100644
+--- a/src/editor/library.tsx
++++ b/src/editor/library.tsx
+@@ -3,11 +3,21 @@ import { useEffect, useRef } from "react";
+ import { boxOf, centerOn } from "../engine/geometry.ts";
+ import { drawScene } from "../engine/render.ts";
+ import { defaultScene, type Element, type Scene } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { resolvePreset } from "../presets/resolve.ts";
+ import { PRESET_MIME } from "./stage.tsx";
+ 
+ /** Anything the library can list: a name and the element dropped on the canvas. */
+ export type LibraryItem = { name: string; element: Element };
+ 
++/** Library entries for recipes, each resolved once; dropping one adds a copy. */
++export function recipeItems(recipes: PresetRecipe[]): LibraryItem[] {
++  return recipes.flatMap((recipe) => {
++    const r = resolvePreset(recipe);
++    return "element" in r ? [{ name: recipe.name, element: r.element }] : [];
++  });
++}
++
+ export function Library({
+   title,
+   items,
+diff --git a/src/presets/diff.ts b/src/presets/diff.ts
+new file mode 100644
+index 0000000..56406d3
+--- /dev/null
++++ b/src/presets/diff.ts
+@@ -0,0 +1,32 @@
++import { defaultElement, type Element } from "../model/model.ts";
++import type { DeepPartial, PresetRecipe } from "../model/preset.ts";
++
++const isPlainObject = (v: unknown): v is Record<string, unknown> =>
++  typeof v === "object" && v !== null && !Array.isArray(v);
++
++/**
++ * The parts of `value` that differ from `base`: objects are compared key by key and only
++ * the differing keys are kept; anything else is kept whole when it is not equal.
++ * Returns `undefined` when nothing differs.
++ */
++export function deepDiff(value: unknown, base: unknown): unknown {
++  if (isPlainObject(value) && isPlainObject(base)) {
++    const out: Record<string, unknown> = {};
++    for (const [key, v] of Object.entries(value)) {
++      const d = deepDiff(v, base[key]);
++      if (d !== undefined) out[key] = d;
++    }
++    return Object.keys(out).length > 0 ? out : undefined;
++  }
++  return JSON.stringify(value) === JSON.stringify(base)
++    ? undefined
++    : structuredClone(value);
++}
++
++/** A recipe that rebuilds `el` from its kind's default: no traits, only what differs. */
++export function recipeFromElement(name: string, el: Element): PresetRecipe {
++  const { id: _id, name: _name, ...own } = el;
++  const { id: _did, name: _dname, ...base } = defaultElement(el.kind);
++  const set = deepDiff(own, base) as DeepPartial<Element> | undefined;
++  return { name, kind: el.kind, traits: [], ...(set ? { set } : {}) };
++}
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index e53b7d9..7c047c4 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -1,7 +1,17 @@
+ import type { Element, Scene } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
+ 
+-/** A saved, pre-configured element: dragging it onto the canvas drops a copy. */
+-export type Preset = { name: string; element: Element };
++/** Before recipes, a user preset stored the whole element. */
++type LegacyPreset = { name: string; element: Element };
++
++/** Reads a stored preset as a recipe; an old whole-element file becomes `set` on no traits. */
++export function asRecipe(data: PresetRecipe | LegacyPreset): PresetRecipe {
++  if ("element" in data) {
++    const { id: _id, ...set } = data.element;
++    return { name: data.name, kind: data.element.kind, traits: [], set };
++  }
++  return data;
++}
+ 
+ async function getJson<T>(url: string): Promise<T> {
+   const res = await fetch(url);
+@@ -17,13 +27,16 @@ async function postJson(url: string, body: unknown): Promise<void> {
+   if (!res.ok) throw new Error(`${url}: ${res.status}`);
+ }
+ 
+-/** User presets live as JSON files in `presets/`. */
+-export async function loadUserPresets(): Promise<Preset[]> {
+-  const items = await getJson<{ name: string; data: Preset }[]>("/api/presets");
+-  return items.map((item) => item.data);
++/** User presets live as recipe JSON files in `presets/`. */
++export async function loadUserPresets(): Promise<PresetRecipe[]> {
++  const items =
++    await getJson<{ name: string; data: PresetRecipe | LegacyPreset }[]>(
++      "/api/presets",
++    );
++  return items.map((item) => asRecipe(item.data));
+ }
+ 
+-export async function saveUserPreset(preset: Preset): Promise<void> {
++export async function saveUserPreset(preset: PresetRecipe): Promise<void> {
+   await postJson(
+     `/api/presets?name=${encodeURIComponent(preset.name)}`,
+     preset,

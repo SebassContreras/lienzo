@@ -1,0 +1,17 @@
+{
+  "name": "Degradado violeta",
+  "kind": "background",
+  "traits": [
+    {
+      "use": "gradient",
+      "color": "#2e1065",
+      "color2": "#0f172a",
+      "angle": 135
+    },
+    {
+      "use": "spotlight",
+      "amount": 0.3,
+      "color": "#7c3aed"
+    }
+  ]
+}

@@ -1,0 +1,768 @@
+diff --git a/package.json b/package.json
+index ff7f5f1..af884e3 100644
+--- a/package.json
++++ b/package.json
+@@ -25,6 +25,7 @@
+     "@fontsource/press-start-2p": "^5.2.0",
+     "@fontsource/space-grotesk": "^5.2.0",
+     "gifenc": "^1.0.3",
++    "lucide": "^1.52.0",
+     "lucide-react": "^1.52.0",
+     "mediabunny": "^1.61.3",
+     "react": "^19.3.0",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index b81c3a0..19f4ab9 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -29,6 +29,9 @@ importers:
+       gifenc:
+         specifier: ^1.0.3
+         version: 1.0.3
++      lucide:
++        specifier: ^1.52.0
++        version: 1.52.0
+       lucide-react:
+         specifier: ^1.52.0
+         version: 1.52.0(@types/react@19.3.0)(react@19.3.0)
+@@ -557,6 +560,9 @@ packages:
+       '@types/react':
+         optional: true
+ 
++  lucide@1.52.0:
++    resolution: {integrity: sha512-XlP0U+m3seobjTPfT0Ybg9YqJeTwSxx1I6R2Ty7vwpA/4HtibMbV28p9tW7AnIwb77YkTboK9x/OPBEqGAzCFg==}
++
+   magic-string@1.4.3:
+     resolution: {integrity: sha512-z12OxmaPGE0F4xlpGdjuAUckipLpQlTAuAmyGhNoD7ODpYUzvDfvtxUbjM/jwznyP178oju/KDdyi220wNJ0RQ==}
+ 
+@@ -1006,6 +1012,8 @@ snapshots:
+     optionalDependencies:
+       '@types/react': 19.3.0
+ 
++  lucide@1.52.0: {}
++
+   magic-string@1.4.3:
+     dependencies:
+       '@jridgewell/sourcemap-codec': 1.6.0
+diff --git a/src/components/icon.ts b/src/components/icon.ts
+new file mode 100644
+index 0000000..1004544
+--- /dev/null
++++ b/src/components/icon.ts
+@@ -0,0 +1,61 @@
++import { animState } from "../engine/anim.ts";
++import { boxOf } from "../engine/geometry.ts";
++import { iconPaths } from "../engine/icon-shapes.ts";
++import {
++  type Ctx,
++  linearGradient,
++  shadowOnly,
++  withTransform,
++} from "../engine/paint.ts";
++import type { IconEl, Scene } from "../model/model.ts";
++
++/** Lucide draws on a 24×24 grid. */
++const GRID = 24;
++
++export function drawIcon(ctx: Ctx, el: IconEl, scene: Scene, t: number): void {
++  const st = animState(el.anim, t, scene.duration);
++  const box = boxOf(el);
++  withTransform(ctx, box, st, () => {
++    const { tile } = el;
++    if (tile.enabled) {
++      const path = new Path2D();
++      path.roundRect(
++        el.x,
++        el.y,
++        el.w,
++        el.h,
++        Math.max(0, Math.min(tile.radius, el.w / 2, el.h / 2)),
++      );
++      ctx.save();
++      ctx.globalAlpha *= tile.opacity;
++      ctx.fillStyle = tile.gradient
++        ? linearGradient(ctx, box, tile.angle, tile.color, tile.color2)
++        : tile.color;
++      ctx.fill(path);
++      ctx.restore();
++    }
++
++    const pad = tile.enabled ? tile.padding : 0;
++    const size = Math.max(1, Math.min(el.w, el.h) - pad * 2);
++    const k = size / GRID;
++    const paths = iconPaths(el.icon);
++    ctx.save();
++    ctx.translate(el.x + (el.w - size) / 2, el.y + (el.h - size) / 2);
++    ctx.scale(k, k);
++    ctx.lineWidth = el.stroke;
++    ctx.lineCap = "round";
++    ctx.lineJoin = "round";
++    const stroke = () => {
++      for (const p of paths) ctx.stroke(p);
++    };
++    if (el.glow.enabled) {
++      for (let i = 0; i < el.glow.strength; i++) {
++        shadowOnly(ctx, stroke, el.glow.color, el.glow.blur * st.glowMul);
++      }
++    }
++    ctx.globalAlpha *= el.opacity;
++    ctx.strokeStyle = el.color;
++    stroke();
++    ctx.restore();
++  });
++}
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index a1e78ae..6c593c2 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -5,6 +5,7 @@ import {
+   Pause,
+   Play,
+   Redo2,
++  Shapes,
+   Sparkles,
+   Spline,
+   Square,
+@@ -31,6 +32,7 @@ import { ExportControls } from "../export/export-controls.tsx";
+ import {
+   cloneElement,
+   defaultEllipse,
++  defaultIcon,
+   defaultLine,
+   defaultRect,
+   defaultScene,
+@@ -85,10 +87,11 @@ function loadInitialScene(): Scene {
+ const BASICS: LibraryItem[] = [
+   { name: "Rectángulo", element: defaultRect() },
+   { name: "Elipse", element: defaultEllipse() },
++  { name: "Icono", element: defaultIcon() },
+   { name: "Texto", element: defaultText() },
+   { name: "Línea", element: defaultLine() },
+ ];
+-const BASIC_ICONS = [Square, Circle, Type, Spline];
++const BASIC_ICONS = [Square, Circle, Shapes, Type, Spline];
+ 
+ const BUILT_INS = recipeItems(BUILT_IN_RECIPES);
+ const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(
+diff --git a/src/editor/icon-picker.tsx b/src/editor/icon-picker.tsx
+new file mode 100644
+index 0000000..3d93177
+--- /dev/null
++++ b/src/editor/icon-picker.tsx
+@@ -0,0 +1,89 @@
++import { createElement, useMemo, useState } from "react";
++import { ICON_NAMES, iconNode } from "../engine/icon-shapes.ts";
++
++/** Most icons shown at once; typing narrows the list. */
++const MAX_SHOWN = 60;
++
++/** Lucide's node data rendered as an inline SVG. */
++export function IconSvg({ name, size = 20 }: { name: string; size?: number }) {
++  const node = iconNode(name) ?? [];
++  return (
++    <svg
++      width={size}
++      height={size}
++      viewBox="0 0 24 24"
++      fill="none"
++      stroke="currentColor"
++      strokeWidth={2}
++      strokeLinecap="round"
++      strokeLinejoin="round"
++      aria-hidden="true"
++    >
++      {node.map(([tag, attrs], i) =>
++        createElement(tag, { key: `${tag}-${i}`, ...attrs }),
++      )}
++    </svg>
++  );
++}
++
++/** Words of a PascalCase name, lower case: "ArrowUpRight" → "arrow up right". */
++const words = (name: string) =>
++  name
++    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
++    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
++    .toLowerCase();
++
++/** Filters icon names by every word typed, in any order. */
++export function filterIcons(query: string, names = ICON_NAMES): string[] {
++  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
++  if (terms.length === 0) return names;
++  return names.filter((name) => {
++    const hay = `${words(name)} ${name.toLowerCase()}`;
++    return terms.every((t) => hay.includes(t));
++  });
++}
++
++export function IconPicker({
++  value,
++  onChange,
++}: {
++  value: string;
++  onChange: (name: string) => void;
++}) {
++  const [query, setQuery] = useState("");
++  const matches = useMemo(() => filterIcons(query), [query]);
++  return (
++    <div className="icon-picker">
++      <div className="icon-current">
++        <IconSvg name={value} size={22} />
++        <span>{value}</span>
++      </div>
++      <input
++        type="search"
++        placeholder="Buscar icono (en inglés: user, cloud…)"
++        value={query}
++        onChange={(e) => setQuery(e.target.value)}
++      />
++      <div className="icon-grid">
++        {matches.slice(0, MAX_SHOWN).map((name) => (
++          <button
++            type="button"
++            key={name}
++            title={name}
++            className={name === value ? "active" : undefined}
++            onClick={() => onChange(name)}
++          >
++            <IconSvg name={name} />
++          </button>
++        ))}
++      </div>
++      <div className="hint">
++        {matches.length === 0
++          ? "Ningún icono coincide."
++          : matches.length > MAX_SHOWN
++            ? `${MAX_SHOWN} de ${matches.length}; escribe para filtrar.`
++            : `${matches.length} iconos.`}
++      </div>
++    </div>
++  );
++}
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 777cfcc..ef4e1d0 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -16,6 +16,7 @@ import {
+   type FlowKind,
+   FONTS,
+   type Glow,
++  type IconEl,
+   type LineEl,
+   type Scene,
+   type ShapeEl,
+@@ -23,6 +24,7 @@ import {
+   type StrokeStyle,
+   type TextEl,
+ } from "../model/model.ts";
++import { IconPicker } from "./icon-picker.tsx";
+ 
+ /* ---------- small field controls ---------- */
+ 
+@@ -617,6 +619,177 @@ function ShapeInspector({
+   );
+ }
+ 
++function IconInspector({ el, change }: { el: IconEl; change: Change<IconEl> }) {
++  return (
++    <>
++      <Section title="Icono">
++        <IconPicker
++          value={el.icon}
++          onChange={(v) =>
++            change((d) => {
++              d.icon = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Trazo">
++        <Num
++          label="Tamaño"
++          value={el.w}
++          min={16}
++          max={1200}
++          onChange={(v) =>
++            change((d) => {
++              d.w = v;
++              d.h = v;
++            })
++          }
++        />
++        <Num
++          label="Grosor"
++          value={el.stroke}
++          min={0.5}
++          max={4}
++          step={0.25}
++          onChange={(v) =>
++            change((d) => {
++              d.stroke = v;
++            })
++          }
++        />
++        <Color
++          label="Color"
++          value={el.color}
++          onChange={(v) =>
++            change((d) => {
++              d.color = v;
++            })
++          }
++        />
++        <Num
++          label="Opacidad"
++          value={el.opacity}
++          max={1}
++          step={0.01}
++          onChange={(v) =>
++            change((d) => {
++              d.opacity = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Fondo del icono">
++        <Check
++          label="Activo"
++          checked={el.tile.enabled}
++          onChange={(v) =>
++            change((d) => {
++              d.tile.enabled = v;
++            })
++          }
++        />
++        {el.tile.enabled && (
++          <>
++            <Color
++              label="Color"
++              value={el.tile.color}
++              onChange={(v) =>
++                change((d) => {
++                  d.tile.color = v;
++                })
++              }
++            />
++            <Check
++              label="Degradado"
++              checked={el.tile.gradient}
++              onChange={(v) =>
++                change((d) => {
++                  d.tile.gradient = v;
++                })
++              }
++            />
++            {el.tile.gradient && (
++              <>
++                <Color
++                  label="Color 2"
++                  value={el.tile.color2}
++                  onChange={(v) =>
++                    change((d) => {
++                      d.tile.color2 = v;
++                    })
++                  }
++                />
++                <Num
++                  label="Ángulo"
++                  value={el.tile.angle}
++                  max={360}
++                  onChange={(v) =>
++                    change((d) => {
++                      d.tile.angle = v;
++                    })
++                  }
++                />
++              </>
++            )}
++            <Num
++              label="Opacidad"
++              value={el.tile.opacity}
++              max={1}
++              step={0.01}
++              onChange={(v) =>
++                change((d) => {
++                  d.tile.opacity = v;
++                })
++              }
++            />
++            <Num
++              label="Esquinas"
++              value={el.tile.radius}
++              max={300}
++              onChange={(v) =>
++                change((d) => {
++                  d.tile.radius = v;
++                })
++              }
++            />
++            <Num
++              label="Margen"
++              value={el.tile.padding}
++              max={300}
++              onChange={(v) =>
++                change((d) => {
++                  d.tile.padding = v;
++                })
++              }
++            />
++          </>
++        )}
++      </Section>
++      <Section title="Brillo">
++        <GlowFields
++          glow={el.glow}
++          onChange={(g) =>
++            change((d) => {
++              d.glow = g;
++            })
++          }
++        />
++      </Section>
++      <Section title="Animación">
++        <AnimFields
++          anim={el.anim}
++          kinds={ANIMS_BY_KIND.icon}
++          onChange={(a) =>
++            change((d) => {
++              d.anim = a;
++            })
++          }
++        />
++      </Section>
++    </>
++  );
++}
++
+ function TextInspector({ el, change }: { el: TextEl; change: Change<TextEl> }) {
+   return (
+     <>
+@@ -1041,6 +1214,7 @@ export function ElementInspector({
+       {(el.kind === "rect" || el.kind === "ellipse") && (
+         <ShapeInspector el={el} change={change} />
+       )}
++      {el.kind === "icon" && <IconInspector el={el} change={change} />}
+       {el.kind === "text" && <TextInspector el={el} change={change} />}
+       {el.kind === "line" && (
+         <LineInspector el={el} change={change} nameOf={nameOf} />
+diff --git a/src/engine/icon-shapes.ts b/src/engine/icon-shapes.ts
+new file mode 100644
+index 0000000..e6f2748
+--- /dev/null
++++ b/src/engine/icon-shapes.ts
+@@ -0,0 +1,112 @@
++import { icons } from "lucide";
++
++/** One drawable piece of a lucide icon, on its 24×24 grid. */
++export type IconShape =
++  | { type: "path"; d: string }
++  | { type: "circle"; cx: number; cy: number; r: number }
++  | { type: "ellipse"; cx: number; cy: number; rx: number; ry: number }
++  | { type: "rect"; x: number; y: number; w: number; h: number; r: number }
++  | { type: "line"; x1: number; y1: number; x2: number; y2: number }
++  | { type: "poly"; points: number[]; closed: boolean };
++
++/** Lucide's icon data: SVG tag names with their attributes. */
++export type IconNode = [string, Record<string, string | number | undefined>][];
++
++/** Every lucide icon name, PascalCase, sorted. */
++export const ICON_NAMES: string[] = Object.keys(icons).sort();
++
++export function iconNode(name: string): IconNode | undefined {
++  return Object.hasOwn(icons, name)
++    ? (icons[name as keyof typeof icons] as unknown as IconNode)
++    : undefined;
++}
++
++const num = (v: string | number | undefined) => Number(v ?? 0) || 0;
++
++/** Turns lucide's icon node data into shapes; unknown tags are skipped. */
++export function iconShapes(node: IconNode): IconShape[] {
++  const out: IconShape[] = [];
++  for (const [tag, a] of node) {
++    if (tag === "path" && a.d) {
++      out.push({ type: "path", d: String(a.d) });
++    } else if (tag === "circle") {
++      out.push({ type: "circle", cx: num(a.cx), cy: num(a.cy), r: num(a.r) });
++    } else if (tag === "ellipse") {
++      out.push({
++        type: "ellipse",
++        cx: num(a.cx),
++        cy: num(a.cy),
++        rx: num(a.rx),
++        ry: num(a.ry),
++      });
++    } else if (tag === "rect") {
++      out.push({
++        type: "rect",
++        x: num(a.x),
++        y: num(a.y),
++        w: num(a.width),
++        h: num(a.height),
++        r: num(a.rx ?? a.ry),
++      });
++    } else if (tag === "line") {
++      out.push({
++        type: "line",
++        x1: num(a.x1),
++        y1: num(a.y1),
++        x2: num(a.x2),
++        y2: num(a.y2),
++      });
++    } else if (tag === "polyline" || tag === "polygon") {
++      const points = String(a.points ?? "")
++        .trim()
++        .split(/[\s,]+/)
++        .filter(Boolean)
++        .map(Number);
++      out.push({ type: "poly", points, closed: tag === "polygon" });
++    }
++  }
++  return out;
++}
++
++function toPath(shape: IconShape): Path2D {
++  if (shape.type === "path") return new Path2D(shape.d);
++  const p = new Path2D();
++  switch (shape.type) {
++    case "circle":
++      p.arc(shape.cx, shape.cy, shape.r, 0, Math.PI * 2);
++      break;
++    case "ellipse":
++      p.ellipse(shape.cx, shape.cy, shape.rx, shape.ry, 0, 0, Math.PI * 2);
++      break;
++    case "rect":
++      p.roundRect(shape.x, shape.y, shape.w, shape.h, shape.r);
++      break;
++    case "line":
++      p.moveTo(shape.x1, shape.y1);
++      p.lineTo(shape.x2, shape.y2);
++      break;
++    case "poly":
++      for (let i = 0; i + 1 < shape.points.length; i += 2) {
++        const x = shape.points[i] as number;
++        const y = shape.points[i + 1] as number;
++        if (i === 0) p.moveTo(x, y);
++        else p.lineTo(x, y);
++      }
++      if (shape.closed) p.closePath();
++      break;
++  }
++  return p;
++}
++
++const pathCache = new Map<string, Path2D[]>();
++
++/** The icon's outline as Path2D objects on the 24×24 grid, cached per name. */
++export function iconPaths(name: string): Path2D[] {
++  let paths = pathCache.get(name);
++  if (!paths) {
++    const node = iconNode(name);
++    paths = node ? iconShapes(node).map(toPath) : [];
++    pathCache.set(name, paths);
++  }
++  return paths;
++}
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index ca7cdd2..3e8dd61 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,4 +1,5 @@
+ import { drawEllipse } from "../components/ellipse.ts";
++import { drawIcon } from "../components/icon.ts";
+ import { drawLine } from "../components/line.ts";
+ import { drawRect } from "../components/rect.ts";
+ import { drawText } from "../components/text.ts";
+@@ -16,6 +17,7 @@ export function drawScene(ctx: Ctx, scene: Scene, t: number): void {
+   for (const el of scene.elements) {
+     if (el.kind === "rect") drawRect(ctx, el, scene, t);
+     else if (el.kind === "ellipse") drawEllipse(ctx, el, scene, t);
++    else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
+     else if (el.kind === "text") drawText(ctx, el, scene, t);
+     else drawLine(ctx, el, scene, t, byId);
+   }
+diff --git a/src/model/model.ts b/src/model/model.ts
+index 7d39e38..54b1b1b 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -90,6 +90,36 @@ export type EllipseEl = Omit<RectEl, "kind" | "radius"> & { kind: "ellipse" };
+ /** Shapes that share the rectangle's fill, border, glows, shadow and label. */
+ export type ShapeEl = RectEl | EllipseEl;
+ 
++/** A lucide icon drawn as strokes, optionally on a rounded tile. */
++export type IconEl = {
++  id: string;
++  kind: "icon";
++  name: string;
++  x: number;
++  y: number;
++  w: number;
++  h: number;
++  /** Lucide icon name in PascalCase, e.g. "Wrench". */
++  icon: string;
++  /** Stroke width on lucide's 24x24 grid. */
++  stroke: number;
++  color: string;
++  opacity: number;
++  tile: {
++    enabled: boolean;
++    color: string;
++    color2: string;
++    gradient: boolean;
++    angle: number;
++    opacity: number;
++    radius: number;
++    /** Space between the tile's edge and the icon, px. */
++    padding: number;
++  };
++  glow: Glow;
++  anim: Anim;
++};
++
+ export type TextEl = {
+   id: string;
+   kind: "text";
+@@ -143,7 +173,7 @@ export type LineEl = {
+   anim: Anim;
+ };
+ 
+-export type Element = RectEl | EllipseEl | TextEl | LineEl;
++export type Element = RectEl | EllipseEl | IconEl | TextEl | LineEl;
+ export type ElementKind = Element["kind"];
+ 
+ export type Background = {
+@@ -186,18 +216,22 @@ export const SIZE_PRESETS = [
+   { label: "LinkedIn 1200×627", width: 1200, height: 627 },
+ ];
+ 
++/** Animations for anything with a box: shapes, icons, images, text. */
++const BOX_ANIMS: AnimKind[] = [
++  "none",
++  "float",
++  "pulse",
++  "breathe",
++  "fade-in",
++  "pop-in",
++  "slide-up",
++];
++
+ export const ANIMS_BY_KIND: Record<ElementKind, AnimKind[]> = {
+-  rect: ["none", "float", "pulse", "breathe", "fade-in", "pop-in", "slide-up"],
+-  ellipse: [
+-    "none",
+-    "float",
+-    "pulse",
+-    "breathe",
+-    "fade-in",
+-    "pop-in",
+-    "slide-up",
+-  ],
+-  text: ["none", "float", "pulse", "breathe", "fade-in", "pop-in", "slide-up"],
++  rect: BOX_ANIMS,
++  ellipse: BOX_ANIMS,
++  icon: BOX_ANIMS,
++  text: BOX_ANIMS,
+   line: ["none", "fade-in", "draw"],
+ };
+ 
+@@ -276,6 +310,34 @@ export function defaultEllipse(): EllipseEl {
+   return { ...rect, kind: "ellipse", name: "Elipse", w: 200, h: 200 };
+ }
+ 
++export function defaultIcon(): IconEl {
++  return {
++    id: newId(),
++    kind: "icon",
++    name: "Icono",
++    x: 0,
++    y: 0,
++    w: 120,
++    h: 120,
++    icon: "Wrench",
++    stroke: 2,
++    color: "#e0f2fe",
++    opacity: 1,
++    tile: {
++      enabled: true,
++      color: "#1e3a8a",
++      color2: "#0b1630",
++      gradient: true,
++      angle: 135,
++      opacity: 1,
++      radius: 28,
++      padding: 28,
++    },
++    glow: noGlow("#60a5fa"),
++    anim: { ...noAnim },
++  };
++}
++
+ export function defaultText(): TextEl {
+   return {
+     id: newId(),
+@@ -330,6 +392,7 @@ export function defaultLine(): LineEl {
+ const DEFAULTS: Record<ElementKind, () => Element> = {
+   rect: defaultRect,
+   ellipse: defaultEllipse,
++  icon: defaultIcon,
+   text: defaultText,
+   line: defaultLine,
+ };
+diff --git a/src/styles.css b/src/styles.css
+index a9fdf0e..74551ea 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -360,3 +360,34 @@ code {
+   font-family: "JetBrains Mono", monospace;
+   font-size: 11px;
+ }
++
++.icon-picker {
++  display: flex;
++  flex-direction: column;
++  gap: 6px;
++}
++.icon-current {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  font-weight: 600;
++}
++.icon-picker input[type="search"] {
++  width: 100%;
++  padding: 4px 6px;
++}
++.icon-grid {
++  display: grid;
++  grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
++  gap: 4px;
++  max-height: 200px;
++  overflow-y: auto;
++}
++.icon-picker .icon-grid > button {
++  justify-content: center;
++  padding: 6px 0;
++}
++.icon-picker .icon-grid > button.active {
++  border-color: var(--accent);
++  color: var(--accent);
++}
+diff --git a/src/traits/trait.ts b/src/traits/trait.ts
+index 4153991..b33c68a 100644
+--- a/src/traits/trait.ts
++++ b/src/traits/trait.ts
+@@ -1,6 +1,7 @@
+ import type {
+   Background,
+   EllipseEl,
++  IconEl,
+   LineEl,
+   RectEl,
+   ShapeEl,
+@@ -15,6 +16,7 @@ export type TraitParams = Record<string, ParamValue>;
+ export type TraitTargets = {
+   rect: RectEl;
+   ellipse: EllipseEl;
++  icon: IconEl;
+   text: TextEl;
+   line: LineEl;
+   background: Background;

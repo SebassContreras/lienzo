@@ -1,0 +1,599 @@
+diff --git a/src/presets/built-in.fixture.json b/src/presets/built-in.fixture.json
+new file mode 100644
+index 0000000..a575f72
+--- /dev/null
++++ b/src/presets/built-in.fixture.json
+@@ -0,0 +1,559 @@
++[
++  {
++    "kind": "rect",
++    "name": "Tarjeta neón",
++    "x": 0,
++    "y": 0,
++    "w": 280,
++    "h": 180,
++    "radius": 24,
++    "fill": {
++      "color": "#13254a",
++      "color2": "#0b1630",
++      "gradient": true,
++      "angle": 90,
++      "opacity": 0.9
++    },
++    "border": {
++      "width": 2,
++      "color": "#3b82f6",
++      "opacity": 0.8,
++      "style": "solid",
++      "flow": 0
++    },
++    "borderGlow": {
++      "enabled": true,
++      "color": "#60a5fa",
++      "blur": 16,
++      "strength": 2
++    },
++    "bgGlow": {
++      "enabled": true,
++      "color": "#1d4ed8",
++      "blur": 50,
++      "strength": 1
++    },
++    "shadow": {
++      "enabled": true,
++      "color": "#000000",
++      "opacity": 0.5,
++      "blur": 40,
++      "x": 0,
++      "y": 16
++    },
++    "label": {
++      "text": "MCP Server",
++      "font": "Inter",
++      "size": 28,
++      "weight": 600,
++      "color": "#ffffff",
++      "align": "center",
++      "padding": 24
++    },
++    "anim": {
++      "kind": "float",
++      "amount": 10,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "rect",
++    "name": "Tarjeta glass",
++    "x": 0,
++    "y": 0,
++    "w": 280,
++    "h": 180,
++    "radius": 24,
++    "fill": {
++      "color": "#ffffff",
++      "color2": "#93c5fd",
++      "gradient": true,
++      "angle": 135,
++      "opacity": 0.08
++    },
++    "border": {
++      "width": 1.5,
++      "color": "#ffffff",
++      "opacity": 0.25,
++      "style": "solid",
++      "flow": 0
++    },
++    "borderGlow": {
++      "enabled": false,
++      "color": "#3b82f6",
++      "blur": 18,
++      "strength": 1
++    },
++    "bgGlow": {
++      "enabled": false,
++      "color": "#2563eb",
++      "blur": 24,
++      "strength": 1
++    },
++    "shadow": {
++      "enabled": true,
++      "color": "#000000",
++      "opacity": 0.5,
++      "blur": 40,
++      "x": 0,
++      "y": 16
++    },
++    "label": {
++      "text": "Cliente",
++      "font": "Inter",
++      "size": 28,
++      "weight": 600,
++      "color": "#ffffff",
++      "align": "center",
++      "padding": 24
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "rect",
++    "name": "Tarjeta borde animado",
++    "x": 0,
++    "y": 0,
++    "w": 280,
++    "h": 180,
++    "radius": 24,
++    "fill": {
++      "color": "#13254a",
++      "color2": "#0b1630",
++      "gradient": true,
++      "angle": 90,
++      "opacity": 0.6
++    },
++    "border": {
++      "width": 2.5,
++      "color": "#22d3ee",
++      "opacity": 1,
++      "style": "dashed",
++      "flow": 4
++    },
++    "borderGlow": {
++      "enabled": true,
++      "color": "#22d3ee",
++      "blur": 14,
++      "strength": 1
++    },
++    "bgGlow": {
++      "enabled": false,
++      "color": "#2563eb",
++      "blur": 24,
++      "strength": 1
++    },
++    "shadow": {
++      "enabled": true,
++      "color": "#000000",
++      "opacity": 0.5,
++      "blur": 40,
++      "x": 0,
++      "y": 16
++    },
++    "label": {
++      "text": "Tool",
++      "font": "Inter",
++      "size": 28,
++      "weight": 600,
++      "color": "#ffffff",
++      "align": "center",
++      "padding": 24
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "rect",
++    "name": "Pill",
++    "x": 0,
++    "y": 0,
++    "w": 420,
++    "h": 64,
++    "radius": 32,
++    "fill": {
++      "color": "#1d4ed8",
++      "color2": "#1e40af",
++      "gradient": false,
++      "angle": 0,
++      "opacity": 0.3
++    },
++    "border": {
++      "width": 2,
++      "color": "#60a5fa",
++      "opacity": 0.8,
++      "style": "solid",
++      "flow": 0
++    },
++    "borderGlow": {
++      "enabled": false,
++      "color": "#3b82f6",
++      "blur": 18,
++      "strength": 1
++    },
++    "bgGlow": {
++      "enabled": false,
++      "color": "#2563eb",
++      "blur": 24,
++      "strength": 1
++    },
++    "shadow": {
++      "enabled": false,
++      "color": "#000000",
++      "opacity": 0.5,
++      "blur": 40,
++      "x": 0,
++      "y": 16
++    },
++    "label": {
++      "text": "🚀 Cómo funciona MCP",
++      "font": "Inter",
++      "size": 24,
++      "weight": 600,
++      "color": "#ffffff",
++      "align": "center",
++      "padding": 24
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "rect",
++    "name": "Botón CTA",
++    "x": 0,
++    "y": 0,
++    "w": 220,
++    "h": 72,
++    "radius": 36,
++    "fill": {
++      "color": "#3b82f6",
++      "color2": "#2563eb",
++      "gradient": true,
++      "angle": 90,
++      "opacity": 1
++    },
++    "border": {
++      "width": 0,
++      "color": "#3b82f6",
++      "opacity": 0.8,
++      "style": "solid",
++      "flow": 0
++    },
++    "borderGlow": {
++      "enabled": true,
++      "color": "#3b82f6",
++      "blur": 18,
++      "strength": 1
++    },
++    "bgGlow": {
++      "enabled": true,
++      "color": "#3b82f6",
++      "blur": 30,
++      "strength": 1
++    },
++    "shadow": {
++      "enabled": true,
++      "color": "#000000",
++      "opacity": 0.5,
++      "blur": 40,
++      "x": 0,
++      "y": 16
++    },
++    "label": {
++      "text": "+ Seguir",
++      "font": "Inter",
++      "size": 26,
++      "weight": 700,
++      "color": "#ffffff",
++      "align": "center",
++      "padding": 24
++    },
++    "anim": {
++      "kind": "pulse",
++      "amount": 6,
++      "cycles": 2,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "text",
++    "name": "Título",
++    "x": 0,
++    "y": 0,
++    "text": "Cómo funciona\nun MCP",
++    "font": "Inter",
++    "size": 80,
++    "weight": 800,
++    "italic": false,
++    "color": "#ffffff",
++    "color2": "#60a5fa",
++    "gradient": false,
++    "align": "left",
++    "lineHeight": 1.15,
++    "letterSpacing": 0,
++    "opacity": 1,
++    "glow": {
++      "enabled": false,
++      "color": "#60a5fa",
++      "blur": 24,
++      "strength": 1
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "text",
++    "name": "Título degradado",
++    "x": 0,
++    "y": 0,
++    "text": "Model Context Protocol",
++    "font": "Inter",
++    "size": 64,
++    "weight": 800,
++    "italic": false,
++    "color": "#3b82f6",
++    "color2": "#22d3ee",
++    "gradient": true,
++    "align": "left",
++    "lineHeight": 1.15,
++    "letterSpacing": 0,
++    "opacity": 1,
++    "glow": {
++      "enabled": false,
++      "color": "#60a5fa",
++      "blur": 24,
++      "strength": 1
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "text",
++    "name": "Párrafo",
++    "x": 0,
++    "y": 0,
++    "text": "El cliente pide, el servidor MCP\nexpone herramientas y datos.",
++    "font": "Inter",
++    "size": 30,
++    "weight": 400,
++    "italic": false,
++    "color": "#cbd5e1",
++    "color2": "#60a5fa",
++    "gradient": false,
++    "align": "left",
++    "lineHeight": 1.4,
++    "letterSpacing": 0,
++    "opacity": 1,
++    "glow": {
++      "enabled": false,
++      "color": "#60a5fa",
++      "blur": 24,
++      "strength": 1
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "text",
++    "name": "Manuscrito",
++    "x": 0,
++    "y": 0,
++    "text": "¡así de simple!",
++    "font": "Caveat",
++    "size": 48,
++    "weight": 700,
++    "italic": false,
++    "color": "#60a5fa",
++    "color2": "#60a5fa",
++    "gradient": false,
++    "align": "left",
++    "lineHeight": 1.15,
++    "letterSpacing": 0,
++    "opacity": 1,
++    "glow": {
++      "enabled": false,
++      "color": "#60a5fa",
++      "blur": 24,
++      "strength": 1
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "text",
++    "name": "Pixel",
++    "x": 0,
++    "y": 0,
++    "text": "REQUEST 200 OK",
++    "font": "Press Start 2P",
++    "size": 28,
++    "weight": 400,
++    "italic": false,
++    "color": "#4ade80",
++    "color2": "#60a5fa",
++    "gradient": false,
++    "align": "left",
++    "lineHeight": 1.15,
++    "letterSpacing": 0,
++    "opacity": 1,
++    "glow": {
++      "enabled": true,
++      "color": "#22c55e",
++      "blur": 12,
++      "strength": 1
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "line",
++    "name": "Conexión con pulsos",
++    "a": {
++      "x": 0,
++      "y": 0
++    },
++    "b": {
++      "x": 260,
++      "y": 0
++    },
++    "bend": 0,
++    "width": 3,
++    "color": "#3b82f6",
++    "opacity": 0.6,
++    "style": "solid",
++    "arrowStart": false,
++    "arrowEnd": true,
++    "glow": {
++      "enabled": true,
++      "color": "#3b82f6",
++      "blur": 12,
++      "strength": 1
++    },
++    "flow": {
++      "kind": "pulse",
++      "color": "#93c5fd",
++      "speed": 2,
++      "count": 2,
++      "size": 5,
++      "reverse": false
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "line",
++    "name": "Hormigas",
++    "a": {
++      "x": 0,
++      "y": 0
++    },
++    "b": {
++      "x": 260,
++      "y": 0
++    },
++    "bend": 0,
++    "width": 3,
++    "color": "#3b82f6",
++    "opacity": 0.25,
++    "style": "solid",
++    "arrowStart": false,
++    "arrowEnd": true,
++    "glow": {
++      "enabled": false,
++      "color": "#3b82f6",
++      "blur": 12,
++      "strength": 1
++    },
++    "flow": {
++      "kind": "ants",
++      "color": "#22d3ee",
++      "speed": 12,
++      "count": 1,
++      "size": 5,
++      "reverse": false
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  },
++  {
++    "kind": "line",
++    "name": "Cometa curvo",
++    "a": {
++      "x": 0,
++      "y": 0
++    },
++    "b": {
++      "x": 260,
++      "y": 0
++    },
++    "bend": -60,
++    "width": 3,
++    "color": "#8b5cf6",
++    "opacity": 0.3,
++    "style": "solid",
++    "arrowStart": false,
++    "arrowEnd": true,
++    "glow": {
++      "enabled": true,
++      "color": "#8b5cf6",
++      "blur": 12,
++      "strength": 1
++    },
++    "flow": {
++      "kind": "comet",
++      "color": "#a78bfa",
++      "speed": 2,
++      "count": 1,
++      "size": 6,
++      "reverse": false
++    },
++    "anim": {
++      "kind": "none",
++      "amount": 12,
++      "cycles": 1,
++      "delay": 0
++    }
++  }
++]
+diff --git a/src/presets/recipes.test.ts b/src/presets/recipes.test.ts
+new file mode 100644
+index 0000000..3e38c4e
+--- /dev/null
++++ b/src/presets/recipes.test.ts
+@@ -0,0 +1,28 @@
++import { describe, expect, it } from "vitest";
++import type { PresetRecipe } from "../model/preset.ts";
++import fixture from "./built-in.fixture.json";
++import { BUILT_IN_RECIPES } from "./recipes.ts";
++import { resolvePreset } from "./resolve.ts";
++
++/**
++ * `built-in.fixture.json` holds, in library order and without ids, the 13 elements the
++ * hand-written `built-in.ts` produced before the presets became recipes.
++ */
++describe("built-in recipes", () => {
++  it("are the 13 presets, in the same order", () => {
++    expect(BUILT_IN_RECIPES.map((r) => r.name)).toEqual(
++      fixture.map((el) => el.name),
++    );
++  });
++
++  it.each(BUILT_IN_RECIPES.map((r, i) => [r.name, i] as const))(
++    "«%s» resolves to the element it built before",
++    (_name, i) => {
++      const r = resolvePreset(BUILT_IN_RECIPES[i] as PresetRecipe);
++      if ("error" in r) throw new Error(r.error);
++      const { id, ...element } = r.element;
++      expect(typeof id).toBe("string");
++      expect(element).toEqual(fixture[i]);
++    },
++  );
++});

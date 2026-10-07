@@ -1,0 +1,15 @@
+{
+  "name": "Puntos sobre gris",
+  "kind": "background",
+  "traits": [
+    {
+      "use": "solid",
+      "color": "#1f2937"
+    },
+    {
+      "use": "dots",
+      "color": "#4b5563",
+      "gap": 28
+    }
+  ]
+}

@@ -1,0 +1,878 @@
+diff --git a/biome.json b/biome.json
+index 0992630..8f46cd9 100644
+--- a/biome.json
++++ b/biome.json
+@@ -14,6 +14,7 @@
+       "!planning",
+       "!presets",
+       "!scenes",
++      "!assets",
+       "!pnpm-lock.yaml"
+     ]
+   },
+diff --git a/src/components/image.ts b/src/components/image.ts
+new file mode 100644
+index 0000000..bd37830
+--- /dev/null
++++ b/src/components/image.ts
+@@ -0,0 +1,77 @@
++import { animState } from "../engine/anim.ts";
++import { boxOf } from "../engine/geometry.ts";
++import { imageFor } from "../engine/images.ts";
++import { type Ctx, rgba, shadowOnly, withTransform } from "../engine/paint.ts";
++import type { ImageEl, Scene } from "../model/model.ts";
++
++export function drawImage(
++  ctx: Ctx,
++  el: ImageEl,
++  scene: Scene,
++  t: number,
++): void {
++  const st = animState(el.anim, t, scene.duration);
++  const box = boxOf(el);
++  withTransform(ctx, box, st, () => {
++    const path = new Path2D();
++    path.roundRect(
++      el.x,
++      el.y,
++      el.w,
++      el.h,
++      Math.max(0, Math.min(el.radius, el.w / 2, el.h / 2)),
++    );
++    if (el.shadow.enabled) {
++      shadowOnly(
++        ctx,
++        () => ctx.fill(path),
++        rgba(el.shadow.color, el.shadow.opacity),
++        el.shadow.blur,
++        el.shadow.x,
++        el.shadow.y,
++      );
++    }
++
++    const image = imageFor(el.src);
++    ctx.save();
++    ctx.globalAlpha *= el.opacity;
++    ctx.clip(path);
++    if (image) {
++      ctx.drawImage(image, el.x, el.y, el.w, el.h);
++    } else {
++      drawPlaceholder(ctx, el);
++    }
++    ctx.restore();
++
++    if (el.border.width > 0) {
++      ctx.save();
++      ctx.lineWidth = el.border.width;
++      ctx.strokeStyle = rgba(el.border.color, el.border.opacity);
++      ctx.stroke(path);
++      ctx.restore();
++    }
++  });
++}
++
++/** Shown before a file is chosen (or while it loads): a soft box with a mountain glyph. */
++function drawPlaceholder(ctx: Ctx, el: ImageEl): void {
++  ctx.fillStyle = "rgba(148, 163, 184, 0.15)";
++  ctx.fillRect(el.x, el.y, el.w, el.h);
++  const s = Math.min(el.w, el.h) * 0.3;
++  const cx = el.x + el.w / 2;
++  const cy = el.y + el.h / 2;
++  ctx.strokeStyle = "rgba(203, 213, 225, 0.6)";
++  ctx.lineWidth = Math.max(1, s / 12);
++  ctx.lineJoin = "round";
++  ctx.strokeRect(cx - s, cy - s * 0.75, s * 2, s * 1.5);
++  ctx.beginPath();
++  ctx.moveTo(cx - s, cy + s * 0.5);
++  ctx.lineTo(cx - s * 0.3, cy - s * 0.15);
++  ctx.lineTo(cx + s * 0.2, cy + s * 0.3);
++  ctx.lineTo(cx + s * 0.5, cy + s * 0.05);
++  ctx.lineTo(cx + s, cy + s * 0.5);
++  ctx.stroke();
++  ctx.beginPath();
++  ctx.arc(cx + s * 0.45, cy - s * 0.35, s * 0.15, 0, Math.PI * 2);
++  ctx.stroke();
++}
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 6c593c2..521c5ef 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -1,6 +1,7 @@
+ import {
+   Circle,
+   FilePlus2,
++  Image,
+   PaintBucket,
+   Pause,
+   Play,
+@@ -33,6 +34,7 @@ import {
+   cloneElement,
+   defaultEllipse,
+   defaultIcon,
++  defaultImage,
+   defaultLine,
+   defaultRect,
+   defaultScene,
+@@ -88,10 +90,11 @@ const BASICS: LibraryItem[] = [
+   { name: "Rectángulo", element: defaultRect() },
+   { name: "Elipse", element: defaultEllipse() },
+   { name: "Icono", element: defaultIcon() },
++  { name: "Imagen", element: defaultImage() },
+   { name: "Texto", element: defaultText() },
+   { name: "Línea", element: defaultLine() },
+ ];
+-const BASIC_ICONS = [Square, Circle, Shapes, Type, Spline];
++const BASIC_ICONS = [Square, Circle, Shapes, Image, Type, Spline];
+ 
+ const BUILT_INS = recipeItems(BUILT_IN_RECIPES);
+ const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index ef4e1d0..80369fa 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -3,10 +3,12 @@ import {
+   ArrowUp,
+   BookmarkPlus,
+   Copy,
++  ImageUp,
+   Link2Off,
+   Trash2,
+ } from "lucide-react";
+ import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
++import { imageSize } from "../engine/images.ts";
+ import {
+   ANIM_LABELS,
+   ANIMS_BY_KIND,
+@@ -17,15 +19,25 @@ import {
+   FONTS,
+   type Glow,
+   type IconEl,
++  type ImageEl,
+   type LineEl,
+   type Scene,
++  type Shadow,
+   type ShapeEl,
+   SIZE_PRESETS,
+   type StrokeStyle,
+   type TextEl,
+ } from "../model/model.ts";
++import { uploadAsset } from "../presets/store.ts";
+ import { IconPicker } from "./icon-picker.tsx";
+ 
++/** Stores a picked file in `assets/` and reads its shape once it decodes. */
++async function uploadImage(file: File) {
++  const src = await uploadAsset(file);
++  const { width, height } = await imageSize(src);
++  return { src, aspect: width / height };
++}
++
+ /* ---------- small field controls ---------- */
+ 
+ export function Section({
+@@ -242,6 +254,60 @@ function GlowFields({
+   );
+ }
+ 
++function ShadowFields({
++  shadow,
++  onChange,
++}: {
++  shadow: Shadow;
++  onChange: (s: Shadow) => void;
++}) {
++  return (
++    <>
++      <Check
++        label="Activa"
++        checked={shadow.enabled}
++        onChange={(enabled) => onChange({ ...shadow, enabled })}
++      />
++      {shadow.enabled && (
++        <>
++          <Color
++            label="Color"
++            value={shadow.color}
++            onChange={(color) => onChange({ ...shadow, color })}
++          />
++          <Num
++            label="Opacidad"
++            value={shadow.opacity}
++            max={1}
++            step={0.01}
++            onChange={(opacity) => onChange({ ...shadow, opacity })}
++          />
++          <Num
++            label="Difusión"
++            value={shadow.blur}
++            max={150}
++            onChange={(blur) => onChange({ ...shadow, blur })}
++          />
++          <Num
++            label="X"
++            value={shadow.x}
++            min={-100}
++            max={100}
++            onChange={(x) => onChange({ ...shadow, x })}
++          />
++          <Num
++            label="Y"
++            value={shadow.y}
++            min={-100}
++            max={100}
++            onChange={(y) => onChange({ ...shadow, y })}
++          />
++        </>
++      )}
++    </>
++  );
++}
++
+ function AnimFields({
+   anim,
+   kinds,
+@@ -477,71 +543,14 @@ function ShapeInspector({
+         />
+       </Section>
+       <Section title="Sombra" open={false}>
+-        <Check
+-          label="Activa"
+-          checked={el.shadow.enabled}
++        <ShadowFields
++          shadow={el.shadow}
+           onChange={(v) =>
+             change((d) => {
+-              d.shadow.enabled = v;
++              d.shadow = v;
+             })
+           }
+         />
+-        {el.shadow.enabled && (
+-          <>
+-            <Color
+-              label="Color"
+-              value={el.shadow.color}
+-              onChange={(v) =>
+-                change((d) => {
+-                  d.shadow.color = v;
+-                })
+-              }
+-            />
+-            <Num
+-              label="Opacidad"
+-              value={el.shadow.opacity}
+-              max={1}
+-              step={0.01}
+-              onChange={(v) =>
+-                change((d) => {
+-                  d.shadow.opacity = v;
+-                })
+-              }
+-            />
+-            <Num
+-              label="Difusión"
+-              value={el.shadow.blur}
+-              max={150}
+-              onChange={(v) =>
+-                change((d) => {
+-                  d.shadow.blur = v;
+-                })
+-              }
+-            />
+-            <Num
+-              label="X"
+-              value={el.shadow.x}
+-              min={-100}
+-              max={100}
+-              onChange={(v) =>
+-                change((d) => {
+-                  d.shadow.x = v;
+-                })
+-              }
+-            />
+-            <Num
+-              label="Y"
+-              value={el.shadow.y}
+-              min={-100}
+-              max={100}
+-              onChange={(v) =>
+-                change((d) => {
+-                  d.shadow.y = v;
+-                })
+-              }
+-            />
+-          </>
+-        )}
+       </Section>
+       <Section title="Texto interior">
+         <TextArea
+@@ -619,6 +628,172 @@ function ShapeInspector({
+   );
+ }
+ 
++function ImageInspector({
++  el,
++  change,
++  onUpload,
++}: {
++  el: ImageEl;
++  change: Change<ImageEl>;
++  onUpload: (file: File) => Promise<{ src: string; aspect: number }>;
++}) {
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState("");
++  return (
++    <>
++      <Section title="Imagen">
++        <label className="file-pick">
++          <ImageUp size={15} />
++          {busy ? "Subiendo…" : el.src ? "Cambiar imagen" : "Elegir imagen"}
++          <input
++            type="file"
++            accept=".png,.jpg,.jpeg,.svg,.webp"
++            disabled={busy}
++            onChange={(e) => {
++              const file = e.target.files?.[0];
++              e.target.value = "";
++              if (!file) return;
++              setBusy(true);
++              setError("");
++              onUpload(file)
++                .then(({ src, aspect }) =>
++                  change((d) => {
++                    d.src = src;
++                    d.aspect = aspect;
++                    if (d.keepAspect) d.h = d.w / aspect;
++                  }),
++                )
++                .catch((err: unknown) => setError(String(err)))
++                .finally(() => setBusy(false));
++            }}
++          />
++        </label>
++        {error && <div className="hint error">{error}</div>}
++        {el.src && (
++          <div className="hint">
++            Guardada en <code>{el.src.slice(1)}</code>
++          </div>
++        )}
++      </Section>
++      <Section title="Forma">
++        <Num
++          label="Ancho"
++          value={el.w}
++          min={10}
++          max={2000}
++          onChange={(v) =>
++            change((d) => {
++              d.w = v;
++              if (d.keepAspect) d.h = v / d.aspect;
++            })
++          }
++        />
++        <Num
++          label="Alto"
++          value={el.h}
++          min={10}
++          max={2000}
++          onChange={(v) =>
++            change((d) => {
++              d.h = v;
++              if (d.keepAspect) d.w = v * d.aspect;
++            })
++          }
++        />
++        <Check
++          label="Proporción"
++          checked={el.keepAspect}
++          onChange={(v) =>
++            change((d) => {
++              d.keepAspect = v;
++              if (v) d.h = d.w / d.aspect;
++            })
++          }
++        />
++        <Num
++          label="Esquinas"
++          value={el.radius}
++          max={300}
++          onChange={(v) =>
++            change((d) => {
++              d.radius = v;
++            })
++          }
++        />
++        <Num
++          label="Opacidad"
++          value={el.opacity}
++          max={1}
++          step={0.01}
++          onChange={(v) =>
++            change((d) => {
++              d.opacity = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Borde">
++        <Num
++          label="Grosor"
++          value={el.border.width}
++          max={20}
++          step={0.5}
++          onChange={(v) =>
++            change((d) => {
++              d.border.width = v;
++            })
++          }
++        />
++        {el.border.width > 0 && (
++          <>
++            <Color
++              label="Color"
++              value={el.border.color}
++              onChange={(v) =>
++                change((d) => {
++                  d.border.color = v;
++                })
++              }
++            />
++            <Num
++              label="Opacidad"
++              value={el.border.opacity}
++              max={1}
++              step={0.01}
++              onChange={(v) =>
++                change((d) => {
++                  d.border.opacity = v;
++                })
++              }
++            />
++          </>
++        )}
++      </Section>
++      <Section title="Sombra" open={false}>
++        <ShadowFields
++          shadow={el.shadow}
++          onChange={(v) =>
++            change((d) => {
++              d.shadow = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Animación">
++        <AnimFields
++          anim={el.anim}
++          kinds={ANIMS_BY_KIND.image}
++          onChange={(a) =>
++            change((d) => {
++              d.anim = a;
++            })
++          }
++        />
++      </Section>
++    </>
++  );
++}
++
+ function IconInspector({ el, change }: { el: IconEl; change: Change<IconEl> }) {
+   return (
+     <>
+@@ -1215,6 +1390,9 @@ export function ElementInspector({
+         <ShapeInspector el={el} change={change} />
+       )}
+       {el.kind === "icon" && <IconInspector el={el} change={change} />}
++      {el.kind === "image" && (
++        <ImageInspector el={el} change={change} onUpload={uploadImage} />
++      )}
+       {el.kind === "text" && <TextInspector el={el} change={change} />}
+       {el.kind === "line" && (
+         <LineInspector el={el} change={change} nameOf={nameOf} />
+diff --git a/src/editor/stage.tsx b/src/editor/stage.tsx
+index 5a98cee..d3d2651 100644
+--- a/src/editor/stage.tsx
++++ b/src/editor/stage.tsx
+@@ -104,6 +104,11 @@ function applyDrag(
+         y = Math.min(o.y + dy, o.y + o.h - MIN);
+         height = o.y + o.h - y;
+       }
++      if (o.kind === "image" && o.keepAspect && o.aspect > 0) {
++        // the dragged corner sets the width; the height follows the picture's shape
++        height = w / o.aspect;
++        if (h === "nw" || h === "ne") y = o.y + o.h - height;
++      }
+       return { ...o, x, y, w, h: height };
+     }
+     if (o.kind === "text") {
+diff --git a/src/engine/images.ts b/src/engine/images.ts
+new file mode 100644
+index 0000000..f1875c2
+--- /dev/null
++++ b/src/engine/images.ts
+@@ -0,0 +1,67 @@
++import type { Element, Scene } from "../model/model.ts";
++
++type Entry = {
++  image?: CanvasImageSource;
++  width: number;
++  height: number;
++  ready: Promise<void>;
++};
++
++const cache = new Map<string, Entry>();
++
++/**
++ * Loads an image once per path. Drawing is synchronous, so `drawScene` asks for the image and
++ * gets it only once it has decoded; exports await `loadSceneImages` first.
++ */
++function entry(src: string): Entry {
++  let e = cache.get(src);
++  if (!e) {
++    const created: Entry = { width: 0, height: 0, ready: Promise.resolve() };
++    created.ready = (async () => {
++      const img = new Image();
++      img.src = src;
++      await img.decode();
++      created.width = img.naturalWidth || 300;
++      created.height = img.naturalHeight || 150;
++      try {
++        created.image = await createImageBitmap(img);
++      } catch {
++        // some SVGs cannot become bitmaps; the decoded element draws just as well
++        created.image = img;
++      }
++    })().catch(() => {
++      cache.delete(src);
++    });
++    e = created;
++    cache.set(src, e);
++  }
++  return e;
++}
++
++/** The decoded image for `src`, or undefined while it is still loading (or failed). */
++export function imageFor(src: string): CanvasImageSource | undefined {
++  return src ? entry(src).image : undefined;
++}
++
++/** Natural size of an image, once decoded. */
++export async function imageSize(
++  src: string,
++): Promise<{ width: number; height: number }> {
++  const e = entry(src);
++  await e.ready;
++  if (!e.image) throw new Error(`could not load ${src}`);
++  return { width: e.width, height: e.height };
++}
++
++function imageSources(elements: Element[], out: Set<string>): Set<string> {
++  for (const el of elements) {
++    if (el.kind === "image" && el.src) out.add(el.src);
++  }
++  return out;
++}
++
++/** Waits until every image the scene uses has decoded, so every exported frame shows them. */
++export async function loadSceneImages(scene: Scene): Promise<void> {
++  const sources = imageSources(scene.elements, new Set());
++  await Promise.all([...sources].map((src) => entry(src).ready));
++}
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 3e8dd61..cc79618 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,5 +1,6 @@
+ import { drawEllipse } from "../components/ellipse.ts";
+ import { drawIcon } from "../components/icon.ts";
++import { drawImage } from "../components/image.ts";
+ import { drawLine } from "../components/line.ts";
+ import { drawRect } from "../components/rect.ts";
+ import { drawText } from "../components/text.ts";
+@@ -18,6 +19,7 @@ export function drawScene(ctx: Ctx, scene: Scene, t: number): void {
+     if (el.kind === "rect") drawRect(ctx, el, scene, t);
+     else if (el.kind === "ellipse") drawEllipse(ctx, el, scene, t);
+     else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
++    else if (el.kind === "image") drawImage(ctx, el, scene, t);
+     else if (el.kind === "text") drawText(ctx, el, scene, t);
+     else drawLine(ctx, el, scene, t, byId);
+   }
+diff --git a/src/export/export.ts b/src/export/export.ts
+index f1cdceb..92ea800 100644
+--- a/src/export/export.ts
++++ b/src/export/export.ts
+@@ -8,6 +8,7 @@ import {
+   QUALITY_HIGH,
+   WebMOutputFormat,
+ } from "mediabunny";
++import { loadSceneImages } from "../engine/images.ts";
+ import { drawScene } from "../engine/render.ts";
+ import type { Scene } from "../model/model.ts";
+ 
+@@ -52,6 +53,7 @@ export async function exportScene(
+   onProgress: Progress,
+ ): Promise<Blob> {
+   await document.fonts.ready;
++  await loadSceneImages(scene);
+   if (options.format === "png") return exportPng(scene, options);
+   if (options.format === "gif") return exportGif(scene, options, onProgress);
+   return exportVideo(scene, options, onProgress);
+diff --git a/src/model/model.ts b/src/model/model.ts
+index 54b1b1b..31b8152 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -120,6 +120,27 @@ export type IconEl = {
+   anim: Anim;
+ };
+ 
++/** A picture file stored in `assets/`, drawn into its box. */
++export type ImageEl = {
++  id: string;
++  kind: "image";
++  name: string;
++  x: number;
++  y: number;
++  w: number;
++  h: number;
++  /** URL path such as `/assets/3f2a….png`; empty until a file is chosen. */
++  src: string;
++  /** Width / height of the picture itself; resizing keeps it when `keepAspect`. */
++  aspect: number;
++  keepAspect: boolean;
++  radius: number;
++  opacity: number;
++  border: { width: number; color: string; opacity: number };
++  shadow: Shadow;
++  anim: Anim;
++};
++
+ export type TextEl = {
+   id: string;
+   kind: "text";
+@@ -173,7 +194,7 @@ export type LineEl = {
+   anim: Anim;
+ };
+ 
+-export type Element = RectEl | EllipseEl | IconEl | TextEl | LineEl;
++export type Element = RectEl | EllipseEl | IconEl | ImageEl | TextEl | LineEl;
+ export type ElementKind = Element["kind"];
+ 
+ export type Background = {
+@@ -231,6 +252,7 @@ export const ANIMS_BY_KIND: Record<ElementKind, AnimKind[]> = {
+   rect: BOX_ANIMS,
+   ellipse: BOX_ANIMS,
+   icon: BOX_ANIMS,
++  image: BOX_ANIMS,
+   text: BOX_ANIMS,
+   line: ["none", "fade-in", "draw"],
+ };
+@@ -338,6 +360,33 @@ export function defaultIcon(): IconEl {
+   };
+ }
+ 
++export function defaultImage(): ImageEl {
++  return {
++    id: newId(),
++    kind: "image",
++    name: "Imagen",
++    x: 0,
++    y: 0,
++    w: 320,
++    h: 240,
++    src: "",
++    aspect: 4 / 3,
++    keepAspect: true,
++    radius: 16,
++    opacity: 1,
++    border: { width: 0, color: "#ffffff", opacity: 0.3 },
++    shadow: {
++      enabled: false,
++      color: "#000000",
++      opacity: 0.5,
++      blur: 40,
++      x: 0,
++      y: 16,
++    },
++    anim: { ...noAnim },
++  };
++}
++
+ export function defaultText(): TextEl {
+   return {
+     id: newId(),
+@@ -393,6 +442,7 @@ const DEFAULTS: Record<ElementKind, () => Element> = {
+   rect: defaultRect,
+   ellipse: defaultEllipse,
+   icon: defaultIcon,
++  image: defaultImage,
+   text: defaultText,
+   line: defaultLine,
+ };
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index 7c047c4..bfa44d0 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -51,3 +51,17 @@ export async function loadScenes(): Promise<{ name: string; data: Scene }[]> {
+ export async function saveScene(name: string, scene: Scene): Promise<void> {
+   await postJson(`/api/scenes?name=${encodeURIComponent(name)}`, scene);
+ }
++
++/** Uploads an image into `assets/` (named by its content hash) and returns its URL path. */
++export async function uploadAsset(file: File): Promise<string> {
++  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
++  if (!["png", "jpg", "jpeg", "svg", "webp"].includes(ext)) {
++    throw new Error("Formato no admitido: usa PNG, JPG, SVG o WebP");
++  }
++  const res = await fetch(`/api/assets?ext=${ext}`, {
++    method: "POST",
++    body: file,
++  });
++  if (!res.ok) throw new Error(`/api/assets: ${res.status}`);
++  return ((await res.json()) as { path: string }).path;
++}
+diff --git a/src/styles.css b/src/styles.css
+index 74551ea..30ee342 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -391,3 +391,21 @@ code {
+   border-color: var(--accent);
+   color: var(--accent);
+ }
++
++.file-pick {
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  gap: 6px;
++  padding: 6px 10px;
++  border: 1px dashed var(--line);
++  border-radius: 6px;
++  background: var(--panel-2);
++  cursor: pointer;
++}
++.file-pick input[type="file"] {
++  display: none;
++}
++.hint.error {
++  color: #fca5a5;
++}
+diff --git a/src/traits/trait.ts b/src/traits/trait.ts
+index b33c68a..58ab766 100644
+--- a/src/traits/trait.ts
++++ b/src/traits/trait.ts
+@@ -2,6 +2,7 @@ import type {
+   Background,
+   EllipseEl,
+   IconEl,
++  ImageEl,
+   LineEl,
+   RectEl,
+   ShapeEl,
+@@ -17,6 +18,7 @@ export type TraitTargets = {
+   rect: RectEl;
+   ellipse: EllipseEl;
+   icon: IconEl;
++  image: ImageEl;
+   text: TextEl;
+   line: LineEl;
+   background: Background;
+diff --git a/vite.config.ts b/vite.config.ts
+index a2d936a..aa611c3 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -1,3 +1,4 @@
++import { createHash } from "node:crypto";
+ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+ import type { IncomingMessage, ServerResponse } from "node:http";
+ import { join } from "node:path";
+@@ -64,6 +65,90 @@ function jsonStore(): Plugin {
+   };
+ }
+ 
++const ASSET_TYPES: Record<string, string> = {
++  png: "image/png",
++  jpg: "image/jpeg",
++  jpeg: "image/jpeg",
++  svg: "image/svg+xml",
++  webp: "image/webp",
++};
++const MAX_ASSET_BYTES = 20 * 1024 * 1024;
++
++/**
++ * Stores images used by scenes in `assets/` at the repo root:
++ * POST /api/assets?ext=png  -> writes assets/<content hash>.png, returns { path }
++ * GET  /assets/<file>       -> the stored file
++ */
++function assetStore(): Plugin {
++  const dir = join(import.meta.dirname, "assets");
++
++  async function upload(req: IncomingMessage, res: ServerResponse) {
++    const url = new URL(req.url ?? "", "http://localhost");
++    const ext = (url.searchParams.get("ext") ?? "").toLowerCase();
++    res.setHeader("content-type", "application/json");
++    if (req.method !== "POST" || !ASSET_TYPES[ext]) {
++      res.statusCode = 400;
++      res.end(
++        JSON.stringify({ error: "expected POST with ext=png|jpg|svg|webp" }),
++      );
++      return;
++    }
++    const chunks: Buffer[] = [];
++    let size = 0;
++    for await (const chunk of req) {
++      size += (chunk as Buffer).length;
++      if (size > MAX_ASSET_BYTES) {
++        res.statusCode = 413;
++        res.end(JSON.stringify({ error: "file too large" }));
++        return;
++      }
++      chunks.push(chunk as Buffer);
++    }
++    const data = Buffer.concat(chunks);
++    const hash = createHash("sha256").update(data).digest("hex").slice(0, 16);
++    const file = `${hash}.${ext === "jpeg" ? "jpg" : ext}`;
++    await mkdir(dir, { recursive: true });
++    await writeFile(join(dir, file), data);
++    res.end(JSON.stringify({ path: `/assets/${file}` }));
++  }
++
++  async function serve(req: IncomingMessage, res: ServerResponse) {
++    const file = (req.url ?? "").split("?")[0]?.replace(/^\/assets\//, "");
++    const ext = file?.split(".").pop()?.toLowerCase() ?? "";
++    if (!file || !/^[\w-]+\.\w+$/.test(file) || !ASSET_TYPES[ext]) {
++      res.statusCode = 404;
++      res.end();
++      return;
++    }
++    try {
++      const data = await readFile(join(dir, file));
++      res.setHeader("content-type", ASSET_TYPES[ext]);
++      res.end(data);
++    } catch {
++      res.statusCode = 404;
++      res.end();
++    }
++  }
++
++  return {
++    name: "asset-store",
++    configureServer(server) {
++      server.middlewares.use((req, res, next) => {
++        const handler = req.url?.startsWith("/api/assets")
++          ? upload
++          : req.url?.startsWith("/assets/")
++            ? serve
++            : undefined;
++        if (!handler) return next();
++        handler(req, res).catch((error: unknown) => {
++          res.statusCode = 500;
++          res.end(JSON.stringify({ error: String(error) }));
++        });
++      });
++    },
++  };
++}
++
+ export default defineConfig({
+-  plugins: [react(), jsonStore()],
++  plugins: [react(), jsonStore(), assetStore()],
+ });

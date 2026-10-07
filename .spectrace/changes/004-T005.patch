@@ -1,0 +1,342 @@
+diff --git a/presets/built-in/01-tarjeta-neon.json b/presets/built-in/01-tarjeta-neon.json
+new file mode 100644
+index 0000000..21ad602
+--- /dev/null
++++ b/presets/built-in/01-tarjeta-neon.json
+@@ -0,0 +1,26 @@
++{
++  "name": "Tarjeta neón",
++  "kind": "rect",
++  "traits": [
++    {
++      "use": "bg-glow",
++      "color": "#1d4ed8",
++      "blur": 50
++    },
++    {
++      "use": "glow",
++      "color": "#60a5fa",
++      "blur": 16,
++      "strength": 2
++    },
++    {
++      "use": "float",
++      "amount": 10
++    }
++  ],
++  "set": {
++    "label": {
++      "text": "MCP Server"
++    }
++  }
++}
+diff --git a/presets/built-in/02-tarjeta-glass.json b/presets/built-in/02-tarjeta-glass.json
+new file mode 100644
+index 0000000..c8d1097
+--- /dev/null
++++ b/presets/built-in/02-tarjeta-glass.json
+@@ -0,0 +1,12 @@
++{
++  "name": "Tarjeta glass",
++  "kind": "rect",
++  "traits": [
++    "glass"
++  ],
++  "set": {
++    "label": {
++      "text": "Cliente"
++    }
++  }
++}
+diff --git a/presets/built-in/03-tarjeta-borde-animado.json b/presets/built-in/03-tarjeta-borde-animado.json
+new file mode 100644
+index 0000000..83ebbd6
+--- /dev/null
++++ b/presets/built-in/03-tarjeta-borde-animado.json
+@@ -0,0 +1,27 @@
++{
++  "name": "Tarjeta borde animado",
++  "kind": "rect",
++  "traits": [
++    {
++      "use": "border",
++      "width": 2.5,
++      "color": "#22d3ee",
++      "opacity": 1,
++      "style": "dashed",
++      "flow": 4
++    },
++    {
++      "use": "glow",
++      "color": "#22d3ee",
++      "blur": 14
++    }
++  ],
++  "set": {
++    "label": {
++      "text": "Tool"
++    },
++    "fill": {
++      "opacity": 0.6
++    }
++  }
++}
+diff --git a/presets/built-in/04-pill.json b/presets/built-in/04-pill.json
+new file mode 100644
+index 0000000..1900d4d
+--- /dev/null
++++ b/presets/built-in/04-pill.json
+@@ -0,0 +1,29 @@
++{
++  "name": "Pill",
++  "kind": "rect",
++  "traits": [
++    {
++      "use": "fill",
++      "color": "#1d4ed8",
++      "color2": "#1e40af",
++      "gradient": false,
++      "angle": 0,
++      "opacity": 0.3
++    },
++    {
++      "use": "border",
++      "color": "#60a5fa"
++    },
++    "no-glow",
++    "no-shadow"
++  ],
++  "set": {
++    "w": 420,
++    "h": 64,
++    "radius": 32,
++    "label": {
++      "text": "🚀 Cómo funciona MCP",
++      "size": 24
++    }
++  }
++}
+diff --git a/presets/built-in/05-boton-cta.json b/presets/built-in/05-boton-cta.json
+new file mode 100644
+index 0000000..9fd415e
+--- /dev/null
++++ b/presets/built-in/05-boton-cta.json
+@@ -0,0 +1,36 @@
++{
++  "name": "Botón CTA",
++  "kind": "rect",
++  "traits": [
++    {
++      "use": "fill",
++      "color": "#3b82f6",
++      "color2": "#2563eb",
++      "opacity": 1
++    },
++    {
++      "use": "border",
++      "width": 0
++    },
++    {
++      "use": "bg-glow",
++      "color": "#3b82f6",
++      "blur": 30
++    },
++    {
++      "use": "pulse",
++      "amount": 6,
++      "cycles": 2
++    }
++  ],
++  "set": {
++    "w": 220,
++    "h": 72,
++    "radius": 36,
++    "label": {
++      "text": "+ Seguir",
++      "size": 26,
++      "weight": 700
++    }
++  }
++}
+diff --git a/presets/built-in/06-titulo.json b/presets/built-in/06-titulo.json
+new file mode 100644
+index 0000000..4695be9
+--- /dev/null
++++ b/presets/built-in/06-titulo.json
+@@ -0,0 +1,9 @@
++{
++  "name": "Título",
++  "kind": "text",
++  "traits": [],
++  "set": {
++    "text": "Cómo funciona\nun MCP",
++    "size": 80
++  }
++}
+diff --git a/presets/built-in/07-titulo-degradado.json b/presets/built-in/07-titulo-degradado.json
+new file mode 100644
+index 0000000..9a99bc9
+--- /dev/null
++++ b/presets/built-in/07-titulo-degradado.json
+@@ -0,0 +1,15 @@
++{
++  "name": "Título degradado",
++  "kind": "text",
++  "traits": [
++    {
++      "use": "gradient-text",
++      "color": "#3b82f6",
++      "color2": "#22d3ee"
++    }
++  ],
++  "set": {
++    "text": "Model Context Protocol",
++    "size": 64
++  }
++}
+diff --git a/presets/built-in/08-parrafo.json b/presets/built-in/08-parrafo.json
+new file mode 100644
+index 0000000..ae52489
+--- /dev/null
++++ b/presets/built-in/08-parrafo.json
+@@ -0,0 +1,12 @@
++{
++  "name": "Párrafo",
++  "kind": "text",
++  "traits": [],
++  "set": {
++    "text": "El cliente pide, el servidor MCP\nexpone herramientas y datos.",
++    "size": 30,
++    "weight": 400,
++    "color": "#cbd5e1",
++    "lineHeight": 1.4
++  }
++}
+diff --git a/presets/built-in/09-manuscrito.json b/presets/built-in/09-manuscrito.json
+new file mode 100644
+index 0000000..de987c0
+--- /dev/null
++++ b/presets/built-in/09-manuscrito.json
+@@ -0,0 +1,12 @@
++{
++  "name": "Manuscrito",
++  "kind": "text",
++  "traits": [],
++  "set": {
++    "text": "¡así de simple!",
++    "font": "Caveat",
++    "size": 48,
++    "weight": 700,
++    "color": "#60a5fa"
++  }
++}
+diff --git a/presets/built-in/10-pixel.json b/presets/built-in/10-pixel.json
+new file mode 100644
+index 0000000..1bb2b25
+--- /dev/null
++++ b/presets/built-in/10-pixel.json
+@@ -0,0 +1,18 @@
++{
++  "name": "Pixel",
++  "kind": "text",
++  "traits": [
++    {
++      "use": "glow",
++      "color": "#22c55e",
++      "blur": 12
++    }
++  ],
++  "set": {
++    "text": "REQUEST 200 OK",
++    "font": "Press Start 2P",
++    "size": 28,
++    "weight": 400,
++    "color": "#4ade80"
++  }
++}
+diff --git a/presets/built-in/11-conexion-con-pulsos.json b/presets/built-in/11-conexion-con-pulsos.json
+new file mode 100644
+index 0000000..6af7801
+--- /dev/null
++++ b/presets/built-in/11-conexion-con-pulsos.json
+@@ -0,0 +1,7 @@
++{
++  "name": "Conexión con pulsos",
++  "kind": "line",
++  "traits": [
++    "flow"
++  ]
++}
+diff --git a/presets/built-in/12-hormigas.json b/presets/built-in/12-hormigas.json
+new file mode 100644
+index 0000000..a3e76cc
+--- /dev/null
++++ b/presets/built-in/12-hormigas.json
+@@ -0,0 +1,17 @@
++{
++  "name": "Hormigas",
++  "kind": "line",
++  "traits": [
++    "no-glow",
++    {
++      "use": "flow",
++      "kind": "ants",
++      "color": "#22d3ee",
++      "speed": 12,
++      "count": 1
++    }
++  ],
++  "set": {
++    "opacity": 0.25
++  }
++}
+diff --git a/presets/built-in/13-cometa-curvo.json b/presets/built-in/13-cometa-curvo.json
+new file mode 100644
+index 0000000..4d6e5dd
+--- /dev/null
++++ b/presets/built-in/13-cometa-curvo.json
+@@ -0,0 +1,23 @@
++{
++  "name": "Cometa curvo",
++  "kind": "line",
++  "traits": [
++    {
++      "use": "glow",
++      "color": "#8b5cf6",
++      "blur": 12
++    },
++    {
++      "use": "flow",
++      "kind": "comet",
++      "color": "#a78bfa",
++      "count": 1,
++      "size": 6
++    }
++  ],
++  "set": {
++    "bend": -60,
++    "opacity": 0.3,
++    "color": "#8b5cf6"
++  }
++}
+diff --git a/src/presets/recipes.ts b/src/presets/recipes.ts
+new file mode 100644
+index 0000000..f8dd51d
+--- /dev/null
++++ b/src/presets/recipes.ts
+@@ -0,0 +1,15 @@
++import type { PresetRecipe } from "../model/preset.ts";
++
++/**
++ * The built-in recipes in `presets/built-in/`, bundled at build time so they are available
++ * synchronously (library, demo scene, tests). File names start with a number that sets
++ * their order in the library.
++ */
++const files = import.meta.glob<PresetRecipe>("../../presets/built-in/*.json", {
++  eager: true,
++  import: "default",
++});
++
++export const BUILT_IN_RECIPES: PresetRecipe[] = Object.keys(files)
++  .sort()
++  .map((path) => files[path] as PresetRecipe);

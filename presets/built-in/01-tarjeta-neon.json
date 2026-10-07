@@ -1,0 +1,26 @@
+{
+  "name": "Tarjeta neón",
+  "kind": "rect",
+  "traits": [
+    {
+      "use": "bg-glow",
+      "color": "#1d4ed8",
+      "blur": 50
+    },
+    {
+      "use": "glow",
+      "color": "#60a5fa",
+      "blur": 16,
+      "strength": 2
+    },
+    {
+      "use": "float",
+      "amount": 10
+    }
+  ],
+  "set": {
+    "label": {
+      "text": "MCP Server"
+    }
+  }
+}

@@ -1,0 +1,685 @@
+diff --git a/src/components/group.ts b/src/components/group.ts
+new file mode 100644
+index 0000000..3c32031
+--- /dev/null
++++ b/src/components/group.ts
+@@ -0,0 +1,31 @@
++import { animState } from "../engine/anim.ts";
++import { boxOf } from "../engine/geometry.ts";
++import { type Ctx, withTransform } from "../engine/paint.ts";
++import type { Element, GroupEl, Scene } from "../model/model.ts";
++
++type DrawElements = (
++  ctx: Ctx,
++  elements: Element[],
++  scene: Scene,
++  t: number,
++) => void;
++
++/**
++ * Draws a group's children inside its box: the group's own animation applies to all of them,
++ * and the content space `cw × ch` is stretched onto `w × h`. `drawElements` comes from the
++ * renderer so groups can hold any kind, other groups included.
++ */
++export function drawGroup(
++  ctx: Ctx,
++  el: GroupEl,
++  scene: Scene,
++  t: number,
++  drawElements: DrawElements,
++): void {
++  const st = animState(el.anim, t, scene.duration);
++  withTransform(ctx, boxOf(el), st, () => {
++    ctx.translate(el.x, el.y);
++    ctx.scale(el.w / (el.cw || 1), el.h / (el.ch || 1));
++    drawElements(ctx, el.children, scene, t);
++  });
++}
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 0e9cb92..807d0df 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -30,9 +30,11 @@ import {
+   resolveLine,
+   translate,
+ } from "../engine/geometry.ts";
++import { groupElements, idsWithin, ungroupElement } from "../engine/groups.ts";
+ import { ExportControls } from "../export/export-controls.tsx";
+ import {
+   cloneElement,
++  cloneElements,
+   defaultEllipse,
+   defaultIcon,
+   defaultImage,
+@@ -60,9 +62,15 @@ import {
+ import { Library, type LibraryItem, recipeItems } from "./library.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
+ 
+-/** Removes `ids` and leaves lines that were attached to them where they were drawn. */
+-function removeElements(scene: Scene, ids: Set<string>): Element[] {
++/**
++ * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
++ * to them where they were drawn.
++ */
++function removeElements(scene: Scene, removed: Set<string>): Element[] {
+   const byId = indexById(scene);
++  const ids = new Set(
++    scene.elements.filter((el) => removed.has(el.id)).flatMap(idsWithin),
++  );
+   return scene.elements
+     .filter((el) => !ids.has(el.id))
+     .map((el) => {
+@@ -85,19 +93,11 @@ function removeElements(scene: Scene, ids: Set<string>): Element[] {
+  */
+ function duplicateElements(scene: Scene, ids: string[]): Element[] {
+   const originals = scene.elements.filter((el) => ids.includes(el.id));
+-  const newIds = new Map(originals.map((el) => [el.id, cloneElement(el).id]));
+   const byId = indexById(scene);
+-  const moving = new Set(newIds.keys());
+-  return originals.map((el) => {
+-    const moved = translate(el, 30, 30, byId, moving);
+-    const copy = { ...structuredClone(moved), id: newIds.get(el.id) as string };
+-    if (copy.kind === "line") {
+-      for (const end of [copy.a, copy.b]) {
+-        if (end.attach) end.attach = newIds.get(end.attach) ?? end.attach;
+-      }
+-    }
+-    return copy;
+-  });
++  const moving = new Set(originals.flatMap(idsWithin));
++  return cloneElements(
++    originals.map((el) => translate(el, 30, 30, byId, moving)),
++  );
+ }
+ 
+ const AUTOSAVE_KEY = "lienzo-scene";
+@@ -278,6 +278,27 @@ export function App() {
+     [checkpoint, selection, setScene],
+   );
+ 
++  const groupSelected = useCallback(() => {
++    const s = sceneRef.current;
++    const { scene: grouped, group } = groupElements(s, selection);
++    if (!group) return;
++    checkpoint();
++    setScene(grouped);
++    setSelection([group.id]);
++  }, [checkpoint, selection, setScene]);
++
++  const ungroupSelected = useCallback(() => {
++    const s = sceneRef.current;
++    const target = s.elements.find(
++      (el) => selection.length === 1 && el.id === selection[0],
++    );
++    if (target?.kind !== "group") return;
++    checkpoint();
++    const { scene: flat, ids } = ungroupElement(s, target.id);
++    setScene(flat);
++    setSelection(ids);
++  }, [checkpoint, selection, setScene]);
++
+   const moveLayer = useCallback(
+     (id: string, dir: 1 | -1) => {
+       const s = sceneRef.current;
+@@ -315,6 +336,10 @@ export function App() {
+         duplicateSelected();
+       } else if (e.key === "Delete" || e.key === "Backspace") {
+         removeSelected();
++      } else if (mod && e.key.toLowerCase() === "g") {
++        e.preventDefault();
++        if (e.shiftKey) ungroupSelected();
++        else groupSelected();
+       } else if (mod && e.key.toLowerCase() === "a") {
+         e.preventDefault();
+         setSelection(sceneRef.current.elements.map((el) => el.id));
+@@ -330,7 +355,16 @@ export function App() {
+     };
+     window.addEventListener("keydown", onKey);
+     return () => window.removeEventListener("keydown", onKey);
+-  }, [duplicateSelected, nudge, redo, removeSelected, togglePlay, undo]);
++  }, [
++    duplicateSelected,
++    groupSelected,
++    nudge,
++    redo,
++    removeSelected,
++    togglePlay,
++    undo,
++    ungroupSelected,
++  ]);
+ 
+   const selected =
+     selection.length === 1
+@@ -478,12 +512,14 @@ export function App() {
+             onDuplicate={duplicateSelected}
+             onLayer={(dir) => moveLayer(selected.id, dir)}
+             onSavePreset={(name) => savePreset(selected, name)}
++            onUngroup={ungroupSelected}
+           />
+         ) : selection.length > 1 ? (
+           <MultiInspector
+             count={selection.length}
+             onDelete={removeSelected}
+             onDuplicate={duplicateSelected}
++            onGroup={groupSelected}
+           />
+         ) : (
+           <SceneInspector
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 2c1931a..cc23daa 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -3,9 +3,11 @@ import {
+   ArrowUp,
+   BookmarkPlus,
+   Copy,
++  Group,
+   ImageUp,
+   Link2Off,
+   Trash2,
++  Ungroup,
+ } from "lucide-react";
+ import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
+ import { imageSize } from "../engine/images.ts";
+@@ -18,6 +20,7 @@ import {
+   type FlowKind,
+   FONTS,
+   type Glow,
++  type GroupEl,
+   type IconEl,
+   type ImageEl,
+   type LineEl,
+@@ -794,6 +797,65 @@ function ImageInspector({
+   );
+ }
+ 
++function GroupInspector({
++  el,
++  change,
++  onUngroup,
++}: {
++  el: GroupEl;
++  change: Change<GroupEl>;
++  onUngroup?: () => void;
++}) {
++  return (
++    <>
++      <Section title="Grupo">
++        <div className="hint">
++          {el.children.length} elementos. Se mueven, cambian de tamaño y se
++          animan juntos.
++        </div>
++        <Num
++          label="Ancho"
++          value={el.w}
++          min={10}
++          max={4000}
++          onChange={(v) =>
++            change((d) => {
++              d.w = v;
++            })
++          }
++        />
++        <Num
++          label="Alto"
++          value={el.h}
++          min={10}
++          max={4000}
++          onChange={(v) =>
++            change((d) => {
++              d.h = v;
++            })
++          }
++        />
++        {onUngroup && (
++          <button type="button" onClick={onUngroup}>
++            <Ungroup size={15} /> Desagrupar (Ctrl+Mayús+G)
++          </button>
++        )}
++      </Section>
++      <Section title="Animación">
++        <AnimFields
++          anim={el.anim}
++          kinds={ANIMS_BY_KIND.group}
++          onChange={(a) =>
++            change((d) => {
++              d.anim = a;
++            })
++          }
++        />
++      </Section>
++    </>
++  );
++}
++
+ function IconInspector({ el, change }: { el: IconEl; change: Change<IconEl> }) {
+   return (
+     <>
+@@ -1335,6 +1397,7 @@ export function ElementInspector({
+   onDuplicate,
+   onLayer,
+   onSavePreset,
++  onUngroup,
+   nameOf,
+ }: {
+   el: Element;
+@@ -1343,6 +1406,7 @@ export function ElementInspector({
+   onDuplicate: () => void;
+   onLayer: (dir: 1 | -1) => void;
+   onSavePreset?: (name: string) => void;
++  onUngroup?: () => void;
+   nameOf: (id: string) => string;
+ }) {
+   const [presetName, setPresetName] = useState("");
+@@ -1390,6 +1454,9 @@ export function ElementInspector({
+         <ShapeInspector el={el} change={change} />
+       )}
+       {el.kind === "icon" && <IconInspector el={el} change={change} />}
++      {el.kind === "group" && (
++        <GroupInspector el={el} change={change} onUngroup={onUngroup} />
++      )}
+       {el.kind === "image" && (
+         <ImageInspector el={el} change={change} onUpload={uploadImage} />
+       )}
+@@ -1430,16 +1497,21 @@ export function MultiInspector({
+   count,
+   onDelete,
+   onDuplicate,
++  onGroup,
+ }: {
+   count: number;
+   onDelete: () => void;
+   onDuplicate: () => void;
++  onGroup: () => void;
+ }) {
+   return (
+     <div className="inspector">
+       <div className="inspector-head">
+         <div className="name">{count} elementos</div>
+         <div className="icon-row">
++          <button type="button" title="Agrupar (Ctrl+G)" onClick={onGroup}>
++            <Group size={15} />
++          </button>
+           <button type="button" title="Duplicar (Ctrl+D)" onClick={onDuplicate}>
+             <Copy size={15} />
+           </button>
+@@ -1450,7 +1522,7 @@ export function MultiInspector({
+       </div>
+       <div className="hint pad">
+         Arrastra cualquiera de ellos para moverlos juntos. Mayús + clic añade o
+-        quita elementos de la selección.
++        quita elementos de la selección. Ctrl+G los agrupa.
+       </div>
+     </div>
+   );
+diff --git a/src/engine/geometry.ts b/src/engine/geometry.ts
+index 1bc3e30..d7fd02d 100644
+--- a/src/engine/geometry.ts
++++ b/src/engine/geometry.ts
+@@ -1,6 +1,7 @@
+ import type {
+   Element,
+   Endpoint,
++  GroupEl,
+   LineEl,
+   Scene,
+   TextEl,
+@@ -237,8 +238,41 @@ export function inBox(b: Box, p: Pt, pad = 0): boolean {
+   );
+ }
+ 
++/**
++ * A group's child as it appears on the canvas: its position and size mapped from the group's
++ * content space onto the group's box (a text's size scales with the width).
++ */
++export function placeChild(child: Element, group: GroupEl): Element {
++  const sx = group.w / (group.cw || 1);
++  const sy = group.h / (group.ch || 1);
++  const at = (p: Pt) => ({ x: group.x + p.x * sx, y: group.y + p.y * sy });
++  if (child.kind === "line") {
++    return {
++      ...child,
++      a: { ...child.a, ...at(child.a) },
++      b: { ...child.b, ...at(child.b) },
++    };
++  }
++  if (child.kind === "text")
++    return { ...child, ...at(child), size: child.size * sx };
++  return { ...child, ...at(child), w: child.w * sx, h: child.h * sy };
++}
++
++/** Every element by id, including those inside groups, in canvas coordinates. */
++export function indexElements(elements: Element[]): Map<string, Element> {
++  const byId = new Map<string, Element>();
++  const add = (el: Element) => {
++    byId.set(el.id, el);
++    if (el.kind === "group") {
++      for (const child of el.children) add(placeChild(child, el));
++    }
++  };
++  elements.forEach(add);
++  return byId;
++}
++
+ export function indexById(scene: Scene): Map<string, Element> {
+-  return new Map(scene.elements.map((el) => [el.id, el]));
++  return indexElements(scene.elements);
+ }
+ 
+ /** Topmost element under `p`; `tol` is the click tolerance in scene px. */
+diff --git a/src/engine/groups.ts b/src/engine/groups.ts
+new file mode 100644
+index 0000000..37f3603
+--- /dev/null
++++ b/src/engine/groups.ts
+@@ -0,0 +1,107 @@
++import {
++  defaultGroup,
++  type Element,
++  type GroupEl,
++  type Scene,
++} from "../model/model.ts";
++import {
++  type Box,
++  boxOf,
++  indexById,
++  placeChild,
++  resolveLine,
++  translate,
++} from "./geometry.ts";
++
++/** The ids of `el` and of everything inside it. */
++export function idsWithin(el: Element): string[] {
++  return el.kind === "group"
++    ? [el.id, ...el.children.flatMap(idsWithin)]
++    : [el.id];
++}
++
++/** The smallest box around the elements, lines measured where they are drawn. */
++export function boundsOf(elements: Element[], byId: Map<string, Element>): Box {
++  let x0 = Infinity;
++  let y0 = Infinity;
++  let x1 = -Infinity;
++  let y1 = -Infinity;
++  for (const el of elements) {
++    const pts =
++      el.kind === "line"
++        ? (() => {
++            const r = resolveLine(el, byId);
++            return [r.a, r.b];
++          })()
++        : (() => {
++            const b = boxOf(el);
++            return [
++              { x: b.x, y: b.y },
++              { x: b.x + b.w, y: b.y + b.h },
++            ];
++          })();
++    for (const p of pts) {
++      x0 = Math.min(x0, p.x);
++      y0 = Math.min(y0, p.y);
++      x1 = Math.max(x1, p.x);
++      y1 = Math.max(y1, p.y);
++    }
++  }
++  return { x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) };
++}
++
++/**
++ * Puts the elements `ids` into one group, placed where the topmost of them was in the layer
++ * order. Lines inside the group stay attached to elements that are also inside; lines outside
++ * keep following the elements they were attached to.
++ */
++export function groupElements(
++  scene: Scene,
++  ids: string[],
++): { scene: Scene; group?: GroupEl } {
++  const members = scene.elements.filter((el) => ids.includes(el.id));
++  if (members.length < 2) return { scene };
++  const byId = indexById(scene);
++  const box = boundsOf(members, byId);
++  const inside = new Set(members.map((el) => el.id));
++  const group: GroupEl = {
++    ...defaultGroup(),
++    name: "Grupo",
++    x: box.x,
++    y: box.y,
++    w: box.w,
++    h: box.h,
++    cw: box.w,
++    ch: box.h,
++    children: members.map((el) => translate(el, -box.x, -box.y, byId, inside)),
++  };
++  const top = Math.max(...members.map((el) => scene.elements.indexOf(el)));
++  const elements: Element[] = [];
++  scene.elements.forEach((el, i) => {
++    if (i === top) elements.push(group);
++    else if (!inside.has(el.id)) elements.push(el);
++  });
++  return { scene: { ...scene, elements }, group };
++}
++
++/**
++ * Replaces a group by its children, placed where they are drawn (sizes scaled by the group's
++ * stretch). The group's own animation is dropped.
++ */
++export function ungroupElement(
++  scene: Scene,
++  id: string,
++): { scene: Scene; ids: string[] } {
++  const group = scene.elements.find((el) => el.id === id);
++  if (group?.kind !== "group") return { scene, ids: [] };
++  const children = group.children.map((child) => placeChild(child, group));
++  return {
++    scene: {
++      ...scene,
++      elements: scene.elements.flatMap((el) =>
++        el.id === id ? children : [el],
++      ),
++    },
++    ids: children.map((el) => el.id),
++  };
++}
+diff --git a/src/engine/images.ts b/src/engine/images.ts
+index f1875c2..097560f 100644
+--- a/src/engine/images.ts
++++ b/src/engine/images.ts
+@@ -56,6 +56,7 @@ export async function imageSize(
+ function imageSources(elements: Element[], out: Set<string>): Set<string> {
+   for (const el of elements) {
+     if (el.kind === "image" && el.src) out.add(el.src);
++    if (el.kind === "group") imageSources(el.children, out);
+   }
+   return out;
+ }
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index cc79618..5a2341b 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,11 +1,12 @@
+ import { drawEllipse } from "../components/ellipse.ts";
++import { drawGroup } from "../components/group.ts";
+ import { drawIcon } from "../components/icon.ts";
+ import { drawImage } from "../components/image.ts";
+ import { drawLine } from "../components/line.ts";
+ import { drawRect } from "../components/rect.ts";
+ import { drawText } from "../components/text.ts";
+-import type { Background, Scene } from "../model/model.ts";
+-import { indexById } from "./geometry.ts";
++import type { Background, Element, Scene } from "../model/model.ts";
++import { indexById, indexElements } from "./geometry.ts";
+ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+ 
+ /**
+@@ -14,12 +15,26 @@ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+  */
+ export function drawScene(ctx: Ctx, scene: Scene, t: number): void {
+   drawBackground(ctx, scene);
+-  const byId = indexById(scene);
+-  for (const el of scene.elements) {
++  drawElements(ctx, scene.elements, scene, t, indexById(scene));
++}
++
++/**
++ * Draws elements in order. `byId` resolves line attachments in the same coordinate space as
++ * `elements` (the scene's, or a group's content space).
++ */
++export function drawElements(
++  ctx: Ctx,
++  elements: Element[],
++  scene: Scene,
++  t: number,
++  byId: Map<string, Element> = indexElements(elements),
++): void {
++  for (const el of elements) {
+     if (el.kind === "rect") drawRect(ctx, el, scene, t);
+     else if (el.kind === "ellipse") drawEllipse(ctx, el, scene, t);
+     else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
+     else if (el.kind === "image") drawImage(ctx, el, scene, t);
++    else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
+     else if (el.kind === "text") drawText(ctx, el, scene, t);
+     else drawLine(ctx, el, scene, t, byId);
+   }
+diff --git a/src/model/model.ts b/src/model/model.ts
+index 31b8152..b58b264 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -141,6 +141,24 @@ export type ImageEl = {
+   anim: Anim;
+ };
+ 
++/**
++ * Elements moved, resized, duplicated and animated as one. Children live in their own
++ * coordinate space, `cw` × `ch`, which is stretched onto the group's box `x, y, w, h`.
++ */
++export type GroupEl = {
++  id: string;
++  kind: "group";
++  name: string;
++  x: number;
++  y: number;
++  w: number;
++  h: number;
++  cw: number;
++  ch: number;
++  children: Element[];
++  anim: Anim;
++};
++
+ export type TextEl = {
+   id: string;
+   kind: "text";
+@@ -194,7 +212,14 @@ export type LineEl = {
+   anim: Anim;
+ };
+ 
+-export type Element = RectEl | EllipseEl | IconEl | ImageEl | TextEl | LineEl;
++export type Element =
++  | RectEl
++  | EllipseEl
++  | IconEl
++  | ImageEl
++  | GroupEl
++  | TextEl
++  | LineEl;
+ export type ElementKind = Element["kind"];
+ 
+ export type Background = {
+@@ -253,6 +278,7 @@ export const ANIMS_BY_KIND: Record<ElementKind, AnimKind[]> = {
+   ellipse: BOX_ANIMS,
+   icon: BOX_ANIMS,
+   image: BOX_ANIMS,
++  group: BOX_ANIMS,
+   text: BOX_ANIMS,
+   line: ["none", "fade-in", "draw"],
+ };
+@@ -387,6 +413,22 @@ export function defaultImage(): ImageEl {
+   };
+ }
+ 
++export function defaultGroup(): GroupEl {
++  return {
++    id: newId(),
++    kind: "group",
++    name: "Grupo",
++    x: 0,
++    y: 0,
++    w: 100,
++    h: 100,
++    cw: 100,
++    ch: 100,
++    children: [],
++    anim: { ...noAnim },
++  };
++}
++
+ export function defaultText(): TextEl {
+   return {
+     id: newId(),
+@@ -443,6 +485,7 @@ const DEFAULTS: Record<ElementKind, () => Element> = {
+   ellipse: defaultEllipse,
+   icon: defaultIcon,
+   image: defaultImage,
++  group: defaultGroup,
+   text: defaultText,
+   line: defaultLine,
+ };
+@@ -481,9 +524,34 @@ export function defaultScene(): Scene {
+   };
+ }
+ 
+-/** Deep copy with a fresh id. */
++/**
++ * Deep copies with fresh ids, for groups' children too. A copied line attached to another
++ * copied element (or to something inside a copied group) is attached to that copy; other
++ * attachments are kept.
++ */
++export function cloneElements(elements: Element[]): Element[] {
++  const copies = structuredClone(elements);
++  const ids = new Map<string, string>();
++  const renew = (e: Element) => {
++    const id = newId();
++    ids.set(e.id, id);
++    e.id = id;
++    if (e.kind === "group") e.children.forEach(renew);
++  };
++  const relink = (e: Element) => {
++    if (e.kind === "line") {
++      for (const end of [e.a, e.b]) {
++        if (end.attach) end.attach = ids.get(end.attach) ?? end.attach;
++      }
++    }
++    if (e.kind === "group") e.children.forEach(relink);
++  };
++  copies.forEach(renew);
++  copies.forEach(relink);
++  return copies;
++}
++
++/** Deep copy with fresh ids (see `cloneElements`). */
+ export function cloneElement<T extends Element>(el: T): T {
+-  const copy = structuredClone(el);
+-  copy.id = newId();
+-  return copy;
++  return cloneElements([el])[0] as T;
+ }
+diff --git a/src/traits/trait.ts b/src/traits/trait.ts
+index 58ab766..1ec8e09 100644
+--- a/src/traits/trait.ts
++++ b/src/traits/trait.ts
+@@ -1,6 +1,7 @@
+ import type {
+   Background,
+   EllipseEl,
++  GroupEl,
+   IconEl,
+   ImageEl,
+   LineEl,
+@@ -19,6 +20,7 @@ export type TraitTargets = {
+   ellipse: EllipseEl;
+   icon: IconEl;
+   image: ImageEl;
++  group: GroupEl;
+   text: TextEl;
+   line: LineEl;
+   background: Background;

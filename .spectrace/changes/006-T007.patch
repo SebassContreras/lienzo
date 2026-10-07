@@ -1,0 +1,40 @@
+diff --git a/.gitignore b/.gitignore
+index c01dba5..c8c8a08 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -14,3 +14,4 @@ coverage/
+ # OS / editor
+ .DS_Store
+ Thumbs.db
++.muxel/
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 0bc7c4f..2f99864 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -1264,7 +1264,7 @@ export function SceneInspector({
+           </>
+         )}
+         {onSaveBackground && (
+-          <div className="preset-save">
++          <div className="preset-save stacked">
+             <input
+               placeholder="Nombre del fondo"
+               value={backgroundName}
+diff --git a/src/styles.css b/src/styles.css
+index b157918..a9fdf0e 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -345,6 +345,13 @@ textarea {
+   display: flex;
+   gap: 6px;
+ }
++.preset-save.stacked {
++  flex-direction: column;
++  margin-top: 4px;
++}
++.preset-save.stacked button {
++  justify-content: center;
++}
+ .section .preset-save input {
+   flex: 1;
+   min-width: 0;

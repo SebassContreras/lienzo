@@ -1,0 +1,99 @@
+diff --git a/src/model/model.ts b/src/model/model.ts
+index b681302..7d00c96 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -307,6 +307,20 @@ export function defaultLine(): LineEl {
+   };
+ }
+ 
++const DEFAULTS: Record<ElementKind, () => Element> = {
++  rect: defaultRect,
++  text: defaultText,
++  line: defaultLine,
++};
++
++/** A fresh default element of `kind`; throws for a kind that does not exist. */
++export function defaultElement(kind: ElementKind): Element {
++  if (!Object.hasOwn(DEFAULTS, kind)) {
++    throw new Error(`unknown element kind ${kind}`);
++  }
++  return DEFAULTS[kind]();
++}
++
+ export function defaultScene(): Scene {
+   return {
+     width: 1080,
+diff --git a/src/presets/resolve.ts b/src/presets/resolve.ts
+new file mode 100644
+index 0000000..e6fb917
+--- /dev/null
++++ b/src/presets/resolve.ts
+@@ -0,0 +1,68 @@
++import { defaultElement, type Element, newId } from "../model/model.ts";
++import type { PresetRecipe, TraitUse } from "../model/preset.ts";
++import { TRAITS, type TraitParams } from "../traits/index.ts";
++
++export type Resolved = { element: Element } | { error: string };
++
++const isPlainObject = (v: unknown): v is Record<string, unknown> =>
++  typeof v === "object" && v !== null && !Array.isArray(v);
++
++/** Merges `patch` into `target` in place: objects merge key by key, anything else replaces. */
++export function deepMerge(
++  target: Record<string, unknown>,
++  patch: Record<string, unknown>,
++): void {
++  for (const [key, value] of Object.entries(patch)) {
++    const current = target[key];
++    if (isPlainObject(value) && isPlainObject(current)) {
++      deepMerge(current, value);
++    } else {
++      target[key] = structuredClone(value);
++    }
++  }
++}
++
++function splitUse(use: TraitUse): { id: string; params: TraitParams } {
++  if (typeof use === "string") return { id: use, params: {} };
++  const { use: id, ...params } = use;
++  return { id, params };
++}
++
++/**
++ * Builds the element a recipe describes: the kind's default, then each trait in order, then
++ * the recipe's own values, with a fresh id. The result is a plain element with no link back
++ * to the recipe, so later changes to traits or recipes never reach it.
++ */
++export function resolvePreset(recipe: PresetRecipe): Resolved {
++  let element: Element;
++  try {
++    element = defaultElement(recipe.kind);
++  } catch {
++    return { error: `Tipo de elemento desconocido «${recipe.kind}»` };
++  }
++  element.name = recipe.name;
++  for (const use of recipe.traits ?? []) {
++    const { id, params } = splitUse(use);
++    const trait = TRAITS.get(id);
++    if (!trait) return { error: `Trait desconocido «${id}»` };
++    const apply = trait.apply[recipe.kind] as
++      | ((el: Element, p: TraitParams) => void)
++      | undefined;
++    if (!apply) {
++      return { error: `El trait «${id}» no se aplica a «${recipe.kind}»` };
++    }
++    const unknown = Object.keys(params).find((k) => !(k in trait.params));
++    if (unknown) {
++      return { error: `El trait «${id}» no tiene el parámetro «${unknown}»` };
++    }
++    apply(element, { ...trait.params, ...params });
++  }
++  if (recipe.set) {
++    deepMerge(
++      element as unknown as Record<string, unknown>,
++      recipe.set as Record<string, unknown>,
++    );
++  }
++  element.id = newId();
++  return { element };
++}

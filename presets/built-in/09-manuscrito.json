@@ -1,0 +1,12 @@
+{
+  "name": "Manuscrito",
+  "kind": "text",
+  "traits": [],
+  "set": {
+    "text": "¡así de simple!",
+    "font": "Caveat",
+    "size": 48,
+    "weight": 700,
+    "color": "#60a5fa"
+  }
+}

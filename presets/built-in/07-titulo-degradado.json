@@ -1,0 +1,15 @@
+{
+  "name": "Título degradado",
+  "kind": "text",
+  "traits": [
+    {
+      "use": "gradient-text",
+      "color": "#3b82f6",
+      "color2": "#22d3ee"
+    }
+  ],
+  "set": {
+    "text": "Model Context Protocol",
+    "size": 64
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Título",
+  "kind": "text",
+  "traits": [],
+  "set": {
+    "text": "Cómo funciona\nun MCP",
+    "size": 80
+  }
+}

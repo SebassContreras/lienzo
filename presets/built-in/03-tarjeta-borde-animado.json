@@ -1,0 +1,27 @@
+{
+  "name": "Tarjeta borde animado",
+  "kind": "rect",
+  "traits": [
+    {
+      "use": "border",
+      "width": 2.5,
+      "color": "#22d3ee",
+      "opacity": 1,
+      "style": "dashed",
+      "flow": 4
+    },
+    {
+      "use": "glow",
+      "color": "#22d3ee",
+      "blur": 14
+    }
+  ],
+  "set": {
+    "label": {
+      "text": "Tool"
+    },
+    "fill": {
+      "opacity": 0.6
+    }
+  }
+}

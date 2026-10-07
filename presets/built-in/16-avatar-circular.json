@@ -1,0 +1,29 @@
+{
+  "name": "Avatar circular",
+  "kind": "ellipse",
+  "traits": [
+    {
+      "use": "fill",
+      "color": "#7c3aed",
+      "color2": "#2563eb",
+      "gradient": true,
+      "angle": 135,
+      "opacity": 1
+    },
+    {
+      "use": "border",
+      "width": 3,
+      "color": "#e0e7ff",
+      "opacity": 0.9
+    }
+  ],
+  "set": {
+    "w": 140,
+    "h": 140,
+    "label": {
+      "text": "AB",
+      "size": 48,
+      "align": "center"
+    }
+  }
+}

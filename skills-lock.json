@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "spectrace-change": {
+      "source": "SebassContreras/spectrace",
+      "sourceType": "github",
+      "skillPath": "skills/spectrace-change/SKILL.md",
+      "computedHash": "e919b99b32f39c015b21bf5a638ca0ba0ba41d9af16d37eef191e4edf745aca8"
+    },
+    "spectrace-plan": {
+      "source": "SebassContreras/spectrace",
+      "sourceType": "github",
+      "skillPath": "skills/spectrace-plan/SKILL.md",
+      "computedHash": "7a86c621605e2ca5a7bf8bf942330c4de8fdd5783f5aeec1ccd7496c84966880"
+    },
+    "spectrace-start": {
+      "source": "SebassContreras/spectrace",
+      "sourceType": "github",
+      "skillPath": "skills/spectrace-start/SKILL.md",
+      "computedHash": "cdff1b4e2bbe5c8c0bca9d47b7f9cb20c633d87e39db7425328eab9efdfc896c"
+    }
+  }
+}

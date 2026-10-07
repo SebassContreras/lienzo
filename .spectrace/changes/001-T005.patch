@@ -1,0 +1,252 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 8c2821e..1b6fe67 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -24,6 +24,7 @@ import {
+   type Pt,
+   resolveLine,
+ } from "../engine/geometry.ts";
++import { ExportControls } from "../export/export-controls.tsx";
+ import {
+   cloneElement,
+   defaultLine,
+@@ -72,6 +73,8 @@ export function App() {
+   const undoStack = useRef<Scene[]>([]);
+   const redoStack = useRef<Scene[]>([]);
+   const [, rerender] = useReducer((x: number) => x + 1, 0);
++  const [status, setStatus] = useState("");
++  const [sceneName, setSceneName] = useState("mi-publicacion");
+ 
+   const setScene = useCallback((s: Scene) => {
+     sceneRef.current = s;
+@@ -260,7 +263,13 @@ export function App() {
+             <FilePlus2 size={16} />
+           </button>
+         </div>
+-        <div className="status" />
++        <div className="status">{status}</div>
++        <ExportControls
++          scene={scene}
++          time={() => clock.current.t}
++          fileName={sceneName}
++          setStatus={setStatus}
++        />
+       </header>
+       <aside className="library">
+         <Library
+diff --git a/src/export/export-controls.tsx b/src/export/export-controls.tsx
+new file mode 100644
+index 0000000..0c143da
+--- /dev/null
++++ b/src/export/export-controls.tsx
+@@ -0,0 +1,71 @@
++import { Download } from "lucide-react";
++import { useState } from "react";
++import type { Scene } from "../model/model.ts";
++import { download, type ExportFormat, exportScene } from "./export.ts";
++
++/** Format and size pickers plus the export button of the top bar. */
++export function ExportControls({
++  scene,
++  time,
++  fileName,
++  setStatus,
++}: {
++  scene: Scene;
++  /** Current playhead, used for the PNG still. */
++  time: () => number;
++  fileName: string;
++  setStatus: (s: string) => void;
++}) {
++  const [format, setFormat] = useState<ExportFormat>("png");
++  const [scale, setScale] = useState(1);
++  const [busy, setBusy] = useState(false);
++
++  const run = async () => {
++    setBusy(true);
++    try {
++      const fps = format === "gif" ? Math.min(scene.fps, 25) : scene.fps;
++      const blob = await exportScene(
++        scene,
++        { format, scale, fps, time: time() },
++        (done, total) => setStatus(`Exportando ${done}/${total}…`),
++      );
++      const ext =
++        format === "mp4" && blob.type === "video/webm" ? "webm" : format;
++      download(blob, `${fileName}.${ext}`);
++      setStatus(
++        `Exportado ${fileName}.${ext} (${(blob.size / 1024 / 1024).toFixed(1)} MB)`,
++      );
++    } catch (error) {
++      setStatus(`Error al exportar: ${error}`);
++    } finally {
++      setBusy(false);
++    }
++  };
++
++  return (
++    <div className="group">
++      <select
++        aria-label="Formato"
++        value={format}
++        onChange={(e) => setFormat(e.target.value as ExportFormat)}
++      >
++        <option value="png">PNG (cuadro actual)</option>
++        <option value="gif">GIF (loop)</option>
++        <option value="mp4">MP4 (loop)</option>
++      </select>
++      <select
++        aria-label="Tamaño"
++        value={scale}
++        onChange={(e) => setScale(Number(e.target.value))}
++      >
++        <option value={1}>100%</option>
++        <option value={0.75}>75%</option>
++        <option value={0.5}>50%</option>
++        <option value={0.25}>25%</option>
++      </select>
++      <button type="button" className="primary" disabled={busy} onClick={run}>
++        <Download size={16} /> Exportar
++      </button>
++    </div>
++  );
++}
+diff --git a/src/export/export.ts b/src/export/export.ts
+new file mode 100644
+index 0000000..f1cdceb
+--- /dev/null
++++ b/src/export/export.ts
+@@ -0,0 +1,133 @@
++import { applyPalette, GIFEncoder, quantize } from "gifenc";
++import {
++  BufferTarget,
++  CanvasSource,
++  canEncodeVideo,
++  Mp4OutputFormat,
++  Output,
++  QUALITY_HIGH,
++  WebMOutputFormat,
++} from "mediabunny";
++import { drawScene } from "../engine/render.ts";
++import type { Scene } from "../model/model.ts";
++
++export type ExportFormat = "png" | "gif" | "mp4";
++
++export type ExportOptions = {
++  format: ExportFormat;
++  /** Output size relative to the scene size (GIFs are heavy at full size). */
++  scale: number;
++  fps: number;
++  /** Time of the still frame for PNG. */
++  time: number;
++};
++
++type Progress = (done: number, total: number) => void;
++
++const even = (n: number) => Math.max(2, Math.round(n / 2) * 2);
++
++function frameCanvas(scene: Scene, scale: number) {
++  const canvas = new OffscreenCanvas(
++    even(scene.width * scale),
++    even(scene.height * scale),
++  );
++  const ctx = canvas.getContext("2d", {
++    willReadFrequently: true,
++  }) as OffscreenCanvasRenderingContext2D;
++  const render = (t: number) => {
++    ctx.setTransform(1, 0, 0, 1, 0, 0);
++    ctx.clearRect(0, 0, canvas.width, canvas.height);
++    ctx.scale(canvas.width / scene.width, canvas.height / scene.height);
++    drawScene(ctx, scene, t);
++  };
++  return { canvas, ctx, render };
++}
++
++/** Lets the browser paint the progress bar between frames. */
++const yieldToUi = () => new Promise((resolve) => setTimeout(resolve, 0));
++
++export async function exportScene(
++  scene: Scene,
++  options: ExportOptions,
++  onProgress: Progress,
++): Promise<Blob> {
++  await document.fonts.ready;
++  if (options.format === "png") return exportPng(scene, options);
++  if (options.format === "gif") return exportGif(scene, options, onProgress);
++  return exportVideo(scene, options, onProgress);
++}
++
++async function exportPng(scene: Scene, options: ExportOptions): Promise<Blob> {
++  const { canvas, render } = frameCanvas(scene, options.scale);
++  render(options.time);
++  return canvas.convertToBlob({ type: "image/png" });
++}
++
++async function exportGif(
++  scene: Scene,
++  options: ExportOptions,
++  onProgress: Progress,
++): Promise<Blob> {
++  const { canvas, ctx, render } = frameCanvas(scene, options.scale);
++  const total = Math.round(scene.duration * options.fps);
++  const gif = GIFEncoder();
++  for (let i = 0; i < total; i++) {
++    render(i / options.fps);
++    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
++    const palette = quantize(data, 256);
++    gif.writeFrame(applyPalette(data, palette), canvas.width, canvas.height, {
++      palette,
++      delay: 1000 / options.fps,
++      repeat: 0,
++    });
++    onProgress(i + 1, total);
++    await yieldToUi();
++  }
++  gif.finish();
++  return new Blob([gif.bytes() as BlobPart], { type: "image/gif" });
++}
++
++async function exportVideo(
++  scene: Scene,
++  options: ExportOptions,
++  onProgress: Progress,
++): Promise<Blob> {
++  const { canvas, render } = frameCanvas(scene, options.scale);
++  const size = { width: canvas.width, height: canvas.height };
++  const useMp4 = await canEncodeVideo("avc", {
++    ...size,
++    quality: QUALITY_HIGH,
++  });
++  const codec = useMp4 ? "avc" : "vp9";
++  const output = new Output({
++    format: useMp4
++      ? new Mp4OutputFormat({ fastStart: "in-memory" })
++      : new WebMOutputFormat(),
++    target: new BufferTarget(),
++  });
++  const source = new CanvasSource(canvas, { codec, quality: QUALITY_HIGH });
++  output.addVideoTrack(source, { frameRate: options.fps });
++  await output.start();
++
++  const total = Math.round(scene.duration * options.fps);
++  const frame = 1 / options.fps;
++  for (let i = 0; i < total; i++) {
++    render(i * frame);
++    await source.add(i * frame, frame);
++    onProgress(i + 1, total);
++    if (i % 5 === 0) await yieldToUi();
++  }
++  await output.finalize();
++  const buffer = (output.target as BufferTarget).buffer;
++  if (!buffer) throw new Error("the video encoder produced no output");
++  return new Blob([buffer], { type: useMp4 ? "video/mp4" : "video/webm" });
++}
++
++export function download(blob: Blob, filename: string): void {
++  const url = URL.createObjectURL(blob);
++  const a = document.createElement("a");
++  a.href = url;
++  a.download = filename;
++  a.click();
++  setTimeout(() => URL.revokeObjectURL(url), 1000);
++}

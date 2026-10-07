@@ -1,0 +1,2574 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+new file mode 100644
+index 0000000..8c2821e
+--- /dev/null
++++ b/src/editor/app.tsx
+@@ -0,0 +1,396 @@
++import {
++  FilePlus2,
++  Pause,
++  Play,
++  Redo2,
++  Sparkles,
++  Spline,
++  Square,
++  Type,
++  Undo2,
++} from "lucide-react";
++import {
++  type MutableRefObject,
++  type ReactNode,
++  useCallback,
++  useEffect,
++  useReducer,
++  useRef,
++  useState,
++} from "react";
++import {
++  centerOn,
++  indexById,
++  type Pt,
++  resolveLine,
++} from "../engine/geometry.ts";
++import {
++  cloneElement,
++  defaultLine,
++  defaultRect,
++  defaultScene,
++  defaultText,
++  type Element,
++  type Scene,
++} from "../model/model.ts";
++import { ElementInspector, SceneInspector } from "./inspector.tsx";
++import { Library, type LibraryItem } from "./library.tsx";
++import { type Clock, Stage } from "./stage.tsx";
++
++/** Removes `ids` and leaves lines that were attached to them where they were drawn. */
++function removeElements(scene: Scene, ids: Set<string>): Element[] {
++  const byId = indexById(scene);
++  return scene.elements
++    .filter((el) => !ids.has(el.id))
++    .map((el) => {
++      if (el.kind !== "line") return el;
++      const hitsA = el.a.attach && ids.has(el.a.attach);
++      const hitsB = el.b.attach && ids.has(el.b.attach);
++      if (!hitsA && !hitsB) return el;
++      const r = resolveLine(el, byId);
++      return {
++        ...el,
++        a: hitsA ? { x: r.a.x, y: r.a.y } : el.a,
++        b: hitsB ? { x: r.b.x, y: r.b.y } : el.b,
++      };
++    });
++}
++
++const BASICS: LibraryItem[] = [
++  { name: "Rectángulo", element: defaultRect() },
++  { name: "Texto", element: defaultText() },
++  { name: "Línea", element: defaultLine() },
++];
++const BASIC_ICONS = [Square, Type, Spline];
++
++export function App() {
++  const [scene, setSceneState] = useState<Scene>(defaultScene);
++  const sceneRef = useRef(scene);
++  const [selectedId, setSelectedId] = useState<string | null>(null);
++  const clock = useRef<Clock>({ t: 0, playing: true });
++  const [playing, setPlaying] = useState(true);
++  const undoStack = useRef<Scene[]>([]);
++  const redoStack = useRef<Scene[]>([]);
++  const [, rerender] = useReducer((x: number) => x + 1, 0);
++
++  const setScene = useCallback((s: Scene) => {
++    sceneRef.current = s;
++    setSceneState(s);
++  }, []);
++
++  /** Records the current scene as an undo step (call before a change starts). */
++  const checkpoint = useCallback(() => {
++    const current = sceneRef.current;
++    const top = undoStack.current.at(-1);
++    if (top && JSON.stringify(top) === JSON.stringify(current)) return;
++    undoStack.current.push(structuredClone(current));
++    if (undoStack.current.length > 200) undoStack.current.shift();
++    redoStack.current = [];
++    rerender();
++  }, []);
++
++  const undo = useCallback(() => {
++    const prev = undoStack.current.pop();
++    if (!prev) return;
++    redoStack.current.push(sceneRef.current);
++    setScene(prev);
++    rerender();
++  }, [setScene]);
++
++  const redo = useCallback(() => {
++    const next = redoStack.current.pop();
++    if (!next) return;
++    undoStack.current.push(sceneRef.current);
++    setScene(next);
++    rerender();
++  }, [setScene]);
++
++  /** Replaces the whole scene as one undoable step. */
++  const loadScene = useCallback(
++    (s: Scene) => {
++      checkpoint();
++      setScene(s);
++      setSelectedId(null);
++    },
++    [checkpoint, setScene],
++  );
++
++  const addElement = useCallback(
++    (template: Element, at?: Pt) => {
++      checkpoint();
++      const s = sceneRef.current;
++      const el = centerOn(
++        cloneElement(template),
++        at?.x ?? s.width / 2,
++        at?.y ?? s.height / 2,
++      );
++      setScene({ ...s, elements: [...s.elements, el] });
++      setSelectedId(el.id);
++    },
++    [checkpoint, setScene],
++  );
++
++  const removeSelected = useCallback(() => {
++    if (!selectedId) return;
++    checkpoint();
++    const s = sceneRef.current;
++    setScene({ ...s, elements: removeElements(s, new Set([selectedId])) });
++    setSelectedId(null);
++  }, [checkpoint, selectedId, setScene]);
++
++  const duplicateSelected = useCallback(() => {
++    const s = sceneRef.current;
++    const el = s.elements.find((e) => e.id === selectedId);
++    if (!el) return;
++    checkpoint();
++    let copy = cloneElement(el);
++    if (copy.kind === "line") {
++      const r = resolveLine(copy, indexById(s));
++      copy = {
++        ...copy,
++        a: { x: r.a.x + 30, y: r.a.y + 30 },
++        b: { x: r.b.x + 30, y: r.b.y + 30 },
++      };
++    } else {
++      copy = { ...copy, x: copy.x + 30, y: copy.y + 30 };
++    }
++    setScene({ ...s, elements: [...s.elements, copy] });
++    setSelectedId(copy.id);
++  }, [checkpoint, selectedId, setScene]);
++
++  const nudge = useCallback(
++    (dx: number, dy: number) => {
++      const s = sceneRef.current;
++      const el = s.elements.find((e) => e.id === selectedId);
++      if (!el || el.kind === "line") return;
++      checkpoint();
++      setScene({
++        ...s,
++        elements: s.elements.map((e) =>
++          e.id === el.id ? { ...el, x: el.x + dx, y: el.y + dy } : e,
++        ),
++      });
++    },
++    [checkpoint, selectedId, setScene],
++  );
++
++  const moveLayer = useCallback(
++    (id: string, dir: 1 | -1) => {
++      const s = sceneRef.current;
++      const i = s.elements.findIndex((e) => e.id === id);
++      const j = Math.max(0, Math.min(s.elements.length - 1, i + dir));
++      if (i < 0 || i === j) return;
++      const elements = [...s.elements];
++      const [moved] = elements.splice(i, 1);
++      elements.splice(j, 0, moved as Element);
++      setScene({ ...s, elements });
++    },
++    [setScene],
++  );
++
++  const togglePlay = useCallback(() => {
++    clock.current.playing = !clock.current.playing;
++    setPlaying(clock.current.playing);
++  }, []);
++
++  useEffect(() => {
++    const onKey = (e: KeyboardEvent) => {
++      const target = e.target as HTMLElement;
++      if (target.closest("input, textarea, select")) return;
++      const mod = e.ctrlKey || e.metaKey;
++      const step = e.shiftKey ? 10 : 1;
++      if (mod && e.key.toLowerCase() === "z") {
++        e.preventDefault();
++        if (e.shiftKey) redo();
++        else undo();
++      } else if (mod && e.key.toLowerCase() === "y") {
++        e.preventDefault();
++        redo();
++      } else if (mod && e.key.toLowerCase() === "d") {
++        e.preventDefault();
++        duplicateSelected();
++      } else if (e.key === "Delete" || e.key === "Backspace") {
++        removeSelected();
++      } else if (e.key === "Escape") {
++        setSelectedId(null);
++      } else if (e.key === " ") {
++        e.preventDefault();
++        togglePlay();
++      } else if (e.key === "ArrowLeft") nudge(-step, 0);
++      else if (e.key === "ArrowRight") nudge(step, 0);
++      else if (e.key === "ArrowUp") nudge(0, -step);
++      else if (e.key === "ArrowDown") nudge(0, step);
++    };
++    window.addEventListener("keydown", onKey);
++    return () => window.removeEventListener("keydown", onKey);
++  }, [duplicateSelected, nudge, redo, removeSelected, togglePlay, undo]);
++
++  const selected = scene.elements.find((el) => el.id === selectedId);
++
++  return (
++    <div className="app">
++      <header className="topbar">
++        <div className="brand">
++          <Sparkles size={16} /> Lienzo
++        </div>
++        <div className="group">
++          <button
++            type="button"
++            title="Deshacer (Ctrl+Z)"
++            disabled={undoStack.current.length === 0}
++            onClick={undo}
++          >
++            <Undo2 size={16} />
++          </button>
++          <button
++            type="button"
++            title="Rehacer (Ctrl+Shift+Z)"
++            disabled={redoStack.current.length === 0}
++            onClick={redo}
++          >
++            <Redo2 size={16} />
++          </button>
++        </div>
++        <div className="group">
++          <button
++            type="button"
++            title="Escena en blanco"
++            onClick={() => loadScene(defaultScene())}
++          >
++            <FilePlus2 size={16} />
++          </button>
++        </div>
++        <div className="status" />
++      </header>
++      <aside className="library">
++        <Library
++          title="Básicos"
++          items={BASICS}
++          icons={BASIC_ICONS}
++          background={scene.background}
++          onAdd={(item) => addElement(item.element)}
++        />
++      </aside>
++      <main className="center">
++        <Stage
++          scene={scene}
++          sceneRef={sceneRef}
++          setScene={setScene}
++          selectedId={selectedId}
++          setSelectedId={setSelectedId}
++          clock={clock}
++          checkpoint={checkpoint}
++          onDropElement={addElement}
++        />
++        <Timeline
++          clock={clock}
++          duration={scene.duration}
++          playing={playing}
++          togglePlay={togglePlay}
++          onScrub={() => {
++            clock.current.playing = false;
++            setPlaying(false);
++          }}
++        />
++      </main>
++      <Panel checkpoint={checkpoint}>
++        {selected ? (
++          <ElementInspector
++            key={selected.id}
++            el={selected}
++            nameOf={(id) =>
++              scene.elements.find((e) => e.id === id)?.name ?? "?"
++            }
++            onChange={(el) =>
++              setScene({
++                ...sceneRef.current,
++                elements: sceneRef.current.elements.map((e) =>
++                  e.id === el.id ? el : e,
++                ),
++              })
++            }
++            onDelete={removeSelected}
++            onDuplicate={duplicateSelected}
++            onLayer={(dir) => moveLayer(selected.id, dir)}
++          />
++        ) : (
++          <SceneInspector scene={scene} onChange={setScene} />
++        )}
++      </Panel>
++    </div>
++  );
++}
++
++/** Right-hand panel; any interaction inside it starts an undo step. */
++function Panel({
++  checkpoint,
++  children,
++}: {
++  checkpoint: () => void;
++  children: ReactNode;
++}) {
++  return (
++    <aside
++      className="panel"
++      onPointerDownCapture={checkpoint}
++      onFocusCapture={checkpoint}
++    >
++      {children}
++    </aside>
++  );
++}
++
++function Timeline({
++  clock,
++  duration,
++  playing,
++  togglePlay,
++  onScrub,
++}: {
++  clock: MutableRefObject<Clock>;
++  duration: number;
++  playing: boolean;
++  togglePlay: () => void;
++  onScrub: () => void;
++}) {
++  const range = useRef<HTMLInputElement>(null);
++  const readout = useRef<HTMLSpanElement>(null);
++  useEffect(() => {
++    let frame = 0;
++    const tick = () => {
++      if (range.current && document.activeElement !== range.current) {
++        range.current.value = String(clock.current.t);
++      }
++      if (readout.current) {
++        readout.current.textContent = `${clock.current.t.toFixed(2)}s / ${duration.toFixed(1)}s`;
++      }
++      frame = requestAnimationFrame(tick);
++    };
++    frame = requestAnimationFrame(tick);
++    return () => cancelAnimationFrame(frame);
++  }, [clock, duration]);
++  return (
++    <div className="timeline">
++      <button
++        type="button"
++        title="Reproducir / pausar (Espacio)"
++        onClick={togglePlay}
++      >
++        {playing ? <Pause size={16} /> : <Play size={16} />}
++      </button>
++      <input
++        ref={range}
++        type="range"
++        min={0}
++        max={duration}
++        step={0.01}
++        defaultValue={0}
++        onInput={(e) => {
++          onScrub();
++          clock.current.t = Number((e.target as HTMLInputElement).value);
++        }}
++      />
++      <span ref={readout} className="readout" />
++    </div>
++  );
++}
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+new file mode 100644
+index 0000000..09612c7
+--- /dev/null
++++ b/src/editor/inspector.tsx
+@@ -0,0 +1,1251 @@
++import {
++  ArrowDown,
++  ArrowUp,
++  BookmarkPlus,
++  Copy,
++  Link2Off,
++  Trash2,
++} from "lucide-react";
++import { type ReactNode, useState } from "react";
++import {
++  ANIM_LABELS,
++  ANIMS_BY_KIND,
++  type Anim,
++  type AnimKind,
++  type Element,
++  type FlowKind,
++  FONTS,
++  type Glow,
++  type LineEl,
++  type RectEl,
++  type Scene,
++  SIZE_PRESETS,
++  type StrokeStyle,
++  type TextEl,
++} from "../model/model.ts";
++
++/* ---------- small field controls ---------- */
++
++export function Section({
++  title,
++  children,
++  open = true,
++}: {
++  title: string;
++  children: ReactNode;
++  open?: boolean;
++}) {
++  return (
++    <details className="section" open={open}>
++      <summary>{title}</summary>
++      <div className="section-body">{children}</div>
++    </details>
++  );
++}
++
++export function Num({
++  label,
++  value,
++  onChange,
++  min = 0,
++  max = 100,
++  step = 1,
++}: {
++  label: string;
++  value: number;
++  onChange: (v: number) => void;
++  min?: number;
++  max?: number;
++  step?: number;
++}) {
++  return (
++    <label className="field">
++      <span>{label}</span>
++      <input
++        type="range"
++        min={min}
++        max={max}
++        step={step}
++        value={value}
++        onChange={(e) => onChange(Number(e.target.value))}
++      />
++      <input
++        className="num"
++        type="number"
++        step={step}
++        value={Number(value.toFixed(2))}
++        onChange={(e) => {
++          const v = Number(e.target.value);
++          if (Number.isFinite(v)) onChange(v);
++        }}
++      />
++    </label>
++  );
++}
++
++export function Color({
++  label,
++  value,
++  onChange,
++}: {
++  label: string;
++  value: string;
++  onChange: (v: string) => void;
++}) {
++  return (
++    <label className="field">
++      <span>{label}</span>
++      <input
++        type="color"
++        value={value}
++        onChange={(e) => onChange(e.target.value)}
++      />
++      <input
++        className="hex"
++        value={value}
++        onChange={(e) => {
++          if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value);
++        }}
++      />
++    </label>
++  );
++}
++
++export function Check({
++  label,
++  checked,
++  onChange,
++}: {
++  label: string;
++  checked: boolean;
++  onChange: (v: boolean) => void;
++}) {
++  return (
++    <label className="field check">
++      <span>{label}</span>
++      <input
++        type="checkbox"
++        checked={checked}
++        onChange={(e) => onChange(e.target.checked)}
++      />
++    </label>
++  );
++}
++
++export function Select<T extends string>({
++  label,
++  value,
++  options,
++  onChange,
++}: {
++  label: string;
++  value: T;
++  options: readonly (readonly [T, string])[];
++  onChange: (v: T) => void;
++}) {
++  return (
++    <label className="field">
++      <span>{label}</span>
++      <select value={value} onChange={(e) => onChange(e.target.value as T)}>
++        {options.map(([v, l]) => (
++          <option key={v} value={v}>
++            {l}
++          </option>
++        ))}
++      </select>
++    </label>
++  );
++}
++
++function TextArea({
++  label,
++  value,
++  onChange,
++}: {
++  label: string;
++  value: string;
++  onChange: (v: string) => void;
++}) {
++  return (
++    <label className="field column">
++      <span>{label}</span>
++      <textarea
++        rows={3}
++        value={value}
++        onChange={(e) => onChange(e.target.value)}
++      />
++    </label>
++  );
++}
++
++const STROKES = [
++  ["solid", "Continuo"],
++  ["dashed", "Guiones"],
++  ["dotted", "Puntos"],
++] as const satisfies readonly (readonly [StrokeStyle, string])[];
++const ALIGNS = [
++  ["left", "Izquierda"],
++  ["center", "Centro"],
++  ["right", "Derecha"],
++] as const;
++const FLOWS = [
++  ["none", "Ninguno"],
++  ["pulse", "Pulsos de luz"],
++  ["ants", "Camino de hormigas"],
++  ["comet", "Cometa"],
++] as const satisfies readonly (readonly [FlowKind, string])[];
++const WEIGHTS = [300, 400, 500, 600, 700, 800, 900];
++const fontOptions = FONTS.map((f) => [f, f] as const);
++const weightOptions = WEIGHTS.map((w) => [String(w), String(w)] as const);
++
++function GlowFields({
++  glow,
++  onChange,
++}: {
++  glow: Glow;
++  onChange: (g: Glow) => void;
++}) {
++  return (
++    <>
++      <Check
++        label="Activo"
++        checked={glow.enabled}
++        onChange={(enabled) => onChange({ ...glow, enabled })}
++      />
++      {glow.enabled && (
++        <>
++          <Color
++            label="Color"
++            value={glow.color}
++            onChange={(color) => onChange({ ...glow, color })}
++          />
++          <Num
++            label="Difusión"
++            value={glow.blur}
++            max={150}
++            onChange={(blur) => onChange({ ...glow, blur })}
++          />
++          <Num
++            label="Intensidad"
++            value={glow.strength}
++            min={1}
++            max={4}
++            onChange={(strength) => onChange({ ...glow, strength })}
++          />
++        </>
++      )}
++    </>
++  );
++}
++
++function AnimFields({
++  anim,
++  kinds,
++  onChange,
++}: {
++  anim: Anim;
++  kinds: AnimKind[];
++  onChange: (a: Anim) => void;
++}) {
++  const loops = ["float", "pulse", "breathe"].includes(anim.kind);
++  const usesAmount = ["float", "pulse", "breathe", "slide-up"].includes(
++    anim.kind,
++  );
++  return (
++    <>
++      <Select
++        label="Tipo"
++        value={anim.kind}
++        options={kinds.map((k) => [k, ANIM_LABELS[k]] as const)}
++        onChange={(kind) => onChange({ ...anim, kind })}
++      />
++      {usesAmount && (
++        <Num
++          label={
++            anim.kind === "float" || anim.kind === "slide-up"
++              ? "Distancia"
++              : "Intensidad %"
++          }
++          value={anim.amount}
++          max={anim.kind === "breathe" ? 100 : 80}
++          onChange={(amount) => onChange({ ...anim, amount })}
++        />
++      )}
++      {loops && (
++        <Num
++          label="Ciclos / loop"
++          value={anim.cycles}
++          min={1}
++          max={8}
++          onChange={(cycles) => onChange({ ...anim, cycles })}
++        />
++      )}
++      {anim.kind !== "none" && (
++        <Num
++          label="Retraso (s)"
++          value={anim.delay}
++          max={5}
++          step={0.1}
++          onChange={(delay) => onChange({ ...anim, delay })}
++        />
++      )}
++    </>
++  );
++}
++
++/* ---------- per-kind inspectors ---------- */
++
++type Change<T> = (fn: (draft: T) => void) => void;
++
++function RectInspector({ el, change }: { el: RectEl; change: Change<RectEl> }) {
++  return (
++    <>
++      <Section title="Forma">
++        <Num
++          label="Ancho"
++          value={el.w}
++          min={10}
++          max={1600}
++          onChange={(v) =>
++            change((d) => {
++              d.w = v;
++            })
++          }
++        />
++        <Num
++          label="Alto"
++          value={el.h}
++          min={10}
++          max={1600}
++          onChange={(v) =>
++            change((d) => {
++              d.h = v;
++            })
++          }
++        />
++        <Num
++          label="Esquinas"
++          value={el.radius}
++          max={300}
++          onChange={(v) =>
++            change((d) => {
++              d.radius = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Fondo">
++        <Color
++          label="Color"
++          value={el.fill.color}
++          onChange={(v) =>
++            change((d) => {
++              d.fill.color = v;
++            })
++          }
++        />
++        <Check
++          label="Degradado"
++          checked={el.fill.gradient}
++          onChange={(v) =>
++            change((d) => {
++              d.fill.gradient = v;
++            })
++          }
++        />
++        {el.fill.gradient && (
++          <>
++            <Color
++              label="Color 2"
++              value={el.fill.color2}
++              onChange={(v) =>
++                change((d) => {
++                  d.fill.color2 = v;
++                })
++              }
++            />
++            <Num
++              label="Ángulo"
++              value={el.fill.angle}
++              max={360}
++              onChange={(v) =>
++                change((d) => {
++                  d.fill.angle = v;
++                })
++              }
++            />
++          </>
++        )}
++        <Num
++          label="Opacidad"
++          value={el.fill.opacity}
++          max={1}
++          step={0.01}
++          onChange={(v) =>
++            change((d) => {
++              d.fill.opacity = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Brillo de fondo">
++        <GlowFields
++          glow={el.bgGlow}
++          onChange={(g) =>
++            change((d) => {
++              d.bgGlow = g;
++            })
++          }
++        />
++      </Section>
++      <Section title="Borde">
++        <Num
++          label="Grosor"
++          value={el.border.width}
++          max={20}
++          step={0.5}
++          onChange={(v) =>
++            change((d) => {
++              d.border.width = v;
++            })
++          }
++        />
++        <Color
++          label="Color"
++          value={el.border.color}
++          onChange={(v) =>
++            change((d) => {
++              d.border.color = v;
++            })
++          }
++        />
++        <Num
++          label="Opacidad"
++          value={el.border.opacity}
++          max={1}
++          step={0.01}
++          onChange={(v) =>
++            change((d) => {
++              d.border.opacity = v;
++            })
++          }
++        />
++        <Select
++          label="Estilo"
++          value={el.border.style}
++          options={STROKES}
++          onChange={(v) =>
++            change((d) => {
++              d.border.style = v;
++            })
++          }
++        />
++        {el.border.style !== "solid" && (
++          <Num
++            label="Movimiento"
++            value={el.border.flow}
++            min={-20}
++            max={20}
++            onChange={(v) =>
++              change((d) => {
++                d.border.flow = v;
++              })
++            }
++          />
++        )}
++      </Section>
++      <Section title="Brillo del borde">
++        <GlowFields
++          glow={el.borderGlow}
++          onChange={(g) =>
++            change((d) => {
++              d.borderGlow = g;
++            })
++          }
++        />
++      </Section>
++      <Section title="Sombra" open={false}>
++        <Check
++          label="Activa"
++          checked={el.shadow.enabled}
++          onChange={(v) =>
++            change((d) => {
++              d.shadow.enabled = v;
++            })
++          }
++        />
++        {el.shadow.enabled && (
++          <>
++            <Color
++              label="Color"
++              value={el.shadow.color}
++              onChange={(v) =>
++                change((d) => {
++                  d.shadow.color = v;
++                })
++              }
++            />
++            <Num
++              label="Opacidad"
++              value={el.shadow.opacity}
++              max={1}
++              step={0.01}
++              onChange={(v) =>
++                change((d) => {
++                  d.shadow.opacity = v;
++                })
++              }
++            />
++            <Num
++              label="Difusión"
++              value={el.shadow.blur}
++              max={150}
++              onChange={(v) =>
++                change((d) => {
++                  d.shadow.blur = v;
++                })
++              }
++            />
++            <Num
++              label="X"
++              value={el.shadow.x}
++              min={-100}
++              max={100}
++              onChange={(v) =>
++                change((d) => {
++                  d.shadow.x = v;
++                })
++              }
++            />
++            <Num
++              label="Y"
++              value={el.shadow.y}
++              min={-100}
++              max={100}
++              onChange={(v) =>
++                change((d) => {
++                  d.shadow.y = v;
++                })
++              }
++            />
++          </>
++        )}
++      </Section>
++      <Section title="Texto interior">
++        <TextArea
++          label="Texto"
++          value={el.label.text}
++          onChange={(v) =>
++            change((d) => {
++              d.label.text = v;
++            })
++          }
++        />
++        <Select
++          label="Fuente"
++          value={el.label.font}
++          options={fontOptions}
++          onChange={(v) =>
++            change((d) => {
++              d.label.font = v;
++            })
++          }
++        />
++        <Num
++          label="Tamaño"
++          value={el.label.size}
++          min={8}
++          max={200}
++          onChange={(v) =>
++            change((d) => {
++              d.label.size = v;
++            })
++          }
++        />
++        <Select
++          label="Peso"
++          value={String(el.label.weight)}
++          options={weightOptions}
++          onChange={(v) =>
++            change((d) => {
++              d.label.weight = Number(v);
++            })
++          }
++        />
++        <Color
++          label="Color"
++          value={el.label.color}
++          onChange={(v) =>
++            change((d) => {
++              d.label.color = v;
++            })
++          }
++        />
++        <Select
++          label="Alineación"
++          value={el.label.align}
++          options={ALIGNS}
++          onChange={(v) =>
++            change((d) => {
++              d.label.align = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Animación">
++        <AnimFields
++          anim={el.anim}
++          kinds={ANIMS_BY_KIND.rect}
++          onChange={(a) =>
++            change((d) => {
++              d.anim = a;
++            })
++          }
++        />
++      </Section>
++    </>
++  );
++}
++
++function TextInspector({ el, change }: { el: TextEl; change: Change<TextEl> }) {
++  return (
++    <>
++      <Section title="Texto">
++        <TextArea
++          label="Contenido"
++          value={el.text}
++          onChange={(v) =>
++            change((d) => {
++              d.text = v;
++            })
++          }
++        />
++        <Select
++          label="Fuente"
++          value={el.font}
++          options={fontOptions}
++          onChange={(v) =>
++            change((d) => {
++              d.font = v;
++            })
++          }
++        />
++        <Num
++          label="Tamaño"
++          value={el.size}
++          min={8}
++          max={300}
++          onChange={(v) =>
++            change((d) => {
++              d.size = v;
++            })
++          }
++        />
++        <Select
++          label="Peso"
++          value={String(el.weight)}
++          options={weightOptions}
++          onChange={(v) =>
++            change((d) => {
++              d.weight = Number(v);
++            })
++          }
++        />
++        <Check
++          label="Cursiva"
++          checked={el.italic}
++          onChange={(v) =>
++            change((d) => {
++              d.italic = v;
++            })
++          }
++        />
++        <Select
++          label="Alineación"
++          value={el.align}
++          options={ALIGNS}
++          onChange={(v) =>
++            change((d) => {
++              d.align = v;
++            })
++          }
++        />
++        <Num
++          label="Interlineado"
++          value={el.lineHeight}
++          min={0.7}
++          max={2.5}
++          step={0.05}
++          onChange={(v) =>
++            change((d) => {
++              d.lineHeight = v;
++            })
++          }
++        />
++        <Num
++          label="Espaciado"
++          value={el.letterSpacing}
++          min={-10}
++          max={40}
++          step={0.5}
++          onChange={(v) =>
++            change((d) => {
++              d.letterSpacing = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Color">
++        <Color
++          label="Color"
++          value={el.color}
++          onChange={(v) =>
++            change((d) => {
++              d.color = v;
++            })
++          }
++        />
++        <Check
++          label="Degradado"
++          checked={el.gradient}
++          onChange={(v) =>
++            change((d) => {
++              d.gradient = v;
++            })
++          }
++        />
++        {el.gradient && (
++          <Color
++            label="Color 2"
++            value={el.color2}
++            onChange={(v) =>
++              change((d) => {
++                d.color2 = v;
++              })
++            }
++          />
++        )}
++        <Num
++          label="Opacidad"
++          value={el.opacity}
++          max={1}
++          step={0.01}
++          onChange={(v) =>
++            change((d) => {
++              d.opacity = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Brillo">
++        <GlowFields
++          glow={el.glow}
++          onChange={(g) =>
++            change((d) => {
++              d.glow = g;
++            })
++          }
++        />
++      </Section>
++      <Section title="Animación">
++        <AnimFields
++          anim={el.anim}
++          kinds={ANIMS_BY_KIND.text}
++          onChange={(a) =>
++            change((d) => {
++              d.anim = a;
++            })
++          }
++        />
++      </Section>
++    </>
++  );
++}
++
++function LineInspector({
++  el,
++  change,
++  nameOf,
++}: {
++  el: LineEl;
++  change: Change<LineEl>;
++  nameOf: (id: string) => string;
++}) {
++  const end = (which: "a" | "b", label: string) =>
++    el[which].attach ? (
++      <div className="attached">
++        <span>
++          {label}: conectado a <b>{nameOf(el[which].attach as string)}</b>
++        </span>
++        <button
++          type="button"
++          title="Desconectar"
++          onClick={() =>
++            change((d) => {
++              d[which].attach = undefined;
++            })
++          }
++        >
++          <Link2Off size={14} />
++        </button>
++      </div>
++    ) : (
++      <div className="hint">
++        {label}: libre. Arrástralo sobre una tarjeta o texto para conectarlo.
++      </div>
++    );
++  return (
++    <>
++      <Section title="Conexión">
++        {end("a", "Inicio")}
++        {end("b", "Fin")}
++        <Num
++          label="Curva"
++          value={el.bend}
++          min={-400}
++          max={400}
++          onChange={(v) =>
++            change((d) => {
++              d.bend = v;
++            })
++          }
++        />
++        <Check
++          label="Flecha inicio"
++          checked={el.arrowStart}
++          onChange={(v) =>
++            change((d) => {
++              d.arrowStart = v;
++            })
++          }
++        />
++        <Check
++          label="Flecha fin"
++          checked={el.arrowEnd}
++          onChange={(v) =>
++            change((d) => {
++              d.arrowEnd = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Trazo">
++        <Num
++          label="Grosor"
++          value={el.width}
++          min={0.5}
++          max={30}
++          step={0.5}
++          onChange={(v) =>
++            change((d) => {
++              d.width = v;
++            })
++          }
++        />
++        <Color
++          label="Color"
++          value={el.color}
++          onChange={(v) =>
++            change((d) => {
++              d.color = v;
++            })
++          }
++        />
++        <Num
++          label="Opacidad"
++          value={el.opacity}
++          max={1}
++          step={0.01}
++          onChange={(v) =>
++            change((d) => {
++              d.opacity = v;
++            })
++          }
++        />
++        <Select
++          label="Estilo"
++          value={el.style}
++          options={STROKES}
++          onChange={(v) =>
++            change((d) => {
++              d.style = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Brillo">
++        <GlowFields
++          glow={el.glow}
++          onChange={(g) =>
++            change((d) => {
++              d.glow = g;
++            })
++          }
++        />
++      </Section>
++      <Section title="Flujo animado">
++        <Select
++          label="Efecto"
++          value={el.flow.kind}
++          options={FLOWS}
++          onChange={(v) =>
++            change((d) => {
++              d.flow.kind = v;
++            })
++          }
++        />
++        {el.flow.kind !== "none" && (
++          <>
++            <Color
++              label="Color"
++              value={el.flow.color}
++              onChange={(v) =>
++                change((d) => {
++                  d.flow.color = v;
++                })
++              }
++            />
++            <Num
++              label="Velocidad"
++              value={el.flow.speed}
++              min={1}
++              max={30}
++              onChange={(v) =>
++                change((d) => {
++                  d.flow.speed = v;
++                })
++              }
++            />
++            {el.flow.kind !== "ants" && (
++              <Num
++                label="Cantidad"
++                value={el.flow.count}
++                min={1}
++                max={10}
++                onChange={(v) =>
++                  change((d) => {
++                    d.flow.count = v;
++                  })
++                }
++              />
++            )}
++            <Num
++              label="Tamaño"
++              value={el.flow.size}
++              min={1}
++              max={30}
++              step={0.5}
++              onChange={(v) =>
++                change((d) => {
++                  d.flow.size = v;
++                })
++              }
++            />
++            <Check
++              label="Invertir sentido"
++              checked={el.flow.reverse}
++              onChange={(v) =>
++                change((d) => {
++                  d.flow.reverse = v;
++                })
++              }
++            />
++          </>
++        )}
++      </Section>
++      <Section title="Animación">
++        <AnimFields
++          anim={el.anim}
++          kinds={ANIMS_BY_KIND.line}
++          onChange={(a) =>
++            change((d) => {
++              d.anim = a;
++            })
++          }
++        />
++      </Section>
++    </>
++  );
++}
++
++/* ---------- panels ---------- */
++
++export function ElementInspector({
++  el,
++  onChange,
++  onDelete,
++  onDuplicate,
++  onLayer,
++  onSavePreset,
++  nameOf,
++}: {
++  el: Element;
++  onChange: (el: Element) => void;
++  onDelete: () => void;
++  onDuplicate: () => void;
++  onLayer: (dir: 1 | -1) => void;
++  onSavePreset?: (name: string) => void;
++  nameOf: (id: string) => string;
++}) {
++  const [presetName, setPresetName] = useState("");
++  const change = <T extends Element>(fn: (draft: T) => void) => {
++    const draft = structuredClone(el) as T;
++    fn(draft);
++    onChange(draft);
++  };
++  return (
++    <div className="inspector">
++      <div className="inspector-head">
++        <input
++          className="name"
++          value={el.name}
++          onChange={(e) =>
++            change((d) => {
++              d.name = e.target.value;
++            })
++          }
++        />
++        <div className="icon-row">
++          <button
++            type="button"
++            title="Traer adelante"
++            onClick={() => onLayer(1)}
++          >
++            <ArrowUp size={15} />
++          </button>
++          <button
++            type="button"
++            title="Enviar atrás"
++            onClick={() => onLayer(-1)}
++          >
++            <ArrowDown size={15} />
++          </button>
++          <button type="button" title="Duplicar (Ctrl+D)" onClick={onDuplicate}>
++            <Copy size={15} />
++          </button>
++          <button type="button" title="Eliminar (Supr)" onClick={onDelete}>
++            <Trash2 size={15} />
++          </button>
++        </div>
++      </div>
++      {el.kind === "rect" && <RectInspector el={el} change={change} />}
++      {el.kind === "text" && <TextInspector el={el} change={change} />}
++      {el.kind === "line" && (
++        <LineInspector el={el} change={change} nameOf={nameOf} />
++      )}
++      {onSavePreset && (
++        <Section title="Guardar como preset">
++          <div className="preset-save">
++            <input
++              placeholder={el.name}
++              value={presetName}
++              onChange={(e) => setPresetName(e.target.value)}
++            />
++            <button
++              type="button"
++              onClick={() => {
++                onSavePreset(presetName.trim() || el.name);
++                setPresetName("");
++              }}
++            >
++              <BookmarkPlus size={15} /> Guardar
++            </button>
++          </div>
++          <div className="hint">
++            Se guarda como JSON en <code>presets/</code> y aparece en la
++            biblioteca.
++          </div>
++        </Section>
++      )}
++    </div>
++  );
++}
++
++export function SceneInspector({
++  scene,
++  onChange,
++}: {
++  scene: Scene;
++  onChange: (s: Scene) => void;
++}) {
++  const change = (fn: (d: Scene) => void) => {
++    const draft = structuredClone(scene);
++    fn(draft);
++    onChange(draft);
++  };
++  const bg = scene.background;
++  const sizeKey = `${scene.width}x${scene.height}`;
++  const sizeOptions = [
++    ...SIZE_PRESETS.map((p) => [`${p.width}x${p.height}`, p.label] as const),
++    ...(SIZE_PRESETS.some((p) => `${p.width}x${p.height}` === sizeKey)
++      ? []
++      : [[sizeKey, `Personalizado ${scene.width}×${scene.height}`] as const]),
++  ];
++  return (
++    <div className="inspector">
++      <div className="inspector-head">
++        <div className="name">Publicación</div>
++      </div>
++      <div className="hint pad">
++        Arrastra componentes desde la izquierda. Selecciona uno para editarlo.
++      </div>
++      <Section title="Formato">
++        <Select
++          label="Tamaño"
++          value={sizeKey}
++          options={sizeOptions}
++          onChange={(v) =>
++            change((d) => {
++              const [w, h] = v.split("x").map(Number);
++              d.width = w as number;
++              d.height = h as number;
++            })
++          }
++        />
++        <Num
++          label="Ancho"
++          value={scene.width}
++          min={200}
++          max={4000}
++          onChange={(v) =>
++            change((d) => {
++              d.width = Math.round(v);
++            })
++          }
++        />
++        <Num
++          label="Alto"
++          value={scene.height}
++          min={200}
++          max={4000}
++          onChange={(v) =>
++            change((d) => {
++              d.height = Math.round(v);
++            })
++          }
++        />
++        <Num
++          label="Duración (s)"
++          value={scene.duration}
++          min={1}
++          max={20}
++          step={0.5}
++          onChange={(v) =>
++            change((d) => {
++              d.duration = v;
++            })
++          }
++        />
++        <Num
++          label="FPS"
++          value={scene.fps}
++          min={10}
++          max={60}
++          onChange={(v) =>
++            change((d) => {
++              d.fps = v;
++            })
++          }
++        />
++      </Section>
++      <Section title="Fondo">
++        <Color
++          label="Color"
++          value={bg.color}
++          onChange={(v) =>
++            change((d) => {
++              d.background.color = v;
++            })
++          }
++        />
++        <Check
++          label="Degradado"
++          checked={bg.gradient}
++          onChange={(v) =>
++            change((d) => {
++              d.background.gradient = v;
++            })
++          }
++        />
++        {bg.gradient && (
++          <>
++            <Color
++              label="Color 2"
++              value={bg.color2}
++              onChange={(v) =>
++                change((d) => {
++                  d.background.color2 = v;
++                })
++              }
++            />
++            <Num
++              label="Ángulo"
++              value={bg.angle}
++              max={360}
++              onChange={(v) =>
++                change((d) => {
++                  d.background.angle = v;
++                })
++              }
++            />
++          </>
++        )}
++        <Num
++          label="Luz central"
++          value={bg.spotlight}
++          max={1}
++          step={0.01}
++          onChange={(v) =>
++            change((d) => {
++              d.background.spotlight = v;
++            })
++          }
++        />
++        {bg.spotlight > 0 && (
++          <Color
++            label="Color luz"
++            value={bg.spotlightColor}
++            onChange={(v) =>
++              change((d) => {
++                d.background.spotlightColor = v;
++              })
++            }
++          />
++        )}
++        <Check
++          label="Puntos"
++          checked={bg.dots}
++          onChange={(v) =>
++            change((d) => {
++              d.background.dots = v;
++            })
++          }
++        />
++        {bg.dots && (
++          <>
++            <Color
++              label="Color puntos"
++              value={bg.dotColor}
++              onChange={(v) =>
++                change((d) => {
++                  d.background.dotColor = v;
++                })
++              }
++            />
++            <Num
++              label="Separación"
++              value={bg.dotGap}
++              min={8}
++              max={120}
++              onChange={(v) =>
++                change((d) => {
++                  d.background.dotGap = v;
++                })
++              }
++            />
++          </>
++        )}
++      </Section>
++    </div>
++  );
++}
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+new file mode 100644
+index 0000000..482b672
+--- /dev/null
++++ b/src/editor/library.tsx
+@@ -0,0 +1,118 @@
++import type { LucideIcon } from "lucide-react";
++import { useEffect, useRef } from "react";
++import { boxOf, centerOn } from "../engine/geometry.ts";
++import { drawScene } from "../engine/render.ts";
++import { defaultScene, type Element, type Scene } from "../model/model.ts";
++import { PRESET_MIME } from "./stage.tsx";
++
++/** Anything the library can list: a name and the element dropped on the canvas. */
++export type LibraryItem = { name: string; element: Element };
++
++export function Library({
++  title,
++  items,
++  icons,
++  background,
++  onAdd,
++  empty,
++}: {
++  title: string;
++  items: LibraryItem[];
++  /** Shows an icon per item instead of a canvas thumbnail. */
++  icons?: LucideIcon[];
++  background: Scene["background"];
++  onAdd: (item: LibraryItem) => void;
++  empty?: string;
++}) {
++  return (
++    <section>
++      <h3>{title}</h3>
++      {items.length === 0 && empty && <p className="hint">{empty}</p>}
++      <div className={icons ? "basics" : "grid"}>
++        {items.map((item, i) => {
++          const Icon = icons?.[i];
++          return (
++            <button
++              type="button"
++              key={item.name}
++              className="item"
++              draggable
++              title="Arrastra al lienzo o haz clic para añadir al centro"
++              onDragStart={(e) => {
++                e.dataTransfer.setData(
++                  PRESET_MIME,
++                  JSON.stringify(item.element),
++                );
++                e.dataTransfer.effectAllowed = "copy";
++              }}
++              onClick={() => onAdd(item)}
++            >
++              {Icon ? (
++                <Icon size={18} />
++              ) : (
++                <Thumb element={item.element} background={background} />
++              )}
++              <span>{item.name}</span>
++            </button>
++          );
++        })}
++      </div>
++    </section>
++  );
++}
++
++const THUMB_W = 116;
++const THUMB_H = 72;
++
++/** The element drawn alone, fitted into a small canvas, at a moment its entry animation is over. */
++function Thumb({
++  element,
++  background,
++}: {
++  element: Element;
++  background: Scene["background"];
++}) {
++  const ref = useRef<HTMLCanvasElement>(null);
++  useEffect(() => {
++    const draw = () => {
++      const canvas = ref.current;
++      const ctx = canvas?.getContext("2d");
++      if (!canvas || !ctx) return;
++      const box = boxOf(element);
++      const pad = 40;
++      const w = Math.max(box.w, 40) + pad * 2;
++      const h = Math.max(box.h, 40) + pad * 2;
++      const mini: Scene = {
++        ...defaultScene(),
++        width: w,
++        height: h,
++        background: { ...background, dots: false, spotlight: 0 },
++        elements: [centerOn(element, w / 2, h / 2)],
++      };
++      const k = Math.min(canvas.width / w, canvas.height / h);
++      ctx.setTransform(1, 0, 0, 1, 0, 0);
++      ctx.fillStyle = background.color2;
++      ctx.fillRect(0, 0, canvas.width, canvas.height);
++      ctx.setTransform(
++        k,
++        0,
++        0,
++        k,
++        (canvas.width - w * k) / 2,
++        (canvas.height - h * k) / 2,
++      );
++      drawScene(ctx, mini, 1.5);
++    };
++    draw();
++    document.fonts.ready.then(draw);
++  }, [element, background]);
++  const dpr = window.devicePixelRatio || 1;
++  return (
++    <canvas
++      ref={ref}
++      width={THUMB_W * dpr}
++      height={THUMB_H * dpr}
++      style={{ width: THUMB_W, height: THUMB_H }}
++    />
++  );
++}
+diff --git a/src/editor/stage.tsx b/src/editor/stage.tsx
+new file mode 100644
+index 0000000..c835c24
+--- /dev/null
++++ b/src/editor/stage.tsx
+@@ -0,0 +1,436 @@
++import { type MutableRefObject, useEffect, useRef, useState } from "react";
++import {
++  boxOf,
++  hitTest,
++  indexById,
++  type Pt,
++  quadAt,
++  resolveLine,
++  samplePath,
++} from "../engine/geometry.ts";
++import { drawScene } from "../engine/render.ts";
++import type { Element, LineEl, Scene } from "../model/model.ts";
++
++export type Clock = { t: number; playing: boolean };
++
++export const PRESET_MIME = "application/x-lienzo-element";
++
++type Handle = "nw" | "ne" | "sw" | "se" | "a" | "b" | "bend";
++
++type Drag =
++  | { mode: "move"; start: Pt; orig: Element; ends?: { a: Pt; b: Pt } }
++  | { mode: "resize"; handle: Handle; start: Pt; orig: Element }
++  | { mode: "end"; which: "a" | "b"; orig: LineEl }
++  | { mode: "bend"; orig: LineEl };
++
++const ACCENT = "#38bdf8";
++const ATTACH = "#4ade80";
++
++function corners(el: Element) {
++  const b = boxOf(el);
++  return {
++    nw: { x: b.x, y: b.y },
++    ne: { x: b.x + b.w, y: b.y },
++    sw: { x: b.x, y: b.y + b.h },
++    se: { x: b.x + b.w, y: b.y + b.h },
++  };
++}
++
++function handleAt(
++  scene: Scene,
++  el: Element,
++  p: Pt,
++  tol: number,
++): Handle | undefined {
++  const near = (q: Pt) => Math.hypot(p.x - q.x, p.y - q.y) <= tol;
++  if (el.kind === "line") {
++    const r = resolveLine(el, indexById(scene));
++    if (near(r.a)) return "a";
++    if (near(r.b)) return "b";
++    if (near(quadAt(r, 0.5))) return "bend";
++    return undefined;
++  }
++  const c = corners(el);
++  return (Object.keys(c) as (keyof typeof c)[]).find((k) => near(c[k]));
++}
++
++const CURSORS: Record<Handle, string> = {
++  nw: "nwse-resize",
++  se: "nwse-resize",
++  ne: "nesw-resize",
++  sw: "nesw-resize",
++  a: "crosshair",
++  b: "crosshair",
++  bend: "grab",
++};
++
++function applyDrag(
++  drag: Drag,
++  p: Pt,
++  scene: Scene,
++  setAttachTarget: (id: string | undefined) => void,
++  tol: number,
++): Element {
++  if (drag.mode === "move") {
++    const dx = p.x - drag.start.x;
++    const dy = p.y - drag.start.y;
++    const o = drag.orig;
++    if (o.kind === "line" && drag.ends) {
++      return {
++        ...o,
++        a: { x: drag.ends.a.x + dx, y: drag.ends.a.y + dy },
++        b: { x: drag.ends.b.x + dx, y: drag.ends.b.y + dy },
++      };
++    }
++    if (o.kind === "line") return o;
++    return { ...o, x: o.x + dx, y: o.y + dy };
++  }
++
++  if (drag.mode === "resize") {
++    const o = drag.orig;
++    const dx = p.x - drag.start.x;
++    const dy = p.y - drag.start.y;
++    const h = drag.handle;
++    if (o.kind === "rect") {
++      const MIN = 16;
++      let { x, y, w, h: height } = o;
++      if (h === "ne" || h === "se") w = Math.max(MIN, o.w + dx);
++      if (h === "nw" || h === "sw") {
++        x = Math.min(o.x + dx, o.x + o.w - MIN);
++        w = o.x + o.w - x;
++      }
++      if (h === "sw" || h === "se") height = Math.max(MIN, o.h + dy);
++      if (h === "nw" || h === "ne") {
++        y = Math.min(o.y + dy, o.y + o.h - MIN);
++        height = o.y + o.h - y;
++      }
++      return { ...o, x, y, w, h: height };
++    }
++    if (o.kind === "text") {
++      const b = boxOf(o);
++      const east = h === "ne" || h === "se";
++      const north = h === "nw" || h === "ne";
++      const newW = east ? b.w + dx : b.w - dx;
++      const ratio = Math.max(0.05, newW / b.w);
++      const size = Math.max(6, Math.round(o.size * ratio));
++      const k = size / o.size;
++      return {
++        ...o,
++        size,
++        x: east ? o.x : o.x + b.w - b.w * k,
++        y: north ? o.y + b.h - b.h * k : o.y,
++      };
++    }
++    return o;
++  }
++
++  if (drag.mode === "end") {
++    const target = hitTest(
++      scene,
++      p,
++      tol,
++      drag.orig.id,
++      (el) => el.kind !== "line",
++    );
++    setAttachTarget(target?.id);
++    const current = scene.elements.find((e) => e.id === drag.orig.id) as
++      | LineEl
++      | undefined;
++    const base = current ?? drag.orig;
++    return { ...base, [drag.which]: { x: p.x, y: p.y, attach: target?.id } };
++  }
++
++  // bend
++  const current = (scene.elements.find((e) => e.id === drag.orig.id) ??
++    drag.orig) as LineEl;
++  const r = resolveLine({ ...current, bend: 0 }, indexById(scene));
++  const mid = { x: (r.a.x + r.b.x) / 2, y: (r.a.y + r.b.y) / 2 };
++  const dx = r.b.x - r.a.x;
++  const dy = r.b.y - r.a.y;
++  const len = Math.hypot(dx, dy) || 1;
++  const n = { x: -dy / len, y: dx / len };
++  const bend = 2 * ((p.x - mid.x) * n.x + (p.y - mid.y) * n.y);
++  return { ...current, bend: Math.round(bend) };
++}
++
++function drawOverlay(
++  ctx: CanvasRenderingContext2D,
++  scene: Scene,
++  selectedId: string | null,
++  hoverId: string | undefined,
++  attachId: string | undefined,
++  zoom: number,
++): void {
++  const px = 1 / zoom;
++  const byId = indexById(scene);
++  ctx.save();
++  ctx.lineWidth = 1.5 * px;
++
++  const outline = (el: Element, color: string, pad: number) => {
++    if (el.kind === "line") {
++      const s = samplePath(resolveLine(el, byId), 40);
++      ctx.strokeStyle = color;
++      ctx.beginPath();
++      s.pts.forEach((q, i) => {
++        if (i) ctx.lineTo(q.x, q.y);
++        else ctx.moveTo(q.x, q.y);
++      });
++      ctx.stroke();
++      return;
++    }
++    const b = boxOf(el);
++    ctx.strokeStyle = color;
++    ctx.strokeRect(b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2);
++  };
++
++  if (hoverId && hoverId !== selectedId) {
++    const el = byId.get(hoverId);
++    if (el) {
++      ctx.setLineDash([4 * px, 4 * px]);
++      outline(el, "rgba(56, 189, 248, 0.6)", 2 * px);
++      ctx.setLineDash([]);
++    }
++  }
++
++  if (attachId) {
++    const el = byId.get(attachId);
++    if (el) {
++      ctx.lineWidth = 3 * px;
++      outline(el, ATTACH, 6 * px);
++      ctx.lineWidth = 1.5 * px;
++    }
++  }
++
++  const sel = selectedId ? byId.get(selectedId) : undefined;
++  if (sel) {
++    const dot = (q: Pt, fill: string, square = false) => {
++      const r = 5 * px;
++      ctx.fillStyle = fill;
++      ctx.strokeStyle = ACCENT;
++      ctx.beginPath();
++      if (square) ctx.rect(q.x - r, q.y - r, r * 2, r * 2);
++      else ctx.arc(q.x, q.y, r + px, 0, Math.PI * 2);
++      ctx.fill();
++      ctx.stroke();
++    };
++    if (sel.kind === "line") {
++      ctx.setLineDash([5 * px, 4 * px]);
++      outline(sel, ACCENT, 0);
++      ctx.setLineDash([]);
++      const r = resolveLine(sel, byId);
++      dot(r.a, sel.a.attach ? ATTACH : "#ffffff");
++      dot(r.b, sel.b.attach ? ATTACH : "#ffffff");
++      const m = quadAt(r, 0.5);
++      ctx.save();
++      ctx.translate(m.x, m.y);
++      ctx.rotate(Math.PI / 4);
++      dot({ x: 0, y: 0 }, "#fde68a", true);
++      ctx.restore();
++    } else {
++      outline(sel, ACCENT, 0);
++      for (const q of Object.values(corners(sel))) dot(q, "#ffffff", true);
++    }
++  }
++  ctx.restore();
++}
++
++export function Stage({
++  scene,
++  sceneRef,
++  setScene,
++  selectedId,
++  setSelectedId,
++  clock,
++  checkpoint,
++  onDropElement,
++}: {
++  scene: Scene;
++  sceneRef: MutableRefObject<Scene>;
++  setScene: (s: Scene) => void;
++  selectedId: string | null;
++  setSelectedId: (id: string | null) => void;
++  clock: MutableRefObject<Clock>;
++  checkpoint: () => void;
++  onDropElement: (el: Element, at: Pt) => void;
++}) {
++  const wrapRef = useRef<HTMLDivElement>(null);
++  const canvasRef = useRef<HTMLCanvasElement>(null);
++  const [view, setView] = useState({ w: 800, h: 600 });
++  const drag = useRef<Drag | null>(null);
++  const hover = useRef<string | undefined>(undefined);
++  const attachTarget = useRef<string | undefined>(undefined);
++  const selectedRef = useRef(selectedId);
++  selectedRef.current = selectedId;
++
++  const zoom = Math.max(
++    0.05,
++    Math.min((view.w - 48) / scene.width, (view.h - 48) / scene.height),
++  );
++  const zoomRef = useRef(zoom);
++  zoomRef.current = zoom;
++  const dpr = window.devicePixelRatio || 1;
++
++  useEffect(() => {
++    const wrap = wrapRef.current;
++    if (!wrap) return;
++    const ro = new ResizeObserver(([entry]) => {
++      if (entry)
++        setView({ w: entry.contentRect.width, h: entry.contentRect.height });
++    });
++    ro.observe(wrap);
++    return () => ro.disconnect();
++  }, []);
++
++  useEffect(() => {
++    let frame = 0;
++    let last = performance.now();
++    const tick = (now: number) => {
++      const dt = (now - last) / 1000;
++      last = now;
++      const s = sceneRef.current;
++      if (clock.current.playing) {
++        clock.current.t = (clock.current.t + dt) % s.duration;
++      }
++      const canvas = canvasRef.current;
++      const ctx = canvas?.getContext("2d");
++      if (canvas && ctx) {
++        const z = zoomRef.current;
++        ctx.setTransform(z * dpr, 0, 0, z * dpr, 0, 0);
++        drawScene(ctx, s, clock.current.t);
++        drawOverlay(
++          ctx,
++          s,
++          selectedRef.current,
++          hover.current,
++          attachTarget.current,
++          z,
++        );
++      }
++      frame = requestAnimationFrame(tick);
++    };
++    frame = requestAnimationFrame(tick);
++    return () => cancelAnimationFrame(frame);
++  }, [clock, dpr, sceneRef]);
++
++  const toScene = (e: { clientX: number; clientY: number }): Pt => {
++    const r = (canvasRef.current as HTMLCanvasElement).getBoundingClientRect();
++    return { x: (e.clientX - r.left) / zoom, y: (e.clientY - r.top) / zoom };
++  };
++
++  const replace = (el: Element) => {
++    const s = sceneRef.current;
++    setScene({
++      ...s,
++      elements: s.elements.map((e) => (e.id === el.id ? el : e)),
++    });
++  };
++
++  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
++    if (e.button !== 0) return;
++    e.currentTarget.setPointerCapture(e.pointerId);
++    const p = toScene(e);
++    const tol = 9 / zoom;
++    const s = sceneRef.current;
++    const sel = s.elements.find((el) => el.id === selectedId);
++    if (sel) {
++      const h = handleAt(s, sel, p, tol);
++      if (h) {
++        checkpoint();
++        if (sel.kind === "line" && (h === "a" || h === "b")) {
++          drag.current = { mode: "end", which: h, orig: sel };
++        } else if (sel.kind === "line") {
++          drag.current = { mode: "bend", orig: sel };
++        } else {
++          drag.current = { mode: "resize", handle: h, start: p, orig: sel };
++        }
++        return;
++      }
++    }
++    const hit = hitTest(s, p, tol);
++    if (!hit) {
++      setSelectedId(null);
++      drag.current = null;
++      return;
++    }
++    setSelectedId(hit.id);
++    checkpoint();
++    if (hit.kind === "line") {
++      const r = resolveLine(hit, indexById(s));
++      drag.current = {
++        mode: "move",
++        start: p,
++        orig: hit,
++        ends: { a: r.a, b: r.b },
++      };
++    } else {
++      drag.current = { mode: "move", start: p, orig: hit };
++    }
++  };
++
++  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
++    const p = toScene(e);
++    const tol = 9 / zoom;
++    const s = sceneRef.current;
++    const canvas = e.currentTarget;
++    if (!drag.current) {
++      const sel = s.elements.find((el) => el.id === selectedId);
++      const h = sel ? handleAt(s, sel, p, tol) : undefined;
++      const hit = hitTest(s, p, tol);
++      hover.current = hit?.id;
++      canvas.style.cursor = h ? CURSORS[h] : hit ? "move" : "default";
++      return;
++    }
++    const d = drag.current;
++    if (d.mode === "move" && d.orig.kind === "line" && !d.ends) return;
++    replace(
++      applyDrag(
++        d,
++        p,
++        s,
++        (id) => {
++          attachTarget.current = id;
++        },
++        tol,
++      ),
++    );
++  };
++
++  const onPointerUp = () => {
++    drag.current = null;
++    attachTarget.current = undefined;
++  };
++
++  return (
++    <div
++      className="stage"
++      role="application"
++      aria-label="Lienzo"
++      ref={wrapRef}
++      onDragOver={(e) => {
++        if (e.dataTransfer.types.includes(PRESET_MIME)) {
++          e.preventDefault();
++          e.dataTransfer.dropEffect = "copy";
++        }
++      }}
++      onDrop={(e) => {
++        const json = e.dataTransfer.getData(PRESET_MIME);
++        if (!json) return;
++        e.preventDefault();
++        onDropElement(JSON.parse(json) as Element, toScene(e));
++      }}
++    >
++      <canvas
++        ref={canvasRef}
++        width={Math.round(scene.width * zoom * dpr)}
++        height={Math.round(scene.height * zoom * dpr)}
++        style={{ width: scene.width * zoom, height: scene.height * zoom }}
++        onPointerDown={onPointerDown}
++        onPointerMove={onPointerMove}
++        onPointerUp={onPointerUp}
++        onPointerLeave={() => {
++          hover.current = undefined;
++        }}
++      />
++    </div>
++  );
++}
+diff --git a/src/main.tsx b/src/main.tsx
+index e56a5a3..8a8d965 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -1,5 +1,32 @@
++import "@fontsource/inter/400.css";
++import "@fontsource/inter/600.css";
++import "@fontsource/inter/700.css";
++import "@fontsource/inter/800.css";
++import "@fontsource/space-grotesk/400.css";
++import "@fontsource/space-grotesk/700.css";
++import "@fontsource/poppins/400.css";
++import "@fontsource/poppins/600.css";
++import "@fontsource/poppins/800.css";
++import "@fontsource/jetbrains-mono/400.css";
++import "@fontsource/jetbrains-mono/700.css";
++import "@fontsource/caveat/400.css";
++import "@fontsource/caveat/700.css";
++import "@fontsource/press-start-2p/400.css";
++import "./styles.css";
++import { StrictMode } from "react";
+ import { createRoot } from "react-dom/client";
++import { App } from "./editor/app.tsx";
++import { FONTS } from "./model/model.ts";
++
++// Canvas text only uses a web font once it is loaded; ask for every family up front.
++for (const family of FONTS) {
++  for (const weight of [400, 600, 700, 800]) {
++    document.fonts.load(`${weight} 32px "${family}"`).catch(() => {});
++  }
++}
+ 
+ createRoot(document.getElementById("root") as HTMLElement).render(
+-  <p>Lienzo</p>,
++  <StrictMode>
++    <App />
++  </StrictMode>,
+ );
+diff --git a/src/styles.css b/src/styles.css
+new file mode 100644
+index 0000000..3542bb3
+--- /dev/null
++++ b/src/styles.css
+@@ -0,0 +1,305 @@
++:root {
++  --bg: #0b0d12;
++  --panel: #12151c;
++  --panel-2: #181c25;
++  --line: #242a36;
++  --text: #e5e7eb;
++  --muted: #8b93a3;
++  --accent: #38bdf8;
++  font-family: "Inter", system-ui, sans-serif;
++  font-size: 13px;
++  color: var(--text);
++  color-scheme: dark;
++}
++
++* {
++  box-sizing: border-box;
++}
++
++html,
++body,
++#root {
++  margin: 0;
++  height: 100%;
++  background: var(--bg);
++}
++
++button,
++input,
++select,
++textarea {
++  font: inherit;
++  color: inherit;
++}
++
++button {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  background: var(--panel-2);
++  border: 1px solid var(--line);
++  border-radius: 6px;
++  padding: 5px 9px;
++  cursor: pointer;
++}
++button:hover:not(:disabled) {
++  border-color: #3a4252;
++}
++button:disabled {
++  opacity: 0.4;
++  cursor: default;
++}
++button.primary {
++  background: #0369a1;
++  border-color: #0284c7;
++}
++
++input,
++select,
++textarea {
++  background: var(--bg);
++  border: 1px solid var(--line);
++  border-radius: 5px;
++  padding: 4px 6px;
++}
++
++.app {
++  display: grid;
++  grid-template-columns: 270px 1fr 300px;
++  grid-template-rows: 48px 1fr;
++  height: 100%;
++}
++
++.topbar {
++  grid-column: 1 / -1;
++  display: flex;
++  align-items: center;
++  gap: 14px;
++  padding: 0 12px;
++  border-bottom: 1px solid var(--line);
++  background: var(--panel);
++}
++.brand {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  font-weight: 700;
++}
++.brand span {
++  color: var(--muted);
++  font-weight: 400;
++}
++.group {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++}
++.scene-name {
++  width: 140px;
++}
++.open {
++  display: inline-flex;
++  align-items: center;
++  gap: 4px;
++}
++.status {
++  flex: 1;
++  color: var(--muted);
++  text-align: right;
++  white-space: nowrap;
++  overflow: hidden;
++  text-overflow: ellipsis;
++}
++
++.library,
++.panel {
++  background: var(--panel);
++  overflow-y: auto;
++}
++.library {
++  border-right: 1px solid var(--line);
++  padding: 10px;
++}
++.library h3 {
++  margin: 12px 2px 8px;
++  font-size: 11px;
++  text-transform: uppercase;
++  letter-spacing: 0.06em;
++  color: var(--muted);
++}
++.library .basics {
++  display: grid;
++  grid-template-columns: repeat(3, 1fr);
++  gap: 6px;
++}
++.library .basics .item {
++  flex-direction: column;
++  padding: 10px 4px;
++  font-size: 12px;
++}
++.library .grid {
++  display: grid;
++  grid-template-columns: 1fr 1fr;
++  gap: 6px;
++}
++.library .grid .item {
++  flex-direction: column;
++  padding: 4px;
++  gap: 4px;
++  font-size: 11px;
++  cursor: grab;
++}
++.library .grid canvas {
++  border-radius: 4px;
++  display: block;
++  max-width: 100%;
++}
++
++.center {
++  display: grid;
++  grid-template-rows: 1fr 44px;
++  min-width: 0;
++  min-height: 0;
++}
++.stage {
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  overflow: hidden;
++  min-height: 0;
++  background:
++    repeating-conic-gradient(#0e1117 0 25%, #0b0d12 0 50%) 0 0 / 24px 24px;
++}
++.stage canvas {
++  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
++  touch-action: none;
++}
++
++.timeline {
++  display: flex;
++  align-items: center;
++  gap: 10px;
++  padding: 0 12px;
++  border-top: 1px solid var(--line);
++  background: var(--panel);
++}
++.timeline input[type="range"] {
++  flex: 1;
++}
++.readout {
++  font-variant-numeric: tabular-nums;
++  color: var(--muted);
++  width: 110px;
++  text-align: right;
++}
++
++.panel {
++  border-left: 1px solid var(--line);
++}
++.inspector-head {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 8px;
++  padding: 10px;
++  border-bottom: 1px solid var(--line);
++  position: sticky;
++  top: 0;
++  background: var(--panel);
++  z-index: 1;
++}
++.inspector-head .name {
++  flex: 1;
++  min-width: 0;
++  font-weight: 600;
++}
++.icon-row {
++  display: flex;
++  gap: 4px;
++}
++.icon-row button {
++  padding: 4px 6px;
++}
++
++.section {
++  border-bottom: 1px solid var(--line);
++}
++.section summary {
++  cursor: pointer;
++  padding: 8px 10px;
++  font-weight: 600;
++  user-select: none;
++}
++.section-body {
++  display: flex;
++  flex-direction: column;
++  gap: 6px;
++  padding: 0 10px 10px;
++}
++
++.field {
++  display: grid;
++  grid-template-columns: 84px 1fr 58px;
++  align-items: center;
++  gap: 6px;
++}
++.field > span {
++  color: var(--muted);
++  font-size: 12px;
++}
++.field select {
++  grid-column: 2 / 4;
++}
++.field input[type="range"] {
++  width: 100%;
++}
++.field .num,
++.field .hex {
++  width: 100%;
++  padding: 3px 4px;
++}
++.field input[type="color"] {
++  width: 100%;
++  height: 26px;
++  padding: 1px;
++}
++.field.check input {
++  justify-self: start;
++}
++.field.column {
++  grid-template-columns: 1fr;
++}
++.field textarea {
++  resize: vertical;
++}
++
++.attached {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 6px;
++  font-size: 12px;
++}
++.attached b {
++  color: #4ade80;
++}
++.hint {
++  color: var(--muted);
++  font-size: 12px;
++  line-height: 1.4;
++}
++.hint.pad {
++  padding: 10px;
++}
++.preset-save {
++  display: flex;
++  gap: 6px;
++}
++.preset-save input {
++  flex: 1;
++  min-width: 0;
++}
++code {
++  font-family: "JetBrains Mono", monospace;
++  font-size: 11px;
++}

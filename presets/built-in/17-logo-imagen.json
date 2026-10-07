@@ -1,0 +1,11 @@
+{
+  "name": "Logo (imagen)",
+  "kind": "image",
+  "traits": [],
+  "set": {
+    "w": 240,
+    "h": 120,
+    "aspect": 2,
+    "radius": 12
+  }
+}

@@ -1,0 +1,102 @@
+diff --git a/src/presets/round-trip.test.ts b/src/presets/round-trip.test.ts
+new file mode 100644
+index 0000000..58e2b62
+--- /dev/null
++++ b/src/presets/round-trip.test.ts
+@@ -0,0 +1,96 @@
++import { readdirSync, readFileSync } from "node:fs";
++import { join } from "node:path";
++import { describe, expect, it } from "vitest";
++import { cloneElement, type Element, type RectEl } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { TRAITS } from "../traits/index.ts";
++import { recipeFromElement } from "./diff.ts";
++import { BUILT_IN_RECIPES } from "./recipes.ts";
++import { resolvePreset } from "./resolve.ts";
++import { asRecipe } from "./store.ts";
++
++function resolved(recipe: PresetRecipe): Element {
++  const r = resolvePreset(recipe);
++  if ("error" in r) throw new Error(r.error);
++  return r.element;
++}
++
++const withoutId = ({ id: _id, ...rest }: Element) => rest;
++
++describe("save as preset", () => {
++  it.each(BUILT_IN_RECIPES.map((r) => [r.name, r] as const))(
++    "«%s» round-trips through a saved recipe",
++    (_name, recipe) => {
++      const el = resolved(recipe);
++      el.name = "Mío";
++      const saved = recipeFromElement("Mío", el);
++      expect(saved.traits).toEqual([]);
++      expect(JSON.stringify(saved)).not.toContain(el.id);
++      expect(withoutId(resolved(saved))).toEqual(withoutId(el));
++    },
++  );
++
++  it("stores only what differs from the kind's default", () => {
++    const el = resolved({ name: "x", kind: "rect", traits: [] }) as RectEl;
++    el.w = 999;
++    el.border.color = "#ff0000";
++    expect(recipeFromElement("x", el)).toEqual({
++      name: "x",
++      kind: "rect",
++      traits: [],
++      set: { w: 999, border: { color: "#ff0000" } },
++    });
++    expect(
++      recipeFromElement("y", resolved({ name: "y", kind: "text", traits: [] })),
++    ).toEqual({
++      name: "y",
++      kind: "text",
++      traits: [],
++    });
++  });
++
++  it("an old whole-element preset file loads as a recipe", () => {
++    const el = resolved(BUILT_IN_RECIPES[0] as PresetRecipe);
++    const recipe = asRecipe({ name: "Viejo", element: el });
++    expect(withoutId(resolved(recipe))).toEqual({
++      ...withoutId(el),
++      name: el.name,
++    });
++  });
++});
++
++describe("dropped elements", () => {
++  it("are not affected by later changes to the recipe or its traits", () => {
++    const recipe = structuredClone(
++      BUILT_IN_RECIPES.find((r) => r.name === "Tarjeta neón") as PresetRecipe,
++    );
++    const dropped = cloneElement(resolved(recipe));
++    const before = structuredClone(dropped);
++
++    (recipe.set as { label: { text: string } }).label.text = "Cambiado";
++    recipe.traits.push("no-glow");
++    const glow = TRAITS.get("glow");
++    const saved = glow?.params.color;
++    if (glow) glow.params.color = "#ff0000";
++    try {
++      expect(resolved(recipe)).not.toEqual(dropped);
++      expect(dropped).toEqual(before);
++    } finally {
++      if (glow && saved !== undefined) glow.params.color = saved;
++    }
++  });
++});
++
++describe("built-in recipe files", () => {
++  it("every JSON file in presets/built-in is loaded, with no code listing them", () => {
++    const dir = join(import.meta.dirname, "../../presets/built-in");
++    const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
++    const names = files
++      .sort()
++      .map(
++        (f) =>
++          (JSON.parse(readFileSync(join(dir, f), "utf8")) as PresetRecipe).name,
++      );
++    expect(BUILT_IN_RECIPES.map((r) => r.name)).toEqual(names);
++  });
++});

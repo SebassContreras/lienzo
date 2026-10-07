@@ -1,0 +1,29 @@
+diff --git a/src/model/preset.ts b/src/model/preset.ts
+new file mode 100644
+index 0000000..7415bdd
+--- /dev/null
++++ b/src/model/preset.ts
+@@ -0,0 +1,23 @@
++import type { Element, ElementKind } from "./model.ts";
++
++/** Optional at every depth: the values a recipe sets on top of its traits. */
++export type DeepPartial<T> = T extends object
++  ? { [K in keyof T]?: DeepPartial<T[K]> }
++  : T;
++
++/** A trait by id, or a trait with parameters: `{ "use": "glow", "color": "#22d3ee" }`. */
++export type TraitUse =
++  | string
++  | ({ use: string } & Record<string, string | number | boolean>);
++
++/**
++ * A preset as stored in JSON: which kind of element it builds, the traits applied in order
++ * on top of that kind's default, and the few values that are its own. It never holds a full
++ * element; `resolvePreset` builds one.
++ */
++export type PresetRecipe = {
++  name: string;
++  kind: ElementKind;
++  traits: TraitUse[];
++  set?: DeepPartial<Element>;
++};

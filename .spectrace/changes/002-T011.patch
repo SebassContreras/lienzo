@@ -1,0 +1,93 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index cfa7ebb..df11f6d 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -18,7 +18,8 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
+ - Everything is drawn with Canvas 2D by `drawScene(ctx, scene, t)`; preview = export (A3)
+ - Scene = plain JSON typed in `src/model/` (A4); one file per component in `src/components/` (A5)
+ - Looping animations use whole cycles per loop (A6)
+-- Presets in `presets/`, scenes in `scenes/`, via the Vite middleware; no database (A7)
++- Presets in `presets/`, scenes in `scenes/`, images in `assets/`, via the Vite middleware;
++  no database (A7)
+ - Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
+ - Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10)
+ - Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12)
+@@ -31,18 +32,24 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
+ ```
+ src/model/       scene types, defaults, size presets, fonts
+ src/engine/      drawScene, painting helpers, animation state, geometry
+-src/components/  one draw function per element kind
++src/components/  one draw function per element kind (rect, ellipse, text, icon, image, line, group)
+ src/editor/      React UI: app shell, stage, library, inspector
+ src/export/      PNG / GIF / MP4
+ src/traits/      reusable style pieces, one file per trait
+ src/presets/     recipe resolver and the JSON store client
+-presets/built-in/  built-in preset recipes (JSON)
++src/types/       type declarations for packages that ship none
++src/demo.ts      the "how MCP works" demo scene
++presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
++scenes/          saved scenes (JSON)
++assets/          images used by scenes, named by content hash
+ ```
+ 
+ ## Rules for agents
+ 
+-- To add a component: a type in `src/model/model.ts`, a draw file in `src/components/`,
+-  a case in `src/engine/render.ts`, an inspector section, and a built-in preset recipe.
++- To add a component: a type, a `default…()` and its `ANIMS_BY_KIND` entry in
++  `src/model/model.ts`; a draw file in `src/components/`; a case in `src/engine/render.ts`;
++  an inspector section; an entry in `BASICS` (`src/editor/app.tsx`); an `apply.<kind>` in each trait
++  that should style it (and the kind in `TraitTargets`); and a built-in preset recipe.
+ - To add a preset: a JSON recipe in `presets/built-in/` combining traits; add a trait in
+   `src/traits/` only when no existing one fits.
+ - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports
+diff --git a/README.md b/README.md
+index 1d034c1..d8d87c4 100644
+--- a/README.md
++++ b/README.md
+@@ -3,15 +3,26 @@
+ A free-form canvas editor for animated social media posts. Drag pre-made components onto
+ the canvas, edit them live, and export PNG, GIF or MP4.
+ 
+-- **Rectangle:** fill or gradient, border (solid, dashed, dotted, moving), border glow,
+-  background glow, shadow, inner text.
++- **Rectangle and ellipse:** fill or gradient, border (solid, dashed, dotted, moving),
++  border glow, background glow, shadow, inner text. Lines attach to the ellipse's outline.
+ - **Text:** font, size, weight, color or gradient, glow.
+-- **Line:** attach its ends to cards so it follows them; curve, arrows, glow, and animated
+-  flow (light pulses, marching ants, comet).
++- **Icon:** any [Lucide](https://lucide.dev) icon from a searchable picker, with stroke,
++  color, glow and an optional rounded tile (color or gradient).
++- **Image:** PNG, JPG, SVG or WebP picked from disk and stored in `assets/`; size (aspect
++  kept by default), corners, opacity, border, shadow.
++- **Line:** attach its ends to elements so it follows them; curve, arrows, glow, and
++  animated flow (light pulses, marching ants, comet).
++- **Groups:** select several elements (Shift+click or drag a box), move them together,
++  and group them; a group moves, resizes, duplicates and animates as one.
+ - **Animations:** float, pulse, breathing glow, fade-in, pop-in, slide-up, draw-on. Loops
+   are seamless in GIF and MP4.
+-- **Presets:** save any configured element as JSON in `presets/` and reuse it. Scenes are
+-  JSON files in `scenes/`.
++- **Presets:** the library's presets are JSON recipes in `presets/built-in/` that combine
++  reusable traits (glow, glass, border, float…). Save any element or group, or the scene
++  background, as your own preset in `presets/` and drop it again.
++- **Files:** scenes are JSON files in `scenes/`; images live in `assets/`. All three
++  folders are plain files you can version with the repo.
++- **Export:** PNG (current frame), looping GIF, and MP4 (WebM when the browser cannot
++  encode H.264).
+ 
+ ## Run
+ 
+@@ -29,8 +40,11 @@ Open http://localhost:5173.
+ | Key | Action |
+ |---|---|
+ | Space | Play / pause |
+-| Ctrl+Z / Ctrl+Shift+Z | Undo / redo |
++| Ctrl+Z / Ctrl+Shift+Z (or Ctrl+Y) | Undo / redo |
+ | Ctrl+D | Duplicate |
++| Ctrl+A | Select all |
++| Shift+click, drag on empty canvas | Add to selection, selection box |
++| Ctrl+G / Ctrl+Shift+G | Group / ungroup |
+ | Delete | Remove |
+ | Arrows (Shift = ×10) | Nudge |
+ | Esc | Deselect |

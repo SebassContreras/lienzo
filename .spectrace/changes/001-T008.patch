@@ -1,0 +1,157 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..b3a41cb
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,26 @@
++name: CI
++
++on:
++  push:
++  pull_request:
++
++permissions:
++  contents: read
++
++jobs:
++  check:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v5
++
++      - uses: pnpm/action-setup@v4
++
++      - uses: actions/setup-node@v5
++        with:
++          node-version-file: .nvmrc
++          cache: pnpm
++
++      - run: pnpm install --frozen-lockfile
++      - run: pnpm lint
++      - run: pnpm typecheck
++      - run: pnpm test
+diff --git a/src/engine/anim.test.ts b/src/engine/anim.test.ts
+new file mode 100644
+index 0000000..275b47f
+--- /dev/null
++++ b/src/engine/anim.test.ts
+@@ -0,0 +1,46 @@
++import { describe, expect, it } from "vitest";
++import type { Anim } from "../model/model.ts";
++import { animState, ENTRY_SEC } from "./anim.ts";
++
++const anim = (patch: Partial<Anim>): Anim => ({
++  kind: "none",
++  amount: 12,
++  cycles: 1,
++  delay: 0,
++  ...patch,
++});
++
++describe("animState", () => {
++  it("looping animations are periodic over the scene duration", () => {
++    const duration = 4;
++    for (const kind of ["float", "pulse", "breathe"] as const) {
++      for (const cycles of [1, 2, 3]) {
++        const a = anim({ kind, cycles, delay: 0.7 });
++        for (const t of [0, 0.3, 1.9]) {
++          const now = animState(a, t, duration);
++          const later = animState(a, t + duration, duration);
++          expect(later.dy).toBeCloseTo(now.dy, 6);
++          expect(later.scale).toBeCloseTo(now.scale, 6);
++          expect(later.glowMul).toBeCloseTo(now.glowMul, 6);
++        }
++      }
++    }
++  });
++
++  it("entry animations start hidden and end fully visible in place", () => {
++    for (const kind of ["fade-in", "pop-in", "slide-up"] as const) {
++      const a = anim({ kind, delay: 0.5 });
++      expect(animState(a, 0.5, 4).alpha).toBe(0);
++      const done = animState(a, 0.5 + ENTRY_SEC, 4);
++      expect(done.alpha).toBe(1);
++      expect(done.scale).toBeCloseTo(1, 6);
++      expect(done.dy).toBeCloseTo(0, 6);
++    }
++  });
++
++  it("draw progresses from 0 to 1", () => {
++    const a = anim({ kind: "draw" });
++    expect(animState(a, 0, 4).progress).toBe(0);
++    expect(animState(a, ENTRY_SEC, 4).progress).toBe(1);
++  });
++});
+diff --git a/src/engine/geometry.test.ts b/src/engine/geometry.test.ts
+new file mode 100644
+index 0000000..a343454
+--- /dev/null
++++ b/src/engine/geometry.test.ts
+@@ -0,0 +1,47 @@
++import { describe, expect, it } from "vitest";
++import { defaultLine, defaultRect, type Element } from "../model/model.ts";
++import {
++  controlPoint,
++  distToPath,
++  pointAtFraction,
++  resolveLine,
++  samplePath,
++} from "./geometry.ts";
++
++describe("line geometry", () => {
++  it("bend offsets the control point perpendicular to the chord", () => {
++    expect(controlPoint({ x: 0, y: 0 }, { x: 100, y: 0 }, 20)).toEqual({
++      x: 50,
++      y: 20,
++    });
++  });
++
++  it("samples a straight line with the right length and midpoint", () => {
++    const s = samplePath({
++      a: { x: 0, y: 0 },
++      b: { x: 200, y: 0 },
++      c: { x: 100, y: 0 },
++    });
++    expect(s.total).toBeCloseTo(200, 6);
++    expect(pointAtFraction(s, 0.5).p.x).toBeCloseTo(100, 6);
++    expect(distToPath(s, { x: 50, y: 10 })).toBeCloseTo(10, 6);
++  });
++
++  it("an attached end sits on the target's edge, pushed out by the gap", () => {
++    const card = { ...defaultRect(), x: 0, y: 0, w: 100, h: 100 };
++    const line = defaultLine();
++    line.a = { x: 0, y: 0, attach: card.id };
++    line.b = { x: 300, y: 50 };
++    const byId = new Map<string, Element>([[card.id, card]]);
++    const r = resolveLine(line, byId);
++    expect(r.a.x).toBeCloseTo(100 + 8 + line.width, 6);
++    expect(r.a.y).toBeCloseTo(50, 6);
++    expect(r.b).toEqual({ x: 300, y: 50 });
++  });
++
++  it("an attachment to a missing element falls back to the stored point", () => {
++    const line = defaultLine();
++    line.a = { x: 10, y: 20, attach: "gone" };
++    expect(resolveLine(line, new Map()).a).toMatchObject({ x: 10, y: 20 });
++  });
++});
+diff --git a/src/presets/slug.test.ts b/src/presets/slug.test.ts
+new file mode 100644
+index 0000000..6508d58
+--- /dev/null
++++ b/src/presets/slug.test.ts
+@@ -0,0 +1,14 @@
++import { describe, expect, it } from "vitest";
++import { slugify } from "./slug.ts";
++
++describe("slugify", () => {
++  it("keeps names safe as file names", () => {
++    expect(slugify("Tarjeta neón")).toBe("tarjeta-ne-n");
++    expect(slugify("../../etc/passwd")).toBe("etc-passwd");
++    expect(slugify("mi_preset-2")).toBe("mi_preset-2");
++  });
++
++  it("never returns an empty name", () => {
++    expect(slugify("!!!")).toBe("untitled");
++  });
++});

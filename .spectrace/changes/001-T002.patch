@@ -1,0 +1,880 @@
+diff --git a/src/engine/anim.ts b/src/engine/anim.ts
+new file mode 100644
+index 0000000..65d14ea
+--- /dev/null
++++ b/src/engine/anim.ts
+@@ -0,0 +1,69 @@
++import type { Anim } from "../model/model.ts";
++
++/** Entry animations (fade-in, pop-in, slide-up, draw) take this long. */
++export const ENTRY_SEC = 0.8;
++
++export const easeOut = (x: number) => 1 - (1 - x) ** 3;
++const easeOutBack = (x: number) => {
++  const c1 = 1.70158;
++  const c3 = c1 + 1;
++  return 1 + c3 * (x - 1) ** 3 + c1 * (x - 1) ** 2;
++};
++export const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
++export const frac = (x: number) => x - Math.floor(x);
++
++export type AnimState = {
++  dx: number;
++  dy: number;
++  scale: number;
++  alpha: number;
++  glowMul: number;
++  /** 0–1, for entry animations such as "draw". */
++  progress: number;
++};
++
++/**
++ * How an element looks at time `t` (seconds within the loop). Looping kinds complete
++ * `anim.cycles` whole cycles per `duration`, so the loop is seamless.
++ */
++export function animState(anim: Anim, t: number, duration: number): AnimState {
++  const state: AnimState = {
++    dx: 0,
++    dy: 0,
++    scale: 1,
++    alpha: 1,
++    glowMul: 1,
++    progress: 1,
++  };
++  const phase = ((t - anim.delay) / duration) * anim.cycles * Math.PI * 2;
++  const entry = clamp01((t - anim.delay) / ENTRY_SEC);
++  switch (anim.kind) {
++    case "float":
++      state.dy = -Math.sin(phase) * anim.amount;
++      break;
++    case "pulse":
++      state.scale = 1 + (anim.amount / 100) * (0.5 - 0.5 * Math.cos(phase));
++      break;
++    case "breathe":
++      state.glowMul = Math.max(0, 1 + (anim.amount / 100) * Math.sin(phase));
++      break;
++    case "fade-in":
++      state.alpha = easeOut(entry);
++      state.progress = state.alpha;
++      break;
++    case "pop-in":
++      state.alpha = clamp01(entry * 2);
++      state.scale = Math.max(0, easeOutBack(entry));
++      break;
++    case "slide-up":
++      state.alpha = easeOut(entry);
++      state.dy = (1 - easeOut(entry)) * anim.amount;
++      break;
++    case "draw":
++      state.progress = easeOut(entry);
++      break;
++    case "none":
++      break;
++  }
++  return state;
++}
+diff --git a/src/engine/geometry.ts b/src/engine/geometry.ts
+new file mode 100644
+index 0000000..af31c3c
+--- /dev/null
++++ b/src/engine/geometry.ts
+@@ -0,0 +1,251 @@
++import type {
++  Element,
++  Endpoint,
++  LineEl,
++  Scene,
++  TextEl,
++} from "../model/model.ts";
++
++export type Pt = { x: number; y: number };
++export type Box = { x: number; y: number; w: number; h: number };
++
++let measureCtxCache: OffscreenCanvasRenderingContext2D | undefined;
++
++/** Created on first use so the pure geometry helpers also load outside a browser. */
++function measureCtx(): OffscreenCanvasRenderingContext2D {
++  measureCtxCache ??= new OffscreenCanvas(1, 1).getContext(
++    "2d",
++  ) as OffscreenCanvasRenderingContext2D;
++  return measureCtxCache;
++}
++
++/** The text properties layout depends on; shared by text elements and rectangle labels. */
++export type TextStyle = Pick<TextEl, "text" | "font" | "size" | "weight"> &
++  Partial<Pick<TextEl, "italic" | "letterSpacing" | "lineHeight">>;
++
++export function fontString(el: TextStyle): string {
++  return `${el.italic ? "italic " : ""}${el.weight} ${el.size}px "${el.font}"`;
++}
++
++export type TextLayout = {
++  lines: string[];
++  widths: number[];
++  w: number;
++  h: number;
++  lineStep: number;
++};
++
++export function textLayout(el: TextStyle): TextLayout {
++  const ctx = measureCtx();
++  ctx.font = fontString(el);
++  ctx.letterSpacing = `${el.letterSpacing ?? 0}px`;
++  const lines = el.text.split("\n");
++  const widths = lines.map((line) => ctx.measureText(line).width);
++  const lineStep = el.size * (el.lineHeight ?? 1.2);
++  return {
++    lines,
++    widths,
++    w: Math.max(1, ...widths),
++    h: Math.max(lineStep, lines.length * lineStep),
++    lineStep,
++  };
++}
++
++export function boxOf(el: Element): Box {
++  if (el.kind === "rect") return { x: el.x, y: el.y, w: el.w, h: el.h };
++  if (el.kind === "text") {
++    const { w, h } = textLayout(el);
++    return { x: el.x, y: el.y, w, h };
++  }
++  const minX = Math.min(el.a.x, el.b.x);
++  const minY = Math.min(el.a.y, el.b.y);
++  return {
++    x: minX,
++    y: minY,
++    w: Math.abs(el.a.x - el.b.x),
++    h: Math.abs(el.a.y - el.b.y),
++  };
++}
++
++const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
++
++export function controlPoint(a: Pt, b: Pt, bend: number): Pt {
++  const dx = b.x - a.x;
++  const dy = b.y - a.y;
++  const len = Math.hypot(dx, dy) || 1;
++  return {
++    x: (a.x + b.x) / 2 + (-dy / len) * bend,
++    y: (a.y + b.y) / 2 + (dx / len) * bend,
++  };
++}
++
++/** Where a ray from the box centre towards `toward` leaves the box, pushed out by `gap`. */
++function clipToBox(box: Box, toward: Pt, gap: number): Pt {
++  const c = center(box);
++  const dx = toward.x - c.x;
++  const dy = toward.y - c.y;
++  const len = Math.hypot(dx, dy);
++  if (len < 1e-6) return c;
++  const tx = dx === 0 ? Infinity : (dx > 0 ? box.w / 2 : -box.w / 2) / dx;
++  const ty = dy === 0 ? Infinity : (dy > 0 ? box.h / 2 : -box.h / 2) / dy;
++  const t = Math.min(tx, ty);
++  return {
++    x: c.x + dx * t + (dx / len) * gap,
++    y: c.y + dy * t + (dy / len) * gap,
++  };
++}
++
++export type ResolvedLine = { a: Pt; b: Pt; c: Pt };
++
++export function attachedBox(
++  ep: Endpoint,
++  byId: Map<string, Element>,
++): Box | undefined {
++  if (!ep.attach) return undefined;
++  const target = byId.get(ep.attach);
++  if (!target || target.kind === "line") return undefined;
++  return boxOf(target);
++}
++
++/** Endpoints after following attachments: attached ends sit on the target's edge. */
++export function resolveLine(
++  line: LineEl,
++  byId: Map<string, Element>,
++): ResolvedLine {
++  const boxA = attachedBox(line.a, byId);
++  const boxB = attachedBox(line.b, byId);
++  const rawA = boxA ? center(boxA) : line.a;
++  const rawB = boxB ? center(boxB) : line.b;
++  const rawC = controlPoint(rawA, rawB, line.bend);
++  const gap = 8 + line.width;
++  const a = boxA ? clipToBox(boxA, rawC, gap) : rawA;
++  const b = boxB ? clipToBox(boxB, rawC, gap) : rawB;
++  return { a, b, c: controlPoint(a, b, line.bend) };
++}
++
++export function quadAt(r: ResolvedLine, t: number): Pt {
++  const u = 1 - t;
++  return {
++    x: u * u * r.a.x + 2 * u * t * r.c.x + t * t * r.b.x,
++    y: u * u * r.a.y + 2 * u * t * r.c.y + t * t * r.b.y,
++  };
++}
++
++export type PathSamples = { pts: Pt[]; lens: number[]; total: number };
++
++export function samplePath(r: ResolvedLine, n = 80): PathSamples {
++  const pts: Pt[] = [];
++  const lens: number[] = [];
++  let total = 0;
++  for (let i = 0; i <= n; i++) {
++    const p = quadAt(r, i / n);
++    if (i > 0) {
++      const prev = pts[i - 1] as Pt;
++      total += Math.hypot(p.x - prev.x, p.y - prev.y);
++    }
++    pts.push(p);
++    lens.push(total);
++  }
++  return { pts, lens, total };
++}
++
++/** Point and direction at a fraction `u` (0–1) of the path's length. */
++export function pointAtFraction(
++  s: PathSamples,
++  u: number,
++): { p: Pt; angle: number } {
++  const target = Math.min(Math.max(u, 0), 1) * s.total;
++  let i = 1;
++  while (i < s.lens.length - 1 && (s.lens[i] as number) < target) i++;
++  const p0 = s.pts[i - 1] as Pt;
++  const p1 = s.pts[i] as Pt;
++  const l0 = s.lens[i - 1] as number;
++  const l1 = s.lens[i] as number;
++  const k = l1 - l0 > 0 ? (target - l0) / (l1 - l0) : 0;
++  return {
++    p: { x: p0.x + (p1.x - p0.x) * k, y: p0.y + (p1.y - p0.y) * k },
++    angle: Math.atan2(p1.y - p0.y, p1.x - p0.x),
++  };
++}
++
++/** The sampled path cut at fraction `u` of its length. */
++export function partialPath(s: PathSamples, u: number): Pt[] {
++  if (u >= 1) return s.pts;
++  const target = Math.max(u, 0) * s.total;
++  const out: Pt[] = [];
++  for (let i = 0; i < s.pts.length; i++) {
++    if ((s.lens[i] as number) <= target) out.push(s.pts[i] as Pt);
++    else break;
++  }
++  out.push(pointAtFraction(s, u).p);
++  return out;
++}
++
++function distToSegment(p: Pt, a: Pt, b: Pt): number {
++  const dx = b.x - a.x;
++  const dy = b.y - a.y;
++  const l2 = dx * dx + dy * dy;
++  const t =
++    l2 === 0
++      ? 0
++      : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
++  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
++}
++
++export function distToPath(s: PathSamples, p: Pt): number {
++  let best = Infinity;
++  for (let i = 1; i < s.pts.length; i++) {
++    best = Math.min(best, distToSegment(p, s.pts[i - 1] as Pt, s.pts[i] as Pt));
++  }
++  return best;
++}
++
++export function inBox(b: Box, p: Pt, pad = 0): boolean {
++  return (
++    p.x >= b.x - pad &&
++    p.x <= b.x + b.w + pad &&
++    p.y >= b.y - pad &&
++    p.y <= b.y + b.h + pad
++  );
++}
++
++export function indexById(scene: Scene): Map<string, Element> {
++  return new Map(scene.elements.map((el) => [el.id, el]));
++}
++
++/** Topmost element under `p`; `tol` is the click tolerance in scene px. */
++export function hitTest(
++  scene: Scene,
++  p: Pt,
++  tol: number,
++  skipId?: string,
++  only?: (el: Element) => boolean,
++): Element | undefined {
++  const byId = indexById(scene);
++  for (let i = scene.elements.length - 1; i >= 0; i--) {
++    const el = scene.elements[i] as Element;
++    if (el.id === skipId || (only && !only(el))) continue;
++    if (el.kind === "line") {
++      const s = samplePath(resolveLine(el, byId), 40);
++      if (distToPath(s, p) <= Math.max(tol, el.width / 2 + tol / 2)) return el;
++    } else if (inBox(boxOf(el), p)) {
++      return el;
++    }
++  }
++  return undefined;
++}
++
++/** Moves a template element so its visual centre lands on (cx, cy). */
++export function centerOn(el: Element, cx: number, cy: number): Element {
++  if (el.kind === "line") {
++    const mx = (el.a.x + el.b.x) / 2;
++    const my = (el.a.y + el.b.y) / 2;
++    return {
++      ...el,
++      a: { x: el.a.x - mx + cx, y: el.a.y - my + cy },
++      b: { x: el.b.x - mx + cx, y: el.b.y - my + cy },
++    };
++  }
++  const b = boxOf(el);
++  return { ...el, x: cx - b.w / 2, y: cy - b.h / 2 };
++}
+diff --git a/src/engine/paint.ts b/src/engine/paint.ts
+new file mode 100644
+index 0000000..55913b4
+--- /dev/null
++++ b/src/engine/paint.ts
+@@ -0,0 +1,102 @@
++import type { StrokeStyle } from "../model/model.ts";
++import type { AnimState } from "./anim.ts";
++import { clamp01 } from "./anim.ts";
++import type { Box, Pt } from "./geometry.ts";
++
++export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
++
++export function rgba(hex: string, alpha: number): string {
++  const h = hex.replace("#", "");
++  const full =
++    h.length === 3
++      ? h
++          .split("")
++          .map((c) => c + c)
++          .join("")
++      : h.slice(0, 6);
++  const n = Number.parseInt(full, 16);
++  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${clamp01(alpha)})`;
++}
++
++/** A two-color gradient across `box` at `angleDeg` (0 = left to right). */
++export function linearGradient(
++  ctx: Ctx,
++  box: Box,
++  angleDeg: number,
++  c1: string,
++  c2: string,
++): CanvasGradient {
++  const a = (angleDeg * Math.PI) / 180;
++  const cx = box.x + box.w / 2;
++  const cy = box.y + box.h / 2;
++  const r =
++    Math.abs((box.w / 2) * Math.cos(a)) + Math.abs((box.h / 2) * Math.sin(a));
++  const g = ctx.createLinearGradient(
++    cx - Math.cos(a) * r,
++    cy - Math.sin(a) * r,
++    cx + Math.cos(a) * r,
++    cy + Math.sin(a) * r,
++  );
++  g.addColorStop(0, c1);
++  g.addColorStop(1, c2);
++  return g;
++}
++
++/**
++ * Paints only the shadow of `paint` (the shape itself is drawn far off-canvas). This gives glows
++ * and drop shadows whose strength does not depend on the shape's own fill opacity.
++ */
++export function shadowOnly(
++  ctx: Ctx,
++  paint: () => void,
++  color: string,
++  blur: number,
++  ox = 0,
++  oy = 0,
++): void {
++  const m = ctx.getTransform();
++  const k = Math.hypot(m.a, m.b);
++  const OFF = 20000;
++  ctx.save();
++  ctx.shadowColor = color;
++  ctx.shadowBlur = blur * k;
++  ctx.shadowOffsetX = (OFF + ox) * k;
++  ctx.shadowOffsetY = oy * k;
++  ctx.translate(-OFF, 0);
++  ctx.fillStyle = "#000";
++  ctx.strokeStyle = "#000";
++  paint();
++  ctx.restore();
++}
++
++export function dashFor(style: StrokeStyle, width: number): number[] {
++  if (style === "dashed") return [width * 4, width * 3];
++  if (style === "dotted") return [0.01, width * 2.4];
++  return [];
++}
++
++/** Runs `draw` with the animation's offset, scale (around the box centre) and alpha applied. */
++export function withTransform(
++  ctx: Ctx,
++  box: Box,
++  st: AnimState,
++  draw: () => void,
++): void {
++  const cx = box.x + box.w / 2;
++  const cy = box.y + box.h / 2;
++  ctx.save();
++  ctx.globalAlpha *= st.alpha;
++  ctx.translate(cx + st.dx, cy + st.dy);
++  ctx.scale(st.scale, st.scale);
++  ctx.translate(-cx, -cy);
++  draw();
++  ctx.restore();
++}
++
++export function tracePolyline(ctx: Ctx, pts: Pt[]): void {
++  ctx.beginPath();
++  pts.forEach((p, i) => {
++    if (i === 0) ctx.moveTo(p.x, p.y);
++    else ctx.lineTo(p.x, p.y);
++  });
++}
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+new file mode 100644
+index 0000000..6aca659
+--- /dev/null
++++ b/src/engine/render.ts
+@@ -0,0 +1,47 @@
++import type { Background, Scene } from "../model/model.ts";
++import { type Ctx, linearGradient, rgba } from "./paint.ts";
++
++/**
++ * Draws one frame of a scene. Pure function of (scene, t): the editor, PNG, GIF and MP4 export
++ * all call this, so what you see while editing is exactly what gets exported.
++ */
++export function drawScene(ctx: Ctx, scene: Scene, t: number): void {
++  drawBackground(ctx, scene);
++  void t;
++}
++
++function drawBackground(ctx: Ctx, scene: Scene): void {
++  const bg: Background = scene.background;
++  const box = { x: 0, y: 0, w: scene.width, h: scene.height };
++  ctx.fillStyle = bg.gradient
++    ? linearGradient(ctx, box, bg.angle, bg.color, bg.color2)
++    : bg.color;
++  ctx.fillRect(0, 0, scene.width, scene.height);
++
++  if (bg.spotlight > 0) {
++    const r = Math.max(scene.width, scene.height) * 0.6;
++    const g = ctx.createRadialGradient(
++      scene.width / 2,
++      scene.height * 0.4,
++      0,
++      scene.width / 2,
++      scene.height * 0.4,
++      r,
++    );
++    g.addColorStop(0, rgba(bg.spotlightColor, bg.spotlight));
++    g.addColorStop(1, rgba(bg.spotlightColor, 0));
++    ctx.fillStyle = g;
++    ctx.fillRect(0, 0, scene.width, scene.height);
++  }
++
++  if (bg.dots && bg.dotGap >= 6) {
++    ctx.fillStyle = bg.dotColor;
++    for (let y = bg.dotGap / 2; y < scene.height; y += bg.dotGap) {
++      for (let x = bg.dotGap / 2; x < scene.width; x += bg.dotGap) {
++        ctx.beginPath();
++        ctx.arc(x, y, 1.6, 0, Math.PI * 2);
++        ctx.fill();
++      }
++    }
++  }
++}
+diff --git a/src/model/model.ts b/src/model/model.ts
+new file mode 100644
+index 0000000..b681302
+--- /dev/null
++++ b/src/model/model.ts
+@@ -0,0 +1,336 @@
++/**
++ * Scene model. A scene is plain JSON: everything the renderer needs to draw any frame.
++ * Elements are drawn in array order (last = on top).
++ */
++
++export type AnimKind =
++  | "none"
++  | "float"
++  | "pulse"
++  | "breathe"
++  | "fade-in"
++  | "pop-in"
++  | "slide-up"
++  | "draw";
++
++export type Anim = {
++  kind: AnimKind;
++  /** px for float/slide-up, % for pulse/breathe. */
++  amount: number;
++  /** Full cycles per loop; integers keep GIF/MP4 loops seamless. */
++  cycles: number;
++  /** Seconds; phase offset for loops, start time for entries. */
++  delay: number;
++};
++
++export type Glow = {
++  enabled: boolean;
++  color: string;
++  blur: number;
++  /** Number of stacked passes, 1–4. */
++  strength: number;
++};
++
++export type Shadow = {
++  enabled: boolean;
++  color: string;
++  opacity: number;
++  blur: number;
++  x: number;
++  y: number;
++};
++
++export type Fill = {
++  color: string;
++  color2: string;
++  gradient: boolean;
++  angle: number;
++  opacity: number;
++};
++
++export type StrokeStyle = "solid" | "dashed" | "dotted";
++
++export type RectEl = {
++  id: string;
++  kind: "rect";
++  name: string;
++  x: number;
++  y: number;
++  w: number;
++  h: number;
++  radius: number;
++  fill: Fill;
++  border: {
++    width: number;
++    color: string;
++    opacity: number;
++    style: StrokeStyle;
++    /** Marching border; dash periods per loop, 0 = still. */
++    flow: number;
++  };
++  borderGlow: Glow;
++  bgGlow: Glow;
++  shadow: Shadow;
++  /** Text drawn inside the rectangle; moves and animates with it. */
++  label: {
++    text: string;
++    font: string;
++    size: number;
++    weight: number;
++    color: string;
++    align: "left" | "center" | "right";
++    padding: number;
++  };
++  anim: Anim;
++};
++
++export type TextEl = {
++  id: string;
++  kind: "text";
++  name: string;
++  x: number;
++  y: number;
++  text: string;
++  font: string;
++  size: number;
++  weight: number;
++  italic: boolean;
++  color: string;
++  color2: string;
++  gradient: boolean;
++  align: "left" | "center" | "right";
++  lineHeight: number;
++  letterSpacing: number;
++  opacity: number;
++  glow: Glow;
++  anim: Anim;
++};
++
++export type Endpoint = { x: number; y: number; attach?: string };
++
++export type FlowKind = "none" | "ants" | "pulse" | "comet";
++
++export type LineEl = {
++  id: string;
++  kind: "line";
++  name: string;
++  a: Endpoint;
++  b: Endpoint;
++  /** Perpendicular offset of the curve's control point, px. */
++  bend: number;
++  width: number;
++  color: string;
++  opacity: number;
++  style: StrokeStyle;
++  arrowStart: boolean;
++  arrowEnd: boolean;
++  glow: Glow;
++  flow: {
++    kind: FlowKind;
++    color: string;
++    /** Laps (pulse/comet) or dash periods (ants) per loop. */
++    speed: number;
++    count: number;
++    size: number;
++    reverse: boolean;
++  };
++  anim: Anim;
++};
++
++export type Element = RectEl | TextEl | LineEl;
++export type ElementKind = Element["kind"];
++
++export type Background = {
++  color: string;
++  color2: string;
++  gradient: boolean;
++  angle: number;
++  dots: boolean;
++  dotColor: string;
++  dotGap: number;
++  /** Soft radial light in the middle, 0 = off. */
++  spotlight: number;
++  spotlightColor: string;
++};
++
++export type Scene = {
++  width: number;
++  height: number;
++  /** Loop length, seconds. */
++  duration: number;
++  fps: number;
++  background: Background;
++  elements: Element[];
++};
++
++export const FONTS = [
++  "Inter",
++  "Space Grotesk",
++  "Poppins",
++  "JetBrains Mono",
++  "Caveat",
++  "Press Start 2P",
++] as const;
++
++export const SIZE_PRESETS = [
++  { label: "Cuadrado 1080×1080", width: 1080, height: 1080 },
++  { label: "Vertical 1080×1350", width: 1080, height: 1350 },
++  { label: "Story 1080×1920", width: 1080, height: 1920 },
++  { label: "Horizontal 1920×1080", width: 1920, height: 1080 },
++  { label: "LinkedIn 1200×627", width: 1200, height: 627 },
++];
++
++export const ANIMS_BY_KIND: Record<ElementKind, AnimKind[]> = {
++  rect: ["none", "float", "pulse", "breathe", "fade-in", "pop-in", "slide-up"],
++  text: ["none", "float", "pulse", "breathe", "fade-in", "pop-in", "slide-up"],
++  line: ["none", "fade-in", "draw"],
++};
++
++export const ANIM_LABELS: Record<AnimKind, string> = {
++  none: "Ninguna",
++  float: "Flotar",
++  pulse: "Pulso (escala)",
++  breathe: "Brillo que respira",
++  "fade-in": "Aparecer",
++  "pop-in": "Pop",
++  "slide-up": "Subir",
++  draw: "Dibujarse",
++};
++
++export function newId(): string {
++  return Math.random().toString(36).slice(2, 10);
++}
++
++const noAnim: Anim = { kind: "none", amount: 12, cycles: 1, delay: 0 };
++const noGlow = (color: string): Glow => ({
++  enabled: false,
++  color,
++  blur: 24,
++  strength: 1,
++});
++
++export function defaultRect(): RectEl {
++  return {
++    id: newId(),
++    kind: "rect",
++    name: "Rectángulo",
++    x: 0,
++    y: 0,
++    w: 280,
++    h: 180,
++    radius: 24,
++    fill: {
++      color: "#13254a",
++      color2: "#0b1630",
++      gradient: true,
++      angle: 90,
++      opacity: 0.9,
++    },
++    border: {
++      width: 2,
++      color: "#3b82f6",
++      opacity: 0.8,
++      style: "solid",
++      flow: 0,
++    },
++    borderGlow: { ...noGlow("#3b82f6"), enabled: true, blur: 18 },
++    bgGlow: noGlow("#2563eb"),
++    shadow: {
++      enabled: true,
++      color: "#000000",
++      opacity: 0.5,
++      blur: 40,
++      x: 0,
++      y: 16,
++    },
++    label: {
++      text: "",
++      font: "Inter",
++      size: 28,
++      weight: 600,
++      color: "#ffffff",
++      align: "center",
++      padding: 24,
++    },
++    anim: { ...noAnim },
++  };
++}
++
++export function defaultText(): TextEl {
++  return {
++    id: newId(),
++    kind: "text",
++    name: "Texto",
++    x: 0,
++    y: 0,
++    text: "Texto",
++    font: "Inter",
++    size: 64,
++    weight: 800,
++    italic: false,
++    color: "#ffffff",
++    color2: "#60a5fa",
++    gradient: false,
++    align: "left",
++    lineHeight: 1.15,
++    letterSpacing: 0,
++    opacity: 1,
++    glow: noGlow("#60a5fa"),
++    anim: { ...noAnim },
++  };
++}
++
++export function defaultLine(): LineEl {
++  return {
++    id: newId(),
++    kind: "line",
++    name: "Línea",
++    a: { x: 0, y: 0 },
++    b: { x: 260, y: 0 },
++    bend: 0,
++    width: 3,
++    color: "#3b82f6",
++    opacity: 0.6,
++    style: "solid",
++    arrowStart: false,
++    arrowEnd: true,
++    glow: { ...noGlow("#3b82f6"), enabled: true, blur: 12 },
++    flow: {
++      kind: "pulse",
++      color: "#93c5fd",
++      speed: 2,
++      count: 2,
++      size: 5,
++      reverse: false,
++    },
++    anim: { ...noAnim },
++  };
++}
++
++export function defaultScene(): Scene {
++  return {
++    width: 1080,
++    height: 1080,
++    duration: 4,
++    fps: 30,
++    background: {
++      color: "#0a1430",
++      color2: "#030712",
++      gradient: true,
++      angle: 120,
++      dots: true,
++      dotColor: "#1e3a8a",
++      dotGap: 36,
++      spotlight: 0.35,
++      spotlightColor: "#1d4ed8",
++    },
++    elements: [],
++  };
++}
++
++/** Deep copy with a fresh id. */
++export function cloneElement<T extends Element>(el: T): T {
++  const copy = structuredClone(el);
++  copy.id = newId();
++  return copy;
++}
+diff --git a/src/types/gifenc.d.ts b/src/types/gifenc.d.ts
+new file mode 100644
+index 0000000..f6f7966
+--- /dev/null
++++ b/src/types/gifenc.d.ts
+@@ -0,0 +1,39 @@
++// Types for gifenc 1.x (the package ships none). API: https://github.com/mattdesl/gifenc
++declare module "gifenc" {
++  export type Palette = number[][];
++  export type GifFrameOptions = {
++    palette?: Palette;
++    /** Frame delay in milliseconds (stored in centiseconds). */
++    delay?: number;
++    /** 0 = loop forever, -1 = play once, n = repeat n times. */
++    repeat?: number;
++    transparent?: boolean;
++    transparentIndex?: number;
++    first?: boolean;
++  };
++  export type GifEncoderInstance = {
++    writeFrame(
++      index: Uint8Array,
++      width: number,
++      height: number,
++      options?: GifFrameOptions,
++    ): void;
++    finish(): void;
++    bytes(): Uint8Array;
++    bytesView(): Uint8Array;
++  };
++  export function GIFEncoder(options?: {
++    auto?: boolean;
++    initialCapacity?: number;
++  }): GifEncoderInstance;
++  export function quantize(
++    rgba: Uint8Array | Uint8ClampedArray,
++    maxColors: number,
++    options?: { format?: "rgb565" | "rgb444" | "rgba4444" },
++  ): Palette;
++  export function applyPalette(
++    rgba: Uint8Array | Uint8ClampedArray,
++    palette: Palette,
++    format?: "rgb565" | "rgb444" | "rgba4444",
++  ): Uint8Array;
++}

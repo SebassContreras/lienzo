@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+
+# Local env
+.env*
+
+# spectrace open task
+.spectrace/state.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.muxel/

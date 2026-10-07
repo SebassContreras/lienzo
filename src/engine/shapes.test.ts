@@ -1,0 +1,200 @@
+import { describe, expect, it } from "vitest";
+import {
+  defaultEllipse,
+  defaultGroup,
+  defaultLine,
+  defaultRect,
+  defaultScene,
+  type Element,
+  type GroupEl,
+  type LineEl,
+  type Scene,
+} from "../model/model.ts";
+import {
+  clipToEllipse,
+  hitTest,
+  indexById,
+  placeChild,
+  resolveLine,
+} from "./geometry.ts";
+import { groupElements, ungroupElement } from "./groups.ts";
+import { ICON_NAMES, iconNode, iconShapes } from "./icon-shapes.ts";
+
+const scene = (elements: Element[]): Scene => ({
+  ...defaultScene(),
+  elements,
+});
+
+describe("ellipse attachment", () => {
+  it("a circle's attached end sits on its edge, pushed out by the gap", () => {
+    const dot = { ...defaultEllipse(), x: 0, y: 0, w: 100, h: 100 };
+    const line = defaultLine();
+    line.a = { x: 0, y: 0, attach: dot.id };
+    line.b = { x: 300, y: 300 };
+    const r = resolveLine(line, new Map<string, Element>([[dot.id, dot]]));
+    const gap = 8 + line.width;
+    const d = (50 + gap) / Math.SQRT2;
+    // on the diagonal the box corner would be farther out; the circle is used instead
+    expect(r.a.x).toBeCloseTo(50 + d, 6);
+    expect(r.a.y).toBeCloseTo(50 + d, 6);
+  });
+
+  it("follows a wide ellipse's own radius in each direction", () => {
+    const box = { x: 0, y: 0, w: 200, h: 100 };
+    expect(clipToEllipse(box, { x: 100, y: -500 }, 0)).toEqual({
+      x: 100,
+      y: 0,
+    });
+    const side = clipToEllipse(box, { x: 900, y: 50 }, 10);
+    expect(side.x).toBeCloseTo(210, 6);
+    expect(side.y).toBeCloseTo(50, 6);
+  });
+
+  it("a target at the end's own centre keeps the centre", () => {
+    const box = { x: 0, y: 0, w: 40, h: 40 };
+    expect(clipToEllipse(box, { x: 20, y: 20 }, 5)).toEqual({ x: 20, y: 20 });
+  });
+});
+
+describe("group coordinate mapping", () => {
+  /** A 100×50 content space stretched onto a 200×150 box at (400, 300). */
+  function stretched(children: Element[]): GroupEl {
+    return {
+      ...defaultGroup(),
+      x: 400,
+      y: 300,
+      w: 200,
+      h: 150,
+      cw: 100,
+      ch: 50,
+      children,
+    };
+  }
+
+  it("places a child by the group's offset and stretch", () => {
+    const tile = { ...defaultRect(), x: 10, y: 20, w: 30, h: 10 };
+    expect(placeChild(tile, stretched([tile]))).toMatchObject({
+      x: 420,
+      y: 360,
+      w: 60,
+      h: 30,
+    });
+  });
+
+  it("maps both ends of a line inside", () => {
+    const line: LineEl = {
+      ...defaultLine(),
+      a: { x: 0, y: 0 },
+      b: { x: 100, y: 50 },
+    };
+    const placed = placeChild(line, stretched([line])) as LineEl;
+    expect(placed.a).toEqual({ x: 400, y: 300 });
+    expect(placed.b).toEqual({ x: 600, y: 450 });
+  });
+
+  it("indexes children, nested ones too, in canvas coordinates", () => {
+    const deep = { ...defaultRect(), x: 0, y: 0, w: 10, h: 10 };
+    const inner: GroupEl = {
+      ...defaultGroup(),
+      x: 50,
+      y: 0,
+      w: 50,
+      h: 50,
+      cw: 50,
+      ch: 50,
+      children: [deep],
+    };
+    const outer = stretched([inner]);
+    const byId = indexById(scene([outer]));
+    expect(byId.get(inner.id)).toMatchObject({
+      x: 500,
+      y: 300,
+      w: 100,
+      h: 150,
+    });
+    expect(byId.get(deep.id)).toMatchObject({ x: 500, y: 300, w: 20, h: 30 });
+  });
+
+  it("a line outside follows an element inside the group", () => {
+    const tile = { ...defaultRect(), x: 0, y: 0, w: 50, h: 50 };
+    const group = stretched([tile]);
+    const line = defaultLine();
+    line.a = { x: 0, y: 0, attach: tile.id };
+    line.b = { x: 900, y: 375 };
+    const r = resolveLine(line, indexById(scene([group, line])));
+    // tile placed at (400, 300) 100×150: its right edge is x = 500, its centre y = 375
+    expect(r.a.x).toBeCloseTo(500 + 8 + line.width, 6);
+    expect(r.a.y).toBeCloseTo(375, 6);
+  });
+
+  it("a click inside the group's box selects the group", () => {
+    const tile = { ...defaultRect(), x: 0, y: 0, w: 10, h: 10 };
+    const group = stretched([tile]);
+    const s = scene([group]);
+    expect(hitTest(s, { x: 590, y: 440 }, 4)?.id).toBe(group.id);
+    expect(hitTest(s, { x: 390, y: 290 }, 4)).toBeUndefined();
+  });
+
+  it("grouping then ungrouping a resized group scales the children in place", () => {
+    const a = { ...defaultRect(), x: 100, y: 100, w: 100, h: 50 };
+    const b = { ...defaultEllipse(), x: 300, y: 200, w: 80, h: 80 };
+    const { scene: grouped, group } = groupElements(scene([a, b]), [
+      a.id,
+      b.id,
+    ]);
+    if (!group) throw new Error("no group");
+    expect(group).toMatchObject({ x: 100, y: 100, w: 280, h: 180 });
+    const bigger = { ...group, w: group.w * 2, h: group.h * 2 };
+    const { scene: flat } = ungroupElement(
+      { ...grouped, elements: [bigger] },
+      group.id,
+    );
+    expect(flat.elements).toMatchObject([
+      { id: a.id, x: 100, y: 100, w: 200, h: 100 },
+      { id: b.id, x: 500, y: 300, w: 160, h: 160 },
+    ]);
+  });
+});
+
+describe("icon node parsing", () => {
+  it("turns each SVG tag into a shape and skips unknown ones", () => {
+    const shapes = iconShapes([
+      ["path", { d: "M1 1L5 5" }],
+      ["circle", { cx: 12, cy: "12", r: 3 }],
+      ["ellipse", { cx: 1, cy: 2, rx: 3, ry: 4 }],
+      ["rect", { x: 2, y: 3, width: 20, height: 18, rx: 2 }],
+      ["line", { x1: 0, y1: 1, x2: 2, y2: 3 }],
+      ["polyline", { points: "1,2 3,4 5,6" }],
+      ["polygon", { points: "0 0 4 0 2 3" }],
+      ["text", { x: 1 }],
+    ]);
+    expect(shapes).toEqual([
+      { type: "path", d: "M1 1L5 5" },
+      { type: "circle", cx: 12, cy: 12, r: 3 },
+      { type: "ellipse", cx: 1, cy: 2, rx: 3, ry: 4 },
+      { type: "rect", x: 2, y: 3, w: 20, h: 18, r: 2 },
+      { type: "line", x1: 0, y1: 1, x2: 2, y2: 3 },
+      { type: "poly", points: [1, 2, 3, 4, 5, 6], closed: false },
+      { type: "poly", points: [0, 0, 4, 0, 2, 3], closed: true },
+    ]);
+  });
+
+  it("missing numbers read as 0 and a path with no data is skipped", () => {
+    expect(
+      iconShapes([
+        ["circle", { r: 4 }],
+        ["path", {}],
+      ]),
+    ).toEqual([{ type: "circle", cx: 0, cy: 0, r: 4 }]);
+  });
+
+  it("knows lucide's icons by name, including the ones the presets use", () => {
+    expect(ICON_NAMES).toEqual([...ICON_NAMES].sort());
+    for (const name of ["Wrench", "Sparkles", "Zap"]) {
+      expect(ICON_NAMES).toContain(name);
+      expect(iconShapes(iconNode(name) ?? []).length).toBeGreaterThan(0);
+    }
+    expect(iconNode("NoSuchIcon")).toBeUndefined();
+    expect(iconNode("constructor")).toBeUndefined();
+  });
+});

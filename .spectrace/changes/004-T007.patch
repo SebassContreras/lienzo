@@ -1,0 +1,326 @@
+diff --git a/src/demo.ts b/src/demo.ts
+index 403a712..b137372 100644
+--- a/src/demo.ts
++++ b/src/demo.ts
+@@ -1,5 +1,4 @@
+ import {
+-  cloneElement,
+   defaultLine,
+   defaultRect,
+   defaultScene,
+@@ -9,12 +8,15 @@ import {
+   type RectEl,
+   type Scene,
+ } from "./model/model.ts";
+-import { BUILT_IN_PRESETS } from "./presets/built-in.ts";
++import { BUILT_IN_RECIPES } from "./presets/recipes.ts";
++import { resolvePreset } from "./presets/resolve.ts";
+ 
+ function fromPreset(name: string): Element {
+-  const preset = BUILT_IN_PRESETS.find((p) => p.name === name);
+-  if (!preset) throw new Error(`unknown preset ${name}`);
+-  return cloneElement(preset.element);
++  const recipe = BUILT_IN_RECIPES.find((r) => r.name === name);
++  if (!recipe) throw new Error(`unknown preset ${name}`);
++  const resolved = resolvePreset(recipe);
++  if ("error" in resolved) throw new Error(resolved.error);
++  return resolved.element;
+ }
+ 
+ function card(
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index b50026c..2b7fa32 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -35,9 +35,14 @@ import {
+   type Element,
+   type Scene,
+ } from "../model/model.ts";
+-import { BUILT_IN_PRESETS, type Preset } from "../presets/built-in.ts";
++import { BUILT_IN_RECIPES } from "../presets/recipes.ts";
++import { resolvePreset } from "../presets/resolve.ts";
+ import { SceneFiles } from "../presets/scene-files.tsx";
+-import { loadUserPresets, saveUserPreset } from "../presets/store.ts";
++import {
++  loadUserPresets,
++  type Preset,
++  saveUserPreset,
++} from "../presets/store.ts";
+ import { ElementInspector, SceneInspector } from "./inspector.tsx";
+ import { Library, type LibraryItem } from "./library.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
+@@ -80,6 +85,12 @@ const BASICS: LibraryItem[] = [
+ ];
+ const BASIC_ICONS = [Square, Type, Spline];
+ 
++/** Built-in presets, each resolved once from its recipe; dropping one adds a copy. */
++const BUILT_INS: LibraryItem[] = BUILT_IN_RECIPES.flatMap((recipe) => {
++  const r = resolvePreset(recipe);
++  return "element" in r ? [{ name: recipe.name, element: r.element }] : [];
++});
++
+ export function App() {
+   const [scene, setSceneState] = useState<Scene>(loadInitialScene);
+   const sceneRef = useRef(scene);
+@@ -347,7 +358,7 @@ export function App() {
+         />
+         <Library
+           title="Prediseñados"
+-          items={BUILT_IN_PRESETS}
++          items={BUILT_INS}
+           background={scene.background}
+           onAdd={(item) => addElement(item.element)}
+         />
+diff --git a/src/presets/built-in.ts b/src/presets/built-in.ts
+deleted file mode 100644
+index 6b01b32..0000000
+--- a/src/presets/built-in.ts
++++ /dev/null
+@@ -1,220 +0,0 @@
+-import {
+-  defaultLine,
+-  defaultRect,
+-  defaultText,
+-  type Element,
+-} from "../model/model.ts";
+-
+-/** A saved, pre-configured element: dragging it onto the canvas drops a copy. */
+-export type Preset = { name: string; element: Element; builtIn?: boolean };
+-
+-function rect(patch: (el: ReturnType<typeof defaultRect>) => void) {
+-  const el = defaultRect();
+-  patch(el);
+-  return el;
+-}
+-function text(patch: (el: ReturnType<typeof defaultText>) => void) {
+-  const el = defaultText();
+-  patch(el);
+-  return el;
+-}
+-function line(patch: (el: ReturnType<typeof defaultLine>) => void) {
+-  const el = defaultLine();
+-  patch(el);
+-  return el;
+-}
+-
+-export const BUILT_IN_PRESETS: Preset[] = [
+-  {
+-    name: "Tarjeta neón",
+-    element: rect((el) => {
+-      el.name = "Tarjeta neón";
+-      el.label.text = "MCP Server";
+-      el.bgGlow = { enabled: true, color: "#1d4ed8", blur: 50, strength: 1 };
+-      el.borderGlow = {
+-        enabled: true,
+-        color: "#60a5fa",
+-        blur: 16,
+-        strength: 2,
+-      };
+-      el.anim = { kind: "float", amount: 10, cycles: 1, delay: 0 };
+-    }),
+-  },
+-  {
+-    name: "Tarjeta glass",
+-    element: rect((el) => {
+-      el.name = "Tarjeta glass";
+-      el.label.text = "Cliente";
+-      el.fill = {
+-        color: "#ffffff",
+-        color2: "#93c5fd",
+-        gradient: true,
+-        angle: 135,
+-        opacity: 0.08,
+-      };
+-      el.border = {
+-        width: 1.5,
+-        color: "#ffffff",
+-        opacity: 0.25,
+-        style: "solid",
+-        flow: 0,
+-      };
+-      el.borderGlow.enabled = false;
+-    }),
+-  },
+-  {
+-    name: "Tarjeta borde animado",
+-    element: rect((el) => {
+-      el.name = "Tarjeta borde animado";
+-      el.label.text = "Tool";
+-      el.fill.opacity = 0.6;
+-      el.border = {
+-        width: 2.5,
+-        color: "#22d3ee",
+-        opacity: 1,
+-        style: "dashed",
+-        flow: 4,
+-      };
+-      el.borderGlow = {
+-        enabled: true,
+-        color: "#22d3ee",
+-        blur: 14,
+-        strength: 1,
+-      };
+-    }),
+-  },
+-  {
+-    name: "Pill",
+-    element: rect((el) => {
+-      el.name = "Pill";
+-      el.w = 420;
+-      el.h = 64;
+-      el.radius = 32;
+-      el.label = { ...el.label, text: "🚀 Cómo funciona MCP", size: 24 };
+-      el.fill = {
+-        color: "#1d4ed8",
+-        color2: "#1e40af",
+-        gradient: false,
+-        angle: 0,
+-        opacity: 0.3,
+-      };
+-      el.border.color = "#60a5fa";
+-      el.borderGlow.enabled = false;
+-      el.shadow.enabled = false;
+-    }),
+-  },
+-  {
+-    name: "Botón CTA",
+-    element: rect((el) => {
+-      el.name = "Botón CTA";
+-      el.w = 220;
+-      el.h = 72;
+-      el.radius = 36;
+-      el.label = { ...el.label, text: "+ Seguir", size: 26, weight: 700 };
+-      el.fill = {
+-        color: "#3b82f6",
+-        color2: "#2563eb",
+-        gradient: true,
+-        angle: 90,
+-        opacity: 1,
+-      };
+-      el.border.width = 0;
+-      el.bgGlow = { enabled: true, color: "#3b82f6", blur: 30, strength: 1 };
+-      el.anim = { kind: "pulse", amount: 6, cycles: 2, delay: 0 };
+-    }),
+-  },
+-  {
+-    name: "Título",
+-    element: text((el) => {
+-      el.name = "Título";
+-      el.text = "Cómo funciona\nun MCP";
+-      el.size = 80;
+-    }),
+-  },
+-  {
+-    name: "Título degradado",
+-    element: text((el) => {
+-      el.name = "Título degradado";
+-      el.text = "Model Context Protocol";
+-      el.size = 64;
+-      el.gradient = true;
+-      el.color = "#3b82f6";
+-      el.color2 = "#22d3ee";
+-    }),
+-  },
+-  {
+-    name: "Párrafo",
+-    element: text((el) => {
+-      el.name = "Párrafo";
+-      el.text =
+-        "El cliente pide, el servidor MCP\nexpone herramientas y datos.";
+-      el.size = 30;
+-      el.weight = 400;
+-      el.color = "#cbd5e1";
+-      el.lineHeight = 1.4;
+-    }),
+-  },
+-  {
+-    name: "Manuscrito",
+-    element: text((el) => {
+-      el.name = "Manuscrito";
+-      el.text = "¡así de simple!";
+-      el.font = "Caveat";
+-      el.size = 48;
+-      el.weight = 700;
+-      el.color = "#60a5fa";
+-    }),
+-  },
+-  {
+-    name: "Pixel",
+-    element: text((el) => {
+-      el.name = "Pixel";
+-      el.text = "REQUEST 200 OK";
+-      el.font = "Press Start 2P";
+-      el.size = 28;
+-      el.weight = 400;
+-      el.color = "#4ade80";
+-      el.glow = { enabled: true, color: "#22c55e", blur: 12, strength: 1 };
+-    }),
+-  },
+-  {
+-    name: "Conexión con pulsos",
+-    element: line((el) => {
+-      el.name = "Conexión con pulsos";
+-    }),
+-  },
+-  {
+-    name: "Hormigas",
+-    element: line((el) => {
+-      el.name = "Hormigas";
+-      el.opacity = 0.25;
+-      el.glow.enabled = false;
+-      el.flow = {
+-        kind: "ants",
+-        color: "#22d3ee",
+-        speed: 12,
+-        count: 1,
+-        size: 5,
+-        reverse: false,
+-      };
+-    }),
+-  },
+-  {
+-    name: "Cometa curvo",
+-    element: line((el) => {
+-      el.name = "Cometa curvo";
+-      el.bend = -60;
+-      el.opacity = 0.3;
+-      el.flow = {
+-        kind: "comet",
+-        color: "#a78bfa",
+-        speed: 2,
+-        count: 1,
+-        size: 6,
+-        reverse: false,
+-      };
+-      el.color = "#8b5cf6";
+-      el.glow.color = "#8b5cf6";
+-    }),
+-  },
+-];
+diff --git a/src/presets/recipes.test.ts b/src/presets/recipes.test.ts
+index 3e38c4e..33dd292 100644
+--- a/src/presets/recipes.test.ts
++++ b/src/presets/recipes.test.ts
+@@ -6,7 +6,7 @@ import { resolvePreset } from "./resolve.ts";
+ 
+ /**
+  * `built-in.fixture.json` holds, in library order and without ids, the 13 elements the
+- * hand-written `built-in.ts` produced before the presets became recipes.
++ * hand-written presets module produced before the presets became recipes.
+  */
+ describe("built-in recipes", () => {
+   it("are the 13 presets, in the same order", () => {
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index a46b4dc..e53b7d9 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -1,5 +1,7 @@
+-import type { Scene } from "../model/model.ts";
+-import type { Preset } from "./built-in.ts";
++import type { Element, Scene } from "../model/model.ts";
++
++/** A saved, pre-configured element: dragging it onto the canvas drops a copy. */
++export type Preset = { name: string; element: Element };
+ 
+ async function getJson<T>(url: string): Promise<T> {
+   const res = await fetch(url);

@@ -1,0 +1,153 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 3465f16..fff3bc5 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -346,19 +346,19 @@ export function App() {
+           items={BASICS}
+           icons={BASIC_ICONS}
+           background={scene.background}
+-          onAdd={(item) => addElement(item.element)}
++          onAdd={(element) => addElement(element)}
+         />
+         <Library
+           title="Prediseñados"
+           items={BUILT_INS}
+           background={scene.background}
+-          onAdd={(item) => addElement(item.element)}
++          onAdd={(element) => addElement(element)}
+         />
+         <Library
+           title="Mis presets"
+           items={userPresets}
+           background={scene.background}
+-          onAdd={(item) => addElement(item.element)}
++          onAdd={(element) => addElement(element)}
+           empty="Selecciona un elemento y usa «Guardar como preset»."
+         />
+       </aside>
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+index af34676..1caa647 100644
+--- a/src/editor/library.tsx
++++ b/src/editor/library.tsx
+@@ -1,4 +1,4 @@
+-import type { LucideIcon } from "lucide-react";
++import { type LucideIcon, TriangleAlert } from "lucide-react";
+ import { useEffect, useRef } from "react";
+ import { boxOf, centerOn } from "../engine/geometry.ts";
+ import { drawScene } from "../engine/render.ts";
+@@ -7,15 +7,20 @@ import type { PresetRecipe } from "../model/preset.ts";
+ import { resolvePreset } from "../presets/resolve.ts";
+ import { PRESET_MIME } from "./stage.tsx";
+ 
+-/** Anything the library can list: a name and the element dropped on the canvas. */
+-export type LibraryItem = { name: string; element: Element };
++/**
++ * Anything the library can list: a name and the element dropped on the canvas, or, for a
++ * recipe that cannot be built, the reason why.
++ */
++export type LibraryItem =
++  | { name: string; element: Element }
++  | { name: string; error: string };
+ 
+ /** Library entries for recipes, each resolved once; dropping one adds a copy. */
+ export function recipeItems(recipes: PresetRecipe[]): LibraryItem[] {
+-  return recipes.flatMap((recipe) => {
+-    const r = resolvePreset(recipe);
+-    return "element" in r ? [{ name: recipe.name, element: r.element }] : [];
+-  });
++  return recipes.map((recipe) => ({
++    name: recipe.name,
++    ...resolvePreset(recipe),
++  }));
+ }
+ 
+ export function Library({
+@@ -31,7 +36,7 @@ export function Library({
+   /** Shows an icon per item instead of a canvas thumbnail. */
+   icons?: LucideIcon[];
+   background: Scene["background"];
+-  onAdd: (item: LibraryItem) => void;
++  onAdd: (element: Element) => void;
+   empty?: string;
+ }) {
+   return (
+@@ -41,6 +46,24 @@ export function Library({
+       <div className={icons ? "basics" : "grid"}>
+         {items.map((item, i) => {
+           const Icon = icons?.[i];
++          if ("error" in item) {
++            return (
++              <button
++                type="button"
++                key={item.name}
++                className="item broken"
++                disabled
++                title={item.error}
++              >
++                <div className="broken-reason">
++                  <TriangleAlert size={16} />
++                  {item.error}
++                </div>
++                <span>{item.name}</span>
++              </button>
++            );
++          }
++          const { element } = item;
+           return (
+             <button
+               type="button"
+@@ -49,18 +72,15 @@ export function Library({
+               draggable
+               title="Arrastra al lienzo o haz clic para añadir al centro"
+               onDragStart={(e) => {
+-                e.dataTransfer.setData(
+-                  PRESET_MIME,
+-                  JSON.stringify(item.element),
+-                );
++                e.dataTransfer.setData(PRESET_MIME, JSON.stringify(element));
+                 e.dataTransfer.effectAllowed = "copy";
+               }}
+-              onClick={() => onAdd(item)}
++              onClick={() => onAdd(element)}
+             >
+               {Icon ? (
+                 <Icon size={18} />
+               ) : (
+-                <Thumb element={item.element} background={background} />
++                <Thumb element={element} background={background} />
+               )}
+               <span>{item.name}</span>
+             </button>
+diff --git a/src/styles.css b/src/styles.css
+index 0be994d..d833b7f 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -149,6 +149,28 @@ textarea {
+   font-size: 11px;
+   cursor: grab;
+ }
++.library .grid .item.broken {
++  cursor: not-allowed;
++  opacity: 0.8;
++  border-color: #7f1d1d;
++}
++.library .broken-reason {
++  display: flex;
++  flex-direction: column;
++  align-items: center;
++  justify-content: center;
++  gap: 4px;
++  width: 116px;
++  height: 72px;
++  padding: 4px;
++  border-radius: 4px;
++  background: #1f1315;
++  color: #fca5a5;
++  font-size: 10px;
++  line-height: 1.25;
++  text-align: center;
++  overflow: hidden;
++}
+ .library .grid canvas {
+   border-radius: 4px;
+   display: block;

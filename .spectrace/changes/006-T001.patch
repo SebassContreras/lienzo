@@ -1,0 +1,305 @@
+diff --git a/src/demo.ts b/src/demo.ts
+index b137372..949d0d9 100644
+--- a/src/demo.ts
++++ b/src/demo.ts
+@@ -9,12 +9,12 @@ import {
+   type Scene,
+ } from "./model/model.ts";
+ import { BUILT_IN_RECIPES } from "./presets/recipes.ts";
+-import { resolvePreset } from "./presets/resolve.ts";
++import { resolveElement } from "./presets/resolve.ts";
+ 
+ function fromPreset(name: string): Element {
+   const recipe = BUILT_IN_RECIPES.find((r) => r.name === name);
+   if (!recipe) throw new Error(`unknown preset ${name}`);
+-  const resolved = resolvePreset(recipe);
++  const resolved = resolveElement(recipe);
+   if ("error" in resolved) throw new Error(resolved.error);
+   return resolved.element;
+ }
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+index 1caa647..f7bd800 100644
+--- a/src/editor/library.tsx
++++ b/src/editor/library.tsx
+@@ -4,7 +4,7 @@ import { boxOf, centerOn } from "../engine/geometry.ts";
+ import { drawScene } from "../engine/render.ts";
+ import { defaultScene, type Element, type Scene } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+-import { resolvePreset } from "../presets/resolve.ts";
++import { resolveElement } from "../presets/resolve.ts";
+ import { PRESET_MIME } from "./stage.tsx";
+ 
+ /**
+@@ -19,7 +19,7 @@ export type LibraryItem =
+ export function recipeItems(recipes: PresetRecipe[]): LibraryItem[] {
+   return recipes.map((recipe) => ({
+     name: recipe.name,
+-    ...resolvePreset(recipe),
++    ...resolveElement(recipe),
+   }));
+ }
+ 
+diff --git a/src/model/model.ts b/src/model/model.ts
+index 7d00c96..bedeeac 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -321,23 +321,28 @@ export function defaultElement(kind: ElementKind): Element {
+   return DEFAULTS[kind]();
+ }
+ 
++/** The background of a new scene ("Azul noche"). */
++export function defaultBackground(): Background {
++  return {
++    color: "#0a1430",
++    color2: "#030712",
++    gradient: true,
++    angle: 120,
++    dots: true,
++    dotColor: "#1e3a8a",
++    dotGap: 36,
++    spotlight: 0.35,
++    spotlightColor: "#1d4ed8",
++  };
++}
++
+ export function defaultScene(): Scene {
+   return {
+     width: 1080,
+     height: 1080,
+     duration: 4,
+     fps: 30,
+-    background: {
+-      color: "#0a1430",
+-      color2: "#030712",
+-      gradient: true,
+-      angle: 120,
+-      dots: true,
+-      dotColor: "#1e3a8a",
+-      dotGap: 36,
+-      spotlight: 0.35,
+-      spotlightColor: "#1d4ed8",
+-    },
++    background: defaultBackground(),
+     elements: [],
+   };
+ }
+diff --git a/src/model/preset.ts b/src/model/preset.ts
+index 7415bdd..205c6e8 100644
+--- a/src/model/preset.ts
++++ b/src/model/preset.ts
+@@ -1,4 +1,4 @@
+-import type { Element, ElementKind } from "./model.ts";
++import type { Background, Element, ElementKind } from "./model.ts";
+ 
+ /** Optional at every depth: the values a recipe sets on top of its traits. */
+ export type DeepPartial<T> = T extends object
+@@ -10,14 +10,17 @@ export type TraitUse =
+   | string
+   | ({ use: string } & Record<string, string | number | boolean>);
+ 
++/** What a recipe builds: an element of some kind, or a scene background. */
++export type PresetKind = ElementKind | "background";
++
+ /**
+- * A preset as stored in JSON: which kind of element it builds, the traits applied in order
++ * A preset as stored in JSON: which kind of element (or background) it builds, the traits applied in order
+  * on top of that kind's default, and the few values that are its own. It never holds a full
+  * element; `resolvePreset` builds one.
+  */
+ export type PresetRecipe = {
+   name: string;
+-  kind: ElementKind;
++  kind: PresetKind;
+   traits: TraitUse[];
+-  set?: DeepPartial<Element>;
++  set?: DeepPartial<Element> | DeepPartial<Background>;
+ };
+diff --git a/src/presets/recipes.test.ts b/src/presets/recipes.test.ts
+index 33dd292..f49b6e2 100644
+--- a/src/presets/recipes.test.ts
++++ b/src/presets/recipes.test.ts
+@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import fixture from "./built-in.fixture.json";
+ import { BUILT_IN_RECIPES } from "./recipes.ts";
+-import { resolvePreset } from "./resolve.ts";
++import { resolveElement } from "./resolve.ts";
+ 
+ /**
+  * `built-in.fixture.json` holds, in library order and without ids, the 13 elements the
+@@ -18,7 +18,7 @@ describe("built-in recipes", () => {
+   it.each(BUILT_IN_RECIPES.map((r, i) => [r.name, i] as const))(
+     "«%s» resolves to the element it built before",
+     (_name, i) => {
+-      const r = resolvePreset(BUILT_IN_RECIPES[i] as PresetRecipe);
++      const r = resolveElement(BUILT_IN_RECIPES[i] as PresetRecipe);
+       if ("error" in r) throw new Error(r.error);
+       const { id, ...element } = r.element;
+       expect(typeof id).toBe("string");
+diff --git a/src/presets/recipes.ts b/src/presets/recipes.ts
+index f8dd51d..7eb4152 100644
+--- a/src/presets/recipes.ts
++++ b/src/presets/recipes.ts
+@@ -10,6 +10,12 @@ const files = import.meta.glob<PresetRecipe>("../../presets/built-in/*.json", {
+   import: "default",
+ });
+ 
+-export const BUILT_IN_RECIPES: PresetRecipe[] = Object.keys(files)
++const ALL: PresetRecipe[] = Object.keys(files)
+   .sort()
+   .map((path) => files[path] as PresetRecipe);
++
++/** Built-in element presets. */
++export const BUILT_IN_RECIPES = ALL.filter((r) => r.kind !== "background");
++
++/** Built-in background presets. */
++export const BUILT_IN_BACKGROUNDS = ALL.filter((r) => r.kind === "background");
+diff --git a/src/presets/resolve.test.ts b/src/presets/resolve.test.ts
+index 7898969..6cdd733 100644
+--- a/src/presets/resolve.test.ts
++++ b/src/presets/resolve.test.ts
+@@ -9,10 +9,10 @@ import {
+ } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { TRAITS } from "../traits/index.ts";
+-import { resolvePreset } from "./resolve.ts";
++import { resolveElement, resolvePreset } from "./resolve.ts";
+ 
+ function resolved(recipe: PresetRecipe) {
+-  const r = resolvePreset(recipe);
++  const r = resolveElement(recipe);
+   if ("error" in r) throw new Error(r.error);
+   return r.element;
+ }
+diff --git a/src/presets/resolve.ts b/src/presets/resolve.ts
+index e6fb917..bbf96cd 100644
+--- a/src/presets/resolve.ts
++++ b/src/presets/resolve.ts
+@@ -1,8 +1,17 @@
+-import { defaultElement, type Element, newId } from "../model/model.ts";
++import {
++  type Background,
++  defaultBackground,
++  defaultElement,
++  type Element,
++  newId,
++} from "../model/model.ts";
+ import type { PresetRecipe, TraitUse } from "../model/preset.ts";
+ import { TRAITS, type TraitParams } from "../traits/index.ts";
+ 
+-export type Resolved = { element: Element } | { error: string };
++export type Resolved =
++  | { element: Element }
++  | { background: Background }
++  | { error: string };
+ 
+ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+   typeof v === "object" && v !== null && !Array.isArray(v);
+@@ -29,24 +38,28 @@ function splitUse(use: TraitUse): { id: string; params: TraitParams } {
+ }
+ 
+ /**
+- * Builds the element a recipe describes: the kind's default, then each trait in order, then
+- * the recipe's own values, with a fresh id. The result is a plain element with no link back
+- * to the recipe, so later changes to traits or recipes never reach it.
++ * Builds what a recipe describes: the kind's default (an element, or the default scene
++ * background), then each trait in order, then the recipe's own values; an element also gets
++ * the recipe's name and a fresh id. The result is plain data with no link back to the recipe,
++ * so later changes to traits or recipes never reach it.
+  */
+ export function resolvePreset(recipe: PresetRecipe): Resolved {
+-  let element: Element;
++  let target: Element | Background;
+   try {
+-    element = defaultElement(recipe.kind);
++    target =
++      recipe.kind === "background"
++        ? defaultBackground()
++        : defaultElement(recipe.kind);
+   } catch {
+     return { error: `Tipo de elemento desconocido «${recipe.kind}»` };
+   }
+-  element.name = recipe.name;
++  if ("kind" in target) target.name = recipe.name;
+   for (const use of recipe.traits ?? []) {
+     const { id, params } = splitUse(use);
+     const trait = TRAITS.get(id);
+     if (!trait) return { error: `Trait desconocido «${id}»` };
+     const apply = trait.apply[recipe.kind] as
+-      | ((el: Element, p: TraitParams) => void)
++      | ((target: Element | Background, p: TraitParams) => void)
+       | undefined;
+     if (!apply) {
+       return { error: `El trait «${id}» no se aplica a «${recipe.kind}»` };
+@@ -55,14 +68,31 @@ export function resolvePreset(recipe: PresetRecipe): Resolved {
+     if (unknown) {
+       return { error: `El trait «${id}» no tiene el parámetro «${unknown}»` };
+     }
+-    apply(element, { ...trait.params, ...params });
++    apply(target, { ...trait.params, ...params });
+   }
+   if (recipe.set) {
+     deepMerge(
+-      element as unknown as Record<string, unknown>,
++      target as unknown as Record<string, unknown>,
+       recipe.set as Record<string, unknown>,
+     );
+   }
+-  element.id = newId();
+-  return { element };
++  if (!("kind" in target)) return { background: target };
++  target.id = newId();
++  return { element: target };
++}
++
++/** Resolves a recipe that must build an element. */
++export function resolveElement(
++  recipe: PresetRecipe,
++): { element: Element } | { error: string } {
++  const r = resolvePreset(recipe);
++  return "background" in r ? { error: "Es un fondo, no un elemento" } : r;
++}
++
++/** Resolves a recipe that must build a scene background. */
++export function resolveBackground(
++  recipe: PresetRecipe,
++): { background: Background } | { error: string } {
++  const r = resolvePreset(recipe);
++  return "element" in r ? { error: "Es un elemento, no un fondo" } : r;
+ }
+diff --git a/src/presets/round-trip.test.ts b/src/presets/round-trip.test.ts
+index 58e2b62..1b251aa 100644
+--- a/src/presets/round-trip.test.ts
++++ b/src/presets/round-trip.test.ts
+@@ -6,11 +6,11 @@ import type { PresetRecipe } from "../model/preset.ts";
+ import { TRAITS } from "../traits/index.ts";
+ import { recipeFromElement } from "./diff.ts";
+ import { BUILT_IN_RECIPES } from "./recipes.ts";
+-import { resolvePreset } from "./resolve.ts";
++import { resolveElement } from "./resolve.ts";
+ import { asRecipe } from "./store.ts";
+ 
+ function resolved(recipe: PresetRecipe): Element {
+-  const r = resolvePreset(recipe);
++  const r = resolveElement(recipe);
+   if ("error" in r) throw new Error(r.error);
+   return r.element;
+ }
+diff --git a/src/traits/trait.ts b/src/traits/trait.ts
+index d20b004..14edc19 100644
+--- a/src/traits/trait.ts
++++ b/src/traits/trait.ts
+@@ -1,4 +1,4 @@
+-import type { LineEl, RectEl, TextEl } from "../model/model.ts";
++import type { Background, LineEl, RectEl, TextEl } from "../model/model.ts";
+ 
+ /** A trait parameter is a plain JSON value so recipes can set it. */
+ export type ParamValue = string | number | boolean;
+@@ -9,6 +9,7 @@ export type TraitTargets = {
+   rect: RectEl;
+   text: TextEl;
+   line: LineEl;
++  background: Background;
+ };
+ export type TraitTarget = keyof TraitTargets;
+ 

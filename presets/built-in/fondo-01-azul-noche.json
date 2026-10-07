@@ -1,0 +1,22 @@
+{
+  "name": "Azul noche",
+  "kind": "background",
+  "traits": [
+    {
+      "use": "gradient",
+      "color": "#0a1430",
+      "color2": "#030712",
+      "angle": 120
+    },
+    {
+      "use": "dots",
+      "color": "#1e3a8a",
+      "gap": 36
+    },
+    {
+      "use": "spotlight",
+      "amount": 0.35,
+      "color": "#1d4ed8"
+    }
+  ]
+}

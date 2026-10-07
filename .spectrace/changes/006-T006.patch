@@ -1,0 +1,127 @@
+diff --git a/src/presets/backgrounds.test.ts b/src/presets/backgrounds.test.ts
+new file mode 100644
+index 0000000..174bd48
+--- /dev/null
++++ b/src/presets/backgrounds.test.ts
+@@ -0,0 +1,121 @@
++import { describe, expect, it } from "vitest";
++import { type Background, defaultScene } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { TRAITS } from "../traits/index.ts";
++import { recipeFromBackground } from "./diff.ts";
++import { BUILT_IN_BACKGROUNDS } from "./recipes.ts";
++import { resolveBackground, resolveElement } from "./resolve.ts";
++
++function background(recipe: PresetRecipe): Background {
++  const r = resolveBackground(recipe);
++  if ("error" in r) throw new Error(r.error);
++  return r.background;
++}
++
++/** The scene background before background presets existed. */
++const TODAYS_DEFAULT: Background = {
++  color: "#0a1430",
++  color2: "#030712",
++  gradient: true,
++  angle: 120,
++  dots: true,
++  dotColor: "#1e3a8a",
++  dotGap: 36,
++  spotlight: 0.35,
++  spotlightColor: "#1d4ed8",
++};
++
++describe("built-in background recipes", () => {
++  it("there are at least five and all resolve", () => {
++    expect(BUILT_IN_BACKGROUNDS.length).toBeGreaterThanOrEqual(5);
++    for (const recipe of BUILT_IN_BACKGROUNDS) background(recipe);
++  });
++
++  it("«Azul noche» is exactly today's default background", () => {
++    const recipe = BUILT_IN_BACKGROUNDS.find((r) => r.name === "Azul noche");
++    expect(background(recipe as PresetRecipe)).toEqual(TODAYS_DEFAULT);
++    expect(defaultScene().background).toEqual(TODAYS_DEFAULT);
++  });
++
++  it("are not element presets, and element recipes are not backgrounds", () => {
++    const bg = BUILT_IN_BACKGROUNDS[0] as PresetRecipe;
++    expect("error" in resolveElement(bg)).toBe(true);
++    const el: PresetRecipe = { name: "x", kind: "rect", traits: [] };
++    expect("error" in resolveBackground(el)).toBe(true);
++  });
++});
++
++describe("background traits", () => {
++  it("solid and gradient clear the overlays; dots and spotlight add them", () => {
++    const bg = background({
++      name: "x",
++      kind: "background",
++      traits: [
++        { use: "solid", color: "#111111" },
++        { use: "spotlight", amount: 0.5, color: "#222222" },
++      ],
++    });
++    expect(bg).toMatchObject({
++      color: "#111111",
++      gradient: false,
++      dots: false,
++      spotlight: 0.5,
++      spotlightColor: "#222222",
++    });
++  });
++
++  it("a background trait does not apply to elements", () => {
++    const r = resolveElement({ name: "x", kind: "rect", traits: ["dots"] });
++    expect(r).toEqual({ error: "El trait «dots» no se aplica a «rect»" });
++  });
++});
++
++describe("save background as preset", () => {
++  it("stores only what differs from the default and reproduces the background", () => {
++    const bg = { ...TODAYS_DEFAULT, color: "#ff0000", dots: false };
++    const recipe = recipeFromBackground("Rojo", bg);
++    expect(recipe).toEqual({
++      name: "Rojo",
++      kind: "background",
++      traits: [],
++      set: { color: "#ff0000", dots: false },
++    });
++    expect(background(recipe)).toEqual(bg);
++  });
++
++  it("the default background saves as an empty recipe", () => {
++    expect(recipeFromBackground("Igual", TODAYS_DEFAULT)).toEqual({
++      name: "Igual",
++      kind: "background",
++      traits: [],
++    });
++  });
++
++  it.each(BUILT_IN_BACKGROUNDS.map((r) => [r.name, r] as const))(
++    "«%s» round-trips through a saved recipe",
++    (_name, recipe) => {
++      const bg = background(recipe);
++      expect(background(recipeFromBackground("Copia", bg))).toEqual(bg);
++    },
++  );
++});
++
++describe("applied backgrounds", () => {
++  it("are copies: later changes to the recipe or its traits do not reach them", () => {
++    const recipe = structuredClone(BUILT_IN_BACKGROUNDS[0] as PresetRecipe);
++    const applied = background(recipe);
++    const before = structuredClone(applied);
++
++    recipe.traits.push({ use: "solid", color: "#ffffff" });
++    const dots = TRAITS.get("dots");
++    const saved = dots?.params.color;
++    if (dots) dots.params.color = "#ff0000";
++    try {
++      expect(background(recipe)).not.toEqual(applied);
++      expect(background(recipe)).not.toBe(background(recipe));
++      expect(applied).toEqual(before);
++    } finally {
++      if (dots && saved !== undefined) dots.params.color = saved;
++    }
++  });
++});

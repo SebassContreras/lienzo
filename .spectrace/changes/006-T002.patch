@@ -1,0 +1,269 @@
+diff --git a/presets/built-in/fondo-01-azul-noche.json b/presets/built-in/fondo-01-azul-noche.json
+new file mode 100644
+index 0000000..8e7726d
+--- /dev/null
++++ b/presets/built-in/fondo-01-azul-noche.json
+@@ -0,0 +1,22 @@
++{
++  "name": "Azul noche",
++  "kind": "background",
++  "traits": [
++    {
++      "use": "gradient",
++      "color": "#0a1430",
++      "color2": "#030712",
++      "angle": 120
++    },
++    {
++      "use": "dots",
++      "color": "#1e3a8a",
++      "gap": 36
++    },
++    {
++      "use": "spotlight",
++      "amount": 0.35,
++      "color": "#1d4ed8"
++    }
++  ]
++}
+diff --git a/presets/built-in/fondo-02-negro-liso.json b/presets/built-in/fondo-02-negro-liso.json
+new file mode 100644
+index 0000000..6ee7abb
+--- /dev/null
++++ b/presets/built-in/fondo-02-negro-liso.json
+@@ -0,0 +1,10 @@
++{
++  "name": "Negro liso",
++  "kind": "background",
++  "traits": [
++    {
++      "use": "solid",
++      "color": "#000000"
++    }
++  ]
++}
+diff --git a/presets/built-in/fondo-03-degradado-violeta.json b/presets/built-in/fondo-03-degradado-violeta.json
+new file mode 100644
+index 0000000..34a0f91
+--- /dev/null
++++ b/presets/built-in/fondo-03-degradado-violeta.json
+@@ -0,0 +1,17 @@
++{
++  "name": "Degradado violeta",
++  "kind": "background",
++  "traits": [
++    {
++      "use": "gradient",
++      "color": "#2e1065",
++      "color2": "#0f172a",
++      "angle": 135
++    },
++    {
++      "use": "spotlight",
++      "amount": 0.3,
++      "color": "#7c3aed"
++    }
++  ]
++}
+diff --git a/presets/built-in/fondo-04-puntos-sobre-gris.json b/presets/built-in/fondo-04-puntos-sobre-gris.json
+new file mode 100644
+index 0000000..cf0d838
+--- /dev/null
++++ b/presets/built-in/fondo-04-puntos-sobre-gris.json
+@@ -0,0 +1,15 @@
++{
++  "name": "Puntos sobre gris",
++  "kind": "background",
++  "traits": [
++    {
++      "use": "solid",
++      "color": "#1f2937"
++    },
++    {
++      "use": "dots",
++      "color": "#4b5563",
++      "gap": 28
++    }
++  ]
++}
+diff --git a/presets/built-in/fondo-05-foco-central.json b/presets/built-in/fondo-05-foco-central.json
+new file mode 100644
+index 0000000..317c352
+--- /dev/null
++++ b/presets/built-in/fondo-05-foco-central.json
+@@ -0,0 +1,15 @@
++{
++  "name": "Foco central",
++  "kind": "background",
++  "traits": [
++    {
++      "use": "solid",
++      "color": "#020617"
++    },
++    {
++      "use": "spotlight",
++      "amount": 0.6,
++      "color": "#0ea5e9"
++    }
++  ]
++}
+diff --git a/src/presets/resolve.test.ts b/src/presets/resolve.test.ts
+index 6cdd733..9179dae 100644
+--- a/src/presets/resolve.test.ts
++++ b/src/presets/resolve.test.ts
+@@ -22,7 +22,9 @@ describe("traits", () => {
+     for (const trait of TRAITS.values()) {
+       const kinds = Object.keys(trait.apply);
+       expect(kinds.length).toBeGreaterThan(0);
+-      for (const k of kinds) expect(["rect", "text", "line"]).toContain(k);
++      for (const k of kinds) {
++        expect(["rect", "text", "line", "background"]).toContain(k);
++      }
+     }
+   });
+ 
+diff --git a/src/presets/round-trip.test.ts b/src/presets/round-trip.test.ts
+index 1b251aa..0f2e011 100644
+--- a/src/presets/round-trip.test.ts
++++ b/src/presets/round-trip.test.ts
+@@ -5,7 +5,7 @@ import { cloneElement, type Element, type RectEl } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { TRAITS } from "../traits/index.ts";
+ import { recipeFromElement } from "./diff.ts";
+-import { BUILT_IN_RECIPES } from "./recipes.ts";
++import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "./recipes.ts";
+ import { resolveElement } from "./resolve.ts";
+ import { asRecipe } from "./store.ts";
+ 
+@@ -91,6 +91,7 @@ describe("built-in recipe files", () => {
+         (f) =>
+           (JSON.parse(readFileSync(join(dir, f), "utf8")) as PresetRecipe).name,
+       );
+-    expect(BUILT_IN_RECIPES.map((r) => r.name)).toEqual(names);
++    const loaded = [...BUILT_IN_RECIPES, ...BUILT_IN_BACKGROUNDS];
++    expect(loaded.map((r) => r.name).sort()).toEqual(names.sort());
+   });
+ });
+diff --git a/src/traits/dots.ts b/src/traits/dots.ts
+new file mode 100644
+index 0000000..002ba9a
+--- /dev/null
++++ b/src/traits/dots.ts
+@@ -0,0 +1,15 @@
++import { defineTrait } from "./trait.ts";
++
++/** A grid of small dots over the background, `gap` px apart. */
++export const dots = defineTrait({
++  id: "dots",
++  label: "Puntos",
++  params: { color: "#1e3a8a", gap: 36 },
++  apply: {
++    background: (bg, p) => {
++      bg.dots = true;
++      bg.dotColor = p.color;
++      bg.dotGap = p.gap;
++    },
++  },
++});
+diff --git a/src/traits/gradient.ts b/src/traits/gradient.ts
+new file mode 100644
+index 0000000..5f6ba30
+--- /dev/null
++++ b/src/traits/gradient.ts
+@@ -0,0 +1,18 @@
++import { defineTrait } from "./trait.ts";
++
++/** A two-color background gradient with nothing on top; later traits can add dots or a light. */
++export const gradient = defineTrait({
++  id: "gradient",
++  label: "Degradado",
++  params: { color: "#0a1430", color2: "#030712", angle: 120 },
++  apply: {
++    background: (bg, p) => {
++      bg.color = p.color;
++      bg.color2 = p.color2;
++      bg.angle = p.angle;
++      bg.gradient = true;
++      bg.dots = false;
++      bg.spotlight = 0;
++    },
++  },
++});
+diff --git a/src/traits/index.ts b/src/traits/index.ts
+index 8742914..cfe5ac2 100644
+--- a/src/traits/index.ts
++++ b/src/traits/index.ts
+@@ -1,16 +1,20 @@
+ import { bgGlow } from "./bg-glow.ts";
+ import { border } from "./border.ts";
+ import { breathe } from "./breathe.ts";
++import { dots } from "./dots.ts";
+ import { fadeIn } from "./fade-in.ts";
+ import { fill } from "./fill.ts";
+ import { float } from "./float.ts";
+ import { flow } from "./flow.ts";
+ import { glass } from "./glass.ts";
+ import { glow } from "./glow.ts";
++import { gradient } from "./gradient.ts";
+ import { gradientText } from "./gradient-text.ts";
+ import { noGlow } from "./no-glow.ts";
+ import { noShadow } from "./no-shadow.ts";
+ import { pulse } from "./pulse.ts";
++import { solid } from "./solid.ts";
++import { spotlight } from "./spotlight.ts";
+ import type { Trait } from "./trait.ts";
+ 
+ export type { Trait, TraitParams, TraitTarget } from "./trait.ts";
+@@ -29,6 +33,10 @@ const ALL: Trait[] = [
+   pulse,
+   breathe,
+   fadeIn,
++  solid,
++  gradient,
++  dots,
++  spotlight,
+ ];
+ 
+ /** Every trait by id; recipes name traits through this registry. */
+diff --git a/src/traits/solid.ts b/src/traits/solid.ts
+new file mode 100644
+index 0000000..b6e3258
+--- /dev/null
++++ b/src/traits/solid.ts
+@@ -0,0 +1,16 @@
++import { defineTrait } from "./trait.ts";
++
++/** A one-color background with nothing on top; later traits can add dots or a light. */
++export const solid = defineTrait({
++  id: "solid",
++  label: "Color liso",
++  params: { color: "#0a1430" },
++  apply: {
++    background: (bg, p) => {
++      bg.color = p.color;
++      bg.gradient = false;
++      bg.dots = false;
++      bg.spotlight = 0;
++    },
++  },
++});
+diff --git a/src/traits/spotlight.ts b/src/traits/spotlight.ts
+new file mode 100644
+index 0000000..02c2ffc
+--- /dev/null
++++ b/src/traits/spotlight.ts
+@@ -0,0 +1,14 @@
++import { defineTrait } from "./trait.ts";
++
++/** A soft radial light in the upper middle of the background; `amount` from 0 to 1. */
++export const spotlight = defineTrait({
++  id: "spotlight",
++  label: "Luz central",
++  params: { amount: 0.35, color: "#1d4ed8" },
++  apply: {
++    background: (bg, p) => {
++      bg.spotlight = p.amount;
++      bg.spotlightColor = p.color;
++    },
++  },
++});

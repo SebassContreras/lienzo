@@ -1,0 +1,263 @@
+diff --git a/presets/built-in/14-tarjeta-con-icono.json b/presets/built-in/14-tarjeta-con-icono.json
+new file mode 100644
+index 0000000..f382efc
+--- /dev/null
++++ b/presets/built-in/14-tarjeta-con-icono.json
+@@ -0,0 +1,59 @@
++{
++  "name": "Tarjeta con icono",
++  "kind": "group",
++  "traits": [
++    {
++      "use": "float",
++      "amount": 8
++    }
++  ],
++  "set": {
++    "w": 320,
++    "h": 210,
++    "cw": 320,
++    "ch": 210,
++    "children": [
++      {
++        "id": "c1",
++        "kind": "rect",
++        "name": "Fondo",
++        "w": 320,
++        "h": 210
++      },
++      {
++        "id": "c2",
++        "kind": "icon",
++        "name": "Icono",
++        "x": 28,
++        "y": 28,
++        "w": 64,
++        "h": 64,
++        "icon": "Sparkles",
++        "tile": {
++          "radius": 18,
++          "padding": 14
++        }
++      },
++      {
++        "id": "c3",
++        "kind": "text",
++        "name": "Título",
++        "x": 28,
++        "y": 112,
++        "text": "Herramienta",
++        "size": 30
++      },
++      {
++        "id": "c4",
++        "kind": "text",
++        "name": "Subtítulo",
++        "x": 28,
++        "y": 154,
++        "text": "Lo que hace, en una línea",
++        "size": 18,
++        "weight": 500,
++        "color": "#94a3b8"
++      }
++    ]
++  }
++}
+diff --git a/presets/built-in/15-icono-con-fondo.json b/presets/built-in/15-icono-con-fondo.json
+new file mode 100644
+index 0000000..a553164
+--- /dev/null
++++ b/presets/built-in/15-icono-con-fondo.json
+@@ -0,0 +1,14 @@
++{
++  "name": "Icono con fondo",
++  "kind": "icon",
++  "traits": [
++    {
++      "use": "glow",
++      "color": "#60a5fa",
++      "blur": 18
++    }
++  ],
++  "set": {
++    "icon": "Zap"
++  }
++}
+diff --git a/presets/built-in/16-avatar-circular.json b/presets/built-in/16-avatar-circular.json
+new file mode 100644
+index 0000000..a082766
+--- /dev/null
++++ b/presets/built-in/16-avatar-circular.json
+@@ -0,0 +1,29 @@
++{
++  "name": "Avatar circular",
++  "kind": "ellipse",
++  "traits": [
++    {
++      "use": "fill",
++      "color": "#7c3aed",
++      "color2": "#2563eb",
++      "gradient": true,
++      "angle": 135,
++      "opacity": 1
++    },
++    {
++      "use": "border",
++      "width": 3,
++      "color": "#e0e7ff",
++      "opacity": 0.9
++    }
++  ],
++  "set": {
++    "w": 140,
++    "h": 140,
++    "label": {
++      "text": "AB",
++      "size": 48,
++      "align": "center"
++    }
++  }
++}
+diff --git a/presets/built-in/17-logo-imagen.json b/presets/built-in/17-logo-imagen.json
+new file mode 100644
+index 0000000..9fb2dc6
+--- /dev/null
++++ b/presets/built-in/17-logo-imagen.json
+@@ -0,0 +1,11 @@
++{
++  "name": "Logo (imagen)",
++  "kind": "image",
++  "traits": [],
++  "set": {
++    "w": 240,
++    "h": 120,
++    "aspect": 2,
++    "radius": 12
++  }
++}
+diff --git a/src/presets/recipes.test.ts b/src/presets/recipes.test.ts
+index f49b6e2..bd27486 100644
+--- a/src/presets/recipes.test.ts
++++ b/src/presets/recipes.test.ts
+@@ -6,23 +6,39 @@ import { resolveElement } from "./resolve.ts";
+ 
+ /**
+  * `built-in.fixture.json` holds, in library order and without ids, the 13 elements the
+- * hand-written presets module produced before the presets became recipes.
++ * hand-written presets module produced before the presets became recipes. Presets added
++ * since come after them.
+  */
+ describe("built-in recipes", () => {
+-  it("are the 13 presets, in the same order", () => {
+-    expect(BUILT_IN_RECIPES.map((r) => r.name)).toEqual(
+-      fixture.map((el) => el.name),
+-    );
++  it("start with the 13 presets, in the same order", () => {
++    expect(
++      BUILT_IN_RECIPES.slice(0, fixture.length).map((r) => r.name),
++    ).toEqual(fixture.map((el) => el.name));
+   });
+ 
+-  it.each(BUILT_IN_RECIPES.map((r, i) => [r.name, i] as const))(
+-    "«%s» resolves to the element it built before",
+-    (_name, i) => {
+-      const r = resolveElement(BUILT_IN_RECIPES[i] as PresetRecipe);
+-      if ("error" in r) throw new Error(r.error);
+-      const { id, ...element } = r.element;
+-      expect(typeof id).toBe("string");
+-      expect(element).toEqual(fixture[i]);
+-    },
+-  );
++  it.each(
++    BUILT_IN_RECIPES.slice(0, fixture.length).map(
++      (r, i) => [r.name, i] as const,
++    ),
++  )("«%s» resolves to the element it built before", (_name, i) => {
++    const r = resolveElement(BUILT_IN_RECIPES[i] as PresetRecipe);
++    if ("error" in r) throw new Error(r.error);
++    const { id, ...element } = r.element;
++    expect(typeof id).toBe("string");
++    expect(element).toEqual(fixture[i]);
++  });
++
++  it.each(
++    BUILT_IN_RECIPES.slice(fixture.length).map((r) => [r.name, r] as const),
++  )("«%s» resolves without errors", (_name, recipe) => {
++    expect(resolveElement(recipe)).not.toHaveProperty("error");
++  });
++
++  it("include the presets for the new components", () => {
++    const kinds = new Map(BUILT_IN_RECIPES.map((r) => [r.name, r.kind]));
++    expect(kinds.get("Tarjeta con icono")).toBe("group");
++    expect(kinds.get("Icono con fondo")).toBe("icon");
++    expect(kinds.get("Avatar circular")).toBe("ellipse");
++    expect(kinds.get("Logo (imagen)")).toBe("image");
++  });
+ });
+diff --git a/src/presets/resolve.test.ts b/src/presets/resolve.test.ts
+index 3a48295..0145df5 100644
+--- a/src/presets/resolve.test.ts
++++ b/src/presets/resolve.test.ts
+@@ -27,6 +27,9 @@ describe("traits", () => {
+           "shape",
+           "rect",
+           "ellipse",
++          "icon",
++          "image",
++          "group",
+           "text",
+           "line",
+           "background",
+diff --git a/src/traits/float.ts b/src/traits/float.ts
+index f675919..2e0ea02 100644
+--- a/src/traits/float.ts
++++ b/src/traits/float.ts
+@@ -12,5 +12,11 @@ export const float = defineTrait({
+     text: (el, p) => {
+       el.anim = { kind: "float", ...p };
+     },
++    icon: (el, p) => {
++      el.anim = { kind: "float", ...p };
++    },
++    group: (el, p) => {
++      el.anim = { kind: "float", ...p };
++    },
+   },
+ });
+diff --git a/src/traits/glow.ts b/src/traits/glow.ts
+index 6c234ee..b04d6ad 100644
+--- a/src/traits/glow.ts
++++ b/src/traits/glow.ts
+@@ -1,6 +1,6 @@
+ import { defineTrait } from "./trait.ts";
+ 
+-/** Neon glow: the border glow of a rectangle, the glow of a text or a line. */
++/** Neon glow: the border glow of a rectangle, the glow of a text, a line or an icon. */
+ export const glow = defineTrait({
+   id: "glow",
+   label: "Brillo neón",
+@@ -15,5 +15,8 @@ export const glow = defineTrait({
+     line: (el, p) => {
+       el.glow = { enabled: true, ...p };
+     },
++    icon: (el, p) => {
++      el.glow = { enabled: true, ...p };
++    },
+   },
+ });
+diff --git a/src/traits/pulse.ts b/src/traits/pulse.ts
+index 9886bfb..25838dc 100644
+--- a/src/traits/pulse.ts
++++ b/src/traits/pulse.ts
+@@ -12,5 +12,11 @@ export const pulse = defineTrait({
+     text: (el, p) => {
+       el.anim = { kind: "pulse", ...p };
+     },
++    icon: (el, p) => {
++      el.anim = { kind: "pulse", ...p };
++    },
++    group: (el, p) => {
++      el.anim = { kind: "pulse", ...p };
++    },
+   },
+ });

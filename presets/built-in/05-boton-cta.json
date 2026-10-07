@@ -1,0 +1,36 @@
+{
+  "name": "Botón CTA",
+  "kind": "rect",
+  "traits": [
+    {
+      "use": "fill",
+      "color": "#3b82f6",
+      "color2": "#2563eb",
+      "opacity": 1
+    },
+    {
+      "use": "border",
+      "width": 0
+    },
+    {
+      "use": "bg-glow",
+      "color": "#3b82f6",
+      "blur": 30
+    },
+    {
+      "use": "pulse",
+      "amount": 6,
+      "cycles": 2
+    }
+  ],
+  "set": {
+    "w": 220,
+    "h": 72,
+    "radius": 36,
+    "label": {
+      "text": "+ Seguir",
+      "size": 26,
+      "weight": 700
+    }
+  }
+}

@@ -1,0 +1,425 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 9d8ca9a..cfa7ebb 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -19,6 +19,7 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
+ - Scene = plain JSON typed in `src/model/` (A4); one file per component in `src/components/` (A5)
+ - Looping animations use whole cycles per loop (A6)
+ - Presets in `presets/`, scenes in `scenes/`, via the Vite middleware; no database (A7)
++- Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
+ - Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10)
+ - Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12)
+ - pnpm only (A13); Biome + Vitest (A14); CI runs lint, typecheck, test (A15)
+@@ -33,13 +34,17 @@ src/engine/      drawScene, painting helpers, animation state, geometry
+ src/components/  one draw function per element kind
+ src/editor/      React UI: app shell, stage, library, inspector
+ src/export/      PNG / GIF / MP4
+-src/presets/     built-in presets and the JSON store client
++src/traits/      reusable style pieces, one file per trait
++src/presets/     recipe resolver and the JSON store client
++presets/built-in/  built-in preset recipes (JSON)
+ ```
+ 
+ ## Rules for agents
+ 
+ - To add a component: a type in `src/model/model.ts`, a draw file in `src/components/`,
+-  a case in `src/engine/render.ts`, an inspector section, and a built-in preset.
++  a case in `src/engine/render.ts`, an inspector section, and a built-in preset recipe.
++- To add a preset: a JSON recipe in `presets/built-in/` combining traits; add a trait in
++  `src/traits/` only when no existing one fits.
+ - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports
+   are deterministic.
+ - Use pnpm, never npm or yarn.
+diff --git a/src/traits/bg-glow.ts b/src/traits/bg-glow.ts
+new file mode 100644
+index 0000000..658ca4e
+--- /dev/null
++++ b/src/traits/bg-glow.ts
+@@ -0,0 +1,13 @@
++import { defineTrait } from "./trait.ts";
++
++/** A soft light behind a rectangle's whole shape. */
++export const bgGlow = defineTrait({
++  id: "bg-glow",
++  label: "Brillo de fondo",
++  params: { color: "#2563eb", blur: 40, strength: 1 },
++  apply: {
++    rect: (el, p) => {
++      el.bgGlow = { enabled: true, ...p };
++    },
++  },
++});
+diff --git a/src/traits/border.ts b/src/traits/border.ts
+new file mode 100644
+index 0000000..723e166
+--- /dev/null
++++ b/src/traits/border.ts
+@@ -0,0 +1,20 @@
++import type { StrokeStyle } from "../model/model.ts";
++import { defineTrait } from "./trait.ts";
++
++/** A rectangle's border; a dashed or dotted border with `flow` marches around the shape. */
++export const border = defineTrait({
++  id: "border",
++  label: "Borde",
++  params: {
++    width: 2,
++    color: "#3b82f6",
++    opacity: 0.8,
++    style: "solid",
++    flow: 0,
++  },
++  apply: {
++    rect: (el, p) => {
++      el.border = { ...p, style: p.style as StrokeStyle };
++    },
++  },
++});
+diff --git a/src/traits/breathe.ts b/src/traits/breathe.ts
+new file mode 100644
+index 0000000..1a602e6
+--- /dev/null
++++ b/src/traits/breathe.ts
+@@ -0,0 +1,16 @@
++import { defineTrait } from "./trait.ts";
++
++/** The glow swells and fades by `amount` %, `cycles` times per loop. */
++export const breathe = defineTrait({
++  id: "breathe",
++  label: "Brillo que respira",
++  params: { amount: 60, cycles: 2, delay: 0 },
++  apply: {
++    rect: (el, p) => {
++      el.anim = { kind: "breathe", ...p };
++    },
++    text: (el, p) => {
++      el.anim = { kind: "breathe", ...p };
++    },
++  },
++});
+diff --git a/src/traits/fade-in.ts b/src/traits/fade-in.ts
+new file mode 100644
+index 0000000..ae557e2
+--- /dev/null
++++ b/src/traits/fade-in.ts
+@@ -0,0 +1,19 @@
++import { defineTrait } from "./trait.ts";
++
++/** Fades in once, starting at `delay` seconds. */
++export const fadeIn = defineTrait({
++  id: "fade-in",
++  label: "Aparecer",
++  params: { delay: 0 },
++  apply: {
++    rect: (el, p) => {
++      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++    },
++    text: (el, p) => {
++      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++    },
++    line: (el, p) => {
++      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++    },
++  },
++});
+diff --git a/src/traits/fill.ts b/src/traits/fill.ts
+new file mode 100644
+index 0000000..8f58952
+--- /dev/null
++++ b/src/traits/fill.ts
+@@ -0,0 +1,19 @@
++import { defineTrait } from "./trait.ts";
++
++/** A rectangle's fill: solid color or two-color gradient. */
++export const fill = defineTrait({
++  id: "fill",
++  label: "Relleno",
++  params: {
++    color: "#13254a",
++    color2: "#0b1630",
++    gradient: true,
++    angle: 90,
++    opacity: 0.9,
++  },
++  apply: {
++    rect: (el, p) => {
++      el.fill = { ...p };
++    },
++  },
++});
+diff --git a/src/traits/float.ts b/src/traits/float.ts
+new file mode 100644
+index 0000000..7997df0
+--- /dev/null
++++ b/src/traits/float.ts
+@@ -0,0 +1,16 @@
++import { defineTrait } from "./trait.ts";
++
++/** Floats up and down by `amount` px, `cycles` times per loop. */
++export const float = defineTrait({
++  id: "float",
++  label: "Flotar",
++  params: { amount: 12, cycles: 1, delay: 0 },
++  apply: {
++    rect: (el, p) => {
++      el.anim = { kind: "float", ...p };
++    },
++    text: (el, p) => {
++      el.anim = { kind: "float", ...p };
++    },
++  },
++});
+diff --git a/src/traits/flow.ts b/src/traits/flow.ts
+new file mode 100644
+index 0000000..e78be2a
+--- /dev/null
++++ b/src/traits/flow.ts
+@@ -0,0 +1,21 @@
++import type { FlowKind } from "../model/model.ts";
++import { defineTrait } from "./trait.ts";
++
++/** Something travelling along a line: light pulses, marching ants or a comet. */
++export const flow = defineTrait({
++  id: "flow",
++  label: "Flujo animado",
++  params: {
++    kind: "pulse",
++    color: "#93c5fd",
++    speed: 2,
++    count: 2,
++    size: 5,
++    reverse: false,
++  },
++  apply: {
++    line: (el, p) => {
++      el.flow = { ...p, kind: p.kind as FlowKind };
++    },
++  },
++});
+diff --git a/src/traits/glass.ts b/src/traits/glass.ts
+new file mode 100644
+index 0000000..071dcff
+--- /dev/null
++++ b/src/traits/glass.ts
+@@ -0,0 +1,27 @@
++import { defineTrait } from "./trait.ts";
++
++/** Frosted glass: an almost transparent white-to-tint fill with a thin light border. */
++export const glass = defineTrait({
++  id: "glass",
++  label: "Vidrio",
++  params: { tint: "#93c5fd", opacity: 0.08, border: 0.25 },
++  apply: {
++    rect: (el, p) => {
++      el.fill = {
++        color: "#ffffff",
++        color2: p.tint,
++        gradient: true,
++        angle: 135,
++        opacity: p.opacity,
++      };
++      el.border = {
++        width: 1.5,
++        color: "#ffffff",
++        opacity: p.border,
++        style: "solid",
++        flow: 0,
++      };
++      el.borderGlow.enabled = false;
++    },
++  },
++});
+diff --git a/src/traits/glow.ts b/src/traits/glow.ts
+new file mode 100644
+index 0000000..e952286
+--- /dev/null
++++ b/src/traits/glow.ts
+@@ -0,0 +1,19 @@
++import { defineTrait } from "./trait.ts";
++
++/** Neon glow: the border glow of a rectangle, the glow of a text or a line. */
++export const glow = defineTrait({
++  id: "glow",
++  label: "Brillo neón",
++  params: { color: "#60a5fa", blur: 18, strength: 1 },
++  apply: {
++    rect: (el, p) => {
++      el.borderGlow = { enabled: true, ...p };
++    },
++    text: (el, p) => {
++      el.glow = { enabled: true, ...p };
++    },
++    line: (el, p) => {
++      el.glow = { enabled: true, ...p };
++    },
++  },
++});
+diff --git a/src/traits/gradient-text.ts b/src/traits/gradient-text.ts
+new file mode 100644
+index 0000000..3737a92
+--- /dev/null
++++ b/src/traits/gradient-text.ts
+@@ -0,0 +1,15 @@
++import { defineTrait } from "./trait.ts";
++
++/** Text painted with a left-to-right two-color gradient. */
++export const gradientText = defineTrait({
++  id: "gradient-text",
++  label: "Texto degradado",
++  params: { color: "#3b82f6", color2: "#22d3ee" },
++  apply: {
++    text: (el, p) => {
++      el.gradient = true;
++      el.color = p.color;
++      el.color2 = p.color2;
++    },
++  },
++});
+diff --git a/src/traits/index.ts b/src/traits/index.ts
+new file mode 100644
+index 0000000..8742914
+--- /dev/null
++++ b/src/traits/index.ts
+@@ -0,0 +1,37 @@
++import { bgGlow } from "./bg-glow.ts";
++import { border } from "./border.ts";
++import { breathe } from "./breathe.ts";
++import { fadeIn } from "./fade-in.ts";
++import { fill } from "./fill.ts";
++import { float } from "./float.ts";
++import { flow } from "./flow.ts";
++import { glass } from "./glass.ts";
++import { glow } from "./glow.ts";
++import { gradientText } from "./gradient-text.ts";
++import { noGlow } from "./no-glow.ts";
++import { noShadow } from "./no-shadow.ts";
++import { pulse } from "./pulse.ts";
++import type { Trait } from "./trait.ts";
++
++export type { Trait, TraitParams, TraitTarget } from "./trait.ts";
++
++const ALL: Trait[] = [
++  glow,
++  noGlow,
++  bgGlow,
++  fill,
++  glass,
++  border,
++  noShadow,
++  gradientText,
++  flow,
++  float,
++  pulse,
++  breathe,
++  fadeIn,
++];
++
++/** Every trait by id; recipes name traits through this registry. */
++export const TRAITS: ReadonlyMap<string, Trait> = new Map(
++  ALL.map((t) => [t.id, t]),
++);
+diff --git a/src/traits/no-glow.ts b/src/traits/no-glow.ts
+new file mode 100644
+index 0000000..41ff197
+--- /dev/null
++++ b/src/traits/no-glow.ts
+@@ -0,0 +1,19 @@
++import { defineTrait } from "./trait.ts";
++
++/** Turns the neon glow off (border glow of a rectangle, glow of a text or a line). */
++export const noGlow = defineTrait({
++  id: "no-glow",
++  label: "Sin brillo",
++  params: {},
++  apply: {
++    rect: (el) => {
++      el.borderGlow.enabled = false;
++    },
++    text: (el) => {
++      el.glow.enabled = false;
++    },
++    line: (el) => {
++      el.glow.enabled = false;
++    },
++  },
++});
+diff --git a/src/traits/no-shadow.ts b/src/traits/no-shadow.ts
+new file mode 100644
+index 0000000..70fcb77
+--- /dev/null
++++ b/src/traits/no-shadow.ts
+@@ -0,0 +1,13 @@
++import { defineTrait } from "./trait.ts";
++
++/** Removes a rectangle's drop shadow. */
++export const noShadow = defineTrait({
++  id: "no-shadow",
++  label: "Sin sombra",
++  params: {},
++  apply: {
++    rect: (el) => {
++      el.shadow.enabled = false;
++    },
++  },
++});
+diff --git a/src/traits/pulse.ts b/src/traits/pulse.ts
+new file mode 100644
+index 0000000..b9c0428
+--- /dev/null
++++ b/src/traits/pulse.ts
+@@ -0,0 +1,16 @@
++import { defineTrait } from "./trait.ts";
++
++/** Grows and shrinks by `amount` %, `cycles` times per loop. */
++export const pulse = defineTrait({
++  id: "pulse",
++  label: "Pulso",
++  params: { amount: 6, cycles: 2, delay: 0 },
++  apply: {
++    rect: (el, p) => {
++      el.anim = { kind: "pulse", ...p };
++    },
++    text: (el, p) => {
++      el.anim = { kind: "pulse", ...p };
++    },
++  },
++});
+diff --git a/src/traits/trait.ts b/src/traits/trait.ts
+new file mode 100644
+index 0000000..d20b004
+--- /dev/null
++++ b/src/traits/trait.ts
+@@ -0,0 +1,33 @@
++import type { LineEl, RectEl, TextEl } from "../model/model.ts";
++
++/** A trait parameter is a plain JSON value so recipes can set it. */
++export type ParamValue = string | number | boolean;
++export type TraitParams = Record<string, ParamValue>;
++
++/** What each kind of trait target is, by the name recipes use for it. */
++export type TraitTargets = {
++  rect: RectEl;
++  text: TextEl;
++  line: LineEl;
++};
++export type TraitTarget = keyof TraitTargets;
++
++type Appliers<P> = {
++  [K in TraitTarget]?: (target: TraitTargets[K], params: P) => void;
++};
++
++/**
++ * A reusable style piece: `params` holds each parameter's default, and `apply` says how the
++ * trait changes every kind it supports. Recipes list traits by `id`.
++ */
++export type Trait<P extends TraitParams = TraitParams> = {
++  id: string;
++  label: string;
++  params: P;
++  apply: Appliers<P>;
++};
++
++/** Keeps each trait's parameter types precise while the registry stores them uniformly. */
++export function defineTrait<P extends TraitParams>(trait: Trait<P>): Trait {
++  return trait as unknown as Trait;
++}

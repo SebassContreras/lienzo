@@ -1,0 +1,12 @@
+{
+  "name": "Párrafo",
+  "kind": "text",
+  "traits": [],
+  "set": {
+    "text": "El cliente pide, el servidor MCP\nexpone herramientas y datos.",
+    "size": 30,
+    "weight": 400,
+    "color": "#cbd5e1",
+    "lineHeight": 1.4
+  }
+}

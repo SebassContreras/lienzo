@@ -1,0 +1,199 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index fff3bc5..127a2ba 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -1,5 +1,6 @@
+ import {
+   FilePlus2,
++  PaintBucket,
+   Pause,
+   Play,
+   Redo2,
+@@ -95,6 +96,7 @@ export function App() {
+   const [status, setStatus] = useState("");
+   const [sceneName, setSceneName] = useState("mi-publicacion");
+   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
++  const [backgroundFocus, setBackgroundFocus] = useState(0);
+ 
+   const setScene = useCallback((s: Scene) => {
+     sceneRef.current = s;
+@@ -324,6 +326,16 @@ export function App() {
+           >
+             Demo
+           </button>
++          <button
++            type="button"
++            title="Editar el fondo de la publicación"
++            onClick={() => {
++              setSelectedId(null);
++              setBackgroundFocus((n) => n + 1);
++            }}
++          >
++            <PaintBucket size={16} /> Fondo
++          </button>
+           <SceneFiles
+             scene={scene}
+             name={sceneName}
+@@ -372,6 +384,11 @@ export function App() {
+           clock={clock}
+           checkpoint={checkpoint}
+           onDropElement={addElement}
++          hint={
++            selectedId
++              ? undefined
++              : "Clic en un área vacía para editar el fondo"
++          }
+         />
+         <Timeline
+           clock={clock}
+@@ -406,7 +423,11 @@ export function App() {
+             onSavePreset={(name) => savePreset(selected, name)}
+           />
+         ) : (
+-          <SceneInspector scene={scene} onChange={setScene} />
++          <SceneInspector
++            scene={scene}
++            onChange={setScene}
++            focusBackground={backgroundFocus}
++          />
+         )}
+       </Panel>
+     </div>
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 09612c7..15cb5b5 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -6,7 +6,7 @@ import {
+   Link2Off,
+   Trash2,
+ } from "lucide-react";
+-import { type ReactNode, useState } from "react";
++import { type ReactNode, type Ref, useEffect, useRef, useState } from "react";
+ import {
+   ANIM_LABELS,
+   ANIMS_BY_KIND,
+@@ -30,13 +30,15 @@ export function Section({
+   title,
+   children,
+   open = true,
++  ref,
+ }: {
+   title: string;
+   children: ReactNode;
+   open?: boolean;
++  ref?: Ref<HTMLDetailsElement>;
+ }) {
+   return (
+-    <details className="section" open={open}>
++    <details className="section" open={open} ref={ref}>
+       <summary>{title}</summary>
+       <div className="section-body">{children}</div>
+     </details>
+@@ -1064,10 +1066,23 @@ export function ElementInspector({
+ export function SceneInspector({
+   scene,
+   onChange,
++  focusBackground = 0,
+ }: {
+   scene: Scene;
+   onChange: (s: Scene) => void;
++  /** Each time this number changes, the "Fondo" section opens and scrolls into view. */
++  focusBackground?: number;
+ }) {
++  const backgroundRef = useRef<HTMLDetailsElement>(null);
++  useEffect(() => {
++    const section = backgroundRef.current;
++    if (!focusBackground || !section) return;
++    section.open = true;
++    section.scrollIntoView({ block: "start", behavior: "smooth" });
++    section.classList.remove("flash");
++    void section.offsetWidth;
++    section.classList.add("flash");
++  }, [focusBackground]);
+   const change = (fn: (d: Scene) => void) => {
+     const draft = structuredClone(scene);
+     fn(draft);
+@@ -1148,7 +1163,7 @@ export function SceneInspector({
+           }
+         />
+       </Section>
+-      <Section title="Fondo">
++      <Section title="Fondo" ref={backgroundRef}>
+         <Color
+           label="Color"
+           value={bg.color}
+diff --git a/src/editor/stage.tsx b/src/editor/stage.tsx
+index c835c24..0158764 100644
+--- a/src/editor/stage.tsx
++++ b/src/editor/stage.tsx
+@@ -243,6 +243,7 @@ export function Stage({
+   clock,
+   checkpoint,
+   onDropElement,
++  hint,
+ }: {
+   scene: Scene;
+   sceneRef: MutableRefObject<Scene>;
+@@ -252,6 +253,8 @@ export function Stage({
+   clock: MutableRefObject<Clock>;
+   checkpoint: () => void;
+   onDropElement: (el: Element, at: Pt) => void;
++  /** A short tip shown over the bottom of the stage. */
++  hint?: string;
+ }) {
+   const wrapRef = useRef<HTMLDivElement>(null);
+   const canvasRef = useRef<HTMLCanvasElement>(null);
+@@ -431,6 +434,7 @@ export function Stage({
+           hover.current = undefined;
+         }}
+       />
++      {hint && <div className="stage-hint">{hint}</div>}
+     </div>
+   );
+ }
+diff --git a/src/styles.css b/src/styles.css
+index d833b7f..b157918 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -192,6 +192,23 @@ textarea {
+   background:
+     repeating-conic-gradient(#0e1117 0 25%, #0b0d12 0 50%) 0 0 / 24px 24px;
+ }
++.stage {
++  position: relative;
++}
++.stage-hint {
++  position: absolute;
++  bottom: 8px;
++  left: 50%;
++  transform: translateX(-50%);
++  padding: 4px 10px;
++  border-radius: 999px;
++  background: rgba(18, 21, 28, 0.85);
++  border: 1px solid var(--line);
++  color: var(--muted);
++  font-size: 12px;
++  pointer-events: none;
++  white-space: nowrap;
++}
+ .center .stage canvas {
+   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+   touch-action: none;
+@@ -246,6 +263,17 @@ textarea {
+ .section {
+   border-bottom: 1px solid var(--line);
+ }
++.section.flash {
++  animation: flash 1.2s ease-out;
++}
++@keyframes flash {
++  from {
++    background: rgba(56, 189, 248, 0.18);
++  }
++  to {
++    background: transparent;
++  }
++}
+ .section summary {
+   cursor: pointer;
+   padding: 8px 10px;

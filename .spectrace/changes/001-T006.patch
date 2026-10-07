@@ -1,0 +1,593 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 1b6fe67..e3b20d1 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -34,6 +34,9 @@ import {
+   type Element,
+   type Scene,
+ } from "../model/model.ts";
++import { BUILT_IN_PRESETS, type Preset } from "../presets/built-in.ts";
++import { SceneFiles } from "../presets/scene-files.tsx";
++import { loadUserPresets, saveUserPreset } from "../presets/store.ts";
+ import { ElementInspector, SceneInspector } from "./inspector.tsx";
+ import { Library, type LibraryItem } from "./library.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
+@@ -57,6 +60,18 @@ function removeElements(scene: Scene, ids: Set<string>): Element[] {
+     });
+ }
+ 
++const AUTOSAVE_KEY = "lienzo-scene";
++
++function loadInitialScene(): Scene {
++  try {
++    const raw = localStorage.getItem(AUTOSAVE_KEY);
++    if (raw) return JSON.parse(raw) as Scene;
++  } catch {
++    // no stored scene or storage blocked: start fresh
++  }
++  return defaultScene();
++}
++
+ const BASICS: LibraryItem[] = [
+   { name: "Rectángulo", element: defaultRect() },
+   { name: "Texto", element: defaultText() },
+@@ -65,7 +80,7 @@ const BASICS: LibraryItem[] = [
+ const BASIC_ICONS = [Square, Type, Spline];
+ 
+ export function App() {
+-  const [scene, setSceneState] = useState<Scene>(defaultScene);
++  const [scene, setSceneState] = useState<Scene>(loadInitialScene);
+   const sceneRef = useRef(scene);
+   const [selectedId, setSelectedId] = useState<string | null>(null);
+   const clock = useRef<Clock>({ t: 0, playing: true });
+@@ -75,6 +90,7 @@ export function App() {
+   const [, rerender] = useReducer((x: number) => x + 1, 0);
+   const [status, setStatus] = useState("");
+   const [sceneName, setSceneName] = useState("mi-publicacion");
++  const [userPresets, setUserPresets] = useState<Preset[]>([]);
+ 
+   const setScene = useCallback((s: Scene) => {
+     sceneRef.current = s;
+@@ -108,6 +124,41 @@ export function App() {
+     rerender();
+   }, [setScene]);
+ 
++  useEffect(() => {
++    try {
++      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(scene));
++    } catch {
++      // storage unavailable: autosave is a convenience only
++    }
++  }, [scene]);
++
++  const refreshPresets = useCallback(() => {
++    loadUserPresets()
++      .then(setUserPresets)
++      .catch(() => setUserPresets([]));
++  }, []);
++  useEffect(refreshPresets, [refreshPresets]);
++
++  const savePreset = useCallback(
++    (el: Element, name: string) => {
++      const element = structuredClone(el);
++      element.name = name;
++      if (element.kind === "line") {
++        // a preset carries no attachments: keep the ends where they are drawn
++        const r = resolveLine(element, indexById(sceneRef.current));
++        element.a = { x: r.a.x, y: r.a.y };
++        element.b = { x: r.b.x, y: r.b.y };
++      }
++      saveUserPreset({ name, element })
++        .then(() => {
++          setStatus(`Preset «${name}» guardado`);
++          refreshPresets();
++        })
++        .catch((error: unknown) => setStatus(`Error: ${error}`));
++    },
++    [refreshPresets],
++  );
++
+   /** Replaces the whole scene as one undoable step. */
+   const loadScene = useCallback(
+     (s: Scene) => {
+@@ -262,6 +313,13 @@ export function App() {
+           >
+             <FilePlus2 size={16} />
+           </button>
++          <SceneFiles
++            scene={scene}
++            name={sceneName}
++            setName={setSceneName}
++            onOpen={loadScene}
++            setStatus={setStatus}
++          />
+         </div>
+         <div className="status">{status}</div>
+         <ExportControls
+@@ -279,6 +337,19 @@ export function App() {
+           background={scene.background}
+           onAdd={(item) => addElement(item.element)}
+         />
++        <Library
++          title="Prediseñados"
++          items={BUILT_IN_PRESETS}
++          background={scene.background}
++          onAdd={(item) => addElement(item.element)}
++        />
++        <Library
++          title="Mis presets"
++          items={userPresets}
++          background={scene.background}
++          onAdd={(item) => addElement(item.element)}
++          empty="Selecciona un elemento y usa «Guardar como preset»."
++        />
+       </aside>
+       <main className="center">
+         <Stage
+@@ -321,6 +392,7 @@ export function App() {
+             onDelete={removeSelected}
+             onDuplicate={duplicateSelected}
+             onLayer={(dir) => moveLayer(selected.id, dir)}
++            onSavePreset={(name) => savePreset(selected, name)}
+           />
+         ) : (
+           <SceneInspector scene={scene} onChange={setScene} />
+diff --git a/src/presets/built-in.ts b/src/presets/built-in.ts
+new file mode 100644
+index 0000000..6b01b32
+--- /dev/null
++++ b/src/presets/built-in.ts
+@@ -0,0 +1,220 @@
++import {
++  defaultLine,
++  defaultRect,
++  defaultText,
++  type Element,
++} from "../model/model.ts";
++
++/** A saved, pre-configured element: dragging it onto the canvas drops a copy. */
++export type Preset = { name: string; element: Element; builtIn?: boolean };
++
++function rect(patch: (el: ReturnType<typeof defaultRect>) => void) {
++  const el = defaultRect();
++  patch(el);
++  return el;
++}
++function text(patch: (el: ReturnType<typeof defaultText>) => void) {
++  const el = defaultText();
++  patch(el);
++  return el;
++}
++function line(patch: (el: ReturnType<typeof defaultLine>) => void) {
++  const el = defaultLine();
++  patch(el);
++  return el;
++}
++
++export const BUILT_IN_PRESETS: Preset[] = [
++  {
++    name: "Tarjeta neón",
++    element: rect((el) => {
++      el.name = "Tarjeta neón";
++      el.label.text = "MCP Server";
++      el.bgGlow = { enabled: true, color: "#1d4ed8", blur: 50, strength: 1 };
++      el.borderGlow = {
++        enabled: true,
++        color: "#60a5fa",
++        blur: 16,
++        strength: 2,
++      };
++      el.anim = { kind: "float", amount: 10, cycles: 1, delay: 0 };
++    }),
++  },
++  {
++    name: "Tarjeta glass",
++    element: rect((el) => {
++      el.name = "Tarjeta glass";
++      el.label.text = "Cliente";
++      el.fill = {
++        color: "#ffffff",
++        color2: "#93c5fd",
++        gradient: true,
++        angle: 135,
++        opacity: 0.08,
++      };
++      el.border = {
++        width: 1.5,
++        color: "#ffffff",
++        opacity: 0.25,
++        style: "solid",
++        flow: 0,
++      };
++      el.borderGlow.enabled = false;
++    }),
++  },
++  {
++    name: "Tarjeta borde animado",
++    element: rect((el) => {
++      el.name = "Tarjeta borde animado";
++      el.label.text = "Tool";
++      el.fill.opacity = 0.6;
++      el.border = {
++        width: 2.5,
++        color: "#22d3ee",
++        opacity: 1,
++        style: "dashed",
++        flow: 4,
++      };
++      el.borderGlow = {
++        enabled: true,
++        color: "#22d3ee",
++        blur: 14,
++        strength: 1,
++      };
++    }),
++  },
++  {
++    name: "Pill",
++    element: rect((el) => {
++      el.name = "Pill";
++      el.w = 420;
++      el.h = 64;
++      el.radius = 32;
++      el.label = { ...el.label, text: "🚀 Cómo funciona MCP", size: 24 };
++      el.fill = {
++        color: "#1d4ed8",
++        color2: "#1e40af",
++        gradient: false,
++        angle: 0,
++        opacity: 0.3,
++      };
++      el.border.color = "#60a5fa";
++      el.borderGlow.enabled = false;
++      el.shadow.enabled = false;
++    }),
++  },
++  {
++    name: "Botón CTA",
++    element: rect((el) => {
++      el.name = "Botón CTA";
++      el.w = 220;
++      el.h = 72;
++      el.radius = 36;
++      el.label = { ...el.label, text: "+ Seguir", size: 26, weight: 700 };
++      el.fill = {
++        color: "#3b82f6",
++        color2: "#2563eb",
++        gradient: true,
++        angle: 90,
++        opacity: 1,
++      };
++      el.border.width = 0;
++      el.bgGlow = { enabled: true, color: "#3b82f6", blur: 30, strength: 1 };
++      el.anim = { kind: "pulse", amount: 6, cycles: 2, delay: 0 };
++    }),
++  },
++  {
++    name: "Título",
++    element: text((el) => {
++      el.name = "Título";
++      el.text = "Cómo funciona\nun MCP";
++      el.size = 80;
++    }),
++  },
++  {
++    name: "Título degradado",
++    element: text((el) => {
++      el.name = "Título degradado";
++      el.text = "Model Context Protocol";
++      el.size = 64;
++      el.gradient = true;
++      el.color = "#3b82f6";
++      el.color2 = "#22d3ee";
++    }),
++  },
++  {
++    name: "Párrafo",
++    element: text((el) => {
++      el.name = "Párrafo";
++      el.text =
++        "El cliente pide, el servidor MCP\nexpone herramientas y datos.";
++      el.size = 30;
++      el.weight = 400;
++      el.color = "#cbd5e1";
++      el.lineHeight = 1.4;
++    }),
++  },
++  {
++    name: "Manuscrito",
++    element: text((el) => {
++      el.name = "Manuscrito";
++      el.text = "¡así de simple!";
++      el.font = "Caveat";
++      el.size = 48;
++      el.weight = 700;
++      el.color = "#60a5fa";
++    }),
++  },
++  {
++    name: "Pixel",
++    element: text((el) => {
++      el.name = "Pixel";
++      el.text = "REQUEST 200 OK";
++      el.font = "Press Start 2P";
++      el.size = 28;
++      el.weight = 400;
++      el.color = "#4ade80";
++      el.glow = { enabled: true, color: "#22c55e", blur: 12, strength: 1 };
++    }),
++  },
++  {
++    name: "Conexión con pulsos",
++    element: line((el) => {
++      el.name = "Conexión con pulsos";
++    }),
++  },
++  {
++    name: "Hormigas",
++    element: line((el) => {
++      el.name = "Hormigas";
++      el.opacity = 0.25;
++      el.glow.enabled = false;
++      el.flow = {
++        kind: "ants",
++        color: "#22d3ee",
++        speed: 12,
++        count: 1,
++        size: 5,
++        reverse: false,
++      };
++    }),
++  },
++  {
++    name: "Cometa curvo",
++    element: line((el) => {
++      el.name = "Cometa curvo";
++      el.bend = -60;
++      el.opacity = 0.3;
++      el.flow = {
++        kind: "comet",
++        color: "#a78bfa",
++        speed: 2,
++        count: 1,
++        size: 6,
++        reverse: false,
++      };
++      el.color = "#8b5cf6";
++      el.glow.color = "#8b5cf6";
++    }),
++  },
++];
+diff --git a/src/presets/scene-files.tsx b/src/presets/scene-files.tsx
+new file mode 100644
+index 0000000..493ecc3
+--- /dev/null
++++ b/src/presets/scene-files.tsx
+@@ -0,0 +1,70 @@
++import { FolderOpen, Save } from "lucide-react";
++import { useState } from "react";
++import type { Scene } from "../model/model.ts";
++import { loadScenes, saveScene } from "./store.ts";
++
++/** Scene name, save-to-`scenes/` and open-from-`scenes/` controls of the top bar. */
++export function SceneFiles({
++  scene,
++  name,
++  setName,
++  onOpen,
++  setStatus,
++}: {
++  scene: Scene;
++  name: string;
++  setName: (name: string) => void;
++  onOpen: (scene: Scene) => void;
++  setStatus: (s: string) => void;
++}) {
++  const [scenes, setScenes] = useState<{ name: string; data: Scene }[]>([]);
++  const refresh = () =>
++    loadScenes()
++      .then(setScenes)
++      .catch(() => setScenes([]));
++
++  return (
++    <>
++      <input
++        className="scene-name"
++        value={name}
++        onChange={(e) => setName(e.target.value)}
++        aria-label="Nombre de la escena"
++        title="Nombre de la escena"
++      />
++      <button
++        type="button"
++        title="Guardar escena como JSON"
++        onClick={() =>
++          saveScene(name, scene)
++            .then(() => setStatus(`Escena «${name}» guardada en scenes/`))
++            .catch((error: unknown) => setStatus(`Error: ${error}`))
++        }
++      >
++        <Save size={16} />
++      </button>
++      <label className="open" title="Abrir escena guardada">
++        <FolderOpen size={16} />
++        <select
++          value=""
++          onFocus={refresh}
++          onPointerDown={refresh}
++          onChange={(e) => {
++            const found = scenes.find((s) => s.name === e.target.value);
++            if (found) {
++              setName(found.name);
++              onOpen(found.data);
++            }
++          }}
++        >
++          <option value="">Abrir…</option>
++          {scenes.map((s) => (
++            <option key={s.name} value={s.name}>
++              {s.name}
++            </option>
++          ))}
++        </select>
++      </label>
++    </>
++  );
++}
+diff --git a/src/presets/slug.ts b/src/presets/slug.ts
+new file mode 100644
+index 0000000..c61932d
+--- /dev/null
++++ b/src/presets/slug.ts
+@@ -0,0 +1,9 @@
++/** File-name-safe version of a preset or scene name: `"Tarjeta Neón!"` → `"tarjeta-ne-n"`. */
++export function slugify(name: string): string {
++  return (
++    name
++      .toLowerCase()
++      .replace(/[^a-z0-9-_]+/g, "-")
++      .replace(/^-+|-+$/g, "") || "untitled"
++  );
++}
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+new file mode 100644
+index 0000000..a46b4dc
+--- /dev/null
++++ b/src/presets/store.ts
+@@ -0,0 +1,38 @@
++import type { Scene } from "../model/model.ts";
++import type { Preset } from "./built-in.ts";
++
++async function getJson<T>(url: string): Promise<T> {
++  const res = await fetch(url);
++  if (!res.ok) throw new Error(`${url}: ${res.status}`);
++  return (await res.json()) as T;
++}
++async function postJson(url: string, body: unknown): Promise<void> {
++  const res = await fetch(url, {
++    method: "POST",
++    headers: { "content-type": "application/json" },
++    body: JSON.stringify(body),
++  });
++  if (!res.ok) throw new Error(`${url}: ${res.status}`);
++}
++
++/** User presets live as JSON files in `presets/`. */
++export async function loadUserPresets(): Promise<Preset[]> {
++  const items = await getJson<{ name: string; data: Preset }[]>("/api/presets");
++  return items.map((item) => item.data);
++}
++
++export async function saveUserPreset(preset: Preset): Promise<void> {
++  await postJson(
++    `/api/presets?name=${encodeURIComponent(preset.name)}`,
++    preset,
++  );
++}
++
++/** Scenes live as JSON files in `scenes/`. */
++export async function loadScenes(): Promise<{ name: string; data: Scene }[]> {
++  return getJson("/api/scenes");
++}
++
++export async function saveScene(name: string, scene: Scene): Promise<void> {
++  await postJson(`/api/scenes?name=${encodeURIComponent(name)}`, scene);
++}
+diff --git a/src/styles.css b/src/styles.css
+index 3542bb3..0be994d 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -170,7 +170,7 @@ textarea {
+   background:
+     repeating-conic-gradient(#0e1117 0 25%, #0b0d12 0 50%) 0 0 / 24px 24px;
+ }
+-.stage canvas {
++.center .stage canvas {
+   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+   touch-action: none;
+ }
+@@ -295,7 +295,7 @@ textarea {
+   display: flex;
+   gap: 6px;
+ }
+-.preset-save input {
++.section .preset-save input {
+   flex: 1;
+   min-width: 0;
+ }
+diff --git a/vite.config.ts b/vite.config.ts
+index 58676f7..a2d936a 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -1,6 +1,69 @@
++import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
++import type { IncomingMessage, ServerResponse } from "node:http";
++import { join } from "node:path";
+ import react from "@vitejs/plugin-react";
+-import { defineConfig } from "vite";
++import { defineConfig, type Plugin } from "vite";
++import { slugify } from "./src/presets/slug.ts";
++
++/**
++ * Stores presets and scenes as plain JSON files at the repo root:
++ * GET  /api/<kind>          -> [{ name, data }]
++ * POST /api/<kind>?name=x   -> writes <kind>/<slug>.json
++ */
++function jsonStore(): Plugin {
++  const kinds = ["presets", "scenes"];
++
++  async function handle(
++    kind: string,
++    req: IncomingMessage,
++    res: ServerResponse,
++  ) {
++    const dir = join(import.meta.dirname, kind);
++    await mkdir(dir, { recursive: true });
++    const url = new URL(req.url ?? "", "http://localhost");
++    res.setHeader("content-type", "application/json");
++    if (req.method === "GET") {
++      const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
++      const items = await Promise.all(
++        files.map(async (f) => ({
++          name: f.replace(/\.json$/, ""),
++          data: JSON.parse(await readFile(join(dir, f), "utf8")),
++        })),
++      );
++      res.end(JSON.stringify(items));
++      return;
++    }
++    if (req.method === "POST") {
++      const chunks: Buffer[] = [];
++      for await (const chunk of req) chunks.push(chunk as Buffer);
++      const name = slugify(url.searchParams.get("name") ?? "untitled");
++      const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
++      await writeFile(
++        join(dir, `${name}.json`),
++        `${JSON.stringify(body, null, 2)}\n`,
++      );
++      res.end(JSON.stringify({ name }));
++      return;
++    }
++    res.statusCode = 405;
++    res.end("{}");
++  }
++
++  return {
++    name: "json-store",
++    configureServer(server) {
++      server.middlewares.use((req, res, next) => {
++        const kind = req.url?.match(/^\/api\/(\w+)/)?.[1];
++        if (!kind || !kinds.includes(kind)) return next();
++        handle(kind, req, res).catch((error: unknown) => {
++          res.statusCode = 500;
++          res.end(JSON.stringify({ error: String(error) }));
++        });
++      });
++    },
++  };
++}
+ 
+ export default defineConfig({
+-  plugins: [react()],
++  plugins: [react(), jsonStore()],
+ });

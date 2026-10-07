@@ -1,0 +1,14 @@
+{
+  "name": "Icono con fondo",
+  "kind": "icon",
+  "traits": [
+    {
+      "use": "glow",
+      "color": "#60a5fa",
+      "blur": 18
+    }
+  ],
+  "set": {
+    "icon": "Zap"
+  }
+}

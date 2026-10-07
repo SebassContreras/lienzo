@@ -1,0 +1,59 @@
+{
+  "name": "Tarjeta con icono",
+  "kind": "group",
+  "traits": [
+    {
+      "use": "float",
+      "amount": 8
+    }
+  ],
+  "set": {
+    "w": 320,
+    "h": 210,
+    "cw": 320,
+    "ch": 210,
+    "children": [
+      {
+        "id": "c1",
+        "kind": "rect",
+        "name": "Fondo",
+        "w": 320,
+        "h": 210
+      },
+      {
+        "id": "c2",
+        "kind": "icon",
+        "name": "Icono",
+        "x": 28,
+        "y": 28,
+        "w": 64,
+        "h": 64,
+        "icon": "Sparkles",
+        "tile": {
+          "radius": 18,
+          "padding": 14
+        }
+      },
+      {
+        "id": "c3",
+        "kind": "text",
+        "name": "Título",
+        "x": 28,
+        "y": 112,
+        "text": "Herramienta",
+        "size": 30
+      },
+      {
+        "id": "c4",
+        "kind": "text",
+        "name": "Subtítulo",
+        "x": 28,
+        "y": 154,
+        "text": "Lo que hace, en una línea",
+        "size": 18,
+        "weight": 500,
+        "color": "#94a3b8"
+      }
+    ]
+  }
+}

@@ -1,0 +1,314 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 807d0df..f06a4c3 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -30,7 +30,12 @@ import {
+   resolveLine,
+   translate,
+ } from "../engine/geometry.ts";
+-import { groupElements, idsWithin, ungroupElement } from "../engine/groups.ts";
++import {
++  detachOutside,
++  groupElements,
++  idsWithin,
++  ungroupElement,
++} from "../engine/groups.ts";
+ import { ExportControls } from "../export/export-controls.tsx";
+ import {
+   cloneElement,
+@@ -201,7 +206,8 @@ export function App() {
+ 
+   const savePreset = useCallback(
+     (el: Element, name: string) => {
+-      const element = structuredClone(el);
++      const element =
++        el.kind === "group" ? detachOutside(el) : structuredClone(el);
+       element.name = name;
+       if (element.kind === "line") {
+         // a preset carries no attachments: keep the ends where they are drawn
+diff --git a/src/engine/groups.ts b/src/engine/groups.ts
+index 37f3603..7f7dbc7 100644
+--- a/src/engine/groups.ts
++++ b/src/engine/groups.ts
+@@ -105,3 +105,20 @@ export function ungroupElement(
+     ids: children.map((el) => el.id),
+   };
+ }
++
++/**
++ * A copy of `group` standing alone, as a preset stores it: a line inside that is attached to
++ * something outside the group keeps that end where its stored point is.
++ */
++export function detachOutside(group: GroupEl): GroupEl {
++  const inside = new Set(idsWithin(group));
++  const detach = (el: Element): Element => {
++    if (el.kind === "group")
++      return { ...el, children: el.children.map(detach) };
++    if (el.kind !== "line") return el;
++    const end = (ep: typeof el.a) =>
++      ep.attach && !inside.has(ep.attach) ? { x: ep.x, y: ep.y } : ep;
++    return { ...el, a: end(el.a), b: end(el.b) };
++  };
++  return detach(structuredClone(group)) as GroupEl;
++}
+diff --git a/src/presets/diff.ts b/src/presets/diff.ts
+index 8c1dbdc..a6377ed 100644
+--- a/src/presets/diff.ts
++++ b/src/presets/diff.ts
+@@ -28,10 +28,69 @@ export function deepDiff(value: unknown, base: unknown): unknown {
+     : structuredClone(value);
+ }
+ 
+-/** A recipe that rebuilds `el` from its kind's default: no traits, only what differs. */
++/**
++ * A group's child as a recipe stores it: its kind, a short local id (lines inside the group
++ * attach by these), and only what differs from its kind's default.
++ */
++function compactChild(
++  el: Element,
++  local: Map<string, string>,
++): Record<string, unknown> {
++  const own = structuredClone(el) as Element;
++  if (own.kind === "line") {
++    for (const end of [own.a, own.b]) {
++      if (end.attach) end.attach = local.get(end.attach);
++      if (!end.attach) delete end.attach;
++    }
++  }
++  const { id, kind, ...rest } = own;
++  const { id: _did, kind: _dkind, ...base } = defaultElement(kind);
++  if ("children" in rest) {
++    const { children, ...fields } = rest;
++    const diff = deepDiff(fields, base) ?? {};
++    return {
++      id: local.get(id),
++      kind,
++      ...(diff as object),
++      children: children.map((c) => compactChild(c, local)),
++    };
++  }
++  const diff = deepDiff(rest, base) ?? {};
++  return { id: local.get(id), kind, ...(diff as object) };
++}
++
++/** Short local ids (`c1`, `c2`…) for everything inside a group, in drawing order. */
++function localIds(children: Element[]): Map<string, string> {
++  const local = new Map<string, string>();
++  const walk = (el: Element) => {
++    local.set(el.id, `c${local.size + 1}`);
++    if (el.kind === "group") el.children.forEach(walk);
++  };
++  children.forEach(walk);
++  return local;
++}
++
++/**
++ * A recipe that rebuilds `el` from its kind's default: no traits, only what differs. A
++ * group keeps its children, each stored the same compact way.
++ */
+ export function recipeFromElement(name: string, el: Element): PresetRecipe {
+   const { id: _id, name: _name, ...own } = el;
+   const { id: _did, name: _dname, ...base } = defaultElement(el.kind);
++  if (el.kind === "group") {
++    const { children: _c, ...fields } = own as typeof own & {
++      children: Element[];
++    };
++    const { children: _dc, ...baseFields } = base as typeof base & {
++      children: Element[];
++    };
++    const local = localIds(el.children);
++    const set = {
++      ...((deepDiff(fields, baseFields) as object | undefined) ?? {}),
++      children: el.children.map((c) => compactChild(c, local)),
++    } as DeepPartial<Element>;
++    return { name, kind: "group", traits: [], set };
++  }
+   const set = deepDiff(own, base) as DeepPartial<Element> | undefined;
+   return { name, kind: el.kind, traits: [], ...(set ? { set } : {}) };
+ }
+diff --git a/src/presets/resolve.ts b/src/presets/resolve.ts
+index b078675..536ed39 100644
+--- a/src/presets/resolve.ts
++++ b/src/presets/resolve.ts
+@@ -1,5 +1,6 @@
+ import {
+   type Background,
++  cloneElement,
+   defaultBackground,
+   defaultElement,
+   type Element,
+@@ -75,10 +76,46 @@ export function resolvePreset(recipe: PresetRecipe): Resolved {
+     );
+   }
+   if (!("kind" in target)) return { background: target };
++  if (target.kind === "group") {
++    const children = expandChildren(target.children as unknown[]);
++    if ("error" in children) return children;
++    // fresh ids for the whole tree, with lines inside re-attached to the new ids
++    target = cloneElement({ ...target, children: children.elements });
++  }
+   target.id = newId();
+   return { element: target };
+ }
+ 
++/**
++ * A group recipe's children, each built from its kind's default plus the values it stores;
++ * groups inside are built the same way.
++ */
++function expandChildren(
++  raw: unknown[],
++): { elements: Element[] } | { error: string } {
++  const elements: Element[] = [];
++  for (const item of raw) {
++    if (!isPlainObject(item) || typeof item.kind !== "string") {
++      return { error: "Un hijo del grupo no tiene tipo" };
++    }
++    let el: Element;
++    try {
++      el = defaultElement(item.kind as Element["kind"]);
++    } catch {
++      return { error: `Tipo de elemento desconocido «${item.kind}»` };
++    }
++    const { children, ...fields } = item;
++    deepMerge(el as unknown as Record<string, unknown>, fields);
++    if (el.kind === "group") {
++      const inner = expandChildren(Array.isArray(children) ? children : []);
++      if ("error" in inner) return inner;
++      el.children = inner.elements;
++    }
++    elements.push(el);
++  }
++  return { elements };
++}
++
+ /** Resolves a recipe that must build an element. */
+ export function resolveElement(
+   recipe: PresetRecipe,
+diff --git a/src/presets/round-trip.test.ts b/src/presets/round-trip.test.ts
+index 0f2e011..015073d 100644
+--- a/src/presets/round-trip.test.ts
++++ b/src/presets/round-trip.test.ts
+@@ -1,7 +1,17 @@
+ import { readdirSync, readFileSync } from "node:fs";
+ import { join } from "node:path";
+ import { describe, expect, it } from "vitest";
+-import { cloneElement, type Element, type RectEl } from "../model/model.ts";
++import {
++  cloneElement,
++  defaultEllipse,
++  defaultGroup,
++  defaultLine,
++  defaultRect,
++  defaultText,
++  type Element,
++  type GroupEl,
++  type RectEl,
++} from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { TRAITS } from "../traits/index.ts";
+ import { recipeFromElement } from "./diff.ts";
+@@ -15,7 +25,23 @@ function resolved(recipe: PresetRecipe): Element {
+   return r.element;
+ }
+ 
+-const withoutId = ({ id: _id, ...rest }: Element) => rest;
++/** `el` with its id removed and the ids inside it replaced by their order, attachments too. */
++function withoutId(el: Element): Record<string, unknown> {
++  const order = new Map<string, string>();
++  const number = (e: Element) => {
++    order.set(e.id, `#${order.size}`);
++    if (e.kind === "group") e.children.forEach(number);
++  };
++  number(el);
++  const { id: _id, ...rest } = el;
++  return JSON.parse(
++    JSON.stringify(rest, (key, value) =>
++      (key === "id" || key === "attach") && typeof value === "string"
++        ? (order.get(value) ?? value)
++        : value,
++    ),
++  );
++}
+ 
+ describe("save as preset", () => {
+   it.each(BUILT_IN_RECIPES.map((r) => [r.name, r] as const))(
+@@ -59,6 +85,79 @@ describe("save as preset", () => {
+   });
+ });
+ 
++describe("group presets", () => {
++  function card(): GroupEl {
++    const tile = { ...defaultRect(), x: 0, y: 0, w: 200, h: 120 };
++    const dot = { ...defaultEllipse(), x: 20, y: 20, w: 30, h: 30 };
++    const title = { ...defaultText(), x: 60, y: 20, text: "Hola" };
++    const link = {
++      ...defaultLine(),
++      a: { x: 0, y: 0, attach: dot.id },
++      b: { x: 0, y: 0, attach: title.id },
++    };
++    const inner = {
++      ...defaultGroup(),
++      x: 10,
++      y: 80,
++      children: [{ ...defaultRect(), w: 40, h: 10 }],
++    };
++    return {
++      ...defaultGroup(),
++      x: 300,
++      y: 200,
++      w: 400,
++      h: 240,
++      cw: 200,
++      ch: 120,
++      children: [tile, dot, title, link, inner],
++    };
++  }
++
++  it("a group round-trips through a saved recipe, nested groups and lines included", () => {
++    const group = card();
++    const saved = recipeFromElement("Tarjeta", group);
++    const back = resolved(saved) as GroupEl;
++    expect(withoutId(back)).toEqual(withoutId({ ...group, name: "Tarjeta" }));
++  });
++
++  it("stores children compactly under local ids, with no canvas ids", () => {
++    const group = card();
++    const saved = recipeFromElement("Tarjeta", group);
++    const json = JSON.stringify(saved);
++    for (const child of group.children) expect(json).not.toContain(child.id);
++    const children = (saved.set as { children: Record<string, unknown>[] })
++      .children;
++    expect(children[0]).toEqual({ id: "c1", kind: "rect", w: 200, h: 120 });
++    expect(children[3]).toMatchObject({
++      kind: "line",
++      a: { attach: "c2" },
++      b: { attach: "c3" },
++    });
++  });
++
++  it("each drop gets fresh ids for the whole tree, attachments following", () => {
++    const recipe = recipeFromElement("Tarjeta", card());
++    const one = cloneElement(resolved(recipe)) as GroupEl;
++    const two = cloneElement(resolved(recipe)) as GroupEl;
++    const ids = (g: GroupEl) => g.children.map((c) => c.id);
++    expect(ids(one)).not.toEqual(ids(two));
++    const line = one.children[3];
++    if (line?.kind !== "line") throw new Error("expected a line");
++    expect(line.a.attach).toBe(one.children[1]?.id);
++    expect(line.b.attach).toBe(one.children[2]?.id);
++  });
++
++  it("a child of an unknown kind is reported, not dropped", () => {
++    const r = resolveElement({
++      name: "Roto",
++      kind: "group",
++      traits: [],
++      set: { children: [{ kind: "nope" }] } as never,
++    });
++    expect(r).toEqual({ error: "Tipo de elemento desconocido «nope»" });
++  });
++});
++
+ describe("dropped elements", () => {
+   it("are not affected by later changes to the recipe or its traits", () => {
+     const recipe = structuredClone(

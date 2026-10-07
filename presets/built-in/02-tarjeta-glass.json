@@ -1,0 +1,12 @@
+{
+  "name": "Tarjeta glass",
+  "kind": "rect",
+  "traits": [
+    "glass"
+  ],
+  "set": {
+    "label": {
+      "text": "Cliente"
+    }
+  }
+}
