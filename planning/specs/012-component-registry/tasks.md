@@ -1,7 +1,8 @@
 # 012 — component-registry — Tasks
 
-- [ ] T001 [agent] [status:todo] Shared field groups (box, fill, stroke, glow, shadow, label, anim)
+- [x] T001 [agent] [status:done] Shared field groups (box, fill, stroke, glow, shadow, label, anim)
       covers: D1@1, A23@1
+      changes: src/components/fields/anim.ts (+78 -0), src/components/fields/box.ts (+30 -0), src/components/fields/field.ts (+270 -0), src/components/fields/fill.ts (+38 -0), src/components/fields/glow.ts (+35 -0), src/components/fields/index.ts (+8 -0), src/components/fields/label.ts (+59 -0), src/components/fields/shadow.ts (+41 -0), src/components/fields/stroke.ts (+64 -0), src/model/fonts.ts (+9 -0), src/model/model.ts (+1 -8)
 - [ ] T002 [agent] [status:todo] Descriptor type and the component registry
       covers: D1@1, A23@1
 - [ ] T003 [agent] [status:todo] Descriptor for rect

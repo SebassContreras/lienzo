@@ -272,14 +272,7 @@ export type Scene = {
   elements: Element[];
 };
 
-export const FONTS = [
-  "Inter",
-  "Space Grotesk",
-  "Poppins",
-  "JetBrains Mono",
-  "Caveat",
-  "Press Start 2P",
-] as const;
+export { FONTS } from "./fonts.ts";
 
 export const SIZE_PRESETS = [
   { label: "Cuadrado 1080×1080", width: 1080, height: 1080 },
