@@ -1,6 +1,6 @@
 import { ellipse } from "../components/ellipse/descriptor.ts";
 import { drawGroup } from "../components/group.ts";
-import { drawIcon } from "../components/icon.ts";
+import { icon } from "../components/icon/descriptor.ts";
 import { drawImage } from "../components/image.ts";
 import { drawLine } from "../components/line.ts";
 import { drawParticles } from "../components/particles.ts";
@@ -34,7 +34,7 @@ export function drawElements(
   for (const el of elements) {
     if (el.kind === "rect") rect.draw(ctx, el, dc);
     else if (el.kind === "ellipse") ellipse.draw(ctx, el, dc);
-    else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
+    else if (el.kind === "icon") icon.draw(ctx, el, dc);
     else if (el.kind === "image") drawImage(ctx, el, scene, t);
     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
     else if (el.kind === "text") drawText(ctx, el, scene, t);

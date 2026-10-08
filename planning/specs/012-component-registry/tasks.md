@@ -12,8 +12,9 @@
 - [x] T004 [agent] [status:done] Descriptor for ellipse
       covers: D1@1
       changes: src/components/ellipse.ts (+0 -27), src/components/ellipse/descriptor.ts (+18 -0), src/components/ellipse/draw.ts (+18 -0), src/components/index.ts (+5 -1), src/engine/render.ts (+2 -2)
-- [ ] T005 [agent] [status:todo] Descriptor for icon
+- [x] T005 [agent] [status:done] Descriptor for icon
       covers: D1@1
+      changes: src/components/icon/descriptor.ts (+89 -0), src/components/icon.ts → src/components/icon/draw.ts (+11 -6), src/components/index.ts (+2 -0), src/engine/render.ts (+2 -2)
 - [ ] T006 [agent] [status:todo] Descriptor for image
       covers: D1@1
 - [ ] T007 [agent] [status:todo] Descriptor for text

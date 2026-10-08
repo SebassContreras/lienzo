@@ -1,18 +1,23 @@
-import { animState } from "../engine/anim.ts";
-import { boxOf } from "../engine/geometry.ts";
-import { iconPaths } from "../engine/icon-shapes.ts";
+import { animState } from "../../engine/anim.ts";
+import { boxOf } from "../../engine/geometry.ts";
+import { iconPaths } from "../../engine/icon-shapes.ts";
 import {
   type Ctx,
   linearGradient,
   shadowOnly,
   withTransform,
-} from "../engine/paint.ts";
-import type { IconEl, Scene } from "../model/model.ts";
+} from "../../engine/paint.ts";
+import type { DrawContext } from "../descriptor.ts";
+import type { IconEl } from "./descriptor.ts";
 
 /** Lucide draws on a 24×24 grid. */
 const GRID = 24;
 
-export function drawIcon(ctx: Ctx, el: IconEl, scene: Scene, t: number): void {
+export function drawIcon(
+  ctx: Ctx,
+  el: IconEl,
+  { scene, t }: DrawContext,
+): void {
   const st = animState(el.anim, t, scene.duration);
   const box = boxOf(el);
   withTransform(ctx, box, st, () => {

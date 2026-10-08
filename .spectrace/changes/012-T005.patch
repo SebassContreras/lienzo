@@ -1,0 +1,171 @@
+diff --git a/src/components/icon/descriptor.ts b/src/components/icon/descriptor.ts
+new file mode 100644
+index 0000000..2783fc9
+--- /dev/null
++++ b/src/components/icon/descriptor.ts
+@@ -0,0 +1,89 @@
++import { z } from "zod";
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import {
++  anim,
++  BOX_ANIMS,
++  check,
++  color,
++  custom,
++  fillFields,
++  glow,
++  noGlow,
++  num,
++  obj,
++  type Parent,
++  position,
++} from "../fields/index.ts";
++import { drawIcon } from "./draw.ts";
++
++const on = (p: Parent) => p.enabled === true;
++
++/** A lucide icon drawn as strokes, optionally on a rounded tile. */
++const fields = {
++  ...position(),
++  /** Icons are square: the size sets both sides. */
++  w: num(120, {
++    label: "Tamaño",
++    section: "Trazo",
++    min: 16,
++    max: 1200,
++    set: (el: { w: number; h: number }, v: number) => {
++      el.w = v;
++      el.h = v;
++    },
++  }),
++  h: num(120, { label: "Alto", inspector: false }),
++  /** Lucide icon name in PascalCase, e.g. "Wrench". */
++  icon: custom("icon", "Wrench", z.string(), {
++    label: "Icono",
++    section: "Icono",
++  }),
++  /** Stroke width on lucide's 24x24 grid. */
++  stroke: num(2, {
++    label: "Grosor",
++    section: "Trazo",
++    min: 0.5,
++    max: 4,
++    step: 0.25,
++  }),
++  color: color("#e0f2fe", { label: "Color", section: "Trazo" }),
++  opacity: num(1, { label: "Opacidad", section: "Trazo", max: 1, step: 0.01 }),
++  tile: obj(
++    {
++      enabled: check(true, { label: "Activo" }),
++      ...fillFields(
++        {
++          color: "#1e3a8a",
++          gradient: true,
++          color2: "#0b1630",
++          angle: 135,
++          opacity: 1,
++        },
++        on,
++      ),
++      radius: num(28, { label: "Esquinas", max: 300, visible: on }),
++      /** Space between the tile's edge and the icon, px. */
++      padding: num(28, { label: "Margen", max: 300, visible: on }),
++    },
++    { section: "Fondo del icono" },
++  ),
++  glow: glow(noGlow("#60a5fa"), "Brillo"),
++  anim: anim(BOX_ANIMS),
++};
++
++export type IconEl = ElementOf<"icon", typeof fields>;
++
++export const icon = defineComponent<IconEl>({
++  kind: "icon",
++  label: "Icono",
++  fields,
++  sections: [
++    { title: "Icono" },
++    { title: "Trazo" },
++    { title: "Fondo del icono" },
++    { title: "Brillo" },
++    { title: "Animación" },
++  ],
++  anims: BOX_ANIMS,
++  draw: drawIcon,
++});
+diff --git a/src/components/icon.ts b/src/components/icon/draw.ts
+similarity index 79%
+rename from src/components/icon.ts
+rename to src/components/icon/draw.ts
+index 1004544..71c01f8 100644
+--- a/src/components/icon.ts
++++ b/src/components/icon/draw.ts
+@@ -1,18 +1,23 @@
+-import { animState } from "../engine/anim.ts";
+-import { boxOf } from "../engine/geometry.ts";
+-import { iconPaths } from "../engine/icon-shapes.ts";
++import { animState } from "../../engine/anim.ts";
++import { boxOf } from "../../engine/geometry.ts";
++import { iconPaths } from "../../engine/icon-shapes.ts";
+ import {
+   type Ctx,
+   linearGradient,
+   shadowOnly,
+   withTransform,
+-} from "../engine/paint.ts";
+-import type { IconEl, Scene } from "../model/model.ts";
++} from "../../engine/paint.ts";
++import type { DrawContext } from "../descriptor.ts";
++import type { IconEl } from "./descriptor.ts";
+ 
+ /** Lucide draws on a 24×24 grid. */
+ const GRID = 24;
+ 
+-export function drawIcon(ctx: Ctx, el: IconEl, scene: Scene, t: number): void {
++export function drawIcon(
++  ctx: Ctx,
++  el: IconEl,
++  { scene, t }: DrawContext,
++): void {
+   const st = animState(el.anim, t, scene.duration);
+   const box = boxOf(el);
+   withTransform(ctx, box, st, () => {
+diff --git a/src/components/index.ts b/src/components/index.ts
+index c11952a..329da67 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -6,11 +6,13 @@ import { newId } from "../model/id.ts";
+ import type { Descriptor } from "./descriptor.ts";
+ import { ellipse } from "./ellipse/descriptor.ts";
+ import { defaultsOf } from "./fields/index.ts";
++import { icon } from "./icon/descriptor.ts";
+ import { rect } from "./rect/descriptor.ts";
+ 
+ export const COMPONENTS = [
+   rect,
+   ellipse,
++  icon,
+ ] as const satisfies readonly Descriptor<{
+   kind: string;
+ }>[];
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index ff8c564..201a7fa 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,6 +1,6 @@
+ import { ellipse } from "../components/ellipse/descriptor.ts";
+ import { drawGroup } from "../components/group.ts";
+-import { drawIcon } from "../components/icon.ts";
++import { icon } from "../components/icon/descriptor.ts";
+ import { drawImage } from "../components/image.ts";
+ import { drawLine } from "../components/line.ts";
+ import { drawParticles } from "../components/particles.ts";
+@@ -34,7 +34,7 @@ export function drawElements(
+   for (const el of elements) {
+     if (el.kind === "rect") rect.draw(ctx, el, dc);
+     else if (el.kind === "ellipse") ellipse.draw(ctx, el, dc);
+-    else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
++    else if (el.kind === "icon") icon.draw(ctx, el, dc);
+     else if (el.kind === "image") drawImage(ctx, el, scene, t);
+     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
+     else if (el.kind === "text") drawText(ctx, el, scene, t);
