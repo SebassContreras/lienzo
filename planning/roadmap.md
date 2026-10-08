@@ -24,3 +24,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 017 | more-elements | todo | 012, 013, 015 | build | 13 |
 | 018 | more-animations | todo | 012, 013 | build | 9 |
 | 019 | animation-presets | todo | 003, 013, 015, 018 | build | 12 |
+| 020 | history-undo | todo | 001 | design | 20 |
+| 021 | smart-connectors | todo | 001, 012 | design | 21 |
+| 022 | canvas-alignment | todo | 001, 012 | design | 22 |
+| 023 | mcp-visual-feedback | todo | 007, 008, 009, 010 | design | 23 |
