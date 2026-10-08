@@ -1,4 +1,4 @@
-import { animState } from "../../engine/anim.ts";
+import type { AnimState } from "../../engine/anim.ts";
 import { boxOf } from "../../engine/geometry.ts";
 import { type Ctx, withTransform } from "../../engine/paint.ts";
 import type { DrawContext } from "../descriptor.ts";
@@ -12,9 +12,9 @@ import type { GroupEl } from "./descriptor.ts";
 export function drawGroup(
   ctx: Ctx,
   el: GroupEl,
+  st: AnimState,
   { scene, t, drawElements }: DrawContext,
 ): void {
-  const st = animState(el.anim, t, scene.duration);
   withTransform(ctx, boxOf(el), st, () => {
     ctx.translate(el.x, el.y);
     ctx.scale(el.w / (el.cw || 1), el.h / (el.ch || 1));

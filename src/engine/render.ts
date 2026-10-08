@@ -1,12 +1,6 @@
-import { ellipse } from "../components/ellipse/descriptor.ts";
-import { group } from "../components/group/descriptor.ts";
-import { icon } from "../components/icon/descriptor.ts";
-import { image } from "../components/image/descriptor.ts";
-import { line } from "../components/line/descriptor.ts";
-import { particles } from "../components/particles/descriptor.ts";
-import { rect } from "../components/rect/descriptor.ts";
-import { text } from "../components/text/descriptor.ts";
+import { descriptorOf } from "../components/index.ts";
 import type { Background, Element, Scene } from "../model/model.ts";
+import { animate } from "./animate.ts";
 import { indexById, indexElements } from "./geometry.ts";
 import { type Ctx, linearGradient, rgba } from "./paint.ts";
 
@@ -32,14 +26,8 @@ export function drawElements(
 ): void {
   const dc = { scene, t, byId, drawElements };
   for (const el of elements) {
-    if (el.kind === "rect") rect.draw(ctx, el, dc);
-    else if (el.kind === "ellipse") ellipse.draw(ctx, el, dc);
-    else if (el.kind === "icon") icon.draw(ctx, el, dc);
-    else if (el.kind === "image") image.draw(ctx, el, dc);
-    else if (el.kind === "group") group.draw(ctx, el, dc);
-    else if (el.kind === "text") text.draw(ctx, el, dc);
-    else if (el.kind === "line") line.draw(ctx, el, dc);
-    else particles.draw(ctx, el, dc);
+    const now = animate(el, t, scene);
+    descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
   }
 }
 

@@ -18,7 +18,7 @@ export type AnimState = {
   scale: number;
   alpha: number;
   glowMul: number;
-  /** 0–1, for entry animations such as "draw". */
+  /** 0–1, how much of a line is drawn ("draw"); 1 for every other kind. */
   progress: number;
 };
 
@@ -49,7 +49,6 @@ export function animState(anim: Anim, t: number, duration: number): AnimState {
       break;
     case "fade-in":
       state.alpha = easeOut(entry);
-      state.progress = state.alpha;
       break;
     case "pop-in":
       state.alpha = clamp01(entry * 2);

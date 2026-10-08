@@ -1,4 +1,4 @@
-import { animState } from "../../engine/anim.ts";
+import type { AnimState } from "../../engine/anim.ts";
 import { boxOf } from "../../engine/geometry.ts";
 import {
   type Ctx,
@@ -17,9 +17,9 @@ const ALPHA_STEPS = 16;
 export function drawParticles(
   ctx: Ctx,
   el: ParticlesEl,
+  st: AnimState,
   { scene, t }: DrawContext,
 ): void {
-  const st = animState(el.anim, t, scene.duration);
   const box = boxOf(el);
   const pos = particlePositions(el, t, scene.duration);
   const n = pos.length / 2;

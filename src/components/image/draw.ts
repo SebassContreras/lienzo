@@ -1,4 +1,4 @@
-import { animState } from "../../engine/anim.ts";
+import type { AnimState } from "../../engine/anim.ts";
 import { boxOf } from "../../engine/geometry.ts";
 import { imageFor } from "../../engine/images.ts";
 import {
@@ -7,15 +7,9 @@ import {
   shadowOnly,
   withTransform,
 } from "../../engine/paint.ts";
-import type { DrawContext } from "../descriptor.ts";
 import type { ImageEl } from "./descriptor.ts";
 
-export function drawImage(
-  ctx: Ctx,
-  el: ImageEl,
-  { scene, t }: DrawContext,
-): void {
-  const st = animState(el.anim, t, scene.duration);
+export function drawImage(ctx: Ctx, el: ImageEl, st: AnimState): void {
   const box = boxOf(el);
   withTransform(ctx, box, st, () => {
     const path = new Path2D();

@@ -1,4 +1,4 @@
-import { animState, frac } from "../../engine/anim.ts";
+import { type AnimState, frac } from "../../engine/anim.ts";
 import {
   type PathSamples,
   type Pt,
@@ -20,12 +20,12 @@ import type { LineEl } from "./descriptor.ts";
 export function drawLine(
   ctx: Ctx,
   el: LineEl,
+  st: AnimState,
   { scene, t, byId }: DrawContext,
 ): void {
-  const st = animState(el.anim, t, scene.duration);
   const s = samplePath(resolveLine(el, byId));
   if (s.total < 1) return;
-  const progress = el.anim.kind === "draw" ? st.progress : 1;
+  const { progress } = st;
   if (progress <= 0) return;
   const pts = partialPath(s, progress);
 

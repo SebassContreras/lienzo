@@ -1,9 +1,15 @@
+import type { AnimState } from "../../engine/anim.ts";
 import type { Ctx } from "../../engine/paint.ts";
 import type { DrawContext } from "../descriptor.ts";
 import { drawShape } from "../rect/draw.ts";
 import type { EllipseEl } from "./descriptor.ts";
 
-export function drawEllipse(ctx: Ctx, el: EllipseEl, dc: DrawContext): void {
+export function drawEllipse(
+  ctx: Ctx,
+  el: EllipseEl,
+  st: AnimState,
+  dc: DrawContext,
+): void {
   const path = new Path2D();
   path.ellipse(
     el.x + el.w / 2,
@@ -14,5 +20,5 @@ export function drawEllipse(ctx: Ctx, el: EllipseEl, dc: DrawContext): void {
     0,
     Math.PI * 2,
   );
-  drawShape(ctx, el, path, dc);
+  drawShape(ctx, el, path, st, dc);
 }

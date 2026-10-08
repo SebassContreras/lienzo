@@ -33,8 +33,9 @@
 - [x] T011 [agent] [status:done] Scene schema and element types generated from the descriptors
       covers: D2@1
       changes: src/components/fields/field.ts (+6 -3), src/components/group/descriptor.ts (+10 -7), src/components/index.ts (+33 -27), src/components/rect/descriptor.ts (+3 -5), src/editor/inspector.tsx (+1 -1), src/model/element-schema.ts (+41 -0), src/model/model.ts (+47 -493), src/model/schema.ts (+6 -221)
-- [ ] T012 [agent] [status:todo] `animate(el, t, scene)` layer and the new draw signature
+- [x] T012 [agent] [status:done] `animate(el, t, scene)` layer and the new draw signature
       covers: D4@1, A24@1
+      changes: src/components/descriptor.ts (+3 -1), src/components/ellipse/draw.ts (+8 -2), src/components/group/draw.ts (+2 -2), src/components/icon/draw.ts (+2 -8), src/components/image/draw.ts (+2 -8), src/components/line/draw.ts (+3 -3), src/components/particles/draw.ts (+2 -2), src/components/rect/draw.ts (+9 -4), src/components/text/draw.ts (+2 -8), src/engine/anim.ts (+1 -2), src/engine/animate.ts (+21 -0), src/engine/render.ts (+4 -16)
 - [ ] T013 [agent] [status:todo] Generic inspector (`FieldEditor`) with custom widgets
       covers: D3@1
 - [ ] T014 [agent] [status:todo] Remove the hand-written per-kind inspectors

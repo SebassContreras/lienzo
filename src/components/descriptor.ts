@@ -2,6 +2,7 @@
  * A component descriptor: everything about one element kind, declared once (A23). The
  * scene schema, default elements, inspector and library are derived from it.
  */
+import type { AnimState } from "../engine/anim.ts";
 import type { Ctx } from "../engine/paint.ts";
 import type { Element, Scene } from "../model/model.ts";
 import {
@@ -50,7 +51,8 @@ export type Descriptor<E extends { kind: string } = Element> = {
   animatable: readonly string[];
   /** Offered among the basic components in the library. */
   basic: boolean;
-  draw(ctx: Ctx, el: E, dc: DrawContext): void;
+  /** Draws `el` as `animate` left it, with `transform` (A24). */
+  draw(ctx: Ctx, el: E, transform: AnimState, dc: DrawContext): void;
 };
 
 /** Number and color field paths, the ones that can be interpolated. */
