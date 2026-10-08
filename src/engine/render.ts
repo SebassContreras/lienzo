@@ -5,7 +5,7 @@ import { image } from "../components/image/descriptor.ts";
 import { drawLine } from "../components/line.ts";
 import { drawParticles } from "../components/particles.ts";
 import { rect } from "../components/rect/descriptor.ts";
-import { drawText } from "../components/text.ts";
+import { text } from "../components/text/descriptor.ts";
 import type { Background, Element, Scene } from "../model/model.ts";
 import { indexById, indexElements } from "./geometry.ts";
 import { type Ctx, linearGradient, rgba } from "./paint.ts";
@@ -37,7 +37,7 @@ export function drawElements(
     else if (el.kind === "icon") icon.draw(ctx, el, dc);
     else if (el.kind === "image") image.draw(ctx, el, dc);
     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
-    else if (el.kind === "text") drawText(ctx, el, scene, t);
+    else if (el.kind === "text") text.draw(ctx, el, dc);
     else if (el.kind === "line") drawLine(ctx, el, scene, t, byId);
     else drawParticles(ctx, el, scene, t);
   }

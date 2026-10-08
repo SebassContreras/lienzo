@@ -18,8 +18,9 @@
 - [x] T006 [agent] [status:done] Descriptor for image
       covers: D1@1
       changes: src/components/image/descriptor.ts (+73 -0), src/components/image.ts → src/components/image/draw.ts (+12 -7), src/components/index.ts (+2 -0), src/engine/render.ts (+2 -2)
-- [ ] T007 [agent] [status:todo] Descriptor for text
+- [x] T007 [agent] [status:done] Descriptor for text
       covers: D1@1
+      changes: src/components/index.ts (+2 -0), src/components/text/descriptor.ts (+71 -0), src/components/text.ts → src/components/text/draw.ts (+10 -5), src/engine/render.ts (+2 -2)
 - [ ] T008 [agent] [status:todo] Descriptor for line
       covers: D1@1
 - [ ] T009 [agent] [status:todo] Descriptor for group

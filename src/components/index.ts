@@ -9,12 +9,14 @@ import { defaultsOf } from "./fields/index.ts";
 import { icon } from "./icon/descriptor.ts";
 import { image } from "./image/descriptor.ts";
 import { rect } from "./rect/descriptor.ts";
+import { text } from "./text/descriptor.ts";
 
 export const COMPONENTS = [
   rect,
   ellipse,
   icon,
   image,
+  text,
 ] as const satisfies readonly Descriptor<{
   kind: string;
 }>[];

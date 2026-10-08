@@ -1,14 +1,19 @@
-import { animState } from "../engine/anim.ts";
-import { fontString, textLayout } from "../engine/geometry.ts";
+import { animState } from "../../engine/anim.ts";
+import { fontString, textLayout } from "../../engine/geometry.ts";
 import {
   type Ctx,
   linearGradient,
   shadowOnly,
   withTransform,
-} from "../engine/paint.ts";
-import type { Scene, TextEl } from "../model/model.ts";
+} from "../../engine/paint.ts";
+import type { DrawContext } from "../descriptor.ts";
+import type { TextEl } from "./descriptor.ts";
 
-export function drawText(ctx: Ctx, el: TextEl, scene: Scene, t: number): void {
+export function drawText(
+  ctx: Ctx,
+  el: TextEl,
+  { scene, t }: DrawContext,
+): void {
   const st = animState(el.anim, t, scene.duration);
   const layout = textLayout(el);
   const box = { x: el.x, y: el.y, w: layout.w, h: layout.h };
