@@ -7,8 +7,9 @@
       covers: D2@1
       changes: src/engine/particle-field.ts (+95 -0)
 - [x] T003 [agent] [status:done] Particles draw function with distance-faded links, and its render case
-      covers: D1@1, D3@1, A5@1
+      covers: D1@1, D3@1, A5@2
       changes: src/components/particles.ts (+76 -0), src/engine/render.ts (+2 -0)
+      └─ reviewed 2026-10-08: A5@2 moves the draw function into `src/components/particles/draw.ts` (012); the drawing code it wrote still holds
 - [x] T004 [agent] [status:done] Stage and geometry: select, move and resize particles by their box
       covers: D5@1
       changes: src/engine/particles-geometry.test.ts (+33 -0)

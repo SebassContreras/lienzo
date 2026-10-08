@@ -24,3 +24,8 @@ Why: the maintainer wants every post buildable from JSON alone, new features inh
 Why: the maintainer wants a wider range of elements and animations for explainer posts, and to save custom animations and reuse them on other elements.
 - ADDED A26@1
 - Tasks: specs 017–019 created; 007–011 and 014–016 re-prioritised
+
+## 2026-10-08 — components live in descriptor folders
+Why: spec 012 moved each component into a descriptor folder (A23).
+- MODIFIED A5@1 → A5@2
+- Tasks: 001/T003 and 005/T003 re-pointed to A5@2 (still valid: their drawing code moved into `<kind>/draw.ts`); 012/T017 re-pointed to A5@2
