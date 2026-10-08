@@ -39,8 +39,9 @@
 - [x] T013 [agent] [status:done] Generic inspector (`FieldEditor`) with custom widgets
       covers: D3@1
       changes: src/editor/controls.tsx (+156 -0), src/editor/field-editor.tsx (+274 -0), src/editor/inspector.tsx (+7 -173), src/editor/layout.ts (+99 -0)
-- [ ] T014 [agent] [status:todo] Remove the hand-written per-kind inspectors
+- [x] T014 [agent] [status:done] Remove the hand-written per-kind inspectors
       covers: D3@1
+      changes: src/editor/inspector.tsx (+3 -1415)
 - [ ] T015 [agent] [status:todo] Test: old scenes, built-in presets and the demo validate the same; every field of every kind is editable; the demo renders pixel-identical
       covers: R1@1, R2@1, R3@1, R4@1, R6@1
       kind: test
