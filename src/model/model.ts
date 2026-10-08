@@ -1,3 +1,5 @@
+import { newId } from "./id.ts";
+
 /**
  * Scene model. A scene is plain JSON: everything the renderer needs to draw any frame.
  * Elements are drawn in array order (last = on top).
@@ -315,9 +317,7 @@ export const ANIM_LABELS: Record<AnimKind, string> = {
   draw: "Dibujarse",
 };
 
-export function newId(): string {
-  return Math.random().toString(36).slice(2, 10);
-}
+export { newId };
 
 const noAnim: Anim = { kind: "none", amount: 12, cycles: 1, delay: 0 };
 const noGlow = (color: string): Glow => ({

@@ -1,0 +1,175 @@
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+new file mode 100644
+index 0000000..97d74ed
+--- /dev/null
++++ b/src/components/descriptor.ts
+@@ -0,0 +1,80 @@
++/**
++ * A component descriptor: everything about one element kind, declared once (A23). The
++ * scene schema, default elements, inspector and library are derived from it.
++ */
++import type { Ctx } from "../engine/paint.ts";
++import type { Element, Scene } from "../model/model.ts";
++import {
++  type AnimKind,
++  type DataField,
++  dataFields,
++  type Fields,
++  type ValueOf,
++} from "./fields/index.ts";
++
++/** What a component's draw function gets besides its own element. */
++export type DrawContext = {
++  scene: Scene;
++  /** Seconds within the loop, for motion that is part of the component (flows, drift). */
++  t: number;
++  /** Resolves line attachments in the coordinate space of the elements being drawn. */
++  byId: Map<string, Element>;
++  /** Draws nested elements (a group's children). */
++  drawElements: (
++    ctx: Ctx,
++    elements: Element[],
++    scene: Scene,
++    t: number,
++  ) => void;
++};
++
++/** The element a kind and its fields describe. */
++export type ElementOf<K extends string, F extends Fields> = {
++  id: string;
++  kind: K;
++  name: string;
++} & ValueOf<F>;
++
++export type Section = { title: string; open?: boolean };
++
++export type Descriptor<E extends { kind: string } = Element> = {
++  kind: E["kind"];
++  /** Name in the library and of new elements, in Spanish. */
++  label: string;
++  fields: Fields;
++  /** Inspector sections, in order; a field names its own in `section`. */
++  sections: readonly Section[];
++  /** Preset animations the inspector offers for this kind. */
++  anims: readonly AnimKind[];
++  /** Field paths ("x", "fill.opacity") that keyframes may animate. */
++  animatable: readonly string[];
++  /** Offered among the basic components in the library. */
++  basic: boolean;
++  draw(ctx: Ctx, el: E, dc: DrawContext): void;
++};
++
++/** Number and color field paths, the ones that can be interpolated. */
++export function interpolatable(fields: Fields, prefix = ""): string[] {
++  return dataFields(fields).flatMap(([key, f]: [string, DataField]) => {
++    const path = prefix + key;
++    if (f.type === "object") return interpolatable(f.fields, `${path}.`);
++    if (f.type === "color") return [path];
++    if (f.type === "number" && !f.int) return [path];
++    return [];
++  });
++}
++
++/**
++ * Fills in what a descriptor may leave out: every interpolatable field is animatable and a
++ * kind is offered in the library unless it says otherwise.
++ */
++export function defineComponent<E extends { kind: string }>(
++  d: Omit<Descriptor<E>, "animatable" | "basic"> &
++    Partial<Pick<Descriptor<E>, "animatable" | "basic">>,
++): Descriptor<E> {
++  return {
++    ...d,
++    animatable: d.animatable ?? interpolatable(d.fields),
++    basic: d.basic ?? true,
++  };
++}
+diff --git a/src/components/index.ts b/src/components/index.ts
+new file mode 100644
+index 0000000..737619b
+--- /dev/null
++++ b/src/components/index.ts
+@@ -0,0 +1,52 @@
++/**
++ * The component registry. A kind exists once its descriptor is listed here; order is the
++ * library's.
++ */
++import { newId } from "../model/id.ts";
++import type { Descriptor } from "./descriptor.ts";
++import { defaultsOf } from "./fields/index.ts";
++
++export const COMPONENTS = [] as const satisfies readonly Descriptor<{
++  kind: string;
++}>[];
++
++type Described<D> = D extends Descriptor<infer E> ? E : never;
++
++/** The element type each registered descriptor describes, as a union. */
++export type RegisteredElement = Described<(typeof COMPONENTS)[number]>;
++
++export type RegisteredKind = RegisteredElement["kind"];
++
++const BY_KIND = new Map<string, Descriptor<RegisteredElement>>(
++  (COMPONENTS as readonly Descriptor<RegisteredElement>[]).map((d) => [
++    d.kind,
++    d,
++  ]),
++);
++
++export const KINDS = [...BY_KIND.keys()] as RegisteredKind[];
++
++/** The descriptor of `kind`, or undefined for a kind that does not exist. */
++export function descriptorOf<K extends RegisteredKind>(
++  kind: K,
++): Descriptor<Extract<RegisteredElement, { kind: K }>>;
++export function descriptorOf(
++  kind: string,
++): Descriptor<RegisteredElement> | undefined;
++export function descriptorOf(kind: string) {
++  return BY_KIND.get(kind);
++}
++
++/** A fresh element of `kind`, every field at its default; throws for an unknown kind. */
++export function createElement<K extends RegisteredKind>(
++  kind: K,
++): Extract<RegisteredElement, { kind: K }> {
++  const d = BY_KIND.get(kind);
++  if (!d) throw new Error(`unknown element kind ${kind}`);
++  return {
++    id: newId(),
++    kind,
++    name: d.label,
++    ...defaultsOf(d.fields),
++  } as Extract<RegisteredElement, { kind: K }>;
++}
+diff --git a/src/model/id.ts b/src/model/id.ts
+new file mode 100644
+index 0000000..a3f1a52
+--- /dev/null
++++ b/src/model/id.ts
+@@ -0,0 +1,4 @@
++/** A short random id for a new element. */
++export function newId(): string {
++  return Math.random().toString(36).slice(2, 10);
++}
+diff --git a/src/model/model.ts b/src/model/model.ts
+index ffa80c9..cd5f58d 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -1,3 +1,5 @@
++import { newId } from "./id.ts";
++
+ /**
+  * Scene model. A scene is plain JSON: everything the renderer needs to draw any frame.
+  * Elements are drawn in array order (last = on top).
+@@ -315,9 +317,7 @@ export const ANIM_LABELS: Record<AnimKind, string> = {
+   draw: "Dibujarse",
+ };
+ 
+-export function newId(): string {
+-  return Math.random().toString(36).slice(2, 10);
+-}
++export { newId };
+ 
+ const noAnim: Anim = { kind: "none", amount: 12, cycles: 1, delay: 0 };
+ const noGlow = (color: string): Glow => ({
