@@ -14,6 +14,9 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 
 ## Stack & conventions
 
+- CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
+  in tools (A20); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
+  over stdio, CLI via `tsx` (A22)
 - Single React 19 + Vite app at the repo root, TypeScript on Node 24 (A1, A8, A9)
 - Everything is drawn with Canvas 2D by `drawScene(ctx, scene, t)`; preview = export (A3)
 - Scene = plain JSON typed in `src/model/` (A4); one file per component in `src/components/` (A5)

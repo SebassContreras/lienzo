@@ -21,13 +21,15 @@ Done when:
 2. The same post exports to PNG, a seamlessly looping GIF and an MP4.
 3. A configured element saved as a preset can be dropped into another scene.
 
+Phase 2: a CLI and an MCP server built on one service layer let scripts and AI agents
+create, edit and export scenes.
+
 ## Who uses it
 
 - **Creators** who explain technical topics on social media (the maintainer first).
 
 ## Out of scope
 
-- MCP server, CLI and AI agent integration.
 - Brand kits and templates.
 - Accounts, cloud hosting, collaboration, publishing to social networks.
 - Timeline/keyframe editing, audio.
