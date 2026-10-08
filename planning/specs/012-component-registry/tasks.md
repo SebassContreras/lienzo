@@ -1,37 +1,54 @@
 # 012 — component-registry — Tasks
 
-- [ ] T001 [agent] [status:todo] Shared field groups (box, fill, stroke, glow, shadow, label, anim)
+- [x] T001 [agent] [status:done] Shared field groups (box, fill, stroke, glow, shadow, label, anim)
       covers: D1@1, A23@1
-- [ ] T002 [agent] [status:todo] Descriptor type and the component registry
+      changes: src/components/fields/anim.ts (+78 -0), src/components/fields/box.ts (+30 -0), src/components/fields/field.ts (+270 -0), src/components/fields/fill.ts (+38 -0), src/components/fields/glow.ts (+35 -0), src/components/fields/index.ts (+8 -0), src/components/fields/label.ts (+59 -0), src/components/fields/shadow.ts (+41 -0), src/components/fields/stroke.ts (+64 -0), src/model/fonts.ts (+9 -0), src/model/model.ts (+1 -8)
+- [x] T002 [agent] [status:done] Descriptor type and the component registry
       covers: D1@1, A23@1
-- [ ] T003 [agent] [status:todo] Descriptor for rect
+      changes: src/components/descriptor.ts (+80 -0), src/components/index.ts (+52 -0), src/model/id.ts (+4 -0), src/model/model.ts (+3 -3)
+- [x] T003 [agent] [status:done] Descriptor for rect
       covers: D1@1
-- [ ] T004 [agent] [status:todo] Descriptor for ellipse
+      changes: src/components/ellipse.ts (+7 -2), src/components/index.ts (+2 -1), src/components/rect/descriptor.ts (+101 -0), src/components/rect.ts → src/components/rect/draw.ts (+9 -9), src/engine/render.ts (+3 -2)
+- [x] T004 [agent] [status:done] Descriptor for ellipse
       covers: D1@1
-- [ ] T005 [agent] [status:todo] Descriptor for icon
+      changes: src/components/ellipse.ts (+0 -27), src/components/ellipse/descriptor.ts (+18 -0), src/components/ellipse/draw.ts (+18 -0), src/components/index.ts (+5 -1), src/engine/render.ts (+2 -2)
+- [x] T005 [agent] [status:done] Descriptor for icon
       covers: D1@1
-- [ ] T006 [agent] [status:todo] Descriptor for image
+      changes: src/components/icon/descriptor.ts (+89 -0), src/components/icon.ts → src/components/icon/draw.ts (+11 -6), src/components/index.ts (+2 -0), src/engine/render.ts (+2 -2)
+- [x] T006 [agent] [status:done] Descriptor for image
       covers: D1@1
-- [ ] T007 [agent] [status:todo] Descriptor for text
+      changes: src/components/image/descriptor.ts (+73 -0), src/components/image.ts → src/components/image/draw.ts (+12 -7), src/components/index.ts (+2 -0), src/engine/render.ts (+2 -2)
+- [x] T007 [agent] [status:done] Descriptor for text
       covers: D1@1
-- [ ] T008 [agent] [status:todo] Descriptor for line
+      changes: src/components/index.ts (+2 -0), src/components/text/descriptor.ts (+71 -0), src/components/text.ts → src/components/text/draw.ts (+10 -5), src/engine/render.ts (+2 -2)
+- [x] T008 [agent] [status:done] Descriptor for line
       covers: D1@1
-- [ ] T009 [agent] [status:todo] Descriptor for group
+      changes: src/components/index.ts (+2 -0), src/components/line/descriptor.ts (+105 -0), src/components/line.ts → src/components/line/draw.ts (+6 -7), src/engine/render.ts (+2 -2)
+- [x] T009 [agent] [status:done] Descriptor for group
       covers: D1@1
-- [ ] T010 [agent] [status:todo] Descriptor for particles
+      changes: src/components/group/descriptor.ts (+49 -0), src/components/group.ts → src/components/group/draw.ts (+6 -14), src/components/index.ts (+2 -0), src/engine/render.ts (+2 -2)
+- [x] T010 [agent] [status:done] Descriptor for particles
       covers: D1@1
-- [ ] T011 [agent] [status:todo] Scene schema and element types generated from the descriptors
+      changes: src/components/index.ts (+2 -0), src/components/particles/descriptor.ts (+99 -0), src/components/particles.ts → src/components/particles/draw.ts (+12 -7), src/engine/render.ts (+2 -2)
+- [x] T011 [agent] [status:done] Scene schema and element types generated from the descriptors
       covers: D2@1
-- [ ] T012 [agent] [status:todo] `animate(el, t, scene)` layer and the new draw signature
+      changes: src/components/fields/field.ts (+6 -3), src/components/group/descriptor.ts (+10 -7), src/components/index.ts (+33 -27), src/components/rect/descriptor.ts (+3 -5), src/editor/inspector.tsx (+1 -1), src/model/element-schema.ts (+41 -0), src/model/model.ts (+47 -493), src/model/schema.ts (+6 -221)
+- [x] T012 [agent] [status:done] `animate(el, t, scene)` layer and the new draw signature
       covers: D4@1, A24@1
-- [ ] T013 [agent] [status:todo] Generic inspector (`FieldEditor`) with custom widgets
+      changes: src/components/descriptor.ts (+3 -1), src/components/ellipse/draw.ts (+8 -2), src/components/group/draw.ts (+2 -2), src/components/icon/draw.ts (+2 -8), src/components/image/draw.ts (+2 -8), src/components/line/draw.ts (+3 -3), src/components/particles/draw.ts (+2 -2), src/components/rect/draw.ts (+9 -4), src/components/text/draw.ts (+2 -8), src/engine/anim.ts (+1 -2), src/engine/animate.ts (+21 -0), src/engine/render.ts (+4 -16)
+- [x] T013 [agent] [status:done] Generic inspector (`FieldEditor`) with custom widgets
       covers: D3@1
-- [ ] T014 [agent] [status:todo] Remove the hand-written per-kind inspectors
+      changes: src/editor/controls.tsx (+156 -0), src/editor/field-editor.tsx (+274 -0), src/editor/inspector.tsx (+7 -173), src/editor/layout.ts (+99 -0)
+- [x] T014 [agent] [status:done] Remove the hand-written per-kind inspectors
       covers: D3@1
-- [ ] T015 [agent] [status:todo] Test: old scenes, built-in presets and the demo validate the same; every field of every kind is editable; the demo renders pixel-identical
+      changes: src/editor/inspector.tsx (+3 -1415)
+- [x] T015 [agent] [status:done] Test: old scenes, built-in presets and the demo validate the same; every field of every kind is editable; the demo renders pixel-identical
       covers: R1@1, R2@1, R3@1, R4@1, R6@1
       kind: test
-- [ ] T016 [agent] [status:todo] AGENTS.md: "To add a component" becomes "add a descriptor folder"
+      changes: src/editor/field-editor.tsx (+3 -0), src/test/golden-scenes.ts (+139 -0), src/test/legacy-schema.ts (+237 -0), src/test/recording-ctx.ts (+212 -0), src/test/registry.test.ts (+214 -0), src/test/render-log.ts (+20 -0), src/test/render.golden.json (+20 -0), src/test/render.test.ts (+29 -0)
+- [x] T016 [agent] [status:done] AGENTS.md: "To add a component" becomes "add a descriptor folder"
       covers: R5@1
-- [ ] T017 [agent] [status:todo] Revise A5 (one file per component) to the descriptor folders of A23 through the spectrace-change flow, re-pointing the tasks that cover A5
-      covers: D1@1, A5@1, A23@1
+      changes: AGENTS.md (+26 -15), src/components/descriptor.ts (+2 -0), src/components/ellipse/descriptor.ts (+1 -0), src/components/group/descriptor.ts (+1 -0), src/components/icon/descriptor.ts (+1 -0), src/components/image/descriptor.ts (+1 -0), src/components/line/descriptor.ts (+1 -0), src/components/particles/descriptor.ts (+1 -0), src/components/rect/descriptor.ts (+1 -0), src/components/text/descriptor.ts (+1 -0), src/editor/app.tsx (+14 -23), src/editor/library.tsx (+6 -4), src/presets/resolve.test.ts (+2 -12), src/traits/trait.ts (+2 -21)
+- [x] T017 [agent] [status:done] Revise A5 (one file per component) to the descriptor folders of A23 through the spectrace-change flow, re-pointing the tasks that cover A5
+      covers: D1@1, A5@2, A23@1
+      changes: none

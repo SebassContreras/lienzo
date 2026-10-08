@@ -1,0 +1,194 @@
+diff --git a/src/components/index.ts b/src/components/index.ts
+index b663a06..51284a6 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -8,6 +8,7 @@ import { ellipse } from "./ellipse/descriptor.ts";
+ import { defaultsOf } from "./fields/index.ts";
+ import { icon } from "./icon/descriptor.ts";
+ import { image } from "./image/descriptor.ts";
++import { line } from "./line/descriptor.ts";
+ import { rect } from "./rect/descriptor.ts";
+ import { text } from "./text/descriptor.ts";
+ 
+@@ -17,6 +18,7 @@ export const COMPONENTS = [
+   icon,
+   image,
+   text,
++  line,
+ ] as const satisfies readonly Descriptor<{
+   kind: string;
+ }>[];
+diff --git a/src/components/line/descriptor.ts b/src/components/line/descriptor.ts
+new file mode 100644
+index 0000000..f09a1c6
+--- /dev/null
++++ b/src/components/line/descriptor.ts
+@@ -0,0 +1,105 @@
++import { z } from "zod";
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import {
++  type AnimKind,
++  anim,
++  check,
++  color,
++  custom,
++  glow,
++  noGlow,
++  num,
++  obj,
++  type Parent,
++  select,
++  strokeStyle,
++  strokeWidth,
++} from "../fields/index.ts";
++import { drawLine } from "./draw.ts";
++
++/** A line end: a free point, or attached to the element `attach`. */
++export type Endpoint = { x: number; y: number; attach?: string };
++
++export type FlowKind = "none" | "ants" | "pulse" | "comet";
++
++const FLOWS = [
++  ["none", "Ninguno"],
++  ["pulse", "Pulsos de luz"],
++  ["ants", "Camino de hormigas"],
++  ["comet", "Cometa"],
++] as const satisfies readonly (readonly [FlowKind, string])[];
++
++const endpointSchema: z.ZodType<Endpoint> = z.object({
++  x: z.number(),
++  y: z.number(),
++  attach: z.string().optional(),
++});
++
++/** Ends are dragged on the stage; the inspector shows what each is attached to. */
++const end = (x: number, label: string) =>
++  custom("connection", { x, y: 0 } as Endpoint, endpointSchema, {
++    label,
++    section: "Conexión",
++  });
++
++const LINE_ANIMS: readonly AnimKind[] = ["none", "fade-in", "draw"];
++
++const C = { section: "Conexión" };
++const S = { section: "Trazo" };
++const flowing = (p: Parent) => p.kind !== "none";
++
++/** A straight or curved connector between two points or elements. */
++const fields = {
++  a: end(0, "Inicio"),
++  b: end(260, "Fin"),
++  /** Perpendicular offset of the curve's control point, px. */
++  bend: num(0, { label: "Curva", min: -400, max: 400, ...C }),
++  width: { ...strokeWidth(3, 0.5, 30), ...S },
++  color: color("#3b82f6", { label: "Color", ...S }),
++  opacity: num(0.6, { label: "Opacidad", max: 1, step: 0.01, ...S }),
++  style: { ...strokeStyle("solid"), ...S },
++  arrowStart: check(false, { label: "Flecha inicio", ...C }),
++  arrowEnd: check(true, { label: "Flecha fin", ...C }),
++  glow: glow({ ...noGlow("#3b82f6"), enabled: true, blur: 12 }, "Brillo"),
++  flow: obj(
++    {
++      kind: select(FLOWS, "pulse", { label: "Efecto" }),
++      color: color("#93c5fd", { label: "Color", visible: flowing }),
++      /** Laps (pulse/comet) or dash periods (ants) per loop. */
++      speed: num(2, { label: "Velocidad", min: 1, max: 30, visible: flowing }),
++      count: num(2, {
++        label: "Cantidad",
++        min: 1,
++        max: 10,
++        visible: (p: Parent) => flowing(p) && p.kind !== "ants",
++      }),
++      size: num(5, {
++        label: "Tamaño",
++        min: 1,
++        max: 30,
++        step: 0.5,
++        visible: flowing,
++      }),
++      reverse: check(false, { label: "Invertir sentido", visible: flowing }),
++    },
++    { section: "Flujo animado" },
++  ),
++  anim: anim(LINE_ANIMS),
++};
++
++export type LineEl = ElementOf<"line", typeof fields>;
++
++export const line = defineComponent<LineEl>({
++  kind: "line",
++  label: "Línea",
++  fields,
++  sections: [
++    { title: "Conexión" },
++    { title: "Trazo" },
++    { title: "Brillo" },
++    { title: "Flujo animado" },
++    { title: "Animación" },
++  ],
++  anims: LINE_ANIMS,
++  draw: drawLine,
++});
+diff --git a/src/components/line.ts b/src/components/line/draw.ts
+similarity index 94%
+rename from src/components/line.ts
+rename to src/components/line/draw.ts
+index 35af43b..f5cfe5b 100644
+--- a/src/components/line.ts
++++ b/src/components/line/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState, frac } from "../engine/anim.ts";
++import { animState, frac } from "../../engine/anim.ts";
+ import {
+   type PathSamples,
+   type Pt,
+@@ -6,22 +6,21 @@ import {
+   pointAtFraction,
+   resolveLine,
+   samplePath,
+-} from "../engine/geometry.ts";
++} from "../../engine/geometry.ts";
+ import {
+   type Ctx,
+   dashFor,
+   rgba,
+   shadowOnly,
+   tracePolyline,
+-} from "../engine/paint.ts";
+-import type { Element, LineEl, Scene } from "../model/model.ts";
++} from "../../engine/paint.ts";
++import type { DrawContext } from "../descriptor.ts";
++import type { LineEl } from "./descriptor.ts";
+ 
+ export function drawLine(
+   ctx: Ctx,
+   el: LineEl,
+-  scene: Scene,
+-  t: number,
+-  byId: Map<string, Element>,
++  { scene, t, byId }: DrawContext,
+ ): void {
+   const st = animState(el.anim, t, scene.duration);
+   const s = samplePath(resolveLine(el, byId));
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index a81764d..b4da652 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -2,7 +2,7 @@ import { ellipse } from "../components/ellipse/descriptor.ts";
+ import { drawGroup } from "../components/group.ts";
+ import { icon } from "../components/icon/descriptor.ts";
+ import { image } from "../components/image/descriptor.ts";
+-import { drawLine } from "../components/line.ts";
++import { line } from "../components/line/descriptor.ts";
+ import { drawParticles } from "../components/particles.ts";
+ import { rect } from "../components/rect/descriptor.ts";
+ import { text } from "../components/text/descriptor.ts";
+@@ -38,7 +38,7 @@ export function drawElements(
+     else if (el.kind === "image") image.draw(ctx, el, dc);
+     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
+     else if (el.kind === "text") text.draw(ctx, el, dc);
+-    else if (el.kind === "line") drawLine(ctx, el, scene, t, byId);
++    else if (el.kind === "line") line.draw(ctx, el, dc);
+     else drawParticles(ctx, el, scene, t);
+   }
+ }

@@ -1,0 +1,184 @@
+diff --git a/src/components/index.ts b/src/components/index.ts
+index 6f0491a..a3591ba 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -10,6 +10,7 @@ import { group } from "./group/descriptor.ts";
+ import { icon } from "./icon/descriptor.ts";
+ import { image } from "./image/descriptor.ts";
+ import { line } from "./line/descriptor.ts";
++import { particles } from "./particles/descriptor.ts";
+ import { rect } from "./rect/descriptor.ts";
+ import { text } from "./text/descriptor.ts";
+ 
+@@ -21,6 +22,7 @@ export const COMPONENTS = [
+   group,
+   text,
+   line,
++  particles,
+ ] as const satisfies readonly Descriptor<{
+   kind: string;
+ }>[];
+diff --git a/src/components/particles/descriptor.ts b/src/components/particles/descriptor.ts
+new file mode 100644
+index 0000000..f28b6b9
+--- /dev/null
++++ b/src/components/particles/descriptor.ts
+@@ -0,0 +1,99 @@
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import {
++  type AnimKind,
++  anim,
++  box,
++  color,
++  glow,
++  noGlow,
++  num,
++  obj,
++  widget,
++} from "../fields/index.ts";
++import { drawParticles } from "./draw.ts";
++
++const PARTICLE_ANIMS: readonly AnimKind[] = [
++  "none",
++  "fade-in",
++  "pop-in",
++  "breathe",
++];
++
++const P = { section: "Partículas" };
++const opacity = (value: number) =>
++  num(value, { label: "Opacidad", max: 1, step: 0.05 });
++
++/**
++ * Points drifting inside the box, joined by lines when close ("constellation"). Paints no
++ * background of its own. Motion is a closed loop derived from `seed` (see particle-field).
++ */
++const fields = {
++  ...box(600, 400),
++  count: num(60, {
++    label: "Cantidad",
++    min: 1,
++    max: 300,
++    int: true,
++    bounds: [1, 300],
++    ...P,
++  }),
++  /** Highest number of laps a point makes per loop. */
++  speed: num(1, {
++    label: "Velocidad",
++    min: 1,
++    max: 6,
++    int: true,
++    bounds: [1, Infinity],
++    ...P,
++  }),
++  /** How far, px, a point wanders from its resting place. */
++  drift: num(40, { label: "Recorrido", max: 300, bounds: [0, Infinity], ...P }),
++  /** Changing it redistributes the points. */
++  seed: num(1, {
++    label: "Semilla",
++    min: 1,
++    max: 9999,
++    set: (el: { seed: number }, v: number) => {
++      el.seed = Math.round(v);
++    },
++    ...P,
++  }),
++  reseed: widget("reseed", P),
++  fitCanvas: widget("fit-canvas", P),
++  dot: obj(
++    {
++      size: num(2.5, { label: "Tamaño", max: 20, step: 0.5 }),
++      color: color("#93c5fd", { label: "Color" }),
++      opacity: opacity(0.9),
++    },
++    { section: "Puntos" },
++  ),
++  link: obj(
++    {
++      distance: num(120, { label: "Distancia de unión", max: 400 }),
++      width: num(1, { label: "Grosor", max: 6, step: 0.25 }),
++      color: color("#60a5fa", { label: "Color" }),
++      opacity: opacity(0.5),
++    },
++    { section: "Líneas" },
++  ),
++  glow: glow(noGlow("#60a5fa"), "Brillo"),
++  anim: anim(PARTICLE_ANIMS),
++};
++
++export type ParticlesEl = ElementOf<"particles", typeof fields>;
++
++export const particles = defineComponent<ParticlesEl>({
++  kind: "particles",
++  label: "Partículas",
++  fields,
++  sections: [
++    { title: "Partículas" },
++    { title: "Puntos" },
++    { title: "Líneas" },
++    { title: "Brillo" },
++    { title: "Animación" },
++  ],
++  anims: PARTICLE_ANIMS,
++  draw: drawParticles,
++});
+diff --git a/src/components/particles.ts b/src/components/particles/draw.ts
+similarity index 85%
+rename from src/components/particles.ts
+rename to src/components/particles/draw.ts
+index 0a54b2d..847723e 100644
+--- a/src/components/particles.ts
++++ b/src/components/particles/draw.ts
+@@ -1,8 +1,14 @@
+-import { animState } from "../engine/anim.ts";
+-import { boxOf } from "../engine/geometry.ts";
+-import { type Ctx, rgba, shadowOnly, withTransform } from "../engine/paint.ts";
+-import { linkAlpha, particlePositions } from "../engine/particle-field.ts";
+-import type { ParticlesEl, Scene } from "../model/model.ts";
++import { animState } from "../../engine/anim.ts";
++import { boxOf } from "../../engine/geometry.ts";
++import {
++  type Ctx,
++  rgba,
++  shadowOnly,
++  withTransform,
++} from "../../engine/paint.ts";
++import { linkAlpha, particlePositions } from "../../engine/particle-field.ts";
++import type { DrawContext } from "../descriptor.ts";
++import type { ParticlesEl } from "./descriptor.ts";
+ 
+ /** Link opacities are rounded to this many steps so all lines draw in a few strokes. */
+ const ALPHA_STEPS = 16;
+@@ -11,8 +17,7 @@ const ALPHA_STEPS = 16;
+ export function drawParticles(
+   ctx: Ctx,
+   el: ParticlesEl,
+-  scene: Scene,
+-  t: number,
++  { scene, t }: DrawContext,
+ ): void {
+   const st = animState(el.anim, t, scene.duration);
+   const box = boxOf(el);
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index d7b2812..95985ef 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -3,7 +3,7 @@ import { group } from "../components/group/descriptor.ts";
+ import { icon } from "../components/icon/descriptor.ts";
+ import { image } from "../components/image/descriptor.ts";
+ import { line } from "../components/line/descriptor.ts";
+-import { drawParticles } from "../components/particles.ts";
++import { particles } from "../components/particles/descriptor.ts";
+ import { rect } from "../components/rect/descriptor.ts";
+ import { text } from "../components/text/descriptor.ts";
+ import type { Background, Element, Scene } from "../model/model.ts";
+@@ -39,7 +39,7 @@ export function drawElements(
+     else if (el.kind === "group") group.draw(ctx, el, dc);
+     else if (el.kind === "text") text.draw(ctx, el, dc);
+     else if (el.kind === "line") line.draw(ctx, el, dc);
+-    else drawParticles(ctx, el, scene, t);
++    else particles.draw(ctx, el, dc);
+   }
+ }
+ 

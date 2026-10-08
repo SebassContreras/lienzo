@@ -1,0 +1,150 @@
+diff --git a/src/components/index.ts b/src/components/index.ts
+index b6971b8..b663a06 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -9,12 +9,14 @@ import { defaultsOf } from "./fields/index.ts";
+ import { icon } from "./icon/descriptor.ts";
+ import { image } from "./image/descriptor.ts";
+ import { rect } from "./rect/descriptor.ts";
++import { text } from "./text/descriptor.ts";
+ 
+ export const COMPONENTS = [
+   rect,
+   ellipse,
+   icon,
+   image,
++  text,
+ ] as const satisfies readonly Descriptor<{
+   kind: string;
+ }>[];
+diff --git a/src/components/text/descriptor.ts b/src/components/text/descriptor.ts
+new file mode 100644
+index 0000000..ccf7028
+--- /dev/null
++++ b/src/components/text/descriptor.ts
+@@ -0,0 +1,71 @@
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import {
++  align,
++  anim,
++  BOX_ANIMS,
++  check,
++  color,
++  font,
++  glow,
++  noGlow,
++  num,
++  type Parent,
++  position,
++  text as textField,
++  weight,
++} from "../fields/index.ts";
++import { drawText } from "./draw.ts";
++
++const T = { section: "Texto" };
++const C = { section: "Color" };
++
++/** Free text; its box is as big as the text it holds. */
++const fields = {
++  ...position(),
++  text: textField("Texto", { label: "Contenido", multiline: true, ...T }),
++  font: { ...font("Inter"), ...T },
++  size: num(64, { label: "Tamaño", min: 8, max: 300, ...T }),
++  weight: { ...weight(800), ...T },
++  italic: check(false, { label: "Cursiva", ...T }),
++  color: color("#ffffff", { label: "Color", ...C }),
++  gradient: check(false, { label: "Degradado", ...C }),
++  color2: color("#60a5fa", {
++    label: "Color 2",
++    ...C,
++    visible: (el: Parent) => el.gradient === true,
++  }),
++  align: { ...align("left"), ...T },
++  lineHeight: num(1.15, {
++    label: "Interlineado",
++    min: 0.7,
++    max: 2.5,
++    step: 0.05,
++    ...T,
++  }),
++  letterSpacing: num(0, {
++    label: "Espaciado",
++    min: -10,
++    max: 40,
++    step: 0.5,
++    ...T,
++  }),
++  opacity: num(1, { label: "Opacidad", max: 1, step: 0.01, ...C }),
++  glow: glow(noGlow("#60a5fa"), "Brillo"),
++  anim: anim(BOX_ANIMS),
++};
++
++export type TextEl = ElementOf<"text", typeof fields>;
++
++export const text = defineComponent<TextEl>({
++  kind: "text",
++  label: "Texto",
++  fields,
++  sections: [
++    { title: "Texto" },
++    { title: "Color" },
++    { title: "Brillo" },
++    { title: "Animación" },
++  ],
++  anims: BOX_ANIMS,
++  draw: drawText,
++});
+diff --git a/src/components/text.ts b/src/components/text/draw.ts
+similarity index 76%
+rename from src/components/text.ts
+rename to src/components/text/draw.ts
+index f2566ed..ba49797 100644
+--- a/src/components/text.ts
++++ b/src/components/text/draw.ts
+@@ -1,14 +1,19 @@
+-import { animState } from "../engine/anim.ts";
+-import { fontString, textLayout } from "../engine/geometry.ts";
++import { animState } from "../../engine/anim.ts";
++import { fontString, textLayout } from "../../engine/geometry.ts";
+ import {
+   type Ctx,
+   linearGradient,
+   shadowOnly,
+   withTransform,
+-} from "../engine/paint.ts";
+-import type { Scene, TextEl } from "../model/model.ts";
++} from "../../engine/paint.ts";
++import type { DrawContext } from "../descriptor.ts";
++import type { TextEl } from "./descriptor.ts";
+ 
+-export function drawText(ctx: Ctx, el: TextEl, scene: Scene, t: number): void {
++export function drawText(
++  ctx: Ctx,
++  el: TextEl,
++  { scene, t }: DrawContext,
++): void {
+   const st = animState(el.anim, t, scene.duration);
+   const layout = textLayout(el);
+   const box = { x: el.x, y: el.y, w: layout.w, h: layout.h };
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 43e802f..a81764d 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -5,7 +5,7 @@ import { image } from "../components/image/descriptor.ts";
+ import { drawLine } from "../components/line.ts";
+ import { drawParticles } from "../components/particles.ts";
+ import { rect } from "../components/rect/descriptor.ts";
+-import { drawText } from "../components/text.ts";
++import { text } from "../components/text/descriptor.ts";
+ import type { Background, Element, Scene } from "../model/model.ts";
+ import { indexById, indexElements } from "./geometry.ts";
+ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+@@ -37,7 +37,7 @@ export function drawElements(
+     else if (el.kind === "icon") icon.draw(ctx, el, dc);
+     else if (el.kind === "image") image.draw(ctx, el, dc);
+     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
+-    else if (el.kind === "text") drawText(ctx, el, scene, t);
++    else if (el.kind === "text") text.draw(ctx, el, dc);
+     else if (el.kind === "line") drawLine(ctx, el, scene, t, byId);
+     else drawParticles(ctx, el, scene, t);
+   }

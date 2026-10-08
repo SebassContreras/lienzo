@@ -1,0 +1,712 @@
+diff --git a/src/components/fields/anim.ts b/src/components/fields/anim.ts
+new file mode 100644
+index 0000000..722ef1d
+--- /dev/null
++++ b/src/components/fields/anim.ts
+@@ -0,0 +1,78 @@
++import { z } from "zod";
++import { num, obj, type Parent, select } from "./field.ts";
++
++export const ANIM_KINDS = [
++  "none",
++  "float",
++  "pulse",
++  "breathe",
++  "fade-in",
++  "pop-in",
++  "slide-up",
++  "draw",
++] as const;
++
++export type AnimKind = (typeof ANIM_KINDS)[number];
++
++export const ANIM_LABELS: Record<AnimKind, string> = {
++  none: "Ninguna",
++  float: "Flotar",
++  pulse: "Pulso (escala)",
++  breathe: "Brillo que respira",
++  "fade-in": "Aparecer",
++  "pop-in": "Pop",
++  "slide-up": "Subir",
++  draw: "Dibujarse",
++};
++
++/** Animations for anything with a box: shapes, icons, images, text, groups. */
++export const BOX_ANIMS: readonly AnimKind[] = [
++  "none",
++  "float",
++  "pulse",
++  "breathe",
++  "fade-in",
++  "pop-in",
++  "slide-up",
++];
++
++const LOOPS: readonly unknown[] = ["float", "pulse", "breathe"];
++const MOVES: readonly unknown[] = ["float", "slide-up"];
++
++/**
++ * The element's preset animation. `kinds` are the ones the inspector offers; any kind
++ * opens, so scenes edited by hand keep working.
++ */
++export function anim(kinds: readonly AnimKind[], section = "Animación") {
++  return obj(
++    {
++      kind: select(
++        kinds.map((k) => [k, ANIM_LABELS[k]] as const),
++        "none" as AnimKind,
++        { label: "Tipo", schema: z.enum(ANIM_KINDS) },
++      ),
++      /** px for float/slide-up, % for pulse/breathe. */
++      amount: num(12, {
++        label: (p: Parent) =>
++          MOVES.includes(p.kind) ? "Distancia" : "Intensidad %",
++        max: (p: Parent) => (p.kind === "breathe" ? 100 : 80),
++        visible: (p: Parent) => LOOPS.includes(p.kind) || p.kind === "slide-up",
++      }),
++      /** Full cycles per loop; integers keep GIF/MP4 loops seamless. */
++      cycles: num(1, {
++        label: "Ciclos / loop",
++        min: 1,
++        max: 8,
++        visible: (p: Parent) => LOOPS.includes(p.kind),
++      }),
++      /** Seconds; phase offset for loops, start time for entries. */
++      delay: num(0, {
++        label: "Retraso (s)",
++        max: 5,
++        step: 0.1,
++        visible: (p: Parent) => p.kind !== "none",
++      }),
++    },
++    { section },
++  );
++}
+diff --git a/src/components/fields/box.ts b/src/components/fields/box.ts
+new file mode 100644
+index 0000000..ebf12c2
+--- /dev/null
++++ b/src/components/fields/box.ts
+@@ -0,0 +1,30 @@
++import { num } from "./field.ts";
++
++/** Where an element sits; moved by dragging it on the stage. */
++export function position() {
++  return {
++    x: num(0, { label: "X", inspector: false }),
++    y: num(0, { label: "Y", inspector: false }),
++  };
++}
++
++type BoxOpts = {
++  section: string;
++  min: number;
++  max: number;
++};
++
++/**
++ * Position and size. With `o`, width and height are edited in section `o.section`;
++ * without it they are only resized on the stage.
++ */
++export function box(w: number, h: number, o?: BoxOpts) {
++  const size = o
++    ? { section: o.section, min: o.min, max: o.max }
++    : { inspector: false as const };
++  return {
++    ...position(),
++    w: num(w, { label: "Ancho", ...size }),
++    h: num(h, { label: "Alto", ...size }),
++  };
++}
+diff --git a/src/components/fields/field.ts b/src/components/fields/field.ts
+new file mode 100644
+index 0000000..c4867ed
+--- /dev/null
++++ b/src/components/fields/field.ts
+@@ -0,0 +1,270 @@
++/**
++ * Fields: what a component's data is made of. Each field declares its value type (as a Zod
++ * schema), default, label, inspector section and control; the scene schema, the default
++ * elements and the inspector are all built from them (A23).
++ */
++import { z } from "zod";
++
++/** The object a field lives in: the element for top-level fields, else the enclosing object. */
++export type Parent = Record<string, unknown>;
++
++/** A value, or a function of the field's parent (labels and ranges that depend on a mode). */
++export type Dyn<T> = T | ((parent: Parent) => T);
++
++type Common = {
++  label: Dyn<string>;
++  /** Inspector section, for top-level fields; nested fields show in their object's section. */
++  section?: string;
++  /** Shown only while this holds for the field's parent. */
++  visible?: (parent: Parent) => boolean;
++  /**
++   * `false` keeps the field out of the inspector: it is edited on the stage (position, line
++   * ends) or derived from other fields (an image's aspect, a group's content).
++   */
++  inspector?: false;
++  /** Writes an edited value into the element draft; by default the field itself is set. */
++  set?: (el: Parent, value: unknown) => void;
++};
++
++export type NumberField = Common & {
++  type: "number";
++  default: number;
++  schema: z.ZodType<number>;
++  min: Dyn<number>;
++  max: Dyn<number>;
++  step: number;
++  /** Edited values are rounded; the schema only takes integers. */
++  int?: boolean;
++  /** Hard limits: edited values are clamped to them and the schema rejects values outside. */
++  bounds?: readonly [number, number];
++};
++
++export type ColorField = Common & {
++  type: "color";
++  default: string;
++  schema: z.ZodType<string>;
++};
++
++export type CheckField = Common & {
++  type: "check";
++  default: boolean;
++  schema: z.ZodType<boolean>;
++};
++
++export type TextField = Common & {
++  type: "text";
++  default: string;
++  schema: z.ZodType<string>;
++  multiline?: boolean;
++};
++
++export type Option = readonly [value: string | number, label: string];
++
++export type SelectField = Common & {
++  type: "select";
++  default: string | number;
++  schema: z.ZodType<string | number>;
++  options: readonly Option[];
++};
++
++/** A value edited by a control of its own, named by `widget` (icon picker, image upload…). */
++export type CustomField = Common & {
++  type: "custom";
++  widget: string;
++  default: unknown;
++  schema: z.ZodType<unknown>;
++};
++
++/** A nested object, such as `fill` or `glow`. */
++export type ObjectField = Common & {
++  type: "object";
++  fields: Fields;
++  default: Parent;
++  schema: z.ZodType<Parent>;
++};
++
++/** An inspector control that holds no data of its own (a hint, an action button). */
++export type WidgetField = {
++  type: "widget";
++  widget: string;
++  section?: string;
++  visible?: (parent: Parent) => boolean;
++};
++
++export type DataField =
++  | NumberField
++  | ColorField
++  | CheckField
++  | TextField
++  | SelectField
++  | CustomField
++  | ObjectField;
++
++export type Field = DataField | WidgetField;
++
++export type Fields = Record<string, Field>;
++
++/** The value a set of fields describes; widgets hold no data and are left out. */
++export type ValueOf<F extends Fields> = {
++  -readonly [K in keyof F as F[K] extends WidgetField
++    ? never
++    : K]: F[K] extends {
++    default: infer T;
++  }
++    ? T
++    : never;
++};
++
++/** `T`'s own default type kept on top of the field's erased one. */
++type Typed<X, T> = Omit<X, "default" | "schema"> & {
++  default: T;
++  schema: z.ZodType<T>;
++};
++
++type Opts<P, T> = {
++  label: string | ((parent: P) => string);
++  section?: string;
++  visible?: (parent: P) => boolean;
++  inspector?: false;
++  // biome-ignore lint/suspicious/noExplicitAny: setters are written against the element type
++  set?: (el: any, value: T) => void;
++};
++
++/** Stores typed callbacks under the field's uniform `Parent` signatures. */
++function common<P, T>(o: Opts<P, T>): Common {
++  return o as unknown as Common;
++}
++
++export function num<P = Parent>(
++  value: number,
++  o: Opts<P, number> & {
++    min?: number | ((parent: P) => number);
++    max?: number | ((parent: P) => number);
++    step?: number;
++    int?: boolean;
++    bounds?: readonly [number, number];
++  },
++): Typed<NumberField, number> {
++  let schema = z.number();
++  if (o.int) schema = schema.int();
++  if (o.bounds && Number.isFinite(o.bounds[0]))
++    schema = schema.min(o.bounds[0]);
++  if (o.bounds && Number.isFinite(o.bounds[1]))
++    schema = schema.max(o.bounds[1]);
++  return {
++    ...common(o),
++    type: "number",
++    default: value,
++    schema,
++    min: (o.min ?? 0) as Dyn<number>,
++    max: (o.max ?? 100) as Dyn<number>,
++    step: o.step ?? 1,
++    int: o.int,
++    bounds: o.bounds,
++  };
++}
++
++export function color<P = Parent>(
++  value: string,
++  o: Opts<P, string>,
++): Typed<ColorField, string> {
++  return { ...common(o), type: "color", default: value, schema: z.string() };
++}
++
++export function check<P = Parent>(
++  value: boolean,
++  o: Opts<P, boolean>,
++): Typed<CheckField, boolean> {
++  return { ...common(o), type: "check", default: value, schema: z.boolean() };
++}
++
++export function text<P = Parent>(
++  value: string,
++  o: Opts<P, string> & { multiline?: boolean },
++): Typed<TextField, string> {
++  return {
++    ...common(o),
++    type: "text",
++    default: value,
++    schema: z.string(),
++    multiline: o.multiline,
++  };
++}
++
++/**
++ * A choice among `options`. The schema takes exactly those values unless `schema` says
++ * otherwise (fonts are any string; animation kinds are checked against every kind).
++ */
++export function select<T extends string | number, P = Parent>(
++  options: readonly (readonly [T, string])[],
++  value: NoInfer<T>,
++  o: Opts<P, T> & { schema?: z.ZodType<T> },
++): Typed<SelectField, T> {
++  const values = options.map(([v]) => v);
++  const schema =
++    o.schema ??
++    (typeof value === "number"
++      ? z.number().refine((v) => values.includes(v as T))
++      : z.enum(values as unknown as [string, ...string[]]));
++  return {
++    ...common(o),
++    type: "select",
++    default: value,
++    schema: schema as z.ZodType<T>,
++    options,
++  };
++}
++
++export function custom<T, P = Parent>(
++  widget: string,
++  value: T,
++  schema: z.ZodType<T>,
++  o: Opts<P, T>,
++): Typed<CustomField, T> {
++  return { ...common(o), type: "custom", widget, default: value, schema };
++}
++
++export function widget<P = Parent>(
++  name: string,
++  o: { section?: string; visible?: (parent: P) => boolean } = {},
++): WidgetField {
++  return {
++    ...(o as Pick<WidgetField, "section" | "visible">),
++    type: "widget",
++    widget: name,
++  };
++}
++
++/** The data fields of `fields`, in order. */
++export function dataFields(fields: Fields): [string, DataField][] {
++  return Object.entries(fields).filter(
++    (e): e is [string, DataField] => e[1].type !== "widget",
++  );
++}
++
++/** A fresh copy of the value `fields` describe, each field at its default. */
++export function defaultsOf<F extends Fields>(fields: F): ValueOf<F> {
++  return Object.fromEntries(
++    dataFields(fields).map(([k, f]) => [k, structuredClone(f.default)]),
++  ) as ValueOf<F>;
++}
++
++/** The Zod object for the value `fields` describe. */
++export function schemaOf<F extends Fields>(fields: F): z.ZodType<ValueOf<F>> {
++  return z.object(
++    Object.fromEntries(dataFields(fields).map(([k, f]) => [k, f.schema])),
++  ) as unknown as z.ZodType<ValueOf<F>>;
++}
++
++export function obj<F extends Fields, P = Parent>(
++  fields: F,
++  o: Omit<Opts<P, ValueOf<F>>, "label"> & { label?: string },
++): Typed<ObjectField, ValueOf<F>> & { fields: F } {
++  return {
++    ...common({ label: "", ...o }),
++    type: "object",
++    fields,
++    default: defaultsOf(fields),
++    schema: schemaOf(fields),
++  };
++}
+diff --git a/src/components/fields/fill.ts b/src/components/fields/fill.ts
+new file mode 100644
+index 0000000..e71c304
+--- /dev/null
++++ b/src/components/fields/fill.ts
+@@ -0,0 +1,38 @@
++import { check, color, type Fields, num, obj, type Parent } from "./field.ts";
++
++export type FillDefaults = {
++  color: string;
++  gradient: boolean;
++  color2: string;
++  angle: number;
++  opacity: number;
++};
++
++const always = () => true;
++
++/**
++ * A solid or two-color gradient fill. `shown` hides every field while it fails (an icon's
++ * tile when it is off).
++ */
++export function fillFields(
++  d: FillDefaults,
++  shown: (p: Parent) => boolean = always,
++) {
++  const gradient = (p: Parent) => shown(p) && p.gradient === true;
++  return {
++    color: color(d.color, { label: "Color", visible: shown }),
++    gradient: check(d.gradient, { label: "Degradado", visible: shown }),
++    color2: color(d.color2, { label: "Color 2", visible: gradient }),
++    angle: num(d.angle, { label: "Ángulo", max: 360, visible: gradient }),
++    opacity: num(d.opacity, {
++      label: "Opacidad",
++      max: 1,
++      step: 0.01,
++      visible: shown,
++    }),
++  } satisfies Fields;
++}
++
++export function fill(d: FillDefaults, section: string) {
++  return obj(fillFields(d), { section });
++}
+diff --git a/src/components/fields/glow.ts b/src/components/fields/glow.ts
+new file mode 100644
+index 0000000..95c97a6
+--- /dev/null
++++ b/src/components/fields/glow.ts
+@@ -0,0 +1,35 @@
++import { check, color, num, obj, type Parent } from "./field.ts";
++
++export type GlowDefaults = {
++  enabled: boolean;
++  color: string;
++  blur: number;
++  /** Number of stacked passes, 1–4. */
++  strength: number;
++};
++
++/** An off glow of `color` with the usual spread. */
++export const noGlow = (color: string): GlowDefaults => ({
++  enabled: false,
++  color,
++  blur: 24,
++  strength: 1,
++});
++
++export function glow(d: GlowDefaults, section: string) {
++  const on = (p: Parent) => p.enabled === true;
++  return obj(
++    {
++      enabled: check(d.enabled, { label: "Activo" }),
++      color: color(d.color, { label: "Color", visible: on }),
++      blur: num(d.blur, { label: "Difusión", max: 150, visible: on }),
++      strength: num(d.strength, {
++        label: "Intensidad",
++        min: 1,
++        max: 4,
++        visible: on,
++      }),
++    },
++    { section },
++  );
++}
+diff --git a/src/components/fields/index.ts b/src/components/fields/index.ts
+new file mode 100644
+index 0000000..3f380f4
+--- /dev/null
++++ b/src/components/fields/index.ts
+@@ -0,0 +1,8 @@
++export * from "./anim.ts";
++export * from "./box.ts";
++export * from "./field.ts";
++export * from "./fill.ts";
++export * from "./glow.ts";
++export * from "./label.ts";
++export * from "./shadow.ts";
++export * from "./stroke.ts";
+diff --git a/src/components/fields/label.ts b/src/components/fields/label.ts
+new file mode 100644
+index 0000000..17be760
+--- /dev/null
++++ b/src/components/fields/label.ts
+@@ -0,0 +1,59 @@
++import { z } from "zod";
++import { FONTS } from "../../model/fonts.ts";
++import { color, num, obj, select, text } from "./field.ts";
++
++export type Align = "left" | "center" | "right";
++
++export const ALIGNS = [
++  ["left", "Izquierda"],
++  ["center", "Centro"],
++  ["right", "Derecha"],
++] as const satisfies readonly (readonly [Align, string])[];
++
++const WEIGHTS = [300, 400, 500, 600, 700, 800, 900].map(
++  (w) => [w, String(w)] as const,
++);
++
++/** Any font name opens; the list offers the bundled ones. */
++export function font(value: string) {
++  return select(
++    FONTS.map((f) => [f as string, f] as const),
++    value,
++    { label: "Fuente", schema: z.string() },
++  );
++}
++
++export function weight(value: number) {
++  return select(WEIGHTS, value, { label: "Peso", schema: z.number() });
++}
++
++export function align(value: Align) {
++  return select(ALIGNS, value, { label: "Alineación" });
++}
++
++/** Text drawn inside a shape, centred vertically; moves and animates with it. */
++export function label(
++  d: {
++    text: string;
++    font: string;
++    size: number;
++    weight: number;
++    color: string;
++    align: Align;
++    padding: number;
++  },
++  section = "Texto interior",
++) {
++  return obj(
++    {
++      text: text(d.text, { label: "Texto", multiline: true }),
++      font: font(d.font),
++      size: num(d.size, { label: "Tamaño", min: 8, max: 200 }),
++      weight: weight(d.weight),
++      color: color(d.color, { label: "Color" }),
++      align: align(d.align),
++      padding: num(d.padding, { label: "Margen", max: 200 }),
++    },
++    { section },
++  );
++}
+diff --git a/src/components/fields/shadow.ts b/src/components/fields/shadow.ts
+new file mode 100644
+index 0000000..b729f2f
+--- /dev/null
++++ b/src/components/fields/shadow.ts
+@@ -0,0 +1,41 @@
++import { check, color, num, obj, type Parent } from "./field.ts";
++
++export type ShadowDefaults = {
++  enabled: boolean;
++  color: string;
++  opacity: number;
++  blur: number;
++  x: number;
++  y: number;
++};
++
++/** The drop shadow cards and images start with. */
++export const softShadow = (enabled: boolean): ShadowDefaults => ({
++  enabled,
++  color: "#000000",
++  opacity: 0.5,
++  blur: 40,
++  x: 0,
++  y: 16,
++});
++
++export function shadow(d: ShadowDefaults, section = "Sombra") {
++  const on = (p: Parent) => p.enabled === true;
++  const offset = { min: -100, max: 100, visible: on };
++  return obj(
++    {
++      enabled: check(d.enabled, { label: "Activa" }),
++      color: color(d.color, { label: "Color", visible: on }),
++      opacity: num(d.opacity, {
++        label: "Opacidad",
++        max: 1,
++        step: 0.01,
++        visible: on,
++      }),
++      blur: num(d.blur, { label: "Difusión", max: 150, visible: on }),
++      x: num(d.x, { label: "X", ...offset }),
++      y: num(d.y, { label: "Y", ...offset }),
++    },
++    { section },
++  );
++}
+diff --git a/src/components/fields/stroke.ts b/src/components/fields/stroke.ts
+new file mode 100644
+index 0000000..4b7001b
+--- /dev/null
++++ b/src/components/fields/stroke.ts
+@@ -0,0 +1,64 @@
++import { color, num, obj, type Parent, select } from "./field.ts";
++
++export type StrokeStyle = "solid" | "dashed" | "dotted";
++
++export const STROKE_STYLES = [
++  ["solid", "Continuo"],
++  ["dashed", "Guiones"],
++  ["dotted", "Puntos"],
++] as const satisfies readonly (readonly [StrokeStyle, string])[];
++
++export function strokeStyle(value: StrokeStyle) {
++  return select(STROKE_STYLES, value, { label: "Estilo" });
++}
++
++export function strokeWidth(value: number, min = 0, max = 20) {
++  return num(value, { label: "Grosor", min, max, step: 0.5 });
++}
++
++const opacity = (value: number, visible?: (p: Parent) => boolean) =>
++  num(value, { label: "Opacidad", max: 1, step: 0.01, visible });
++
++/** A shape's border: dashes can march around it (`flow` periods per loop, 0 = still). */
++export function border(
++  d: {
++    width: number;
++    color: string;
++    opacity: number;
++    style: StrokeStyle;
++    flow: number;
++  },
++  section: string,
++) {
++  return obj(
++    {
++      width: strokeWidth(d.width),
++      color: color(d.color, { label: "Color" }),
++      opacity: opacity(d.opacity),
++      style: strokeStyle(d.style),
++      flow: num(d.flow, {
++        label: "Movimiento",
++        min: -20,
++        max: 20,
++        visible: (p: Parent) => p.style !== "solid",
++      }),
++    },
++    { section },
++  );
++}
++
++/** A plain border whose color shows only once it has a width. */
++export function plainBorder(
++  d: { width: number; color: string; opacity: number },
++  section: string,
++) {
++  const drawn = (p: Parent) => (p.width as number) > 0;
++  return obj(
++    {
++      width: strokeWidth(d.width),
++      color: color(d.color, { label: "Color", visible: drawn }),
++      opacity: opacity(d.opacity, drawn),
++    },
++    { section },
++  );
++}
+diff --git a/src/model/fonts.ts b/src/model/fonts.ts
+new file mode 100644
+index 0000000..ec785f2
+--- /dev/null
++++ b/src/model/fonts.ts
+@@ -0,0 +1,9 @@
++/** The bundled fonts (`@fontsource/*`), loaded before the first frame is drawn. */
++export const FONTS = [
++  "Inter",
++  "Space Grotesk",
++  "Poppins",
++  "JetBrains Mono",
++  "Caveat",
++  "Press Start 2P",
++] as const;
+diff --git a/src/model/model.ts b/src/model/model.ts
+index 3d86150..ffa80c9 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -272,14 +272,7 @@ export type Scene = {
+   elements: Element[];
+ };
+ 
+-export const FONTS = [
+-  "Inter",
+-  "Space Grotesk",
+-  "Poppins",
+-  "JetBrains Mono",
+-  "Caveat",
+-  "Press Start 2P",
+-] as const;
++export { FONTS } from "./fonts.ts";
+ 
+ export const SIZE_PRESETS = [
+   { label: "Cuadrado 1080×1080", width: 1080, height: 1080 },

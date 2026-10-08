@@ -1,0 +1,223 @@
+diff --git a/src/components/ellipse.ts b/src/components/ellipse.ts
+index 1d2d965..4715e24 100644
+--- a/src/components/ellipse.ts
++++ b/src/components/ellipse.ts
+@@ -1,6 +1,6 @@
+ import type { Ctx } from "../engine/paint.ts";
+ import type { EllipseEl, Scene } from "../model/model.ts";
+-import { drawShape } from "./rect.ts";
++import { drawShape } from "./rect/draw.ts";
+ 
+ export function drawEllipse(
+   ctx: Ctx,
+@@ -18,5 +18,10 @@ export function drawEllipse(
+     0,
+     Math.PI * 2,
+   );
+-  drawShape(ctx, el, path, scene, t);
++  drawShape(ctx, el, path, {
++    scene,
++    t,
++    byId: new Map(),
++    drawElements: () => {},
++  });
+ }
+diff --git a/src/components/index.ts b/src/components/index.ts
+index 737619b..2cda9e3 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -5,8 +5,9 @@
+ import { newId } from "../model/id.ts";
+ import type { Descriptor } from "./descriptor.ts";
+ import { defaultsOf } from "./fields/index.ts";
++import { rect } from "./rect/descriptor.ts";
+ 
+-export const COMPONENTS = [] as const satisfies readonly Descriptor<{
++export const COMPONENTS = [rect] as const satisfies readonly Descriptor<{
+   kind: string;
+ }>[];
+ 
+diff --git a/src/components/rect/descriptor.ts b/src/components/rect/descriptor.ts
+new file mode 100644
+index 0000000..7297708
+--- /dev/null
++++ b/src/components/rect/descriptor.ts
+@@ -0,0 +1,101 @@
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import {
++  anim,
++  BOX_ANIMS,
++  border,
++  box,
++  fill,
++  glow,
++  label,
++  noGlow,
++  num,
++  shadow,
++  softShadow,
++} from "../fields/index.ts";
++import { drawRect } from "./draw.ts";
++
++/**
++ * What rectangles and ellipses share: fill, border, glows, shadow and the inner label, in a
++ * `w` × `h` box.
++ */
++export function shapeFields(w: number, h: number) {
++  return {
++    ...box(w, h, { section: "Forma", min: 10, max: 1600 }),
++    fill: fill(
++      {
++        color: "#13254a",
++        gradient: true,
++        color2: "#0b1630",
++        angle: 90,
++        opacity: 0.9,
++      },
++      "Fondo",
++    ),
++    border: border(
++      {
++        width: 2,
++        color: "#3b82f6",
++        opacity: 0.8,
++        style: "solid",
++        flow: 0,
++      },
++      "Borde",
++    ),
++    borderGlow: glow(
++      { ...noGlow("#3b82f6"), enabled: true, blur: 18 },
++      "Brillo del borde",
++    ),
++    bgGlow: glow(noGlow("#2563eb"), "Brillo de fondo"),
++    shadow: shadow(softShadow(true)),
++    label: label({
++      text: "",
++      font: "Inter",
++      size: 28,
++      weight: 600,
++      color: "#ffffff",
++      align: "center",
++      padding: 24,
++    }),
++    anim: anim(BOX_ANIMS),
++  };
++}
++
++/** The inspector sections of shapes; `Forma` holds the size. */
++export const SHAPE_SECTIONS = [
++  { title: "Forma" },
++  { title: "Fondo" },
++  { title: "Brillo de fondo" },
++  { title: "Borde" },
++  { title: "Brillo del borde" },
++  { title: "Sombra", open: false },
++  { title: "Texto interior" },
++  { title: "Animación" },
++];
++
++/** Anything drawn like a rectangle (see `drawShape`). */
++export type ShapeEl = ElementOf<
++  "rect" | "ellipse",
++  ReturnType<typeof shapeFields>
++>;
++
++const { x, y, w, h, ...style } = shapeFields(280, 180);
++
++const fields = {
++  x,
++  y,
++  w,
++  h,
++  radius: num(24, { label: "Esquinas", max: 300, section: "Forma" }),
++  ...style,
++};
++
++export type RectEl = ElementOf<"rect", typeof fields>;
++
++export const rect = defineComponent<RectEl>({
++  kind: "rect",
++  label: "Rectángulo",
++  fields,
++  sections: SHAPE_SECTIONS,
++  anims: BOX_ANIMS,
++  draw: drawRect,
++});
+diff --git a/src/components/rect.ts b/src/components/rect/draw.ts
+similarity index 86%
+rename from src/components/rect.ts
+rename to src/components/rect/draw.ts
+index 810836c..d04352d 100644
+--- a/src/components/rect.ts
++++ b/src/components/rect/draw.ts
+@@ -1,5 +1,5 @@
+-import { animState } from "../engine/anim.ts";
+-import { boxOf, fontString, textLayout } from "../engine/geometry.ts";
++import { animState } from "../../engine/anim.ts";
++import { fontString, textLayout } from "../../engine/geometry.ts";
+ import {
+   type Ctx,
+   dashFor,
+@@ -7,10 +7,11 @@ import {
+   rgba,
+   shadowOnly,
+   withTransform,
+-} from "../engine/paint.ts";
+-import type { RectEl, Scene, ShapeEl } from "../model/model.ts";
++} from "../../engine/paint.ts";
++import type { DrawContext } from "../descriptor.ts";
++import type { RectEl, ShapeEl } from "./descriptor.ts";
+ 
+-export function drawRect(ctx: Ctx, el: RectEl, scene: Scene, t: number): void {
++export function drawRect(ctx: Ctx, el: RectEl, dc: DrawContext): void {
+   const path = new Path2D();
+   path.roundRect(
+     el.x,
+@@ -19,7 +20,7 @@ export function drawRect(ctx: Ctx, el: RectEl, scene: Scene, t: number): void {
+     el.h,
+     Math.max(0, Math.min(el.radius, el.w / 2, el.h / 2)),
+   );
+-  drawShape(ctx, el, path, scene, t);
++  drawShape(ctx, el, path, dc);
+ }
+ 
+ /**
+@@ -30,11 +31,10 @@ export function drawShape(
+   ctx: Ctx,
+   el: ShapeEl,
+   path: Path2D,
+-  scene: Scene,
+-  t: number,
++  { scene, t }: DrawContext,
+ ): void {
+   const st = animState(el.anim, t, scene.duration);
+-  const box = boxOf(el);
++  const box = { x: el.x, y: el.y, w: el.w, h: el.h };
+   withTransform(ctx, box, st, () => {
+     if (el.shadow.enabled) {
+       shadowOnly(
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 0cb97ba..57a6ee9 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -4,7 +4,7 @@ import { drawIcon } from "../components/icon.ts";
+ import { drawImage } from "../components/image.ts";
+ import { drawLine } from "../components/line.ts";
+ import { drawParticles } from "../components/particles.ts";
+-import { drawRect } from "../components/rect.ts";
++import { rect } from "../components/rect/descriptor.ts";
+ import { drawText } from "../components/text.ts";
+ import type { Background, Element, Scene } from "../model/model.ts";
+ import { indexById, indexElements } from "./geometry.ts";
+@@ -30,8 +30,9 @@ export function drawElements(
+   t: number,
+   byId: Map<string, Element> = indexElements(elements),
+ ): void {
++  const dc = { scene, t, byId, drawElements };
+   for (const el of elements) {
+-    if (el.kind === "rect") drawRect(ctx, el, scene, t);
++    if (el.kind === "rect") rect.draw(ctx, el, dc);
+     else if (el.kind === "ellipse") drawEllipse(ctx, el, scene, t);
+     else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
+     else if (el.kind === "image") drawImage(ctx, el, scene, t);

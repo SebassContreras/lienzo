@@ -1,0 +1,1056 @@
+diff --git a/src/components/fields/field.ts b/src/components/fields/field.ts
+index c4867ed..064fbd5 100644
+--- a/src/components/fields/field.ts
++++ b/src/components/fields/field.ts
+@@ -249,11 +249,14 @@ export function defaultsOf<F extends Fields>(fields: F): ValueOf<F> {
+   ) as ValueOf<F>;
+ }
+ 
++/** The Zod shape (key → schema) of the value `fields` describe. */
++export function shapeOf(fields: Fields): Record<string, z.ZodType> {
++  return Object.fromEntries(dataFields(fields).map(([k, f]) => [k, f.schema]));
++}
++
+ /** The Zod object for the value `fields` describe. */
+ export function schemaOf<F extends Fields>(fields: F): z.ZodType<ValueOf<F>> {
+-  return z.object(
+-    Object.fromEntries(dataFields(fields).map(([k, f]) => [k, f.schema])),
+-  ) as unknown as z.ZodType<ValueOf<F>>;
++  return z.object(shapeOf(fields)) as unknown as z.ZodType<ValueOf<F>>;
+ }
+ 
+ export function obj<F extends Fields, P = Parent>(
+diff --git a/src/components/group/descriptor.ts b/src/components/group/descriptor.ts
+index 9f74045..e4cc618 100644
+--- a/src/components/group/descriptor.ts
++++ b/src/components/group/descriptor.ts
+@@ -1,6 +1,6 @@
+ import { z } from "zod";
++import { ElementSchema } from "../../model/element-schema.ts";
+ import type { Element } from "../../model/model.ts";
+-import { ElementSchema } from "../../model/schema.ts";
+ import { defineComponent, type ElementOf } from "../descriptor.ts";
+ import { anim, BOX_ANIMS, box, custom, num, widget } from "../fields/index.ts";
+ import { drawGroup } from "./draw.ts";
+@@ -11,6 +11,11 @@ const { x, y, w, h } = box(100, 100, {
+   max: 4000,
+ });
+ 
++/** Annotated so the element types do not depend on themselves through the schema. */
++const childrenSchema: z.ZodType<unknown[]> = z.array(
++  z.lazy(() => ElementSchema),
++);
++
+ /**
+  * Elements moved, resized, duplicated and animated as one. Children live in their own
+  * coordinate space, `cw` × `ch`, which is stretched onto the group's box `x, y, w, h`.
+@@ -24,12 +29,10 @@ const fields = {
+   ungroup: widget("ungroup", { section: "Grupo" }),
+   cw: num(100, { label: "Ancho interior", inspector: false }),
+   ch: num(100, { label: "Alto interior", inspector: false }),
+-  children: custom(
+-    "children",
+-    [] as unknown[],
+-    z.array(z.lazy(() => ElementSchema)),
+-    { label: "Elementos", inspector: false },
+-  ),
++  children: custom("children", [] as unknown[], childrenSchema, {
++    label: "Elementos",
++    inspector: false,
++  }),
+   anim: anim(BOX_ANIMS),
+ };
+ 
+diff --git a/src/components/index.ts b/src/components/index.ts
+index a3591ba..6daac2f 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -1,20 +1,36 @@
+ /**
+- * The component registry. A kind exists once its descriptor is listed here; order is the
+- * library's.
++ * The component registry. A kind exists once its descriptor is imported here, listed in
++ * `COMPONENTS` and its element type added to `RegisteredElement`; order is the library's.
+  */
++import { registerElementKinds } from "../model/element-schema.ts";
+ import { newId } from "../model/id.ts";
+ import type { Descriptor } from "./descriptor.ts";
+-import { ellipse } from "./ellipse/descriptor.ts";
++import { type EllipseEl, ellipse } from "./ellipse/descriptor.ts";
+ import { defaultsOf } from "./fields/index.ts";
+-import { group } from "./group/descriptor.ts";
+-import { icon } from "./icon/descriptor.ts";
+-import { image } from "./image/descriptor.ts";
+-import { line } from "./line/descriptor.ts";
+-import { particles } from "./particles/descriptor.ts";
+-import { rect } from "./rect/descriptor.ts";
+-import { text } from "./text/descriptor.ts";
++import { type GroupEl, group } from "./group/descriptor.ts";
++import { type IconEl, icon } from "./icon/descriptor.ts";
++import { type ImageEl, image } from "./image/descriptor.ts";
++import { type LineEl, line } from "./line/descriptor.ts";
++import { type ParticlesEl, particles } from "./particles/descriptor.ts";
++import { type RectEl, rect } from "./rect/descriptor.ts";
++import { type TextEl, text } from "./text/descriptor.ts";
+ 
+-export const COMPONENTS = [
++/** Every element kind's type, as a union. */
++export type RegisteredElement =
++  | RectEl
++  | EllipseEl
++  | IconEl
++  | ImageEl
++  | GroupEl
++  | TextEl
++  | LineEl
++  | ParticlesEl;
++
++export type RegisteredKind = RegisteredElement["kind"];
++
++type DescriptorOf<E> = E extends RegisteredElement ? Descriptor<E> : never;
++
++export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = [
+   rect,
+   ellipse,
+   icon,
+@@ -23,25 +39,15 @@ export const COMPONENTS = [
+   text,
+   line,
+   particles,
+-] as const satisfies readonly Descriptor<{
+-  kind: string;
+-}>[];
++];
+ 
+-type Described<D> = D extends Descriptor<infer E> ? E : never;
+-
+-/** The element type each registered descriptor describes, as a union. */
+-export type RegisteredElement = Described<(typeof COMPONENTS)[number]>;
+-
+-export type RegisteredKind = RegisteredElement["kind"];
++registerElementKinds(COMPONENTS);
+ 
+-const BY_KIND = new Map<string, Descriptor<RegisteredElement>>(
+-  (COMPONENTS as readonly Descriptor<RegisteredElement>[]).map((d) => [
+-    d.kind,
+-    d,
+-  ]),
++const BY_KIND = new Map<string, DescriptorOf<RegisteredElement>>(
++  COMPONENTS.map((d) => [d.kind, d]),
+ );
+ 
+-export const KINDS = [...BY_KIND.keys()] as RegisteredKind[];
++export const KINDS = COMPONENTS.map((d) => d.kind);
+ 
+ /** The descriptor of `kind`, or undefined for a kind that does not exist. */
+ export function descriptorOf<K extends RegisteredKind>(
+@@ -49,7 +55,7 @@ export function descriptorOf<K extends RegisteredKind>(
+ ): Descriptor<Extract<RegisteredElement, { kind: K }>>;
+ export function descriptorOf(
+   kind: string,
+-): Descriptor<RegisteredElement> | undefined;
++): DescriptorOf<RegisteredElement> | undefined;
+ export function descriptorOf(kind: string) {
+   return BY_KIND.get(kind);
+ }
+diff --git a/src/components/rect/descriptor.ts b/src/components/rect/descriptor.ts
+index 7297708..b87a970 100644
+--- a/src/components/rect/descriptor.ts
++++ b/src/components/rect/descriptor.ts
+@@ -1,4 +1,5 @@
+ import { defineComponent, type ElementOf } from "../descriptor.ts";
++import type { EllipseEl } from "../ellipse/descriptor.ts";
+ import {
+   anim,
+   BOX_ANIMS,
+@@ -72,11 +73,8 @@ export const SHAPE_SECTIONS = [
+   { title: "Animación" },
+ ];
+ 
+-/** Anything drawn like a rectangle (see `drawShape`). */
+-export type ShapeEl = ElementOf<
+-  "rect" | "ellipse",
+-  ReturnType<typeof shapeFields>
+->;
++/** Shapes that share the rectangle's fill, border, glows, shadow and label. */
++export type ShapeEl = RectEl | EllipseEl;
+ 
+ const { x, y, w, h, ...style } = shapeFields(280, 180);
+ 
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 5ff6d32..905c53b 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -320,7 +320,7 @@ function AnimFields({
+   onChange,
+ }: {
+   anim: Anim;
+-  kinds: AnimKind[];
++  kinds: readonly AnimKind[];
+   onChange: (a: Anim) => void;
+ }) {
+   const loops = ["float", "pulse", "breathe"].includes(anim.kind);
+diff --git a/src/model/element-schema.ts b/src/model/element-schema.ts
+new file mode 100644
+index 0000000..b32f0ee
+--- /dev/null
++++ b/src/model/element-schema.ts
+@@ -0,0 +1,41 @@
++/**
++ * The element schema, generated from the component descriptors (D2). It imports no
++ * component, so a group's descriptor can refer to it for its children; the registry hands
++ * it the descriptors with `registerElementKinds`.
++ */
++import { z } from "zod";
++import { type Fields, shapeOf } from "../components/fields/index.ts";
++import type { Element } from "./model.ts";
++
++let components: readonly { kind: string; fields: Fields }[] = [];
++let union: z.ZodType<Element> | undefined;
++
++/** Called once by the registry with every descriptor. */
++export function registerElementKinds(
++  list: readonly { kind: string; fields: Fields }[],
++): void {
++  components = list;
++  union = undefined;
++}
++
++function elementUnion(): z.ZodType<Element> {
++  const [first, ...rest] = components.map((d) =>
++    z.object({
++      id: z.string(),
++      kind: z.literal(d.kind),
++      name: z.string(),
++      ...shapeOf(d.fields),
++    }),
++  );
++  if (!first) throw new Error("no components registered");
++  return z.discriminatedUnion("kind", [
++    first,
++    ...rest,
++  ]) as unknown as z.ZodType<Element>;
++}
++
++/** Any element, checked against its kind's descriptor fields. */
++export const ElementSchema: z.ZodType<Element> = z.lazy(() => {
++  union ??= elementUnion();
++  return union;
++});
+diff --git a/src/model/model.ts b/src/model/model.ts
+index cd5f58d..30d8fc8 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -1,255 +1,42 @@
+-import { newId } from "./id.ts";
+-
+ /**
+  * Scene model. A scene is plain JSON: everything the renderer needs to draw any frame.
+- * Elements are drawn in array order (last = on top).
+- */
+-
+-export type AnimKind =
+-  | "none"
+-  | "float"
+-  | "pulse"
+-  | "breathe"
+-  | "fade-in"
+-  | "pop-in"
+-  | "slide-up"
+-  | "draw";
+-
+-export type Anim = {
+-  kind: AnimKind;
+-  /** px for float/slide-up, % for pulse/breathe. */
+-  amount: number;
+-  /** Full cycles per loop; integers keep GIF/MP4 loops seamless. */
+-  cycles: number;
+-  /** Seconds; phase offset for loops, start time for entries. */
+-  delay: number;
+-};
+-
+-export type Glow = {
+-  enabled: boolean;
+-  color: string;
+-  blur: number;
+-  /** Number of stacked passes, 1–4. */
+-  strength: number;
+-};
+-
+-export type Shadow = {
+-  enabled: boolean;
+-  color: string;
+-  opacity: number;
+-  blur: number;
+-  x: number;
+-  y: number;
+-};
+-
+-export type Fill = {
+-  color: string;
+-  color2: string;
+-  gradient: boolean;
+-  angle: number;
+-  opacity: number;
+-};
+-
+-export type StrokeStyle = "solid" | "dashed" | "dotted";
+-
+-export type RectEl = {
+-  id: string;
+-  kind: "rect";
+-  name: string;
+-  x: number;
+-  y: number;
+-  w: number;
+-  h: number;
+-  radius: number;
+-  fill: Fill;
+-  border: {
+-    width: number;
+-    color: string;
+-    opacity: number;
+-    style: StrokeStyle;
+-    /** Marching border; dash periods per loop, 0 = still. */
+-    flow: number;
+-  };
+-  borderGlow: Glow;
+-  bgGlow: Glow;
+-  shadow: Shadow;
+-  /** Text drawn inside the rectangle; moves and animates with it. */
+-  label: {
+-    text: string;
+-    font: string;
+-    size: number;
+-    weight: number;
+-    color: string;
+-    align: "left" | "center" | "right";
+-    padding: number;
+-  };
+-  anim: Anim;
+-};
+-
+-/** An ellipse inside its box (a circle when `w` equals `h`); styled like a rectangle. */
+-export type EllipseEl = Omit<RectEl, "kind" | "radius"> & { kind: "ellipse" };
+-
+-/** Shapes that share the rectangle's fill, border, glows, shadow and label. */
+-export type ShapeEl = RectEl | EllipseEl;
+-
+-/** A lucide icon drawn as strokes, optionally on a rounded tile. */
+-export type IconEl = {
+-  id: string;
+-  kind: "icon";
+-  name: string;
+-  x: number;
+-  y: number;
+-  w: number;
+-  h: number;
+-  /** Lucide icon name in PascalCase, e.g. "Wrench". */
+-  icon: string;
+-  /** Stroke width on lucide's 24x24 grid. */
+-  stroke: number;
+-  color: string;
+-  opacity: number;
+-  tile: {
+-    enabled: boolean;
+-    color: string;
+-    color2: string;
+-    gradient: boolean;
+-    angle: number;
+-    opacity: number;
+-    radius: number;
+-    /** Space between the tile's edge and the icon, px. */
+-    padding: number;
+-  };
+-  glow: Glow;
+-  anim: Anim;
+-};
+-
+-/** A picture file stored in `assets/`, drawn into its box. */
+-export type ImageEl = {
+-  id: string;
+-  kind: "image";
+-  name: string;
+-  x: number;
+-  y: number;
+-  w: number;
+-  h: number;
+-  /** URL path such as `/assets/3f2a….png`; empty until a file is chosen. */
+-  src: string;
+-  /** Width / height of the picture itself; resizing keeps it when `keepAspect`. */
+-  aspect: number;
+-  keepAspect: boolean;
+-  radius: number;
+-  opacity: number;
+-  border: { width: number; color: string; opacity: number };
+-  shadow: Shadow;
+-  anim: Anim;
+-};
+-
+-/**
+- * Elements moved, resized, duplicated and animated as one. Children live in their own
+- * coordinate space, `cw` × `ch`, which is stretched onto the group's box `x, y, w, h`.
++ * Elements are drawn in array order (last = on top). Element types come from the component
++ * descriptors in `src/components/` (A23); this module re-exports them under their usual names.
+  */
+-export type GroupEl = {
+-  id: string;
+-  kind: "group";
+-  name: string;
+-  x: number;
+-  y: number;
+-  w: number;
+-  h: number;
+-  cw: number;
+-  ch: number;
+-  children: Element[];
+-  anim: Anim;
+-};
+-
+-export type TextEl = {
+-  id: string;
+-  kind: "text";
+-  name: string;
+-  x: number;
+-  y: number;
+-  text: string;
+-  font: string;
+-  size: number;
+-  weight: number;
+-  italic: boolean;
+-  color: string;
+-  color2: string;
+-  gradient: boolean;
+-  align: "left" | "center" | "right";
+-  lineHeight: number;
+-  letterSpacing: number;
+-  opacity: number;
+-  glow: Glow;
+-  anim: Anim;
+-};
+ 
+-export type Endpoint = { x: number; y: number; attach?: string };
+-
+-export type FlowKind = "none" | "ants" | "pulse" | "comet";
+-
+-export type LineEl = {
+-  id: string;
+-  kind: "line";
+-  name: string;
+-  a: Endpoint;
+-  b: Endpoint;
+-  /** Perpendicular offset of the curve's control point, px. */
+-  bend: number;
+-  width: number;
+-  color: string;
+-  opacity: number;
+-  style: StrokeStyle;
+-  arrowStart: boolean;
+-  arrowEnd: boolean;
+-  glow: Glow;
+-  flow: {
+-    kind: FlowKind;
+-    color: string;
+-    /** Laps (pulse/comet) or dash periods (ants) per loop. */
+-    speed: number;
+-    count: number;
+-    size: number;
+-    reverse: boolean;
+-  };
+-  anim: Anim;
+-};
+-
+-/**
+- * Points drifting inside the box, joined by lines when close ("constellation"). Paints no
+- * background of its own. Motion is a closed loop derived from `seed` (see particle-field).
+- */
+-export type ParticlesEl = {
+-  id: string;
+-  kind: "particles";
+-  name: string;
+-  x: number;
+-  y: number;
+-  w: number;
+-  h: number;
+-  /** Number of points, 1–300. */
+-  count: number;
+-  /** Changing it redistributes the points. */
+-  seed: number;
+-  /** Highest number of laps a point makes per loop (integer, ≥ 1). */
+-  speed: number;
+-  /** How far, px, a point wanders from its resting place. */
+-  drift: number;
+-  dot: { size: number; color: string; opacity: number };
+-  link: { distance: number; width: number; color: string; opacity: number };
+-  glow: Glow;
+-  anim: Anim;
+-};
++import type { AnimKind } from "../components/fields/index.ts";
++import {
++  COMPONENTS,
++  createElement,
++  descriptorOf,
++  type RegisteredElement,
++  type RegisteredKind,
++} from "../components/index.ts";
++import type { RectEl } from "../components/rect/descriptor.ts";
++import { newId } from "./id.ts";
+ 
+-export type Element =
+-  | RectEl
+-  | EllipseEl
+-  | IconEl
+-  | ImageEl
+-  | GroupEl
+-  | TextEl
+-  | LineEl
+-  | ParticlesEl;
+-export type ElementKind = Element["kind"];
++export type { EllipseEl } from "../components/ellipse/descriptor.ts";
++export type { AnimKind, StrokeStyle } from "../components/fields/index.ts";
++export { ANIM_LABELS } from "../components/fields/index.ts";
++export type { GroupEl } from "../components/group/descriptor.ts";
++export type { IconEl } from "../components/icon/descriptor.ts";
++export type { ImageEl } from "../components/image/descriptor.ts";
++export type {
++  Endpoint,
++  FlowKind,
++  LineEl,
++} from "../components/line/descriptor.ts";
++export type { ParticlesEl } from "../components/particles/descriptor.ts";
++export type { RectEl, ShapeEl } from "../components/rect/descriptor.ts";
++export type { TextEl } from "../components/text/descriptor.ts";
++
++export type Element = RegisteredElement;
++export type ElementKind = RegisteredKind;
++
++export type Anim = RectEl["anim"];
++export type Glow = RectEl["borderGlow"];
++export type Shadow = RectEl["shadow"];
++export type Fill = RectEl["fill"];
+ 
+ export type Background = {
+   color: string;
+@@ -284,260 +71,27 @@ export const SIZE_PRESETS = [
+   { label: "LinkedIn 1200×627", width: 1200, height: 627 },
+ ];
+ 
+-/** Animations for anything with a box: shapes, icons, images, text. */
+-const BOX_ANIMS: AnimKind[] = [
+-  "none",
+-  "float",
+-  "pulse",
+-  "breathe",
+-  "fade-in",
+-  "pop-in",
+-  "slide-up",
+-];
+-
+-export const ANIMS_BY_KIND: Record<ElementKind, AnimKind[]> = {
+-  rect: BOX_ANIMS,
+-  ellipse: BOX_ANIMS,
+-  icon: BOX_ANIMS,
+-  image: BOX_ANIMS,
+-  group: BOX_ANIMS,
+-  text: BOX_ANIMS,
+-  line: ["none", "fade-in", "draw"],
+-  particles: ["none", "fade-in", "pop-in", "breathe"],
+-};
+-
+-export const ANIM_LABELS: Record<AnimKind, string> = {
+-  none: "Ninguna",
+-  float: "Flotar",
+-  pulse: "Pulso (escala)",
+-  breathe: "Brillo que respira",
+-  "fade-in": "Aparecer",
+-  "pop-in": "Pop",
+-  "slide-up": "Subir",
+-  draw: "Dibujarse",
+-};
++export const ANIMS_BY_KIND = Object.fromEntries(
++  COMPONENTS.map((d) => [d.kind, d.anims]),
++) as Record<ElementKind, readonly AnimKind[]>;
+ 
+ export { newId };
+ 
+-const noAnim: Anim = { kind: "none", amount: 12, cycles: 1, delay: 0 };
+-const noGlow = (color: string): Glow => ({
+-  enabled: false,
+-  color,
+-  blur: 24,
+-  strength: 1,
+-});
+-
+-export function defaultRect(): RectEl {
+-  return {
+-    id: newId(),
+-    kind: "rect",
+-    name: "Rectángulo",
+-    x: 0,
+-    y: 0,
+-    w: 280,
+-    h: 180,
+-    radius: 24,
+-    fill: {
+-      color: "#13254a",
+-      color2: "#0b1630",
+-      gradient: true,
+-      angle: 90,
+-      opacity: 0.9,
+-    },
+-    border: {
+-      width: 2,
+-      color: "#3b82f6",
+-      opacity: 0.8,
+-      style: "solid",
+-      flow: 0,
+-    },
+-    borderGlow: { ...noGlow("#3b82f6"), enabled: true, blur: 18 },
+-    bgGlow: noGlow("#2563eb"),
+-    shadow: {
+-      enabled: true,
+-      color: "#000000",
+-      opacity: 0.5,
+-      blur: 40,
+-      x: 0,
+-      y: 16,
+-    },
+-    label: {
+-      text: "",
+-      font: "Inter",
+-      size: 28,
+-      weight: 600,
+-      color: "#ffffff",
+-      align: "center",
+-      padding: 24,
+-    },
+-    anim: { ...noAnim },
+-  };
+-}
+-
+-export function defaultEllipse(): EllipseEl {
+-  const { radius: _radius, ...rect } = defaultRect();
+-  return { ...rect, kind: "ellipse", name: "Elipse", w: 200, h: 200 };
+-}
+-
+-export function defaultIcon(): IconEl {
+-  return {
+-    id: newId(),
+-    kind: "icon",
+-    name: "Icono",
+-    x: 0,
+-    y: 0,
+-    w: 120,
+-    h: 120,
+-    icon: "Wrench",
+-    stroke: 2,
+-    color: "#e0f2fe",
+-    opacity: 1,
+-    tile: {
+-      enabled: true,
+-      color: "#1e3a8a",
+-      color2: "#0b1630",
+-      gradient: true,
+-      angle: 135,
+-      opacity: 1,
+-      radius: 28,
+-      padding: 28,
+-    },
+-    glow: noGlow("#60a5fa"),
+-    anim: { ...noAnim },
+-  };
+-}
+-
+-export function defaultImage(): ImageEl {
+-  return {
+-    id: newId(),
+-    kind: "image",
+-    name: "Imagen",
+-    x: 0,
+-    y: 0,
+-    w: 320,
+-    h: 240,
+-    src: "",
+-    aspect: 4 / 3,
+-    keepAspect: true,
+-    radius: 16,
+-    opacity: 1,
+-    border: { width: 0, color: "#ffffff", opacity: 0.3 },
+-    shadow: {
+-      enabled: false,
+-      color: "#000000",
+-      opacity: 0.5,
+-      blur: 40,
+-      x: 0,
+-      y: 16,
+-    },
+-    anim: { ...noAnim },
+-  };
+-}
+-
+-export function defaultGroup(): GroupEl {
+-  return {
+-    id: newId(),
+-    kind: "group",
+-    name: "Grupo",
+-    x: 0,
+-    y: 0,
+-    w: 100,
+-    h: 100,
+-    cw: 100,
+-    ch: 100,
+-    children: [],
+-    anim: { ...noAnim },
+-  };
+-}
+-
+-export function defaultText(): TextEl {
+-  return {
+-    id: newId(),
+-    kind: "text",
+-    name: "Texto",
+-    x: 0,
+-    y: 0,
+-    text: "Texto",
+-    font: "Inter",
+-    size: 64,
+-    weight: 800,
+-    italic: false,
+-    color: "#ffffff",
+-    color2: "#60a5fa",
+-    gradient: false,
+-    align: "left",
+-    lineHeight: 1.15,
+-    letterSpacing: 0,
+-    opacity: 1,
+-    glow: noGlow("#60a5fa"),
+-    anim: { ...noAnim },
+-  };
+-}
+-
+-export function defaultLine(): LineEl {
+-  return {
+-    id: newId(),
+-    kind: "line",
+-    name: "Línea",
+-    a: { x: 0, y: 0 },
+-    b: { x: 260, y: 0 },
+-    bend: 0,
+-    width: 3,
+-    color: "#3b82f6",
+-    opacity: 0.6,
+-    style: "solid",
+-    arrowStart: false,
+-    arrowEnd: true,
+-    glow: { ...noGlow("#3b82f6"), enabled: true, blur: 12 },
+-    flow: {
+-      kind: "pulse",
+-      color: "#93c5fd",
+-      speed: 2,
+-      count: 2,
+-      size: 5,
+-      reverse: false,
+-    },
+-    anim: { ...noAnim },
+-  };
+-}
+-
+-export function defaultParticles(): ParticlesEl {
+-  return {
+-    id: newId(),
+-    kind: "particles",
+-    name: "Partículas",
+-    x: 0,
+-    y: 0,
+-    w: 600,
+-    h: 400,
+-    count: 60,
+-    seed: 1,
+-    speed: 1,
+-    drift: 40,
+-    dot: { size: 2.5, color: "#93c5fd", opacity: 0.9 },
+-    link: { distance: 120, width: 1, color: "#60a5fa", opacity: 0.5 },
+-    glow: noGlow("#60a5fa"),
+-    anim: { ...noAnim },
+-  };
+-}
+-
+-const DEFAULTS: Record<ElementKind, () => Element> = {
+-  rect: defaultRect,
+-  ellipse: defaultEllipse,
+-  icon: defaultIcon,
+-  image: defaultImage,
+-  group: defaultGroup,
+-  text: defaultText,
+-  line: defaultLine,
+-  particles: defaultParticles,
+-};
++export const defaultRect = () => createElement("rect");
++export const defaultEllipse = () => createElement("ellipse");
++export const defaultIcon = () => createElement("icon");
++export const defaultImage = () => createElement("image");
++export const defaultGroup = () => createElement("group");
++export const defaultText = () => createElement("text");
++export const defaultLine = () => createElement("line");
++export const defaultParticles = () => createElement("particles");
+ 
+ /** A fresh default element of `kind`; throws for a kind that does not exist. */
+ export function defaultElement(kind: ElementKind): Element {
+-  if (!Object.hasOwn(DEFAULTS, kind)) {
++  if (!descriptorOf(kind as string)) {
+     throw new Error(`unknown element kind ${kind}`);
+   }
+-  return DEFAULTS[kind]();
++  return createElement(kind);
+ }
+ 
+ /** The background of a new scene ("Azul noche"). */
+diff --git a/src/model/schema.ts b/src/model/schema.ts
+index 925a1c0..4c93084 100644
+--- a/src/model/schema.ts
++++ b/src/model/schema.ts
+@@ -3,220 +3,15 @@
+  * Imports are checked here before anything is written (D4).
+  */
+ import { z } from "zod";
++import { KINDS } from "../components/index.ts";
+ import { resolvePreset } from "../presets/resolve.ts";
+-import type { Element, Scene } from "./model.ts";
++import { ElementSchema } from "./element-schema.ts";
++import type { Scene } from "./model.ts";
+ import type { PresetRecipe } from "./preset.ts";
+ 
+-const color = z.string();
+-const align = z.enum(["left", "center", "right"]);
+-const strokeStyle = z.enum(["solid", "dashed", "dotted"]);
+-
+-const anim = z.object({
+-  kind: z.enum([
+-    "none",
+-    "float",
+-    "pulse",
+-    "breathe",
+-    "fade-in",
+-    "pop-in",
+-    "slide-up",
+-    "draw",
+-  ]),
+-  amount: z.number(),
+-  cycles: z.number(),
+-  delay: z.number(),
+-});
+-
+-const glow = z.object({
+-  enabled: z.boolean(),
+-  color,
+-  blur: z.number(),
+-  strength: z.number(),
+-});
+-
+-const shadow = z.object({
+-  enabled: z.boolean(),
+-  color,
+-  opacity: z.number(),
+-  blur: z.number(),
+-  x: z.number(),
+-  y: z.number(),
+-});
++export { ElementSchema };
+ 
+-const box = {
+-  id: z.string(),
+-  name: z.string(),
+-  x: z.number(),
+-  y: z.number(),
+-  w: z.number(),
+-  h: z.number(),
+-};
+-
+-const shapeFields = {
+-  ...box,
+-  fill: z.object({
+-    color,
+-    color2: color,
+-    gradient: z.boolean(),
+-    angle: z.number(),
+-    opacity: z.number(),
+-  }),
+-  border: z.object({
+-    width: z.number(),
+-    color,
+-    opacity: z.number(),
+-    style: strokeStyle,
+-    flow: z.number(),
+-  }),
+-  borderGlow: glow,
+-  bgGlow: glow,
+-  shadow,
+-  label: z.object({
+-    text: z.string(),
+-    font: z.string(),
+-    size: z.number(),
+-    weight: z.number(),
+-    color,
+-    align,
+-    padding: z.number(),
+-  }),
+-  anim,
+-};
+-
+-const rect = z.object({
+-  ...shapeFields,
+-  kind: z.literal("rect"),
+-  radius: z.number(),
+-});
+-
+-const ellipse = z.object({ ...shapeFields, kind: z.literal("ellipse") });
+-
+-const icon = z.object({
+-  ...box,
+-  kind: z.literal("icon"),
+-  icon: z.string(),
+-  stroke: z.number(),
+-  color,
+-  opacity: z.number(),
+-  tile: z.object({
+-    enabled: z.boolean(),
+-    color,
+-    color2: color,
+-    gradient: z.boolean(),
+-    angle: z.number(),
+-    opacity: z.number(),
+-    radius: z.number(),
+-    padding: z.number(),
+-  }),
+-  glow,
+-  anim,
+-});
+-
+-const image = z.object({
+-  ...box,
+-  kind: z.literal("image"),
+-  src: z.string(),
+-  aspect: z.number(),
+-  keepAspect: z.boolean(),
+-  radius: z.number(),
+-  opacity: z.number(),
+-  border: z.object({ width: z.number(), color, opacity: z.number() }),
+-  shadow,
+-  anim,
+-});
+-
+-const text = z.object({
+-  id: z.string(),
+-  kind: z.literal("text"),
+-  name: z.string(),
+-  x: z.number(),
+-  y: z.number(),
+-  text: z.string(),
+-  font: z.string(),
+-  size: z.number(),
+-  weight: z.number(),
+-  italic: z.boolean(),
+-  color,
+-  color2: color,
+-  gradient: z.boolean(),
+-  align,
+-  lineHeight: z.number(),
+-  letterSpacing: z.number(),
+-  opacity: z.number(),
+-  glow,
+-  anim,
+-});
+-
+-const endpoint = z.object({
+-  x: z.number(),
+-  y: z.number(),
+-  attach: z.string().optional(),
+-});
+-
+-const line = z.object({
+-  id: z.string(),
+-  kind: z.literal("line"),
+-  name: z.string(),
+-  a: endpoint,
+-  b: endpoint,
+-  bend: z.number(),
+-  width: z.number(),
+-  color,
+-  opacity: z.number(),
+-  style: strokeStyle,
+-  arrowStart: z.boolean(),
+-  arrowEnd: z.boolean(),
+-  glow,
+-  flow: z.object({
+-    kind: z.enum(["none", "ants", "pulse", "comet"]),
+-    color,
+-    speed: z.number(),
+-    count: z.number(),
+-    size: z.number(),
+-    reverse: z.boolean(),
+-  }),
+-  anim,
+-});
+-
+-const particles = z.object({
+-  ...box,
+-  kind: z.literal("particles"),
+-  count: z.number().int().min(1).max(300),
+-  seed: z.number(),
+-  speed: z.number().int().min(1),
+-  drift: z.number().min(0),
+-  dot: z.object({ size: z.number(), color, opacity: z.number() }),
+-  link: z.object({
+-    distance: z.number(),
+-    width: z.number(),
+-    color,
+-    opacity: z.number(),
+-  }),
+-  glow,
+-  anim,
+-});
+-
+-const group = z.object({
+-  ...box,
+-  kind: z.literal("group"),
+-  cw: z.number(),
+-  ch: z.number(),
+-  get children() {
+-    return z.array(ElementSchema);
+-  },
+-  anim,
+-});
+-
+-export const ElementSchema: z.ZodType<Element> = z.discriminatedUnion("kind", [
+-  rect,
+-  ellipse,
+-  icon,
+-  image,
+-  group,
+-  text,
+-  line,
+-  particles,
+-]);
++const color = z.string();
+ 
+ export const BackgroundSchema = z.object({
+   color,
+@@ -254,17 +49,7 @@ export const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
+   .object({
+     name: z.string().min(1),
+     category: z.string().optional(),
+-    kind: z.enum([
+-      "rect",
+-      "ellipse",
+-      "icon",
+-      "image",
+-      "group",
+-      "text",
+-      "line",
+-      "particles",
+-      "background",
+-    ]),
++    kind: z.lazy(() => z.enum([...KINDS, "background"])),
+     traits: z.array(traitUse),
+     set: z.record(z.string(), z.unknown()).optional(),
+   })

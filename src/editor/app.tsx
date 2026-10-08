@@ -1,16 +1,10 @@
 import {
-  Circle,
   FilePlus2,
-  Image,
   PaintBucket,
   Pause,
   Play,
   Redo2,
-  Shapes,
   Sparkles,
-  Spline,
-  Square,
-  Type,
   Undo2,
   Upload,
 } from "lucide-react";
@@ -23,6 +17,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { COMPONENTS, createElement } from "../components/index.ts";
 import { demoScene } from "../demo.ts";
 import {
   centerOn,
@@ -41,14 +36,7 @@ import { ExportControls } from "../export/export-controls.tsx";
 import {
   cloneElement,
   cloneElements,
-  defaultEllipse,
-  defaultIcon,
-  defaultImage,
-  defaultLine,
-  defaultParticles,
-  defaultRect,
   defaultScene,
-  defaultText,
   type Element,
   type Scene,
 } from "../model/model.ts";
@@ -75,6 +63,7 @@ import {
   BackgroundLibrary,
   backgroundItems,
 } from "./backgrounds.tsx";
+import { IconSvg } from "./icon-picker.tsx";
 import {
   ElementInspector,
   MultiInspector,
@@ -138,16 +127,18 @@ function loadInitialScene(): Scene {
   return demoScene();
 }
 
-const BASICS: LibraryItem[] = [
-  { name: "Rectángulo", element: defaultRect() },
-  { name: "Elipse", element: defaultEllipse() },
-  { name: "Icono", element: defaultIcon() },
-  { name: "Imagen", element: defaultImage() },
-  { name: "Texto", element: defaultText() },
-  { name: "Línea", element: defaultLine() },
-  { name: "Partículas", element: defaultParticles() },
-];
-const BASIC_ICONS = [Square, Circle, Shapes, Image, Type, Spline, Sparkles];
+/** Every kind its descriptor offers in the library, in registry order. */
+const BASIC_KINDS = COMPONENTS.filter((d) => d.basic);
+const BASICS: LibraryItem[] = BASIC_KINDS.map((d) => ({
+  name: d.label,
+  element: createElement(d.kind),
+}));
+const BASIC_ICONS = BASIC_KINDS.map(
+  (d) =>
+    function BasicIcon({ size }: { size?: number }) {
+      return <IconSvg name={d.icon} size={size} />;
+    },
+);
 
 const BUILT_INS = recipeItems(BUILT_IN_RECIPES);
 const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(

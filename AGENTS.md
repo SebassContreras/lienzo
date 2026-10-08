@@ -18,7 +18,12 @@ What exists today:
 
 - Single React 19 + Vite app at the repo root, TypeScript on Node 24 (A1, A8, A9)
 - Everything is drawn with Canvas 2D by `drawScene(ctx, scene, t)`; preview = export (A3)
-- Scene = plain JSON typed in `src/model/` (A4); one file per component in `src/components/` (A5)
+- Scene = plain JSON (A4); every component kind is one descriptor in `src/components/<kind>/`
+  that declares its fields, defaults, inspector sections, draw function and animations; the
+  element types, the Zod element schema, default elements, the inspector and the library's
+  basic components are derived from the descriptors (A23)
+- Time is applied only by `animate(el, t, scene)` (`src/engine/animate.ts`) before a component
+  draws; components get the result as a transform (A24)
 - Looping animations use whole cycles per loop (A6)
 - Presets in `presets/`, scenes in `scenes/`, images in `assets/`, via the Vite middleware;
   no database (A7)
@@ -31,10 +36,9 @@ What exists today:
 - Scenes and preset recipes are validated with Zod in `src/model/schema.ts` before any
   import is written
 
-Planned (decided, not built yet — specs 007–019):
+Planned (decided, not built yet — specs 007–011, 013–019):
 
-- One descriptor per component kind drives schema, inspector, keyframes, compact JSON and tools
-  (A23, spec 012); time is applied only by `animate(el, t, scene)` before drawing (A24);
+- Descriptors also drive keyframes, compact JSON and tools (A23, specs 015, 011, 007);
   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
 - Animation presets in `presets/animations/`, copied or linked, relative times and offsets
   (A26, spec 019)
@@ -45,11 +49,15 @@ Planned (decided, not built yet — specs 007–019):
 ## Layout
 
 ```
-src/model/       scene types, defaults, size presets, fonts; Zod schemas (schema.ts)
-src/engine/      drawScene, painting helpers, animation state, geometry, particle field
-src/components/  one draw function per element kind (rect, ellipse, text, icon, image, line,
-                 group, particles)
-src/editor/      React UI: app shell, stage, library, background library, inspector
+src/model/       scene and background types, size presets, fonts; Zod schemas (schema.ts,
+                 element-schema.ts generated from the descriptors)
+src/engine/      drawScene, animate, painting helpers, animation state, geometry, particle field
+src/components/  index.ts = the registry; descriptor.ts = the descriptor type; fields/ = field
+                 builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);
+                 <kind>/descriptor.ts + <kind>/draw.ts per element kind (rect, ellipse, icon,
+                 image, group, text, line, particles)
+src/editor/      React UI: app shell, stage, library, background library, inspector (the
+                 element inspector is generated: layout.ts + field-editor.tsx)
 src/export/      PNG / GIF / MP4
 src/traits/      reusable style pieces, one file per trait
 src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
@@ -63,12 +71,15 @@ assets/          images used by scenes, named by content hash
 
 ## Rules for agents
 
-- To add a component: a type, a `default…()` and its `ANIMS_BY_KIND` entry in
-  `src/model/model.ts`; a draw file in `src/components/`; a case in `src/engine/render.ts`;
-  an inspector section; an entry in `BASICS` (`src/editor/app.tsx`); an `apply.<kind>` in each trait
-  that should style it (and the kind in `TraitTargets`); its schema in `src/model/schema.ts`
-  (the element union and the recipe `kind` list) and the known-kinds list in
-  `src/presets/resolve.test.ts`; and a built-in preset recipe with a `category`.
+- To add a component: add a descriptor folder `src/components/<kind>/` with `descriptor.ts`
+  (fields built from `src/components/fields/`, composing the shared groups; sections; the
+  animations it offers; label and library icon; `defineComponent`) and `draw.ts` (draws the
+  element with the transform `animate` gives it), then register it in
+  `src/components/index.ts` (import, `COMPONENTS`, `RegisteredElement`). Nothing else: type,
+  defaults, schema, inspector and library entry follow. A control the field types don't
+  cover is a `custom` field or a `widget` with a renderer in `WIDGETS`
+  (`src/editor/field-editor.tsx`). Optionally, an `apply.<kind>` in traits that should style
+  it and a built-in preset recipe with a `category`.
 - To add a preset: a JSON recipe in `presets/built-in/` combining traits; add a trait in
   `src/traits/` only when no existing one fits.
 - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports

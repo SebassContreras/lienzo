@@ -1,0 +1,120 @@
+diff --git a/src/components/ellipse.ts b/src/components/ellipse.ts
+deleted file mode 100644
+index 4715e24..0000000
+--- a/src/components/ellipse.ts
++++ /dev/null
+@@ -1,27 +0,0 @@
+-import type { Ctx } from "../engine/paint.ts";
+-import type { EllipseEl, Scene } from "../model/model.ts";
+-import { drawShape } from "./rect/draw.ts";
+-
+-export function drawEllipse(
+-  ctx: Ctx,
+-  el: EllipseEl,
+-  scene: Scene,
+-  t: number,
+-): void {
+-  const path = new Path2D();
+-  path.ellipse(
+-    el.x + el.w / 2,
+-    el.y + el.h / 2,
+-    Math.max(0, el.w / 2),
+-    Math.max(0, el.h / 2),
+-    0,
+-    0,
+-    Math.PI * 2,
+-  );
+-  drawShape(ctx, el, path, {
+-    scene,
+-    t,
+-    byId: new Map(),
+-    drawElements: () => {},
+-  });
+-}
+diff --git a/src/components/ellipse/descriptor.ts b/src/components/ellipse/descriptor.ts
+new file mode 100644
+index 0000000..22537f4
+--- /dev/null
++++ b/src/components/ellipse/descriptor.ts
+@@ -0,0 +1,18 @@
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import { BOX_ANIMS } from "../fields/index.ts";
++import { SHAPE_SECTIONS, shapeFields } from "../rect/descriptor.ts";
++import { drawEllipse } from "./draw.ts";
++
++/** An ellipse inside its box (a circle when `w` equals `h`); styled like a rectangle. */
++const fields = shapeFields(200, 200);
++
++export type EllipseEl = ElementOf<"ellipse", typeof fields>;
++
++export const ellipse = defineComponent<EllipseEl>({
++  kind: "ellipse",
++  label: "Elipse",
++  fields,
++  sections: SHAPE_SECTIONS,
++  anims: BOX_ANIMS,
++  draw: drawEllipse,
++});
+diff --git a/src/components/ellipse/draw.ts b/src/components/ellipse/draw.ts
+new file mode 100644
+index 0000000..82166a3
+--- /dev/null
++++ b/src/components/ellipse/draw.ts
+@@ -0,0 +1,18 @@
++import type { Ctx } from "../../engine/paint.ts";
++import type { DrawContext } from "../descriptor.ts";
++import { drawShape } from "../rect/draw.ts";
++import type { EllipseEl } from "./descriptor.ts";
++
++export function drawEllipse(ctx: Ctx, el: EllipseEl, dc: DrawContext): void {
++  const path = new Path2D();
++  path.ellipse(
++    el.x + el.w / 2,
++    el.y + el.h / 2,
++    Math.max(0, el.w / 2),
++    Math.max(0, el.h / 2),
++    0,
++    0,
++    Math.PI * 2,
++  );
++  drawShape(ctx, el, path, dc);
++}
+diff --git a/src/components/index.ts b/src/components/index.ts
+index 2cda9e3..c11952a 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -4,10 +4,14 @@
+  */
+ import { newId } from "../model/id.ts";
+ import type { Descriptor } from "./descriptor.ts";
++import { ellipse } from "./ellipse/descriptor.ts";
+ import { defaultsOf } from "./fields/index.ts";
+ import { rect } from "./rect/descriptor.ts";
+ 
+-export const COMPONENTS = [rect] as const satisfies readonly Descriptor<{
++export const COMPONENTS = [
++  rect,
++  ellipse,
++] as const satisfies readonly Descriptor<{
+   kind: string;
+ }>[];
+ 
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 57a6ee9..ff8c564 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,4 +1,4 @@
+-import { drawEllipse } from "../components/ellipse.ts";
++import { ellipse } from "../components/ellipse/descriptor.ts";
+ import { drawGroup } from "../components/group.ts";
+ import { drawIcon } from "../components/icon.ts";
+ import { drawImage } from "../components/image.ts";
+@@ -33,7 +33,7 @@ export function drawElements(
+   const dc = { scene, t, byId, drawElements };
+   for (const el of elements) {
+     if (el.kind === "rect") rect.draw(ctx, el, dc);
+-    else if (el.kind === "ellipse") drawEllipse(ctx, el, scene, t);
++    else if (el.kind === "ellipse") ellipse.draw(ctx, el, dc);
+     else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
+     else if (el.kind === "image") drawImage(ctx, el, scene, t);
+     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);

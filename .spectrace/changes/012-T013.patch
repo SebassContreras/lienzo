@@ -1,0 +1,752 @@
+diff --git a/src/editor/controls.tsx b/src/editor/controls.tsx
+new file mode 100644
+index 0000000..60d7712
+--- /dev/null
++++ b/src/editor/controls.tsx
+@@ -0,0 +1,156 @@
++/** The inspector's basic controls: a collapsible section and one row per value. */
++import type { ReactNode, Ref } from "react";
++
++export function Section({
++  title,
++  children,
++  open = true,
++  ref,
++}: {
++  title: string;
++  children: ReactNode;
++  open?: boolean;
++  ref?: Ref<HTMLDetailsElement>;
++}) {
++  return (
++    <details className="section" open={open} ref={ref}>
++      <summary>{title}</summary>
++      <div className="section-body">{children}</div>
++    </details>
++  );
++}
++
++export function Num({
++  label,
++  value,
++  onChange,
++  min = 0,
++  max = 100,
++  step = 1,
++}: {
++  label: string;
++  value: number;
++  onChange: (v: number) => void;
++  min?: number;
++  max?: number;
++  step?: number;
++}) {
++  return (
++    <label className="field">
++      <span>{label}</span>
++      <input
++        type="range"
++        min={min}
++        max={max}
++        step={step}
++        value={value}
++        onChange={(e) => onChange(Number(e.target.value))}
++      />
++      <input
++        className="num"
++        type="number"
++        step={step}
++        value={Number(value.toFixed(2))}
++        onChange={(e) => {
++          const v = Number(e.target.value);
++          if (Number.isFinite(v)) onChange(v);
++        }}
++      />
++    </label>
++  );
++}
++
++export function Color({
++  label,
++  value,
++  onChange,
++}: {
++  label: string;
++  value: string;
++  onChange: (v: string) => void;
++}) {
++  return (
++    <label className="field">
++      <span>{label}</span>
++      <input
++        type="color"
++        value={value}
++        onChange={(e) => onChange(e.target.value)}
++      />
++      <input
++        className="hex"
++        value={value}
++        onChange={(e) => {
++          if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value);
++        }}
++      />
++    </label>
++  );
++}
++
++export function Check({
++  label,
++  checked,
++  onChange,
++}: {
++  label: string;
++  checked: boolean;
++  onChange: (v: boolean) => void;
++}) {
++  return (
++    <label className="field check">
++      <span>{label}</span>
++      <input
++        type="checkbox"
++        checked={checked}
++        onChange={(e) => onChange(e.target.checked)}
++      />
++    </label>
++  );
++}
++
++export function Select<T extends string>({
++  label,
++  value,
++  options,
++  onChange,
++}: {
++  label: string;
++  value: T;
++  options: readonly (readonly [T, string])[];
++  onChange: (v: T) => void;
++}) {
++  return (
++    <label className="field">
++      <span>{label}</span>
++      <select value={value} onChange={(e) => onChange(e.target.value as T)}>
++        {options.map(([v, l]) => (
++          <option key={v} value={v}>
++            {l}
++          </option>
++        ))}
++      </select>
++    </label>
++  );
++}
++
++export function TextArea({
++  label,
++  value,
++  onChange,
++}: {
++  label: string;
++  value: string;
++  onChange: (v: string) => void;
++}) {
++  return (
++    <label className="field column">
++      <span>{label}</span>
++      <textarea
++        rows={3}
++        value={value}
++        onChange={(e) => onChange(e.target.value)}
++      />
++    </label>
++  );
++}
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+new file mode 100644
+index 0000000..8c46e0e
+--- /dev/null
++++ b/src/editor/field-editor.tsx
+@@ -0,0 +1,274 @@
++/**
++ * The inspector generated from a descriptor (D3): one control per field by its type, and a
++ * widget of its own for each custom field or widget a descriptor names.
++ */
++import { ImageUp, Link2Off, Maximize, Shuffle, Ungroup } from "lucide-react";
++import { type ReactNode, useState } from "react";
++import { descriptorOf } from "../components/index.ts";
++import { imageSize } from "../engine/images.ts";
++import type {
++  Element,
++  Endpoint,
++  GroupEl,
++  ImageEl,
++  ParticlesEl,
++} from "../model/model.ts";
++import { uploadAsset } from "../presets/store.ts";
++import { Check, Color, Num, Section, Select, TextArea } from "./controls.tsx";
++import { IconPicker } from "./icon-picker.tsx";
++import {
++  inspectorLayout,
++  type LayoutItem,
++  resolve,
++  valueAt,
++  writeField,
++} from "./layout.ts";
++
++export type Change = (fn: (draft: Element) => void) => void;
++
++/** What widgets may need from the editor around the inspector. */
++export type EditorContext = {
++  nameOf: (id: string) => string;
++  /** Scene size, for "Ajustar al lienzo". */
++  canvas?: { width: number; height: number };
++  onUngroup?: () => void;
++  onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
++};
++
++type WidgetProps = {
++  el: Element;
++  item: LayoutItem;
++  value: unknown;
++  label: string;
++  change: Change;
++  ctx: EditorContext;
++};
++
++/** Stores a picked file in `assets/` and reads its shape once it decodes. */
++async function uploadImage(file: File) {
++  const src = await uploadAsset(file);
++  const { width, height } = await imageSize(src);
++  return { src, aspect: width / height };
++}
++
++function ImageUpload({ el, change, ctx }: WidgetProps) {
++  const image = el as ImageEl;
++  const onUpload = ctx.onUpload ?? uploadImage;
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState("");
++  return (
++    <>
++      <label className="file-pick">
++        <ImageUp size={15} />
++        {busy ? "Subiendo…" : image.src ? "Cambiar imagen" : "Elegir imagen"}
++        <input
++          type="file"
++          accept=".png,.jpg,.jpeg,.svg,.webp"
++          disabled={busy}
++          onChange={(e) => {
++            const file = e.target.files?.[0];
++            e.target.value = "";
++            if (!file) return;
++            setBusy(true);
++            setError("");
++            onUpload(file)
++              .then(({ src, aspect }) =>
++                change((draft) => {
++                  const d = draft as ImageEl;
++                  d.src = src;
++                  d.aspect = aspect;
++                  if (d.keepAspect) d.h = d.w / aspect;
++                }),
++              )
++              .catch((err: unknown) => setError(String(err)))
++              .finally(() => setBusy(false));
++          }}
++        />
++      </label>
++      {error && <div className="hint error">{error}</div>}
++      {image.src && (
++        <div className="hint">
++          Guardada en <code>{image.src.slice(1)}</code>
++        </div>
++      )}
++    </>
++  );
++}
++
++function Connection({ item, value, label, change, ctx }: WidgetProps) {
++  const end = value as Endpoint;
++  const key = item.path[item.path.length - 1] as "a" | "b";
++  return end.attach ? (
++    <div className="attached">
++      <span>
++        {label}: conectado a <b>{ctx.nameOf(end.attach)}</b>
++      </span>
++      <button
++        type="button"
++        title="Desconectar"
++        onClick={() =>
++          change((d) => {
++            if (d.kind === "line") d[key].attach = undefined;
++          })
++        }
++      >
++        <Link2Off size={14} />
++      </button>
++    </div>
++  ) : (
++    <div className="hint">
++      {label}: libre. Arrástralo sobre una tarjeta o texto para conectarlo.
++    </div>
++  );
++}
++
++/** Custom fields and widgets, by the name descriptors give them. */
++const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
++  icon: ({ value, change }) => (
++    <IconPicker
++      value={value as string}
++      onChange={(v) =>
++        change((d) => {
++          if (d.kind === "icon") d.icon = v;
++        })
++      }
++    />
++  ),
++  image: (p) => <ImageUpload {...p} />,
++  connection: (p) => <Connection {...p} />,
++  "group-info": ({ el }) => (
++    <div className="hint">
++      {(el as GroupEl).children.length} elementos. Se mueven, cambian de tamaño
++      y se animan juntos.
++    </div>
++  ),
++  ungroup: ({ ctx }) =>
++    ctx.onUngroup && (
++      <button type="button" onClick={ctx.onUngroup}>
++        <Ungroup size={15} /> Desagrupar (Ctrl+Mayús+G)
++      </button>
++    ),
++  reseed: ({ change }) => (
++    <button
++      type="button"
++      title="Coloca los puntos en otras posiciones"
++      onClick={() =>
++        change((d) => {
++          (d as ParticlesEl).seed = 1 + Math.floor(Math.random() * 9999);
++        })
++      }
++    >
++      <Shuffle size={15} /> Redistribuir
++    </button>
++  ),
++  "fit-canvas": ({ change, ctx }) => {
++    const { canvas } = ctx;
++    return (
++      canvas && (
++        <button
++          type="button"
++          title="Cubre toda la publicación"
++          onClick={() =>
++            change((d) => {
++              const p = d as ParticlesEl;
++              p.x = 0;
++              p.y = 0;
++              p.w = canvas.width;
++              p.h = canvas.height;
++            })
++          }
++        >
++          <Maximize size={15} /> Ajustar al lienzo
++        </button>
++      )
++    );
++  },
++};
++
++/** One row of the inspector: the control `item`'s field type calls for. */
++function Control({
++  el,
++  item,
++  change,
++  ctx,
++}: {
++  el: Element;
++  item: LayoutItem;
++  change: Change;
++  ctx: EditorContext;
++}) {
++  const { field, parent, path } = item;
++  const value = valueAt(el, path);
++  const label = field.type === "widget" ? "" : resolve(field.label, parent);
++  if (field.type === "widget" || field.type === "custom") {
++    const render = WIDGETS[field.widget];
++    if (!render) throw new Error(`unknown inspector widget ${field.widget}`);
++    return render({ el, item, value, label, change, ctx });
++  }
++  const write = (v: unknown) => change((d) => writeField(d, path, field, v));
++  switch (field.type) {
++    case "number":
++      return (
++        <Num
++          label={label}
++          value={value as number}
++          min={resolve(field.min, parent)}
++          max={resolve(field.max, parent)}
++          step={field.step}
++          onChange={write}
++        />
++      );
++    case "color":
++      return <Color label={label} value={value as string} onChange={write} />;
++    case "check":
++      return (
++        <Check label={label} checked={value as boolean} onChange={write} />
++      );
++    case "text":
++      return (
++        <TextArea label={label} value={value as string} onChange={write} />
++      );
++    case "select": {
++      const options = field.options.map(([v, l]) => [String(v), l] as const);
++      return (
++        <Select
++          label={label}
++          value={String(value)}
++          options={options}
++          onChange={(v) =>
++            write(field.options.find(([o]) => String(o) === v)?.[0] ?? v)
++          }
++        />
++      );
++    }
++  }
++}
++
++/** Every section of `el`'s inspector, generated from its kind's descriptor. */
++export function FieldEditor({
++  el,
++  change,
++  ctx,
++}: {
++  el: Element;
++  change: Change;
++  ctx: EditorContext;
++}) {
++  const d = descriptorOf(el.kind);
++  if (!d) return null;
++  return inspectorLayout(d as never, el)
++    .filter((s) => s.items.length > 0)
++    .map((s) => (
++      <Section key={s.title} title={s.title} open={s.open}>
++        {s.items.map((item) => (
++          <Control
++            key={item.path.join(".")}
++            el={el}
++            item={item}
++            change={change}
++            ctx={ctx}
++          />
++        ))}
++      </Section>
++    ));
++}
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 905c53b..d7eae1d 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -35,6 +35,8 @@ import {
+   type TextEl,
+ } from "../model/model.ts";
+ import { uploadAsset } from "../presets/store.ts";
++import { Check, Color, Num, Section, Select, TextArea } from "./controls.tsx";
++import { FieldEditor } from "./field-editor.tsx";
+ import { IconPicker } from "./icon-picker.tsx";
+ 
+ /** Stores a picked file in `assets/` and reads its shape once it decodes. */
+@@ -44,162 +46,6 @@ async function uploadImage(file: File) {
+   return { src, aspect: width / height };
+ }
+ 
+-/* ---------- small field controls ---------- */
+-
+-export function Section({
+-  title,
+-  children,
+-  open = true,
+-  ref,
+-}: {
+-  title: string;
+-  children: ReactNode;
+-  open?: boolean;
+-  ref?: Ref<HTMLDetailsElement>;
+-}) {
+-  return (
+-    <details className="section" open={open} ref={ref}>
+-      <summary>{title}</summary>
+-      <div className="section-body">{children}</div>
+-    </details>
+-  );
+-}
+-
+-export function Num({
+-  label,
+-  value,
+-  onChange,
+-  min = 0,
+-  max = 100,
+-  step = 1,
+-}: {
+-  label: string;
+-  value: number;
+-  onChange: (v: number) => void;
+-  min?: number;
+-  max?: number;
+-  step?: number;
+-}) {
+-  return (
+-    <label className="field">
+-      <span>{label}</span>
+-      <input
+-        type="range"
+-        min={min}
+-        max={max}
+-        step={step}
+-        value={value}
+-        onChange={(e) => onChange(Number(e.target.value))}
+-      />
+-      <input
+-        className="num"
+-        type="number"
+-        step={step}
+-        value={Number(value.toFixed(2))}
+-        onChange={(e) => {
+-          const v = Number(e.target.value);
+-          if (Number.isFinite(v)) onChange(v);
+-        }}
+-      />
+-    </label>
+-  );
+-}
+-
+-export function Color({
+-  label,
+-  value,
+-  onChange,
+-}: {
+-  label: string;
+-  value: string;
+-  onChange: (v: string) => void;
+-}) {
+-  return (
+-    <label className="field">
+-      <span>{label}</span>
+-      <input
+-        type="color"
+-        value={value}
+-        onChange={(e) => onChange(e.target.value)}
+-      />
+-      <input
+-        className="hex"
+-        value={value}
+-        onChange={(e) => {
+-          if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value);
+-        }}
+-      />
+-    </label>
+-  );
+-}
+-
+-export function Check({
+-  label,
+-  checked,
+-  onChange,
+-}: {
+-  label: string;
+-  checked: boolean;
+-  onChange: (v: boolean) => void;
+-}) {
+-  return (
+-    <label className="field check">
+-      <span>{label}</span>
+-      <input
+-        type="checkbox"
+-        checked={checked}
+-        onChange={(e) => onChange(e.target.checked)}
+-      />
+-    </label>
+-  );
+-}
+-
+-export function Select<T extends string>({
+-  label,
+-  value,
+-  options,
+-  onChange,
+-}: {
+-  label: string;
+-  value: T;
+-  options: readonly (readonly [T, string])[];
+-  onChange: (v: T) => void;
+-}) {
+-  return (
+-    <label className="field">
+-      <span>{label}</span>
+-      <select value={value} onChange={(e) => onChange(e.target.value as T)}>
+-        {options.map(([v, l]) => (
+-          <option key={v} value={v}>
+-            {l}
+-          </option>
+-        ))}
+-      </select>
+-    </label>
+-  );
+-}
+-
+-function TextArea({
+-  label,
+-  value,
+-  onChange,
+-}: {
+-  label: string;
+-  value: string;
+-  onChange: (v: string) => void;
+-}) {
+-  return (
+-    <label className="field column">
+-      <span>{label}</span>
+-      <textarea
+-        rows={3}
+-        value={value}
+-        onChange={(e) => onChange(e.target.value)}
+-      />
+-    </label>
+-  );
+-}
+-
+ const STROKES = [
+   ["solid", "Continuo"],
+   ["dashed", "Guiones"],
+@@ -1640,23 +1486,11 @@ export function ElementInspector({
+           </button>
+         </div>
+       </div>
+-      {(el.kind === "rect" || el.kind === "ellipse") && (
+-        <ShapeInspector el={el} change={change} />
+-      )}
+-      {el.kind === "icon" && <IconInspector el={el} change={change} />}
+-      {el.kind === "group" && (
+-        <GroupInspector el={el} change={change} onUngroup={onUngroup} />
+-      )}
+-      {el.kind === "image" && (
+-        <ImageInspector el={el} change={change} onUpload={uploadImage} />
+-      )}
+-      {el.kind === "text" && <TextInspector el={el} change={change} />}
+-      {el.kind === "line" && (
+-        <LineInspector el={el} change={change} nameOf={nameOf} />
+-      )}
+-      {el.kind === "particles" && (
+-        <ParticlesInspector el={el} change={change} canvas={canvas} />
+-      )}
++      <FieldEditor
++        el={el}
++        change={change}
++        ctx={{ nameOf, canvas, onUngroup }}
++      />
+       {onSavePreset && (
+         <Section title="Guardar como preset">
+           <div className="preset-save">
+diff --git a/src/editor/layout.ts b/src/editor/layout.ts
+new file mode 100644
+index 0000000..3d954f1
+--- /dev/null
++++ b/src/editor/layout.ts
+@@ -0,0 +1,99 @@
++/**
++ * What the inspector shows for an element, worked out from its descriptor: the sections in
++ * order and, in each, the controls that are visible right now. Pure, so it is tested without
++ * a browser; `FieldEditor` only renders it.
++ */
++import type { Descriptor } from "../components/descriptor.ts";
++import type {
++  DataField,
++  Dyn,
++  Fields,
++  Parent,
++  WidgetField,
++} from "../components/fields/index.ts";
++import type { Element } from "../model/model.ts";
++
++export type LayoutItem = {
++  /** Where the value lives, e.g. ["fill", "color"]; a widget's is its key. */
++  path: string[];
++  field: Exclude<DataField, { type: "object" }> | WidgetField;
++  /** The object the field belongs to (the element, or e.g. its `fill`). */
++  parent: Parent;
++};
++
++export type LayoutSection = {
++  title: string;
++  open: boolean;
++  items: LayoutItem[];
++};
++
++export const resolve = <T>(v: Dyn<T>, parent: Parent): T =>
++  typeof v === "function" ? (v as (p: Parent) => T)(parent) : v;
++
++/** Every control of `fields` (objects opened into theirs), visible or not. */
++function items(
++  fields: Fields,
++  parent: Parent,
++  prefix: string[],
++  all: boolean,
++): (LayoutItem & { section?: string })[] {
++  return Object.entries(fields).flatMap(([key, field]) => {
++    if (field.type !== "widget" && field.inspector === false) return [];
++    if (!all && field.visible && !field.visible(parent)) return [];
++    const path = [...prefix, key];
++    if (field.type === "object") {
++      const value = (parent[key] ?? {}) as Parent;
++      return items(field.fields, value, path, all).map((it) => ({
++        ...it,
++        section: field.section,
++      }));
++    }
++    return [{ path, field, parent, section: field.section }];
++  });
++}
++
++/**
++ * The inspector for `el`: its descriptor's sections, each with its visible controls. With
++ * `all`, controls hidden by the element's current state are listed too.
++ */
++export function inspectorLayout(
++  d: Descriptor<Element>,
++  el: Element,
++  all = false,
++): LayoutSection[] {
++  const list = items(d.fields, el as unknown as Parent, [], all);
++  return d.sections.map((s) => ({
++    title: s.title,
++    open: s.open ?? true,
++    items: list.filter((it) => it.section === s.title),
++  }));
++}
++
++/** The value at `path` inside `el`. */
++export function valueAt(el: unknown, path: string[]): unknown {
++  return path.reduce<unknown>((v, k) => (v as Parent)?.[k], el);
++}
++
++/**
++ * Writes `value` into `draft` at `path` the way the field says: clamped and rounded for
++ * numbers with bounds or `int`, through the field's own `set` when it has one (on the
++ * object that holds it).
++ */
++export function writeField(
++  draft: Element,
++  path: string[],
++  field: DataField,
++  value: unknown,
++): void {
++  let v = value;
++  if (field.type === "number" && typeof v === "number") {
++    if (field.bounds) {
++      v = Math.min(field.bounds[1], Math.max(field.bounds[0], v));
++    }
++    if (field.int) v = Math.round(v as number);
++  }
++  const holder = valueAt(draft, path.slice(0, -1)) as Parent;
++  const key = path[path.length - 1] as string;
++  if (field.set) field.set(holder, v);
++  else holder[key] = v;
++}

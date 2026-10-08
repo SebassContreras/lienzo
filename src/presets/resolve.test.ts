@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { KINDS } from "../components/index.ts";
 import {
   defaultLine,
   defaultRect,
@@ -23,18 +24,7 @@ describe("traits", () => {
       const kinds = Object.keys(trait.apply);
       expect(kinds.length).toBeGreaterThan(0);
       for (const k of kinds) {
-        expect([
-          "shape",
-          "rect",
-          "ellipse",
-          "icon",
-          "image",
-          "group",
-          "text",
-          "line",
-          "particles",
-          "background",
-        ]).toContain(k);
+        expect(["shape", ...KINDS, "background"]).toContain(k);
       }
     }
   });

@@ -1,5 +1,5 @@
-import { animState } from "../engine/anim.ts";
-import { boxOf, fontString, textLayout } from "../engine/geometry.ts";
+import type { AnimState } from "../../engine/anim.ts";
+import { fontString, textLayout } from "../../engine/geometry.ts";
 import {
   type Ctx,
   dashFor,
@@ -7,10 +7,16 @@ import {
   rgba,
   shadowOnly,
   withTransform,
-} from "../engine/paint.ts";
-import type { RectEl, Scene, ShapeEl } from "../model/model.ts";
+} from "../../engine/paint.ts";
+import type { DrawContext } from "../descriptor.ts";
+import type { RectEl, ShapeEl } from "./descriptor.ts";
 
-export function drawRect(ctx: Ctx, el: RectEl, scene: Scene, t: number): void {
+export function drawRect(
+  ctx: Ctx,
+  el: RectEl,
+  st: AnimState,
+  dc: DrawContext,
+): void {
   const path = new Path2D();
   path.roundRect(
     el.x,
@@ -19,7 +25,7 @@ export function drawRect(ctx: Ctx, el: RectEl, scene: Scene, t: number): void {
     el.h,
     Math.max(0, Math.min(el.radius, el.w / 2, el.h / 2)),
   );
-  drawShape(ctx, el, path, scene, t);
+  drawShape(ctx, el, path, st, dc);
 }
 
 /**
@@ -30,11 +36,10 @@ export function drawShape(
   ctx: Ctx,
   el: ShapeEl,
   path: Path2D,
-  scene: Scene,
-  t: number,
+  st: AnimState,
+  { scene, t }: DrawContext,
 ): void {
-  const st = animState(el.anim, t, scene.duration);
-  const box = boxOf(el);
+  const box = { x: el.x, y: el.y, w: el.w, h: el.h };
   withTransform(ctx, box, st, () => {
     if (el.shadow.enabled) {
       shadowOnly(

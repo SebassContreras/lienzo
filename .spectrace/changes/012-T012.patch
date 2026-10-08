@@ -1,0 +1,329 @@
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+index 97d74ed..51b6202 100644
+--- a/src/components/descriptor.ts
++++ b/src/components/descriptor.ts
+@@ -2,6 +2,7 @@
+  * A component descriptor: everything about one element kind, declared once (A23). The
+  * scene schema, default elements, inspector and library are derived from it.
+  */
++import type { AnimState } from "../engine/anim.ts";
+ import type { Ctx } from "../engine/paint.ts";
+ import type { Element, Scene } from "../model/model.ts";
+ import {
+@@ -50,7 +51,8 @@ export type Descriptor<E extends { kind: string } = Element> = {
+   animatable: readonly string[];
+   /** Offered among the basic components in the library. */
+   basic: boolean;
+-  draw(ctx: Ctx, el: E, dc: DrawContext): void;
++  /** Draws `el` as `animate` left it, with `transform` (A24). */
++  draw(ctx: Ctx, el: E, transform: AnimState, dc: DrawContext): void;
+ };
+ 
+ /** Number and color field paths, the ones that can be interpolated. */
+diff --git a/src/components/ellipse/draw.ts b/src/components/ellipse/draw.ts
+index 82166a3..1883628 100644
+--- a/src/components/ellipse/draw.ts
++++ b/src/components/ellipse/draw.ts
+@@ -1,9 +1,15 @@
++import type { AnimState } from "../../engine/anim.ts";
+ import type { Ctx } from "../../engine/paint.ts";
+ import type { DrawContext } from "../descriptor.ts";
+ import { drawShape } from "../rect/draw.ts";
+ import type { EllipseEl } from "./descriptor.ts";
+ 
+-export function drawEllipse(ctx: Ctx, el: EllipseEl, dc: DrawContext): void {
++export function drawEllipse(
++  ctx: Ctx,
++  el: EllipseEl,
++  st: AnimState,
++  dc: DrawContext,
++): void {
+   const path = new Path2D();
+   path.ellipse(
+     el.x + el.w / 2,
+@@ -14,5 +20,5 @@ export function drawEllipse(ctx: Ctx, el: EllipseEl, dc: DrawContext): void {
+     0,
+     Math.PI * 2,
+   );
+-  drawShape(ctx, el, path, dc);
++  drawShape(ctx, el, path, st, dc);
+ }
+diff --git a/src/components/group/draw.ts b/src/components/group/draw.ts
+index a9d8212..998ec46 100644
+--- a/src/components/group/draw.ts
++++ b/src/components/group/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState } from "../../engine/anim.ts";
++import type { AnimState } from "../../engine/anim.ts";
+ import { boxOf } from "../../engine/geometry.ts";
+ import { type Ctx, withTransform } from "../../engine/paint.ts";
+ import type { DrawContext } from "../descriptor.ts";
+@@ -12,9 +12,9 @@ import type { GroupEl } from "./descriptor.ts";
+ export function drawGroup(
+   ctx: Ctx,
+   el: GroupEl,
++  st: AnimState,
+   { scene, t, drawElements }: DrawContext,
+ ): void {
+-  const st = animState(el.anim, t, scene.duration);
+   withTransform(ctx, boxOf(el), st, () => {
+     ctx.translate(el.x, el.y);
+     ctx.scale(el.w / (el.cw || 1), el.h / (el.ch || 1));
+diff --git a/src/components/icon/draw.ts b/src/components/icon/draw.ts
+index 71c01f8..e5936fa 100644
+--- a/src/components/icon/draw.ts
++++ b/src/components/icon/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState } from "../../engine/anim.ts";
++import type { AnimState } from "../../engine/anim.ts";
+ import { boxOf } from "../../engine/geometry.ts";
+ import { iconPaths } from "../../engine/icon-shapes.ts";
+ import {
+@@ -7,18 +7,12 @@ import {
+   shadowOnly,
+   withTransform,
+ } from "../../engine/paint.ts";
+-import type { DrawContext } from "../descriptor.ts";
+ import type { IconEl } from "./descriptor.ts";
+ 
+ /** Lucide draws on a 24×24 grid. */
+ const GRID = 24;
+ 
+-export function drawIcon(
+-  ctx: Ctx,
+-  el: IconEl,
+-  { scene, t }: DrawContext,
+-): void {
+-  const st = animState(el.anim, t, scene.duration);
++export function drawIcon(ctx: Ctx, el: IconEl, st: AnimState): void {
+   const box = boxOf(el);
+   withTransform(ctx, box, st, () => {
+     const { tile } = el;
+diff --git a/src/components/image/draw.ts b/src/components/image/draw.ts
+index d4abb59..c5f2513 100644
+--- a/src/components/image/draw.ts
++++ b/src/components/image/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState } from "../../engine/anim.ts";
++import type { AnimState } from "../../engine/anim.ts";
+ import { boxOf } from "../../engine/geometry.ts";
+ import { imageFor } from "../../engine/images.ts";
+ import {
+@@ -7,15 +7,9 @@ import {
+   shadowOnly,
+   withTransform,
+ } from "../../engine/paint.ts";
+-import type { DrawContext } from "../descriptor.ts";
+ import type { ImageEl } from "./descriptor.ts";
+ 
+-export function drawImage(
+-  ctx: Ctx,
+-  el: ImageEl,
+-  { scene, t }: DrawContext,
+-): void {
+-  const st = animState(el.anim, t, scene.duration);
++export function drawImage(ctx: Ctx, el: ImageEl, st: AnimState): void {
+   const box = boxOf(el);
+   withTransform(ctx, box, st, () => {
+     const path = new Path2D();
+diff --git a/src/components/line/draw.ts b/src/components/line/draw.ts
+index f5cfe5b..461b611 100644
+--- a/src/components/line/draw.ts
++++ b/src/components/line/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState, frac } from "../../engine/anim.ts";
++import { type AnimState, frac } from "../../engine/anim.ts";
+ import {
+   type PathSamples,
+   type Pt,
+@@ -20,12 +20,12 @@ import type { LineEl } from "./descriptor.ts";
+ export function drawLine(
+   ctx: Ctx,
+   el: LineEl,
++  st: AnimState,
+   { scene, t, byId }: DrawContext,
+ ): void {
+-  const st = animState(el.anim, t, scene.duration);
+   const s = samplePath(resolveLine(el, byId));
+   if (s.total < 1) return;
+-  const progress = el.anim.kind === "draw" ? st.progress : 1;
++  const { progress } = st;
+   if (progress <= 0) return;
+   const pts = partialPath(s, progress);
+ 
+diff --git a/src/components/particles/draw.ts b/src/components/particles/draw.ts
+index 847723e..8c191b7 100644
+--- a/src/components/particles/draw.ts
++++ b/src/components/particles/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState } from "../../engine/anim.ts";
++import type { AnimState } from "../../engine/anim.ts";
+ import { boxOf } from "../../engine/geometry.ts";
+ import {
+   type Ctx,
+@@ -17,9 +17,9 @@ const ALPHA_STEPS = 16;
+ export function drawParticles(
+   ctx: Ctx,
+   el: ParticlesEl,
++  st: AnimState,
+   { scene, t }: DrawContext,
+ ): void {
+-  const st = animState(el.anim, t, scene.duration);
+   const box = boxOf(el);
+   const pos = particlePositions(el, t, scene.duration);
+   const n = pos.length / 2;
+diff --git a/src/components/rect/draw.ts b/src/components/rect/draw.ts
+index d04352d..9628029 100644
+--- a/src/components/rect/draw.ts
++++ b/src/components/rect/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState } from "../../engine/anim.ts";
++import type { AnimState } from "../../engine/anim.ts";
+ import { fontString, textLayout } from "../../engine/geometry.ts";
+ import {
+   type Ctx,
+@@ -11,7 +11,12 @@ import {
+ import type { DrawContext } from "../descriptor.ts";
+ import type { RectEl, ShapeEl } from "./descriptor.ts";
+ 
+-export function drawRect(ctx: Ctx, el: RectEl, dc: DrawContext): void {
++export function drawRect(
++  ctx: Ctx,
++  el: RectEl,
++  st: AnimState,
++  dc: DrawContext,
++): void {
+   const path = new Path2D();
+   path.roundRect(
+     el.x,
+@@ -20,7 +25,7 @@ export function drawRect(ctx: Ctx, el: RectEl, dc: DrawContext): void {
+     el.h,
+     Math.max(0, Math.min(el.radius, el.w / 2, el.h / 2)),
+   );
+-  drawShape(ctx, el, path, dc);
++  drawShape(ctx, el, path, st, dc);
+ }
+ 
+ /**
+@@ -31,9 +36,9 @@ export function drawShape(
+   ctx: Ctx,
+   el: ShapeEl,
+   path: Path2D,
++  st: AnimState,
+   { scene, t }: DrawContext,
+ ): void {
+-  const st = animState(el.anim, t, scene.duration);
+   const box = { x: el.x, y: el.y, w: el.w, h: el.h };
+   withTransform(ctx, box, st, () => {
+     if (el.shadow.enabled) {
+diff --git a/src/components/text/draw.ts b/src/components/text/draw.ts
+index ba49797..0e11ff2 100644
+--- a/src/components/text/draw.ts
++++ b/src/components/text/draw.ts
+@@ -1,4 +1,4 @@
+-import { animState } from "../../engine/anim.ts";
++import type { AnimState } from "../../engine/anim.ts";
+ import { fontString, textLayout } from "../../engine/geometry.ts";
+ import {
+   type Ctx,
+@@ -6,15 +6,9 @@ import {
+   shadowOnly,
+   withTransform,
+ } from "../../engine/paint.ts";
+-import type { DrawContext } from "../descriptor.ts";
+ import type { TextEl } from "./descriptor.ts";
+ 
+-export function drawText(
+-  ctx: Ctx,
+-  el: TextEl,
+-  { scene, t }: DrawContext,
+-): void {
+-  const st = animState(el.anim, t, scene.duration);
++export function drawText(ctx: Ctx, el: TextEl, st: AnimState): void {
+   const layout = textLayout(el);
+   const box = { x: el.x, y: el.y, w: layout.w, h: layout.h };
+   withTransform(ctx, box, st, () => {
+diff --git a/src/engine/anim.ts b/src/engine/anim.ts
+index 65d14ea..19bdc45 100644
+--- a/src/engine/anim.ts
++++ b/src/engine/anim.ts
+@@ -18,7 +18,7 @@ export type AnimState = {
+   scale: number;
+   alpha: number;
+   glowMul: number;
+-  /** 0–1, for entry animations such as "draw". */
++  /** 0–1, how much of a line is drawn ("draw"); 1 for every other kind. */
+   progress: number;
+ };
+ 
+@@ -49,7 +49,6 @@ export function animState(anim: Anim, t: number, duration: number): AnimState {
+       break;
+     case "fade-in":
+       state.alpha = easeOut(entry);
+-      state.progress = state.alpha;
+       break;
+     case "pop-in":
+       state.alpha = clamp01(entry * 2);
+diff --git a/src/engine/animate.ts b/src/engine/animate.ts
+new file mode 100644
+index 0000000..9ace66c
+--- /dev/null
++++ b/src/engine/animate.ts
+@@ -0,0 +1,21 @@
++import type { Element, Scene } from "../model/model.ts";
++import { type AnimState, animState } from "./anim.ts";
++
++/** An element as it stands at one moment, and the transform to draw it with. */
++export type Animated<E extends Element = Element> = {
++  el: E;
++  transform: AnimState;
++};
++
++/**
++ * Applies time to an element before it is drawn (A24): its preset animation becomes a
++ * transform (offset, scale, alpha, glow, entry progress). Components draw what this returns
++ * and never animate from `t` themselves, so every kind gets every animation.
++ */
++export function animate<E extends Element>(
++  el: E,
++  t: number,
++  scene: Scene,
++): Animated<E> {
++  return { el, transform: animState(el.anim, t, scene.duration) };
++}
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 95985ef..e60be21 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,12 +1,6 @@
+-import { ellipse } from "../components/ellipse/descriptor.ts";
+-import { group } from "../components/group/descriptor.ts";
+-import { icon } from "../components/icon/descriptor.ts";
+-import { image } from "../components/image/descriptor.ts";
+-import { line } from "../components/line/descriptor.ts";
+-import { particles } from "../components/particles/descriptor.ts";
+-import { rect } from "../components/rect/descriptor.ts";
+-import { text } from "../components/text/descriptor.ts";
++import { descriptorOf } from "../components/index.ts";
+ import type { Background, Element, Scene } from "../model/model.ts";
++import { animate } from "./animate.ts";
+ import { indexById, indexElements } from "./geometry.ts";
+ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+ 
+@@ -32,14 +26,8 @@ export function drawElements(
+ ): void {
+   const dc = { scene, t, byId, drawElements };
+   for (const el of elements) {
+-    if (el.kind === "rect") rect.draw(ctx, el, dc);
+-    else if (el.kind === "ellipse") ellipse.draw(ctx, el, dc);
+-    else if (el.kind === "icon") icon.draw(ctx, el, dc);
+-    else if (el.kind === "image") image.draw(ctx, el, dc);
+-    else if (el.kind === "group") group.draw(ctx, el, dc);
+-    else if (el.kind === "text") text.draw(ctx, el, dc);
+-    else if (el.kind === "line") line.draw(ctx, el, dc);
+-    else particles.draw(ctx, el, dc);
++    const now = animate(el, t, scene);
++    descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
+   }
+ }
+ 
