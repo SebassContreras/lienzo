@@ -1,0 +1,133 @@
+diff --git a/src/components/group/descriptor.ts b/src/components/group/descriptor.ts
+new file mode 100644
+index 0000000..9f74045
+--- /dev/null
++++ b/src/components/group/descriptor.ts
+@@ -0,0 +1,49 @@
++import { z } from "zod";
++import type { Element } from "../../model/model.ts";
++import { ElementSchema } from "../../model/schema.ts";
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import { anim, BOX_ANIMS, box, custom, num, widget } from "../fields/index.ts";
++import { drawGroup } from "./draw.ts";
++
++const { x, y, w, h } = box(100, 100, {
++  section: "Grupo",
++  min: 10,
++  max: 4000,
++});
++
++/**
++ * Elements moved, resized, duplicated and animated as one. Children live in their own
++ * coordinate space, `cw` × `ch`, which is stretched onto the group's box `x, y, w, h`.
++ */
++const fields = {
++  x,
++  y,
++  info: widget("group-info", { section: "Grupo" }),
++  w,
++  h,
++  ungroup: widget("ungroup", { section: "Grupo" }),
++  cw: num(100, { label: "Ancho interior", inspector: false }),
++  ch: num(100, { label: "Alto interior", inspector: false }),
++  children: custom(
++    "children",
++    [] as unknown[],
++    z.array(z.lazy(() => ElementSchema)),
++    { label: "Elementos", inspector: false },
++  ),
++  anim: anim(BOX_ANIMS),
++};
++
++export type GroupEl = Omit<ElementOf<"group", typeof fields>, "children"> & {
++  children: Element[];
++};
++
++export const group = defineComponent<GroupEl>({
++  kind: "group",
++  label: "Grupo",
++  fields,
++  sections: [{ title: "Grupo" }, { title: "Animación" }],
++  anims: BOX_ANIMS,
++  // a group is made from a selection (Ctrl+G), not dragged from the library
++  basic: false,
++  draw: drawGroup,
++});
+diff --git a/src/components/group.ts b/src/components/group/draw.ts
+similarity index 59%
+rename from src/components/group.ts
+rename to src/components/group/draw.ts
+index 3c32031..a9d8212 100644
+--- a/src/components/group.ts
++++ b/src/components/group/draw.ts
+@@ -1,14 +1,8 @@
+-import { animState } from "../engine/anim.ts";
+-import { boxOf } from "../engine/geometry.ts";
+-import { type Ctx, withTransform } from "../engine/paint.ts";
+-import type { Element, GroupEl, Scene } from "../model/model.ts";
+-
+-type DrawElements = (
+-  ctx: Ctx,
+-  elements: Element[],
+-  scene: Scene,
+-  t: number,
+-) => void;
++import { animState } from "../../engine/anim.ts";
++import { boxOf } from "../../engine/geometry.ts";
++import { type Ctx, withTransform } from "../../engine/paint.ts";
++import type { DrawContext } from "../descriptor.ts";
++import type { GroupEl } from "./descriptor.ts";
+ 
+ /**
+  * Draws a group's children inside its box: the group's own animation applies to all of them,
+@@ -18,9 +12,7 @@ type DrawElements = (
+ export function drawGroup(
+   ctx: Ctx,
+   el: GroupEl,
+-  scene: Scene,
+-  t: number,
+-  drawElements: DrawElements,
++  { scene, t, drawElements }: DrawContext,
+ ): void {
+   const st = animState(el.anim, t, scene.duration);
+   withTransform(ctx, boxOf(el), st, () => {
+diff --git a/src/components/index.ts b/src/components/index.ts
+index 51284a6..6f0491a 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -6,6 +6,7 @@ import { newId } from "../model/id.ts";
+ import type { Descriptor } from "./descriptor.ts";
+ import { ellipse } from "./ellipse/descriptor.ts";
+ import { defaultsOf } from "./fields/index.ts";
++import { group } from "./group/descriptor.ts";
+ import { icon } from "./icon/descriptor.ts";
+ import { image } from "./image/descriptor.ts";
+ import { line } from "./line/descriptor.ts";
+@@ -17,6 +18,7 @@ export const COMPONENTS = [
+   ellipse,
+   icon,
+   image,
++  group,
+   text,
+   line,
+ ] as const satisfies readonly Descriptor<{
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index b4da652..d7b2812 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,5 +1,5 @@
+ import { ellipse } from "../components/ellipse/descriptor.ts";
+-import { drawGroup } from "../components/group.ts";
++import { group } from "../components/group/descriptor.ts";
+ import { icon } from "../components/icon/descriptor.ts";
+ import { image } from "../components/image/descriptor.ts";
+ import { line } from "../components/line/descriptor.ts";
+@@ -36,7 +36,7 @@ export function drawElements(
+     else if (el.kind === "ellipse") ellipse.draw(ctx, el, dc);
+     else if (el.kind === "icon") icon.draw(ctx, el, dc);
+     else if (el.kind === "image") image.draw(ctx, el, dc);
+-    else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
++    else if (el.kind === "group") group.draw(ctx, el, dc);
+     else if (el.kind === "text") text.draw(ctx, el, dc);
+     else if (el.kind === "line") line.draw(ctx, el, dc);
+     else drawParticles(ctx, el, scene, t);

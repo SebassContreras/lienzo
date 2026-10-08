@@ -6,6 +6,7 @@ import { newId } from "../model/id.ts";
 import type { Descriptor } from "./descriptor.ts";
 import { ellipse } from "./ellipse/descriptor.ts";
 import { defaultsOf } from "./fields/index.ts";
+import { group } from "./group/descriptor.ts";
 import { icon } from "./icon/descriptor.ts";
 import { image } from "./image/descriptor.ts";
 import { line } from "./line/descriptor.ts";
@@ -17,6 +18,7 @@ export const COMPONENTS = [
   ellipse,
   icon,
   image,
+  group,
   text,
   line,
 ] as const satisfies readonly Descriptor<{

@@ -24,8 +24,9 @@
 - [x] T008 [agent] [status:done] Descriptor for line
       covers: D1@1
       changes: src/components/index.ts (+2 -0), src/components/line/descriptor.ts (+105 -0), src/components/line.ts → src/components/line/draw.ts (+6 -7), src/engine/render.ts (+2 -2)
-- [ ] T009 [agent] [status:todo] Descriptor for group
+- [x] T009 [agent] [status:done] Descriptor for group
       covers: D1@1
+      changes: src/components/group/descriptor.ts (+49 -0), src/components/group.ts → src/components/group/draw.ts (+6 -14), src/components/index.ts (+2 -0), src/engine/render.ts (+2 -2)
 - [ ] T010 [agent] [status:todo] Descriptor for particles
       covers: D1@1
 - [ ] T011 [agent] [status:todo] Scene schema and element types generated from the descriptors
