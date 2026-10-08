@@ -1,0 +1,204 @@
+diff --git a/src/presets/json-store.ts b/src/presets/json-store.ts
+new file mode 100644
+index 0000000..8ec8de8
+--- /dev/null
++++ b/src/presets/json-store.ts
+@@ -0,0 +1,85 @@
++import {
++  access,
++  mkdir,
++  readdir,
++  readFile,
++  unlink,
++  writeFile,
++} from "node:fs/promises";
++import { join } from "node:path";
++import { slugify } from "./slug.ts";
++
++export type StoreReply = { status: number; body: unknown };
++
++const fileOf = (dir: string, name: string) =>
++  join(dir, `${slugify(name)}.json`);
++
++async function exists(path: string): Promise<boolean> {
++  try {
++    await access(path);
++    return true;
++  } catch {
++    return false;
++  }
++}
++
++/**
++ * The JSON store behind `/api/presets` and `/api/scenes`, one file per item in `dir`:
++ * GET                     -> [{ name, data }]
++ * POST   ?name=x          -> writes <slug>.json
++ * DELETE ?name=x          -> removes <slug>.json
++ * POST   /rename?from=x&to=y -> moves the file; a stored `name` field becomes `y`
++ */
++export async function handleStore(
++  dir: string,
++  method: string,
++  url: URL,
++  body: () => Promise<string>,
++): Promise<StoreReply> {
++  await mkdir(dir, { recursive: true });
++  const rest = url.pathname.replace(/^\/api\/\w+/, "");
++  const q = url.searchParams;
++  if (method === "GET" && rest === "") {
++    const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
++    const items = await Promise.all(
++      files.map(async (f) => ({
++        name: f.replace(/\.json$/, ""),
++        data: JSON.parse(await readFile(join(dir, f), "utf8")),
++      })),
++    );
++    return { status: 200, body: items };
++  }
++  if (method === "POST" && rest === "") {
++    const name = slugify(q.get("name") ?? "untitled");
++    const data = JSON.parse(await body());
++    await writeFile(
++      join(dir, `${name}.json`),
++      `${JSON.stringify(data, null, 2)}\n`,
++    );
++    return { status: 200, body: { name } };
++  }
++  if (method === "DELETE" && rest === "") {
++    const path = fileOf(dir, q.get("name") ?? "");
++    if (!(await exists(path)))
++      return { status: 404, body: { error: "not found" } };
++    await unlink(path);
++    return { status: 200, body: {} };
++  }
++  if (method === "POST" && rest === "/rename") {
++    const from = fileOf(dir, q.get("from") ?? "");
++    const toName = q.get("to") ?? "";
++    const to = fileOf(dir, toName);
++    if (!toName.trim()) return { status: 400, body: { error: "empty name" } };
++    if (!(await exists(from)))
++      return { status: 404, body: { error: "not found" } };
++    if (from !== to && (await exists(to))) {
++      return { status: 409, body: { error: "name taken" } };
++    }
++    const data = JSON.parse(await readFile(from, "utf8"));
++    if (data && typeof data.name === "string") data.name = toName;
++    await writeFile(to, `${JSON.stringify(data, null, 2)}\n`);
++    if (from !== to) await unlink(from);
++    return { status: 200, body: { name: slugify(toName) } };
++  }
++  return { status: 405, body: {} };
++}
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index bfa44d0..9df7c4a 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -65,3 +65,36 @@ export async function uploadAsset(file: File): Promise<string> {
+   if (!res.ok) throw new Error(`/api/assets: ${res.status}`);
+   return ((await res.json()) as { path: string }).path;
+ }
++
++async function call(url: string, method: string): Promise<void> {
++  const res = await fetch(url, { method });
++  if (res.ok) return;
++  const { error } = (await res.json().catch(() => ({}))) as { error?: string };
++  throw new Error(
++    error === "name taken"
++      ? "Ya existe otro con ese nombre"
++      : `${url}: ${res.status}`,
++  );
++}
++
++export type StoreKind = "presets" | "scenes";
++
++/** Removes a stored preset or scene by its file name. */
++export async function deleteStored(
++  kind: StoreKind,
++  name: string,
++): Promise<void> {
++  await call(`/api/${kind}?name=${encodeURIComponent(name)}`, "DELETE");
++}
++
++/** Renames a stored preset or scene; a preset's own `name` follows. */
++export async function renameStored(
++  kind: StoreKind,
++  from: string,
++  to: string,
++): Promise<void> {
++  await call(
++    `/api/${kind}/rename?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
++    "POST",
++  );
++}
+diff --git a/vite.config.ts b/vite.config.ts
+index aa611c3..de935c3 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -1,16 +1,12 @@
+ import { createHash } from "node:crypto";
+-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
++import { mkdir, readFile, writeFile } from "node:fs/promises";
+ import type { IncomingMessage, ServerResponse } from "node:http";
+ import { join } from "node:path";
+ import react from "@vitejs/plugin-react";
+ import { defineConfig, type Plugin } from "vite";
+-import { slugify } from "./src/presets/slug.ts";
++import { handleStore } from "./src/presets/json-store.ts";
+ 
+-/**
+- * Stores presets and scenes as plain JSON files at the repo root:
+- * GET  /api/<kind>          -> [{ name, data }]
+- * POST /api/<kind>?name=x   -> writes <kind>/<slug>.json
+- */
++/** Serves `presets/` and `scenes/` at the repo root through `handleStore`. */
+ function jsonStore(): Plugin {
+   const kinds = ["presets", "scenes"];
+ 
+@@ -19,35 +15,21 @@ function jsonStore(): Plugin {
+     req: IncomingMessage,
+     res: ServerResponse,
+   ) {
+-    const dir = join(import.meta.dirname, kind);
+-    await mkdir(dir, { recursive: true });
+     const url = new URL(req.url ?? "", "http://localhost");
+-    res.setHeader("content-type", "application/json");
+-    if (req.method === "GET") {
+-      const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
+-      const items = await Promise.all(
+-        files.map(async (f) => ({
+-          name: f.replace(/\.json$/, ""),
+-          data: JSON.parse(await readFile(join(dir, f), "utf8")),
+-        })),
+-      );
+-      res.end(JSON.stringify(items));
+-      return;
+-    }
+-    if (req.method === "POST") {
++    const body = async () => {
+       const chunks: Buffer[] = [];
+       for await (const chunk of req) chunks.push(chunk as Buffer);
+-      const name = slugify(url.searchParams.get("name") ?? "untitled");
+-      const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+-      await writeFile(
+-        join(dir, `${name}.json`),
+-        `${JSON.stringify(body, null, 2)}\n`,
+-      );
+-      res.end(JSON.stringify({ name }));
+-      return;
+-    }
+-    res.statusCode = 405;
+-    res.end("{}");
++      return Buffer.concat(chunks).toString("utf8");
++    };
++    const reply = await handleStore(
++      join(import.meta.dirname, kind),
++      req.method ?? "GET",
++      url,
++      body,
++    );
++    res.setHeader("content-type", "application/json");
++    res.statusCode = reply.status;
++    res.end(JSON.stringify(reply.body));
+   }
+ 
+   return {

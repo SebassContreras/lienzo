@@ -1,0 +1,569 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index f06a4c3..959f74a 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -53,7 +53,12 @@ import {
+ import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
+ import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+ import { SceneFiles } from "../presets/scene-files.tsx";
+-import { loadUserPresets, saveUserPreset } from "../presets/store.ts";
++import {
++  deleteStored,
++  loadUserPresetFiles,
++  renameStored,
++  saveUserPreset,
++} from "../presets/store.ts";
+ import {
+   type BackgroundItem,
+   BackgroundLibrary,
+@@ -189,12 +194,24 @@ export function App() {
+   }, [scene]);
+ 
+   const refreshPresets = useCallback(() => {
+-    loadUserPresets()
+-      .then((recipes) => {
+-        const isBackground = (r: { kind: string }) => r.kind === "background";
+-        setUserPresets(recipeItems(recipes.filter((r) => !isBackground(r))));
++    loadUserPresetFiles()
++      .then((stored) => {
++        const elements = stored.filter((s) => s.recipe.kind !== "background");
++        const backgrounds = stored.filter(
++          (s) => s.recipe.kind === "background",
++        );
++        setUserPresets(
++          recipeItems(
++            elements.map((s) => s.recipe),
++            elements.map((s) => s.file),
++          ),
++        );
+         setUserBackgrounds(
+-          backgroundItems(recipes.filter(isBackground), "user"),
++          backgroundItems(
++            backgrounds.map((s) => s.recipe),
++            "user",
++            backgrounds.map((s) => s.file),
++          ),
+         );
+       })
+       .catch(() => {
+@@ -204,8 +221,23 @@ export function App() {
+   }, []);
+   useEffect(refreshPresets, [refreshPresets]);
+ 
++  /** Runs a change to stored presets, then reports it and reloads the library. */
++  const presetChange = useCallback(
++    (work: Promise<void>, done: string) => {
++      work
++        .then(() => {
++          setStatus(done);
++          refreshPresets();
++        })
++        .catch((error: unknown) =>
++          setStatus(`Error: ${error instanceof Error ? error.message : error}`),
++        );
++    },
++    [refreshPresets],
++  );
++
+   const savePreset = useCallback(
+-    (el: Element, name: string) => {
++    (el: Element, name: string, file?: string) => {
+       const element =
+         el.kind === "group" ? detachOutside(el) : structuredClone(el);
+       element.name = name;
+@@ -215,14 +247,12 @@ export function App() {
+         element.a = { x: r.a.x, y: r.a.y };
+         element.b = { x: r.b.x, y: r.b.y };
+       }
+-      saveUserPreset(recipeFromElement(name, element))
+-        .then(() => {
+-          setStatus(`Preset «${name}» guardado`);
+-          refreshPresets();
+-        })
+-        .catch((error: unknown) => setStatus(`Error: ${error}`));
++      presetChange(
++        saveUserPreset(recipeFromElement(name, element), file),
++        `Preset «${name}» guardado`,
++      );
+     },
+-    [refreshPresets],
++    [presetChange],
+   );
+ 
+   /** Replaces the whole scene as one undoable step. */
+@@ -377,6 +407,11 @@ export function App() {
+       ? scene.elements.find((el) => el.id === selection[0])
+       : undefined;
+ 
++  const renamePreset = (file: string, to: string) =>
++    presetChange(renameStored("presets", file, to), `Renombrado a «${to}»`);
++  const removePreset = (file: string, name: string) =>
++    presetChange(deleteStored("presets", file), `«${name}» borrado`);
++
+   return (
+     <div className="app">
+       <header className="topbar">
+@@ -462,9 +497,32 @@ export function App() {
+           background={scene.background}
+           onAdd={(element) => addElement(element)}
+           empty="Selecciona un elemento y usa «Guardar como preset»."
++          actions={{
++            rename: renamePreset,
++            remove: removePreset,
++            overwrite: selected
++              ? (file, name) => savePreset(selected, name, file)
++              : undefined,
++            overwriteHint: selected
++              ? "Sobrescribir con el elemento seleccionado"
++              : "Selecciona un elemento para sobrescribir",
++          }}
+         />
+         <BackgroundLibrary
+           items={[...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds]}
++          actions={{
++            rename: renamePreset,
++            remove: removePreset,
++            overwrite: (file, name) =>
++              presetChange(
++                saveUserPreset(
++                  recipeFromBackground(name, sceneRef.current.background),
++                  file,
++                ),
++                `Fondo «${name}» sobrescrito`,
++              ),
++            overwriteHint: "Sobrescribir con el fondo actual",
++          }}
+           onApply={(background) => {
+             checkpoint();
+             setScene({ ...sceneRef.current, background });
+@@ -533,12 +591,10 @@ export function App() {
+             onChange={setScene}
+             focusBackground={backgroundFocus}
+             onSaveBackground={(name) =>
+-              saveUserPreset(recipeFromBackground(name, scene.background))
+-                .then(() => {
+-                  setStatus(`Fondo «${name}» guardado`);
+-                  refreshPresets();
+-                })
+-                .catch((error: unknown) => setStatus(`Error: ${error}`))
++              presetChange(
++                saveUserPreset(recipeFromBackground(name, scene.background)),
++                `Fondo «${name}» guardado`,
++              )
+             }
+           />
+         )}
+diff --git a/src/editor/backgrounds.tsx b/src/editor/backgrounds.tsx
+index 16703fc..3c6ab07 100644
+--- a/src/editor/backgrounds.tsx
++++ b/src/editor/backgrounds.tsx
+@@ -4,23 +4,28 @@ import { drawScene } from "../engine/render.ts";
+ import { type Background, defaultScene, type Scene } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { resolveBackground } from "../presets/resolve.ts";
++import { ItemActions, type PresetActions } from "./library.tsx";
+ 
+ /**
+  * A background preset as the library lists it, or the reason its recipe cannot be built.
+  * `key` is unique across built-in and user presets, which may share a name.
+  */
+-export type BackgroundItem = { key: string; name: string } & (
+-  | { background: Background }
+-  | { error: string }
+-);
++export type BackgroundItem = {
++  key: string;
++  name: string;
++  /** Stored file name, for user presets. */
++  file?: string;
++} & ({ background: Background } | { error: string });
+ 
+ export function backgroundItems(
+   recipes: PresetRecipe[],
+   source: "built-in" | "user",
++  files?: string[],
+ ): BackgroundItem[] {
+-  return recipes.map((recipe) => ({
+-    key: `${source}:${recipe.name}`,
++  return recipes.map((recipe, i) => ({
++    key: `${source}:${files?.[i] ?? recipe.name}`,
+     name: recipe.name,
++    file: files?.[i],
+     ...resolveBackground(recipe),
+   }));
+ }
+@@ -29,45 +34,62 @@ export function backgroundItems(
+ export function BackgroundLibrary({
+   items,
+   onApply,
++  actions,
+ }: {
+   items: BackgroundItem[];
+   onApply: (background: Background) => void;
++  actions?: PresetActions;
+ }) {
+   return (
+     <section>
+       <h3>Fondos</h3>
+       <div className="grid">
+-        {items.map((item) =>
+-          "error" in item ? (
+-            <button
+-              type="button"
+-              key={item.key}
+-              className="item broken"
+-              disabled
+-              title={item.error}
+-            >
+-              <div className="broken-reason">
+-                <TriangleAlert size={16} />
+-                {item.error}
+-              </div>
+-              <span>{item.name}</span>
+-            </button>
+-          ) : (
+-            <button
+-              type="button"
+-              key={item.key}
+-              className="item background-item"
+-              title="Clic para usar este fondo"
+-              onClick={() => onApply(structuredClone(item.background))}
+-            >
+-              <BackgroundThumb background={item.background} />
+-              <span>{item.name}</span>
+-            </button>
+-          ),
+-        )}
++        {items.map((item) => {
++          const button = backgroundButton(item);
++          if (!actions || item.file === undefined) return button;
++          return (
++            <div className="item-wrap" key={item.key}>
++              {button}
++              <ItemActions
++                file={item.file}
++                name={item.name}
++                actions={actions}
++              />
++            </div>
++          );
++        })}
+       </div>
+     </section>
+   );
++
++  function backgroundButton(item: BackgroundItem) {
++    return "error" in item ? (
++      <button
++        type="button"
++        key={item.key}
++        className="item broken"
++        disabled
++        title={item.error}
++      >
++        <div className="broken-reason">
++          <TriangleAlert size={16} />
++          {item.error}
++        </div>
++        <span>{item.name}</span>
++      </button>
++    ) : (
++      <button
++        type="button"
++        key={item.key}
++        className="item background-item"
++        title="Clic para usar este fondo"
++        onClick={() => onApply(structuredClone(item.background))}
++      >
++        <BackgroundThumb background={item.background} />
++        <span>{item.name}</span>
++      </button>
++    );
++  }
+ }
+ 
+ const THUMB_W = 116;
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+index f7bd800..f3c378e 100644
+--- a/src/editor/library.tsx
++++ b/src/editor/library.tsx
+@@ -1,4 +1,10 @@
+-import { type LucideIcon, TriangleAlert } from "lucide-react";
++import {
++  type LucideIcon,
++  Pencil,
++  Replace,
++  Trash2,
++  TriangleAlert,
++} from "lucide-react";
+ import { useEffect, useRef } from "react";
+ import { boxOf, centerOn } from "../engine/geometry.ts";
+ import { drawScene } from "../engine/render.ts";
+@@ -11,14 +17,76 @@ import { PRESET_MIME } from "./stage.tsx";
+  * Anything the library can list: a name and the element dropped on the canvas, or, for a
+  * recipe that cannot be built, the reason why.
+  */
+-export type LibraryItem =
+-  | { name: string; element: Element }
+-  | { name: string; error: string };
++export type LibraryItem = {
++  name: string /** Stored file name, for user presets. */;
++  file?: string;
++} & ({ element: Element } | { error: string });
++
++/** What can be done to a stored preset from the library. */
++export type PresetActions = {
++  rename: (file: string, name: string) => void;
++  /** Absent when there is nothing to overwrite with (e.g. no element selected). */
++  overwrite?: (file: string, name: string) => void;
++  overwriteHint: string;
++  remove: (file: string, name: string) => void;
++};
++
++/** Rename, overwrite and delete buttons shown under a stored preset. */
++export function ItemActions({
++  file,
++  name,
++  actions,
++}: {
++  file: string;
++  name: string;
++  actions: PresetActions;
++}) {
++  const { overwrite } = actions;
++  return (
++    <div className="item-actions">
++      <button
++        type="button"
++        title="Renombrar"
++        onClick={() => {
++          const to = window.prompt("Nuevo nombre", name)?.trim();
++          if (to && to !== name) actions.rename(file, to);
++        }}
++      >
++        <Pencil size={12} />
++      </button>
++      <button
++        type="button"
++        title={actions.overwriteHint}
++        disabled={!overwrite}
++        onClick={() => {
++          if (overwrite && window.confirm(`¿Sobrescribir «${name}»?`)) {
++            overwrite(file, name);
++          }
++        }}
++      >
++        <Replace size={12} />
++      </button>
++      <button
++        type="button"
++        title="Borrar"
++        onClick={() => {
++          if (window.confirm(`¿Borrar «${name}»?`)) actions.remove(file, name);
++        }}
++      >
++        <Trash2 size={12} />
++      </button>
++    </div>
++  );
++}
+ 
+ /** Library entries for recipes, each resolved once; dropping one adds a copy. */
+-export function recipeItems(recipes: PresetRecipe[]): LibraryItem[] {
+-  return recipes.map((recipe) => ({
++export function recipeItems(
++  recipes: PresetRecipe[],
++  files?: string[],
++): LibraryItem[] {
++  return recipes.map((recipe, i) => ({
+     name: recipe.name,
++    file: files?.[i],
+     ...resolveElement(recipe),
+   }));
+ }
+@@ -30,6 +98,7 @@ export function Library({
+   background,
+   onAdd,
+   empty,
++  actions,
+ }: {
+   title: string;
+   items: LibraryItem[];
+@@ -38,6 +107,7 @@ export function Library({
+   background: Scene["background"];
+   onAdd: (element: Element) => void;
+   empty?: string;
++  actions?: PresetActions;
+ }) {
+   return (
+     <section>
+@@ -46,49 +116,64 @@ export function Library({
+       <div className={icons ? "basics" : "grid"}>
+         {items.map((item, i) => {
+           const Icon = icons?.[i];
+-          if ("error" in item) {
+-            return (
+-              <button
+-                type="button"
+-                key={item.name}
+-                className="item broken"
+-                disabled
+-                title={item.error}
+-              >
+-                <div className="broken-reason">
+-                  <TriangleAlert size={16} />
+-                  {item.error}
+-                </div>
+-                <span>{item.name}</span>
+-              </button>
+-            );
+-          }
+-          const { element } = item;
++          const button = itemButton(item, Icon);
++          if (!actions || item.file === undefined) return button;
+           return (
+-            <button
+-              type="button"
+-              key={item.name}
+-              className="item"
+-              draggable
+-              title="Arrastra al lienzo o haz clic para añadir al centro"
+-              onDragStart={(e) => {
+-                e.dataTransfer.setData(PRESET_MIME, JSON.stringify(element));
+-                e.dataTransfer.effectAllowed = "copy";
+-              }}
+-              onClick={() => onAdd(element)}
+-            >
+-              {Icon ? (
+-                <Icon size={18} />
+-              ) : (
+-                <Thumb element={element} background={background} />
+-              )}
+-              <span>{item.name}</span>
+-            </button>
++            <div className="item-wrap" key={item.file}>
++              {button}
++              <ItemActions
++                file={item.file}
++                name={item.name}
++                actions={actions}
++              />
++            </div>
+           );
+         })}
+       </div>
+     </section>
+   );
++
++  function itemButton(item: LibraryItem, Icon?: LucideIcon) {
++    if ("error" in item) {
++      return (
++        <button
++          type="button"
++          key={item.name}
++          className="item broken"
++          disabled
++          title={item.error}
++        >
++          <div className="broken-reason">
++            <TriangleAlert size={16} />
++            {item.error}
++          </div>
++          <span>{item.name}</span>
++        </button>
++      );
++    }
++    const { element } = item;
++    return (
++      <button
++        type="button"
++        key={item.name}
++        className="item"
++        draggable
++        title="Arrastra al lienzo o haz clic para añadir al centro"
++        onDragStart={(e) => {
++          e.dataTransfer.setData(PRESET_MIME, JSON.stringify(element));
++          e.dataTransfer.effectAllowed = "copy";
++        }}
++        onClick={() => onAdd(element)}
++      >
++        {Icon ? (
++          <Icon size={18} />
++        ) : (
++          <Thumb element={element} background={background} />
++        )}
++        <span>{item.name}</span>
++      </button>
++    );
++  }
+ }
+ 
+ const THUMB_W = 116;
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index 9df7c4a..c9e93ac 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -29,18 +29,29 @@ async function postJson(url: string, body: unknown): Promise<void> {
+ 
+ /** User presets live as recipe JSON files in `presets/`. */
+ export async function loadUserPresets(): Promise<PresetRecipe[]> {
++  return (await loadUserPresetFiles()).map((item) => item.recipe);
++}
++
++/** User presets with the file name each is stored under (for rename, overwrite, delete). */
++export async function loadUserPresetFiles(): Promise<
++  { file: string; recipe: PresetRecipe }[]
++> {
+   const items =
+     await getJson<{ name: string; data: PresetRecipe | LegacyPreset }[]>(
+       "/api/presets",
+     );
+-  return items.map((item) => asRecipe(item.data));
++  return items.map((item) => ({
++    file: item.name,
++    recipe: asRecipe(item.data),
++  }));
+ }
+ 
+-export async function saveUserPreset(preset: PresetRecipe): Promise<void> {
+-  await postJson(
+-    `/api/presets?name=${encodeURIComponent(preset.name)}`,
+-    preset,
+-  );
++/** Writes a preset to `presets/<file>.json`; `file` defaults to its name. */
++export async function saveUserPreset(
++  preset: PresetRecipe,
++  file = preset.name,
++): Promise<void> {
++  await postJson(`/api/presets?name=${encodeURIComponent(file)}`, preset);
+ }
+ 
+ /** Scenes live as JSON files in `scenes/`. */
+diff --git a/src/styles.css b/src/styles.css
+index 30ee342..7b258ef 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -171,6 +171,23 @@ textarea {
+   text-align: center;
+   overflow: hidden;
+ }
++.library .item-wrap {
++  display: flex;
++  flex-direction: column;
++  gap: 2px;
++}
++.library .item-actions {
++  display: flex;
++  justify-content: center;
++  gap: 2px;
++}
++.item-actions > button {
++  padding: 2px 6px;
++}
++.item-actions > button:disabled {
++  opacity: 0.4;
++  cursor: not-allowed;
++}
+ .library .grid canvas {
+   border-radius: 4px;
+   display: block;

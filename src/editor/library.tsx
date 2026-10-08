@@ -1,9 +1,18 @@
-import { type LucideIcon, TriangleAlert } from "lucide-react";
+import {
+  Download,
+  type LucideIcon,
+  Pencil,
+  Replace,
+  Tag,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
 import { boxOf, centerOn } from "../engine/geometry.ts";
 import { drawScene } from "../engine/render.ts";
 import { defaultScene, type Element, type Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
+import { groupByCategory } from "../presets/categories.ts";
 import { resolveElement } from "../presets/resolve.ts";
 import { PRESET_MIME } from "./stage.tsx";
 
@@ -11,14 +20,106 @@ import { PRESET_MIME } from "./stage.tsx";
  * Anything the library can list: a name and the element dropped on the canvas, or, for a
  * recipe that cannot be built, the reason why.
  */
-export type LibraryItem =
-  | { name: string; element: Element }
-  | { name: string; error: string };
+export type LibraryItem = {
+  name: string;
+  category?: string;
+  /** Stored file name, for user presets. */
+  file?: string;
+} & ({ element: Element } | { error: string });
+
+/** A stored preset as its actions see it. */
+export type StoredRef = { file: string; name: string; category?: string };
+
+/** What can be done to a stored preset from the library. */
+export type PresetActions = {
+  rename: (item: StoredRef, to: string) => void;
+  setCategory: (item: StoredRef, category: string) => void;
+  /** Absent when there is nothing to overwrite with (e.g. no element selected). */
+  overwrite?: (item: StoredRef) => void;
+  overwriteHint: string;
+  remove: (item: StoredRef) => void;
+  /** Downloads the stored recipe as a `.json` file. */
+  exportJson: (item: StoredRef) => void;
+};
+
+/** Rename, overwrite and delete buttons shown under a stored preset. */
+export function ItemActions({
+  item,
+  actions,
+}: {
+  item: StoredRef;
+  actions: PresetActions;
+}) {
+  const { overwrite } = actions;
+  const { name } = item;
+  return (
+    <div className="item-actions">
+      <button
+        type="button"
+        title="Renombrar"
+        onClick={() => {
+          const to = window.prompt("Nuevo nombre", name)?.trim();
+          if (to && to !== name) actions.rename(item, to);
+        }}
+      >
+        <Pencil size={12} />
+      </button>
+      <button
+        type="button"
+        title={`Categoría: ${item.category || "ninguna"}`}
+        onClick={() => {
+          const to = window.prompt(
+            "Categoría (vacío = sin categoría)",
+            item.category ?? "",
+          );
+          if (to !== null && to.trim() !== (item.category ?? "")) {
+            actions.setCategory(item, to.trim());
+          }
+        }}
+      >
+        <Tag size={12} />
+      </button>
+      <button
+        type="button"
+        title={actions.overwriteHint}
+        disabled={!overwrite}
+        onClick={() => {
+          if (overwrite && window.confirm(`¿Sobrescribir «${name}»?`)) {
+            overwrite(item);
+          }
+        }}
+      >
+        <Replace size={12} />
+      </button>
+      <button
+        type="button"
+        title="Exportar como .json"
+        onClick={() => actions.exportJson(item)}
+      >
+        <Download size={12} />
+      </button>
+      <button
+        type="button"
+        title="Borrar"
+        onClick={() => {
+          if (window.confirm(`¿Borrar «${name}»?`)) actions.remove(item);
+        }}
+      >
+        <Trash2 size={12} />
+      </button>
+    </div>
+  );
+}
 
 /** Library entries for recipes, each resolved once; dropping one adds a copy. */
-export function recipeItems(recipes: PresetRecipe[]): LibraryItem[] {
-  return recipes.map((recipe) => ({
+export function recipeItems(
+  recipes: PresetRecipe[],
+  files?: string[],
+): LibraryItem[] {
+  return recipes.map((recipe, i) => ({
     name: recipe.name,
+    category: recipe.category,
+    file: files?.[i],
     ...resolveElement(recipe),
   }));
 }
@@ -30,6 +131,7 @@ export function Library({
   background,
   onAdd,
   empty,
+  actions,
 }: {
   title: string;
   items: LibraryItem[];
@@ -38,57 +140,82 @@ export function Library({
   background: Scene["background"];
   onAdd: (element: Element) => void;
   empty?: string;
+  actions?: PresetActions;
 }) {
   return (
     <section>
       <h3>{title}</h3>
       {items.length === 0 && empty && <p className="hint">{empty}</p>}
-      <div className={icons ? "basics" : "grid"}>
-        {items.map((item, i) => {
-          const Icon = icons?.[i];
-          if ("error" in item) {
-            return (
-              <button
-                type="button"
-                key={item.name}
-                className="item broken"
-                disabled
-                title={item.error}
-              >
-                <div className="broken-reason">
-                  <TriangleAlert size={16} />
-                  {item.error}
-                </div>
-                <span>{item.name}</span>
-              </button>
-            );
-          }
-          const { element } = item;
-          return (
-            <button
-              type="button"
-              key={item.name}
-              className="item"
-              draggable
-              title="Arrastra al lienzo o haz clic para añadir al centro"
-              onDragStart={(e) => {
-                e.dataTransfer.setData(PRESET_MIME, JSON.stringify(element));
-                e.dataTransfer.effectAllowed = "copy";
-              }}
-              onClick={() => onAdd(element)}
-            >
-              {Icon ? (
-                <Icon size={18} />
-              ) : (
-                <Thumb element={element} background={background} />
-              )}
-              <span>{item.name}</span>
-            </button>
-          );
-        })}
-      </div>
+      {icons ? (
+        <div className="basics">
+          {items.map((item, i) => itemButton(item, icons[i]))}
+        </div>
+      ) : (
+        groupByCategory(items).map((group) => (
+          <div key={group.category} className="category">
+            {group.category && <h4>{group.category}</h4>}
+            <div className="grid">
+              {group.items.map((item) => {
+                const button = itemButton(item);
+                if (!actions || item.file === undefined) return button;
+                return (
+                  <div className="item-wrap" key={item.file}>
+                    {button}
+                    <ItemActions
+                      item={{ ...item, file: item.file }}
+                      actions={actions}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      )}
     </section>
   );
+
+  function itemButton(item: LibraryItem, Icon?: LucideIcon) {
+    if ("error" in item) {
+      return (
+        <button
+          type="button"
+          key={item.name}
+          className="item broken"
+          disabled
+          title={item.error}
+        >
+          <div className="broken-reason">
+            <TriangleAlert size={16} />
+            {item.error}
+          </div>
+          <span>{item.name}</span>
+        </button>
+      );
+    }
+    const { element } = item;
+    return (
+      <button
+        type="button"
+        key={item.name}
+        className="item"
+        draggable
+        title="Arrastra al lienzo o haz clic para añadir al centro"
+        onDragStart={(e) => {
+          e.dataTransfer.setData(PRESET_MIME, JSON.stringify(element));
+          e.dataTransfer.effectAllowed = "copy";
+        }}
+        onClick={() => onAdd(element)}
+      >
+        {Icon ? (
+          <Icon size={18} />
+        ) : (
+          <Thumb element={element} background={background} />
+        )}
+        <span>{item.name}</span>
+      </button>
+    );
+  }
 }
 
 const THUMB_W = 116;

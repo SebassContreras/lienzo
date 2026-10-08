@@ -29,18 +29,29 @@ async function postJson(url: string, body: unknown): Promise<void> {
 
 /** User presets live as recipe JSON files in `presets/`. */
 export async function loadUserPresets(): Promise<PresetRecipe[]> {
+  return (await loadUserPresetFiles()).map((item) => item.recipe);
+}
+
+/** User presets with the file name each is stored under (for rename, overwrite, delete). */
+export async function loadUserPresetFiles(): Promise<
+  { file: string; recipe: PresetRecipe }[]
+> {
   const items =
     await getJson<{ name: string; data: PresetRecipe | LegacyPreset }[]>(
       "/api/presets",
     );
-  return items.map((item) => asRecipe(item.data));
+  return items.map((item) => ({
+    file: item.name,
+    recipe: asRecipe(item.data),
+  }));
 }
 
-export async function saveUserPreset(preset: PresetRecipe): Promise<void> {
-  await postJson(
-    `/api/presets?name=${encodeURIComponent(preset.name)}`,
-    preset,
-  );
+/** Writes a preset to `presets/<file>.json`; `file` defaults to its name. */
+export async function saveUserPreset(
+  preset: PresetRecipe,
+  file = preset.name,
+): Promise<void> {
+  await postJson(`/api/presets?name=${encodeURIComponent(file)}`, preset);
 }
 
 /** Scenes live as JSON files in `scenes/`. */
@@ -64,4 +75,37 @@ export async function uploadAsset(file: File): Promise<string> {
   });
   if (!res.ok) throw new Error(`/api/assets: ${res.status}`);
   return ((await res.json()) as { path: string }).path;
+}
+
+async function call(url: string, method: string): Promise<void> {
+  const res = await fetch(url, { method });
+  if (res.ok) return;
+  const { error } = (await res.json().catch(() => ({}))) as { error?: string };
+  throw new Error(
+    error === "name taken"
+      ? "Ya existe otro con ese nombre"
+      : `${url}: ${res.status}`,
+  );
+}
+
+export type StoreKind = "presets" | "scenes";
+
+/** Removes a stored preset or scene by its file name. */
+export async function deleteStored(
+  kind: StoreKind,
+  name: string,
+): Promise<void> {
+  await call(`/api/${kind}?name=${encodeURIComponent(name)}`, "DELETE");
+}
+
+/** Renames a stored preset or scene; a preset's own `name` follows. */
+export async function renameStored(
+  kind: StoreKind,
+  from: string,
+  to: string,
+): Promise<void> {
+  await call(
+    `/api/${kind}/rename?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    "POST",
+  );
 }

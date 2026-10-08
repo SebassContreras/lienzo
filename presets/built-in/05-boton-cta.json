@@ -1,5 +1,6 @@
 {
   "name": "Botón CTA",
+  "category": "Tarjetas",
   "kind": "rect",
   "traits": [
     {

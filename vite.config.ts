@@ -1,16 +1,12 @@
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { slugify } from "./src/presets/slug.ts";
+import { handleStore } from "./src/presets/json-store.ts";
 
-/**
- * Stores presets and scenes as plain JSON files at the repo root:
- * GET  /api/<kind>          -> [{ name, data }]
- * POST /api/<kind>?name=x   -> writes <kind>/<slug>.json
- */
+/** Serves `presets/` and `scenes/` at the repo root through `handleStore`. */
 function jsonStore(): Plugin {
   const kinds = ["presets", "scenes"];
 
@@ -19,35 +15,21 @@ function jsonStore(): Plugin {
     req: IncomingMessage,
     res: ServerResponse,
   ) {
-    const dir = join(import.meta.dirname, kind);
-    await mkdir(dir, { recursive: true });
     const url = new URL(req.url ?? "", "http://localhost");
-    res.setHeader("content-type", "application/json");
-    if (req.method === "GET") {
-      const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
-      const items = await Promise.all(
-        files.map(async (f) => ({
-          name: f.replace(/\.json$/, ""),
-          data: JSON.parse(await readFile(join(dir, f), "utf8")),
-        })),
-      );
-      res.end(JSON.stringify(items));
-      return;
-    }
-    if (req.method === "POST") {
+    const body = async () => {
       const chunks: Buffer[] = [];
       for await (const chunk of req) chunks.push(chunk as Buffer);
-      const name = slugify(url.searchParams.get("name") ?? "untitled");
-      const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-      await writeFile(
-        join(dir, `${name}.json`),
-        `${JSON.stringify(body, null, 2)}\n`,
-      );
-      res.end(JSON.stringify({ name }));
-      return;
-    }
-    res.statusCode = 405;
-    res.end("{}");
+      return Buffer.concat(chunks).toString("utf8");
+    };
+    const reply = await handleStore(
+      join(import.meta.dirname, kind),
+      req.method ?? "GET",
+      url,
+      body,
+    );
+    res.setHeader("content-type", "application/json");
+    res.statusCode = reply.status;
+    res.end(JSON.stringify(reply.body));
   }
 
   return {

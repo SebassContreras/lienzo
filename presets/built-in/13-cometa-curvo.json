@@ -1,5 +1,6 @@
 {
   "name": "Cometa curvo",
+  "category": "Conexiones",
   "kind": "line",
   "traits": [
     {

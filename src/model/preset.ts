@@ -20,6 +20,8 @@ export type PresetKind = ElementKind | "background";
  */
 export type PresetRecipe = {
   name: string;
+  /** Library section it is listed under. */
+  category?: string;
   kind: PresetKind;
   traits: TraitUse[];
   set?: DeepPartial<Element> | DeepPartial<Background>;

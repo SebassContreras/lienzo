@@ -1,5 +1,6 @@
 {
   "name": "Tarjeta con icono",
+  "category": "Tarjetas",
   "kind": "group",
   "traits": [
     {

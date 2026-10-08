@@ -171,6 +171,33 @@ textarea {
   text-align: center;
   overflow: hidden;
 }
+.library .preset-filter {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.library .category h4 {
+  margin: 8px 0 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.library .item-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.library .item-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+.item-actions > button {
+  padding: 2px 6px;
+}
+.item-actions > button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .library .grid canvas {
   border-radius: 4px;
   display: block;
@@ -408,4 +435,87 @@ code {
 }
 .hint.error {
   color: #fca5a5;
+}
+
+.scenes-dialog {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: inherit;
+}
+.scenes-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+.scenes-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.scenes-dialog h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.scenes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: 10px;
+}
+.scene-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.scene-card .scene-open {
+  padding: 4px;
+}
+.scenes-dialog .scene-card canvas {
+  display: block;
+  border-radius: 4px;
+}
+.scene-card .scene-broken {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 168px;
+  height: 128px;
+  padding: 6px;
+  border-radius: 4px;
+  background: #1f1315;
+  color: #fca5a5;
+  font-size: 10px;
+  text-align: center;
+  overflow: hidden;
+}
+.scene-card .scene-title {
+  max-width: 168px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  font-size: 12px;
+  cursor: pointer;
+}
+.library .file-button {
+  margin-bottom: 8px;
+}
+.scenes-dialog > header .file-button {
+  margin-left: auto;
+  margin-right: 8px;
 }

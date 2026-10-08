@@ -1,5 +1,6 @@
 {
   "name": "Hormigas",
+  "category": "Conexiones",
   "kind": "line",
   "traits": [
     "no-glow",

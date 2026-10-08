@@ -1,0 +1,305 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 416b392..3c1bfe8 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -12,6 +12,7 @@ import {
+   Square,
+   Type,
+   Undo2,
++  Upload,
+ } from "lucide-react";
+ import {
+   type MutableRefObject,
+@@ -51,8 +52,15 @@ import {
+   type Scene,
+ } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
++import { parsePresetRecipe } from "../model/schema.ts";
+ import { filterByName } from "../presets/categories.ts";
+ import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
++import {
++  downloadJson,
++  freeSlug,
++  oneLine,
++  readJsonFile,
++} from "../presets/json-files.ts";
+ import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+ import { SceneFiles } from "../presets/scene-files.tsx";
+ import {
+@@ -444,6 +452,37 @@ export function App() {
+         ? `«${item.name}» en «${category}»`
+         : `«${item.name}» sin categoría`,
+     );
++  const exportPreset = (item: StoredRef) =>
++    loadUserPresetFiles()
++      .then((stored) => {
++        const found = stored.find((s) => s.file === item.file);
++        if (!found) throw new Error(`«${item.name}» ya no existe`);
++        downloadJson(item.file, found.recipe);
++      })
++      .catch((error: unknown) =>
++        setStatus(`Error: ${error instanceof Error ? error.message : error}`),
++      );
++  /** Validates a chosen file and, only if it is a preset recipe, saves it under a free name. */
++  const importPreset = (file: File) =>
++    presetChange(
++      readJsonFile(file).then(async (data) => {
++        const parsed = parsePresetRecipe(data);
++        if (!parsed.ok) {
++          throw new Error(
++            `«${file.name}» no es un preset válido: ${oneLine(parsed.error)}`,
++          );
++        }
++        const stored = await loadUserPresetFiles();
++        await saveUserPreset(
++          parsed.value,
++          freeSlug(
++            parsed.value.name,
++            stored.map((s) => s.file),
++          ),
++        );
++      }),
++      `Preset «${file.name}» importado`,
++    );
+   const withCategory = (recipe: PresetRecipe, category?: string) =>
+     category ? { ...recipe, category } : recipe;
+   const matching = <T extends { name: string }>(items: T[]) =>
+@@ -523,6 +562,22 @@ export function App() {
+           value={presetFilter}
+           onChange={(e) => setPresetFilter(e.target.value)}
+         />
++        <label
++          className="file-button"
++          title="Importar un preset desde un archivo .json"
++        >
++          <Upload size={14} /> Importar preset
++          <input
++            type="file"
++            accept=".json,application/json"
++            hidden
++            onChange={(e) => {
++              const file = e.target.files?.[0];
++              e.target.value = "";
++              if (file) importPreset(file);
++            }}
++          />
++        </label>
+         <Library
+           title="Básicos"
+           items={BASICS}
+@@ -546,6 +601,7 @@ export function App() {
+             rename: renamePreset,
+             remove: removePreset,
+             setCategory: setPresetCategory,
++            exportJson: exportPreset,
+             overwrite: selected
+               ? (item) => savePreset(selected, item.name, item)
+               : undefined,
+@@ -560,6 +616,7 @@ export function App() {
+             rename: renamePreset,
+             remove: removePreset,
+             setCategory: setPresetCategory,
++            exportJson: exportPreset,
+             overwrite: (item) =>
+               presetChange(
+                 saveUserPreset(
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+index e519be2..2c0bc74 100644
+--- a/src/editor/library.tsx
++++ b/src/editor/library.tsx
+@@ -1,4 +1,5 @@
+ import {
++  Download,
+   type LucideIcon,
+   Pencil,
+   Replace,
+@@ -37,6 +38,8 @@ export type PresetActions = {
+   overwrite?: (item: StoredRef) => void;
+   overwriteHint: string;
+   remove: (item: StoredRef) => void;
++  /** Downloads the stored recipe as a `.json` file. */
++  exportJson: (item: StoredRef) => void;
+ };
+ 
+ /** Rename, overwrite and delete buttons shown under a stored preset. */
+@@ -88,6 +91,13 @@ export function ItemActions({
+       >
+         <Replace size={12} />
+       </button>
++      <button
++        type="button"
++        title="Exportar como .json"
++        onClick={() => actions.exportJson(item)}
++      >
++        <Download size={12} />
++      </button>
+       <button
+         type="button"
+         title="Borrar"
+diff --git a/src/presets/json-files.ts b/src/presets/json-files.ts
+new file mode 100644
+index 0000000..34e5d43
+--- /dev/null
++++ b/src/presets/json-files.ts
+@@ -0,0 +1,38 @@
++import { slugify } from "./slug.ts";
++
++/** Downloads `data` as `<name>.json`. */
++export function downloadJson(name: string, data: unknown): void {
++  const blob = new Blob([`${JSON.stringify(data, null, 2)}\n`], {
++    type: "application/json",
++  });
++  const url = URL.createObjectURL(blob);
++  const a = document.createElement("a");
++  a.href = url;
++  a.download = `${slugify(name)}.json`;
++  a.click();
++  URL.revokeObjectURL(url);
++}
++
++/** The parsed contents of a chosen file; rejects with a readable message if it is not JSON. */
++export async function readJsonFile(file: File): Promise<unknown> {
++  const text = await file.text();
++  try {
++    return JSON.parse(text);
++  } catch {
++    throw new Error(`«${file.name}» no es un JSON válido`);
++  }
++}
++
++/** `base`, or `base-2`, `base-3`… — the first slug not in `taken`. */
++export function freeSlug(base: string, taken: Iterable<string>): string {
++  const used = new Set(taken);
++  const slug = slugify(base);
++  let candidate = slug;
++  for (let n = 2; used.has(candidate); n++) candidate = `${slug}-${n}`;
++  return candidate;
++}
++
++/** A multi-line validation message on one line, for the status bar. */
++export function oneLine(message: string): string {
++  return message.split("\n").join(" · ");
++}
+diff --git a/src/presets/scene-files.tsx b/src/presets/scene-files.tsx
+index efb517a..a15a582 100644
+--- a/src/presets/scene-files.tsx
++++ b/src/presets/scene-files.tsx
+@@ -1,10 +1,12 @@
+ import {
+   Copy,
++  Download,
+   FolderOpen,
+   Pencil,
+   Save,
+   Trash2,
+   TriangleAlert,
++  Upload,
+   X,
+ } from "lucide-react";
+ import { useEffect, useRef, useState } from "react";
+@@ -12,6 +14,7 @@ import { loadSceneImages } from "../engine/images.ts";
+ import { drawScene } from "../engine/render.ts";
+ import type { Scene } from "../model/model.ts";
+ import { parseScene } from "../model/schema.ts";
++import { downloadJson, freeSlug, oneLine, readJsonFile } from "./json-files.ts";
+ import { deleteStored, loadScenes, renameStored, saveScene } from "./store.ts";
+ 
+ type StoredScene = { name: string } & ({ scene: Scene } | { error: string });
+@@ -57,6 +60,30 @@ export function SceneFiles({
+         setStatus(`Error: ${error instanceof Error ? error.message : error}`),
+       );
+ 
++  /** Validates a chosen file and, only if it is a scene, saves it under a free name. */
++  const importScene = (file: File) =>
++    readJsonFile(file)
++      .then((data) => {
++        const parsed = parseScene(data);
++        if (!parsed.ok) {
++          setStatus(
++            `«${file.name}» no es una escena válida: ${oneLine(parsed.error)}`,
++          );
++          return;
++        }
++        const target = freeSlug(
++          file.name.replace(/\.json$/i, ""),
++          scenes.map((s) => s.name),
++        );
++        return change(
++          saveScene(target, parsed.value),
++          `Escena «${target}» importada`,
++        );
++      })
++      .catch((error: unknown) =>
++        setStatus(`Error: ${error instanceof Error ? error.message : error}`),
++      );
++
+   const freeName = (base: string) => {
+     const taken = new Set(scenes.map((s) => s.name));
+     let n = 1;
+@@ -98,6 +125,22 @@ export function SceneFiles({
+       <dialog ref={dialog} className="scenes-dialog">
+         <header>
+           <h2>Escenas guardadas</h2>
++          <label
++            className="file-button"
++            title="Importar una escena desde un archivo .json"
++          >
++            <Upload size={14} /> Importar
++            <input
++              type="file"
++              accept=".json,application/json"
++              hidden
++              onChange={(e) => {
++                const file = e.target.files?.[0];
++                e.target.value = "";
++                if (file) importScene(file);
++              }}
++            />
++          </label>
+           <button
+             type="button"
+             title="Cerrar"
+@@ -160,6 +203,16 @@ export function SceneFiles({
+                 >
+                   <Copy size={12} />
+                 </button>
++                <button
++                  type="button"
++                  title="Exportar como .json"
++                  disabled={!("scene" in s)}
++                  onClick={() => {
++                    if ("scene" in s) downloadJson(s.name, s.scene);
++                  }}
++                >
++                  <Download size={12} />
++                </button>
+                 <button
+                   type="button"
+                   title="Borrar"
+diff --git a/src/styles.css b/src/styles.css
+index fb4a465..fba0293 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -500,3 +500,22 @@ code {
+   text-overflow: ellipsis;
+   white-space: nowrap;
+ }
++
++.file-button {
++  display: inline-flex;
++  align-items: center;
++  gap: 6px;
++  padding: 4px 8px;
++  border: 1px solid var(--line);
++  border-radius: 6px;
++  background: var(--panel-2);
++  font-size: 12px;
++  cursor: pointer;
++}
++.library .file-button {
++  margin-bottom: 8px;
++}
++.scenes-dialog > header .file-button {
++  margin-left: auto;
++  margin-right: 8px;
++}

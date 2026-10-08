@@ -12,6 +12,7 @@ import {
   Square,
   Type,
   Undo2,
+  Upload,
 } from "lucide-react";
 import {
   type MutableRefObject,
@@ -50,10 +51,24 @@ import {
   type Element,
   type Scene,
 } from "../model/model.ts";
+import type { PresetRecipe } from "../model/preset.ts";
+import { parsePresetRecipe } from "../model/schema.ts";
+import { filterByName } from "../presets/categories.ts";
 import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
+import {
+  downloadJson,
+  freeSlug,
+  oneLine,
+  readJsonFile,
+} from "../presets/json-files.ts";
 import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
 import { SceneFiles } from "../presets/scene-files.tsx";
-import { loadUserPresets, saveUserPreset } from "../presets/store.ts";
+import {
+  deleteStored,
+  loadUserPresetFiles,
+  renameStored,
+  saveUserPreset,
+} from "../presets/store.ts";
 import {
   type BackgroundItem,
   BackgroundLibrary,
@@ -64,7 +79,12 @@ import {
   MultiInspector,
   SceneInspector,
 } from "./inspector.tsx";
-import { Library, type LibraryItem, recipeItems } from "./library.tsx";
+import {
+  Library,
+  type LibraryItem,
+  recipeItems,
+  type StoredRef,
+} from "./library.tsx";
 import { type Clock, Stage } from "./stage.tsx";
 
 /**
@@ -147,6 +167,7 @@ export function App() {
   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
   const [backgroundFocus, setBackgroundFocus] = useState(0);
+  const [presetFilter, setPresetFilter] = useState("");
 
   const setScene = useCallback((s: Scene) => {
     sceneRef.current = s;
@@ -189,12 +210,24 @@ export function App() {
   }, [scene]);
 
   const refreshPresets = useCallback(() => {
-    loadUserPresets()
-      .then((recipes) => {
-        const isBackground = (r: { kind: string }) => r.kind === "background";
-        setUserPresets(recipeItems(recipes.filter((r) => !isBackground(r))));
+    loadUserPresetFiles()
+      .then((stored) => {
+        const elements = stored.filter((s) => s.recipe.kind !== "background");
+        const backgrounds = stored.filter(
+          (s) => s.recipe.kind === "background",
+        );
+        setUserPresets(
+          recipeItems(
+            elements.map((s) => s.recipe),
+            elements.map((s) => s.file),
+          ),
+        );
         setUserBackgrounds(
-          backgroundItems(recipes.filter(isBackground), "user"),
+          backgroundItems(
+            backgrounds.map((s) => s.recipe),
+            "user",
+            backgrounds.map((s) => s.file),
+          ),
         );
       })
       .catch(() => {
@@ -204,8 +237,24 @@ export function App() {
   }, []);
   useEffect(refreshPresets, [refreshPresets]);
 
+  /** Runs a change to stored presets, then reports it and reloads the library. */
+  const presetChange = useCallback(
+    (work: Promise<void>, done: string) => {
+      work
+        .then(() => {
+          setStatus(done);
+          refreshPresets();
+        })
+        .catch((error: unknown) =>
+          setStatus(`Error: ${error instanceof Error ? error.message : error}`),
+        );
+    },
+    [refreshPresets],
+  );
+
   const savePreset = useCallback(
-    (el: Element, name: string) => {
+    /** `over` is the stored preset being overwritten; its file and category are kept. */
+    (el: Element, name: string, over?: StoredRef) => {
       const element =
         el.kind === "group" ? detachOutside(el) : structuredClone(el);
       element.name = name;
@@ -215,14 +264,17 @@ export function App() {
         element.a = { x: r.a.x, y: r.a.y };
         element.b = { x: r.b.x, y: r.b.y };
       }
-      saveUserPreset(recipeFromElement(name, element))
-        .then(() => {
-          setStatus(`Preset «${name}» guardado`);
-          refreshPresets();
-        })
-        .catch((error: unknown) => setStatus(`Error: ${error}`));
+      presetChange(
+        saveUserPreset(
+          over?.category
+            ? { ...recipeFromElement(name, element), category: over.category }
+            : recipeFromElement(name, element),
+          over?.file,
+        ),
+        `Preset «${name}» guardado`,
+      );
     },
-    [refreshPresets],
+    [presetChange],
   );
 
   /** Replaces the whole scene as one undoable step. */
@@ -377,6 +429,65 @@ export function App() {
       ? scene.elements.find((el) => el.id === selection[0])
       : undefined;
 
+  const renamePreset = (item: StoredRef, to: string) =>
+    presetChange(
+      renameStored("presets", item.file, to),
+      `Renombrado a «${to}»`,
+    );
+  const removePreset = (item: StoredRef) =>
+    presetChange(deleteStored("presets", item.file), `«${item.name}» borrado`);
+  /** Rewrites a stored preset with a new category (none when empty). */
+  const setPresetCategory = (item: StoredRef, category: string) =>
+    presetChange(
+      loadUserPresetFiles().then(async (stored) => {
+        const found = stored.find((s) => s.file === item.file);
+        if (!found) throw new Error(`«${item.name}» ya no existe`);
+        const { category: _old, ...recipe } = found.recipe;
+        await saveUserPreset(
+          category ? { ...recipe, category } : recipe,
+          item.file,
+        );
+      }),
+      category
+        ? `«${item.name}» en «${category}»`
+        : `«${item.name}» sin categoría`,
+    );
+  const exportPreset = (item: StoredRef) =>
+    loadUserPresetFiles()
+      .then((stored) => {
+        const found = stored.find((s) => s.file === item.file);
+        if (!found) throw new Error(`«${item.name}» ya no existe`);
+        downloadJson(item.file, found.recipe);
+      })
+      .catch((error: unknown) =>
+        setStatus(`Error: ${error instanceof Error ? error.message : error}`),
+      );
+  /** Validates a chosen file and, only if it is a preset recipe, saves it under a free name. */
+  const importPreset = (file: File) =>
+    presetChange(
+      readJsonFile(file).then(async (data) => {
+        const parsed = parsePresetRecipe(data);
+        if (!parsed.ok) {
+          throw new Error(
+            `«${file.name}» no es un preset válido: ${oneLine(parsed.error)}`,
+          );
+        }
+        const stored = await loadUserPresetFiles();
+        await saveUserPreset(
+          parsed.value,
+          freeSlug(
+            parsed.value.name,
+            stored.map((s) => s.file),
+          ),
+        );
+      }),
+      `Preset «${file.name}» importado`,
+    );
+  const withCategory = (recipe: PresetRecipe, category?: string) =>
+    category ? { ...recipe, category } : recipe;
+  const matching = <T extends { name: string }>(items: T[]) =>
+    filterByName(items, presetFilter);
+
   return (
     <div className="app">
       <header className="topbar">
@@ -443,6 +554,30 @@ export function App() {
         />
       </header>
       <aside className="library">
+        <input
+          className="preset-filter"
+          type="search"
+          placeholder="Filtrar por nombre…"
+          aria-label="Filtrar presets por nombre"
+          value={presetFilter}
+          onChange={(e) => setPresetFilter(e.target.value)}
+        />
+        <label
+          className="file-button"
+          title="Importar un preset desde un archivo .json"
+        >
+          <Upload size={14} /> Importar preset
+          <input
+            type="file"
+            accept=".json,application/json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) importPreset(file);
+            }}
+          />
+        </label>
         <Library
           title="Básicos"
           items={BASICS}
@@ -452,19 +587,52 @@ export function App() {
         />
         <Library
           title="Prediseñados"
-          items={BUILT_INS}
+          items={matching(BUILT_INS)}
           background={scene.background}
           onAdd={(element) => addElement(element)}
         />
         <Library
           title="Mis presets"
-          items={userPresets}
+          items={matching(userPresets)}
           background={scene.background}
           onAdd={(element) => addElement(element)}
           empty="Selecciona un elemento y usa «Guardar como preset»."
+          actions={{
+            rename: renamePreset,
+            remove: removePreset,
+            setCategory: setPresetCategory,
+            exportJson: exportPreset,
+            overwrite: selected
+              ? (item) => savePreset(selected, item.name, item)
+              : undefined,
+            overwriteHint: selected
+              ? "Sobrescribir con el elemento seleccionado"
+              : "Selecciona un elemento para sobrescribir",
+          }}
         />
         <BackgroundLibrary
-          items={[...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds]}
+          items={matching([...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds])}
+          actions={{
+            rename: renamePreset,
+            remove: removePreset,
+            setCategory: setPresetCategory,
+            exportJson: exportPreset,
+            overwrite: (item) =>
+              presetChange(
+                saveUserPreset(
+                  withCategory(
+                    recipeFromBackground(
+                      item.name,
+                      sceneRef.current.background,
+                    ),
+                    item.category,
+                  ),
+                  item.file,
+                ),
+                `Fondo «${item.name}» sobrescrito`,
+              ),
+            overwriteHint: "Sobrescribir con el fondo actual",
+          }}
           onApply={(background) => {
             checkpoint();
             setScene({ ...sceneRef.current, background });
@@ -533,12 +701,10 @@ export function App() {
             onChange={setScene}
             focusBackground={backgroundFocus}
             onSaveBackground={(name) =>
-              saveUserPreset(recipeFromBackground(name, scene.background))
-                .then(() => {
-                  setStatus(`Fondo «${name}» guardado`);
-                  refreshPresets();
-                })
-                .catch((error: unknown) => setStatus(`Error: ${error}`))
+              presetChange(
+                saveUserPreset(recipeFromBackground(name, scene.background)),
+                `Fondo «${name}» guardado`,
+              )
             }
           />
         )}

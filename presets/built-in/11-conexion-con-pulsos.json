@@ -1,5 +1,6 @@
 {
   "name": "Conexión con pulsos",
+  "category": "Conexiones",
   "kind": "line",
   "traits": [
     "flow"

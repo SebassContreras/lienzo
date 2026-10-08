@@ -1,0 +1,687 @@
+diff --git a/presets/built-in/01-tarjeta-neon.json b/presets/built-in/01-tarjeta-neon.json
+index 21ad602..9b7a556 100644
+--- a/presets/built-in/01-tarjeta-neon.json
++++ b/presets/built-in/01-tarjeta-neon.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Tarjeta neón",
++  "category": "Tarjetas",
+   "kind": "rect",
+   "traits": [
+     {
+diff --git a/presets/built-in/02-tarjeta-glass.json b/presets/built-in/02-tarjeta-glass.json
+index c8d1097..dc13baa 100644
+--- a/presets/built-in/02-tarjeta-glass.json
++++ b/presets/built-in/02-tarjeta-glass.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Tarjeta glass",
++  "category": "Tarjetas",
+   "kind": "rect",
+   "traits": [
+     "glass"
+diff --git a/presets/built-in/03-tarjeta-borde-animado.json b/presets/built-in/03-tarjeta-borde-animado.json
+index 83ebbd6..dd1430d 100644
+--- a/presets/built-in/03-tarjeta-borde-animado.json
++++ b/presets/built-in/03-tarjeta-borde-animado.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Tarjeta borde animado",
++  "category": "Tarjetas",
+   "kind": "rect",
+   "traits": [
+     {
+diff --git a/presets/built-in/04-pill.json b/presets/built-in/04-pill.json
+index 1900d4d..12bbfbc 100644
+--- a/presets/built-in/04-pill.json
++++ b/presets/built-in/04-pill.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Pill",
++  "category": "Tarjetas",
+   "kind": "rect",
+   "traits": [
+     {
+diff --git a/presets/built-in/05-boton-cta.json b/presets/built-in/05-boton-cta.json
+index 9fd415e..373bb72 100644
+--- a/presets/built-in/05-boton-cta.json
++++ b/presets/built-in/05-boton-cta.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Botón CTA",
++  "category": "Tarjetas",
+   "kind": "rect",
+   "traits": [
+     {
+diff --git a/presets/built-in/06-titulo.json b/presets/built-in/06-titulo.json
+index 4695be9..bd71b12 100644
+--- a/presets/built-in/06-titulo.json
++++ b/presets/built-in/06-titulo.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Título",
++  "category": "Texto",
+   "kind": "text",
+   "traits": [],
+   "set": {
+diff --git a/presets/built-in/07-titulo-degradado.json b/presets/built-in/07-titulo-degradado.json
+index 9a99bc9..e1e17ae 100644
+--- a/presets/built-in/07-titulo-degradado.json
++++ b/presets/built-in/07-titulo-degradado.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Título degradado",
++  "category": "Texto",
+   "kind": "text",
+   "traits": [
+     {
+diff --git a/presets/built-in/08-parrafo.json b/presets/built-in/08-parrafo.json
+index ae52489..bd70510 100644
+--- a/presets/built-in/08-parrafo.json
++++ b/presets/built-in/08-parrafo.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Párrafo",
++  "category": "Texto",
+   "kind": "text",
+   "traits": [],
+   "set": {
+diff --git a/presets/built-in/09-manuscrito.json b/presets/built-in/09-manuscrito.json
+index de987c0..cc3f268 100644
+--- a/presets/built-in/09-manuscrito.json
++++ b/presets/built-in/09-manuscrito.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Manuscrito",
++  "category": "Texto",
+   "kind": "text",
+   "traits": [],
+   "set": {
+diff --git a/presets/built-in/10-pixel.json b/presets/built-in/10-pixel.json
+index 1bb2b25..388a40e 100644
+--- a/presets/built-in/10-pixel.json
++++ b/presets/built-in/10-pixel.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Pixel",
++  "category": "Texto",
+   "kind": "text",
+   "traits": [
+     {
+diff --git a/presets/built-in/11-conexion-con-pulsos.json b/presets/built-in/11-conexion-con-pulsos.json
+index 6af7801..2961738 100644
+--- a/presets/built-in/11-conexion-con-pulsos.json
++++ b/presets/built-in/11-conexion-con-pulsos.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Conexión con pulsos",
++  "category": "Conexiones",
+   "kind": "line",
+   "traits": [
+     "flow"
+diff --git a/presets/built-in/12-hormigas.json b/presets/built-in/12-hormigas.json
+index a3e76cc..fef6b8e 100644
+--- a/presets/built-in/12-hormigas.json
++++ b/presets/built-in/12-hormigas.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Hormigas",
++  "category": "Conexiones",
+   "kind": "line",
+   "traits": [
+     "no-glow",
+diff --git a/presets/built-in/13-cometa-curvo.json b/presets/built-in/13-cometa-curvo.json
+index 4d6e5dd..071ded3 100644
+--- a/presets/built-in/13-cometa-curvo.json
++++ b/presets/built-in/13-cometa-curvo.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Cometa curvo",
++  "category": "Conexiones",
+   "kind": "line",
+   "traits": [
+     {
+diff --git a/presets/built-in/14-tarjeta-con-icono.json b/presets/built-in/14-tarjeta-con-icono.json
+index f382efc..944d3a9 100644
+--- a/presets/built-in/14-tarjeta-con-icono.json
++++ b/presets/built-in/14-tarjeta-con-icono.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Tarjeta con icono",
++  "category": "Tarjetas",
+   "kind": "group",
+   "traits": [
+     {
+diff --git a/presets/built-in/15-icono-con-fondo.json b/presets/built-in/15-icono-con-fondo.json
+index a553164..8a80457 100644
+--- a/presets/built-in/15-icono-con-fondo.json
++++ b/presets/built-in/15-icono-con-fondo.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Icono con fondo",
++  "category": "Iconos e imágenes",
+   "kind": "icon",
+   "traits": [
+     {
+diff --git a/presets/built-in/16-avatar-circular.json b/presets/built-in/16-avatar-circular.json
+index a082766..860c944 100644
+--- a/presets/built-in/16-avatar-circular.json
++++ b/presets/built-in/16-avatar-circular.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Avatar circular",
++  "category": "Iconos e imágenes",
+   "kind": "ellipse",
+   "traits": [
+     {
+diff --git a/presets/built-in/17-logo-imagen.json b/presets/built-in/17-logo-imagen.json
+index 9fb2dc6..baab97a 100644
+--- a/presets/built-in/17-logo-imagen.json
++++ b/presets/built-in/17-logo-imagen.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "Logo (imagen)",
++  "category": "Iconos e imágenes",
+   "kind": "image",
+   "traits": [],
+   "set": {
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 959f74a..416b392 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -50,6 +50,8 @@ import {
+   type Element,
+   type Scene,
+ } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { filterByName } from "../presets/categories.ts";
+ import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
+ import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+ import { SceneFiles } from "../presets/scene-files.tsx";
+@@ -69,7 +71,12 @@ import {
+   MultiInspector,
+   SceneInspector,
+ } from "./inspector.tsx";
+-import { Library, type LibraryItem, recipeItems } from "./library.tsx";
++import {
++  Library,
++  type LibraryItem,
++  recipeItems,
++  type StoredRef,
++} from "./library.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
+ 
+ /**
+@@ -152,6 +159,7 @@ export function App() {
+   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
+   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
+   const [backgroundFocus, setBackgroundFocus] = useState(0);
++  const [presetFilter, setPresetFilter] = useState("");
+ 
+   const setScene = useCallback((s: Scene) => {
+     sceneRef.current = s;
+@@ -237,7 +245,8 @@ export function App() {
+   );
+ 
+   const savePreset = useCallback(
+-    (el: Element, name: string, file?: string) => {
++    /** `over` is the stored preset being overwritten; its file and category are kept. */
++    (el: Element, name: string, over?: StoredRef) => {
+       const element =
+         el.kind === "group" ? detachOutside(el) : structuredClone(el);
+       element.name = name;
+@@ -248,7 +257,12 @@ export function App() {
+         element.b = { x: r.b.x, y: r.b.y };
+       }
+       presetChange(
+-        saveUserPreset(recipeFromElement(name, element), file),
++        saveUserPreset(
++          over?.category
++            ? { ...recipeFromElement(name, element), category: over.category }
++            : recipeFromElement(name, element),
++          over?.file,
++        ),
+         `Preset «${name}» guardado`,
+       );
+     },
+@@ -407,10 +421,33 @@ export function App() {
+       ? scene.elements.find((el) => el.id === selection[0])
+       : undefined;
+ 
+-  const renamePreset = (file: string, to: string) =>
+-    presetChange(renameStored("presets", file, to), `Renombrado a «${to}»`);
+-  const removePreset = (file: string, name: string) =>
+-    presetChange(deleteStored("presets", file), `«${name}» borrado`);
++  const renamePreset = (item: StoredRef, to: string) =>
++    presetChange(
++      renameStored("presets", item.file, to),
++      `Renombrado a «${to}»`,
++    );
++  const removePreset = (item: StoredRef) =>
++    presetChange(deleteStored("presets", item.file), `«${item.name}» borrado`);
++  /** Rewrites a stored preset with a new category (none when empty). */
++  const setPresetCategory = (item: StoredRef, category: string) =>
++    presetChange(
++      loadUserPresetFiles().then(async (stored) => {
++        const found = stored.find((s) => s.file === item.file);
++        if (!found) throw new Error(`«${item.name}» ya no existe`);
++        const { category: _old, ...recipe } = found.recipe;
++        await saveUserPreset(
++          category ? { ...recipe, category } : recipe,
++          item.file,
++        );
++      }),
++      category
++        ? `«${item.name}» en «${category}»`
++        : `«${item.name}» sin categoría`,
++    );
++  const withCategory = (recipe: PresetRecipe, category?: string) =>
++    category ? { ...recipe, category } : recipe;
++  const matching = <T extends { name: string }>(items: T[]) =>
++    filterByName(items, presetFilter);
+ 
+   return (
+     <div className="app">
+@@ -478,6 +515,14 @@ export function App() {
+         />
+       </header>
+       <aside className="library">
++        <input
++          className="preset-filter"
++          type="search"
++          placeholder="Filtrar por nombre…"
++          aria-label="Filtrar presets por nombre"
++          value={presetFilter}
++          onChange={(e) => setPresetFilter(e.target.value)}
++        />
+         <Library
+           title="Básicos"
+           items={BASICS}
+@@ -487,21 +532,22 @@ export function App() {
+         />
+         <Library
+           title="Prediseñados"
+-          items={BUILT_INS}
++          items={matching(BUILT_INS)}
+           background={scene.background}
+           onAdd={(element) => addElement(element)}
+         />
+         <Library
+           title="Mis presets"
+-          items={userPresets}
++          items={matching(userPresets)}
+           background={scene.background}
+           onAdd={(element) => addElement(element)}
+           empty="Selecciona un elemento y usa «Guardar como preset»."
+           actions={{
+             rename: renamePreset,
+             remove: removePreset,
++            setCategory: setPresetCategory,
+             overwrite: selected
+-              ? (file, name) => savePreset(selected, name, file)
++              ? (item) => savePreset(selected, item.name, item)
+               : undefined,
+             overwriteHint: selected
+               ? "Sobrescribir con el elemento seleccionado"
+@@ -509,17 +555,24 @@ export function App() {
+           }}
+         />
+         <BackgroundLibrary
+-          items={[...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds]}
++          items={matching([...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds])}
+           actions={{
+             rename: renamePreset,
+             remove: removePreset,
+-            overwrite: (file, name) =>
++            setCategory: setPresetCategory,
++            overwrite: (item) =>
+               presetChange(
+                 saveUserPreset(
+-                  recipeFromBackground(name, sceneRef.current.background),
+-                  file,
++                  withCategory(
++                    recipeFromBackground(
++                      item.name,
++                      sceneRef.current.background,
++                    ),
++                    item.category,
++                  ),
++                  item.file,
+                 ),
+-                `Fondo «${name}» sobrescrito`,
++                `Fondo «${item.name}» sobrescrito`,
+               ),
+             overwriteHint: "Sobrescribir con el fondo actual",
+           }}
+diff --git a/src/editor/backgrounds.tsx b/src/editor/backgrounds.tsx
+index 3c6ab07..c0f52cd 100644
+--- a/src/editor/backgrounds.tsx
++++ b/src/editor/backgrounds.tsx
+@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
+ import { drawScene } from "../engine/render.ts";
+ import { type Background, defaultScene, type Scene } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
++import { groupByCategory } from "../presets/categories.ts";
+ import { resolveBackground } from "../presets/resolve.ts";
+ import { ItemActions, type PresetActions } from "./library.tsx";
+ 
+@@ -13,6 +14,7 @@ import { ItemActions, type PresetActions } from "./library.tsx";
+ export type BackgroundItem = {
+   key: string;
+   name: string;
++  category?: string;
+   /** Stored file name, for user presets. */
+   file?: string;
+ } & ({ background: Background } | { error: string });
+@@ -25,6 +27,7 @@ export function backgroundItems(
+   return recipes.map((recipe, i) => ({
+     key: `${source}:${files?.[i] ?? recipe.name}`,
+     name: recipe.name,
++    category: recipe.category,
+     file: files?.[i],
+     ...resolveBackground(recipe),
+   }));
+@@ -43,22 +46,26 @@ export function BackgroundLibrary({
+   return (
+     <section>
+       <h3>Fondos</h3>
+-      <div className="grid">
+-        {items.map((item) => {
+-          const button = backgroundButton(item);
+-          if (!actions || item.file === undefined) return button;
+-          return (
+-            <div className="item-wrap" key={item.key}>
+-              {button}
+-              <ItemActions
+-                file={item.file}
+-                name={item.name}
+-                actions={actions}
+-              />
+-            </div>
+-          );
+-        })}
+-      </div>
++      {groupByCategory(items).map((group) => (
++        <div key={group.category} className="category">
++          {group.category && <h4>{group.category}</h4>}
++          <div className="grid">
++            {group.items.map((item) => {
++              const button = backgroundButton(item);
++              if (!actions || item.file === undefined) return button;
++              return (
++                <div className="item-wrap" key={item.key}>
++                  {button}
++                  <ItemActions
++                    item={{ ...item, file: item.file }}
++                    actions={actions}
++                  />
++                </div>
++              );
++            })}
++          </div>
++        </div>
++      ))}
+     </section>
+   );
+ 
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+index f3c378e..e519be2 100644
+--- a/src/editor/library.tsx
++++ b/src/editor/library.tsx
+@@ -2,6 +2,7 @@ import {
+   type LucideIcon,
+   Pencil,
+   Replace,
++  Tag,
+   Trash2,
+   TriangleAlert,
+ } from "lucide-react";
+@@ -10,6 +11,7 @@ import { boxOf, centerOn } from "../engine/geometry.ts";
+ import { drawScene } from "../engine/render.ts";
+ import { defaultScene, type Element, type Scene } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
++import { groupByCategory } from "../presets/categories.ts";
+ import { resolveElement } from "../presets/resolve.ts";
+ import { PRESET_MIME } from "./stage.tsx";
+ 
+@@ -18,30 +20,35 @@ import { PRESET_MIME } from "./stage.tsx";
+  * recipe that cannot be built, the reason why.
+  */
+ export type LibraryItem = {
+-  name: string /** Stored file name, for user presets. */;
++  name: string;
++  category?: string;
++  /** Stored file name, for user presets. */
+   file?: string;
+ } & ({ element: Element } | { error: string });
+ 
++/** A stored preset as its actions see it. */
++export type StoredRef = { file: string; name: string; category?: string };
++
+ /** What can be done to a stored preset from the library. */
+ export type PresetActions = {
+-  rename: (file: string, name: string) => void;
++  rename: (item: StoredRef, to: string) => void;
++  setCategory: (item: StoredRef, category: string) => void;
+   /** Absent when there is nothing to overwrite with (e.g. no element selected). */
+-  overwrite?: (file: string, name: string) => void;
++  overwrite?: (item: StoredRef) => void;
+   overwriteHint: string;
+-  remove: (file: string, name: string) => void;
++  remove: (item: StoredRef) => void;
+ };
+ 
+ /** Rename, overwrite and delete buttons shown under a stored preset. */
+ export function ItemActions({
+-  file,
+-  name,
++  item,
+   actions,
+ }: {
+-  file: string;
+-  name: string;
++  item: StoredRef;
+   actions: PresetActions;
+ }) {
+   const { overwrite } = actions;
++  const { name } = item;
+   return (
+     <div className="item-actions">
+       <button
+@@ -49,18 +56,33 @@ export function ItemActions({
+         title="Renombrar"
+         onClick={() => {
+           const to = window.prompt("Nuevo nombre", name)?.trim();
+-          if (to && to !== name) actions.rename(file, to);
++          if (to && to !== name) actions.rename(item, to);
+         }}
+       >
+         <Pencil size={12} />
+       </button>
++      <button
++        type="button"
++        title={`Categoría: ${item.category || "ninguna"}`}
++        onClick={() => {
++          const to = window.prompt(
++            "Categoría (vacío = sin categoría)",
++            item.category ?? "",
++          );
++          if (to !== null && to.trim() !== (item.category ?? "")) {
++            actions.setCategory(item, to.trim());
++          }
++        }}
++      >
++        <Tag size={12} />
++      </button>
+       <button
+         type="button"
+         title={actions.overwriteHint}
+         disabled={!overwrite}
+         onClick={() => {
+           if (overwrite && window.confirm(`¿Sobrescribir «${name}»?`)) {
+-            overwrite(file, name);
++            overwrite(item);
+           }
+         }}
+       >
+@@ -70,7 +92,7 @@ export function ItemActions({
+         type="button"
+         title="Borrar"
+         onClick={() => {
+-          if (window.confirm(`¿Borrar «${name}»?`)) actions.remove(file, name);
++          if (window.confirm(`¿Borrar «${name}»?`)) actions.remove(item);
+         }}
+       >
+         <Trash2 size={12} />
+@@ -86,6 +108,7 @@ export function recipeItems(
+ ): LibraryItem[] {
+   return recipes.map((recipe, i) => ({
+     name: recipe.name,
++    category: recipe.category,
+     file: files?.[i],
+     ...resolveElement(recipe),
+   }));
+@@ -113,23 +136,32 @@ export function Library({
+     <section>
+       <h3>{title}</h3>
+       {items.length === 0 && empty && <p className="hint">{empty}</p>}
+-      <div className={icons ? "basics" : "grid"}>
+-        {items.map((item, i) => {
+-          const Icon = icons?.[i];
+-          const button = itemButton(item, Icon);
+-          if (!actions || item.file === undefined) return button;
+-          return (
+-            <div className="item-wrap" key={item.file}>
+-              {button}
+-              <ItemActions
+-                file={item.file}
+-                name={item.name}
+-                actions={actions}
+-              />
++      {icons ? (
++        <div className="basics">
++          {items.map((item, i) => itemButton(item, icons[i]))}
++        </div>
++      ) : (
++        groupByCategory(items).map((group) => (
++          <div key={group.category} className="category">
++            {group.category && <h4>{group.category}</h4>}
++            <div className="grid">
++              {group.items.map((item) => {
++                const button = itemButton(item);
++                if (!actions || item.file === undefined) return button;
++                return (
++                  <div className="item-wrap" key={item.file}>
++                    {button}
++                    <ItemActions
++                      item={{ ...item, file: item.file }}
++                      actions={actions}
++                    />
++                  </div>
++                );
++              })}
+             </div>
+-          );
+-        })}
+-      </div>
++          </div>
++        ))
++      )}
+     </section>
+   );
+ 
+diff --git a/src/model/preset.ts b/src/model/preset.ts
+index 205c6e8..31a2879 100644
+--- a/src/model/preset.ts
++++ b/src/model/preset.ts
+@@ -20,6 +20,8 @@ export type PresetKind = ElementKind | "background";
+  */
+ export type PresetRecipe = {
+   name: string;
++  /** Library section it is listed under. */
++  category?: string;
+   kind: PresetKind;
+   traits: TraitUse[];
+   set?: DeepPartial<Element> | DeepPartial<Background>;
+diff --git a/src/model/schema.ts b/src/model/schema.ts
+index 1f6ed09..3da355a 100644
+--- a/src/model/schema.ts
++++ b/src/model/schema.ts
+@@ -234,6 +234,7 @@ const traitUse = z.union([
+ export const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
+   .object({
+     name: z.string().min(1),
++    category: z.string().optional(),
+     kind: z.enum([
+       "rect",
+       "ellipse",
+diff --git a/src/presets/categories.ts b/src/presets/categories.ts
+new file mode 100644
+index 0000000..8b1556e
+--- /dev/null
++++ b/src/presets/categories.ts
+@@ -0,0 +1,43 @@
++/** Shown for presets without a category, when others have one. */
++export const NO_CATEGORY = "Sin categoría";
++
++/** Items whose name contains `query`, ignoring case and accents. */
++export function filterByName<T extends { name: string }>(
++  items: T[],
++  query: string,
++): T[] {
++  const fold = (s: string) =>
++    s
++      .normalize("NFD")
++      .replace(/\p{Diacritic}/gu, "")
++      .toLowerCase();
++  const q = fold(query.trim());
++  return q ? items.filter((item) => fold(item.name).includes(q)) : items;
++}
++
++/**
++ * One section per category, in the order categories first appear; presets without one go
++ * last under `NO_CATEGORY`. With no categories at all, a single section titled "".
++ */
++export function groupByCategory<T extends { category?: string }>(
++  items: T[],
++): { category: string; items: T[] }[] {
++  const groups = new Map<string, T[]>();
++  const loose: T[] = [];
++  for (const item of items) {
++    const c = item.category?.trim();
++    if (!c) loose.push(item);
++    else groups.set(c, [...(groups.get(c) ?? []), item]);
++  }
++  const sections = [...groups].map(([category, items]) => ({
++    category,
++    items,
++  }));
++  if (loose.length > 0) {
++    sections.push({
++      category: sections.length ? NO_CATEGORY : "",
++      items: loose,
++    });
++  }
++  return sections;
++}
+diff --git a/src/styles.css b/src/styles.css
+index 7b258ef..2f52cb8 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -171,6 +171,16 @@ textarea {
+   text-align: center;
+   overflow: hidden;
+ }
++.library .preset-filter {
++  width: 100%;
++  margin-bottom: 8px;
++}
++.library .category h4 {
++  margin: 8px 0 4px;
++  font-size: 11px;
++  font-weight: 500;
++  color: var(--muted);
++}
+ .library .item-wrap {
+   display: flex;
+   flex-direction: column;

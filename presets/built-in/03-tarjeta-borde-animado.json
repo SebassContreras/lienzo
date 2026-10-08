@@ -1,5 +1,6 @@
 {
   "name": "Tarjeta borde animado",
+  "category": "Tarjetas",
   "kind": "rect",
   "traits": [
     {
