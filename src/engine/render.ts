@@ -2,7 +2,7 @@ import { ellipse } from "../components/ellipse/descriptor.ts";
 import { drawGroup } from "../components/group.ts";
 import { icon } from "../components/icon/descriptor.ts";
 import { image } from "../components/image/descriptor.ts";
-import { drawLine } from "../components/line.ts";
+import { line } from "../components/line/descriptor.ts";
 import { drawParticles } from "../components/particles.ts";
 import { rect } from "../components/rect/descriptor.ts";
 import { text } from "../components/text/descriptor.ts";
@@ -38,7 +38,7 @@ export function drawElements(
     else if (el.kind === "image") image.draw(ctx, el, dc);
     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
     else if (el.kind === "text") text.draw(ctx, el, dc);
-    else if (el.kind === "line") drawLine(ctx, el, scene, t, byId);
+    else if (el.kind === "line") line.draw(ctx, el, dc);
     else drawParticles(ctx, el, scene, t);
   }
 }

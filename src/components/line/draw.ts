@@ -1,4 +1,4 @@
-import { animState, frac } from "../engine/anim.ts";
+import { animState, frac } from "../../engine/anim.ts";
 import {
   type PathSamples,
   type Pt,
@@ -6,22 +6,21 @@ import {
   pointAtFraction,
   resolveLine,
   samplePath,
-} from "../engine/geometry.ts";
+} from "../../engine/geometry.ts";
 import {
   type Ctx,
   dashFor,
   rgba,
   shadowOnly,
   tracePolyline,
-} from "../engine/paint.ts";
-import type { Element, LineEl, Scene } from "../model/model.ts";
+} from "../../engine/paint.ts";
+import type { DrawContext } from "../descriptor.ts";
+import type { LineEl } from "./descriptor.ts";
 
 export function drawLine(
   ctx: Ctx,
   el: LineEl,
-  scene: Scene,
-  t: number,
-  byId: Map<string, Element>,
+  { scene, t, byId }: DrawContext,
 ): void {
   const st = animState(el.anim, t, scene.duration);
   const s = samplePath(resolveLine(el, byId));
