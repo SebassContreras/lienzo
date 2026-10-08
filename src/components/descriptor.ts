@@ -49,6 +49,8 @@ export type Descriptor<E extends { kind: string } = Element> = {
   anims: readonly AnimKind[];
   /** Field paths ("x", "fill.opacity") that keyframes may animate. */
   animatable: readonly string[];
+  /** Lucide icon (PascalCase name) shown for the kind in the library. */
+  icon: string;
   /** Offered among the basic components in the library. */
   basic: boolean;
   /** Draws `el` as `animate` left it, with `transform` (A24). */

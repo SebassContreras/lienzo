@@ -43,6 +43,7 @@ export type GroupEl = Omit<ElementOf<"group", typeof fields>, "children"> & {
 export const group = defineComponent<GroupEl>({
   kind: "group",
   label: "Grupo",
+  icon: "Group",
   fields,
   sections: [{ title: "Grupo" }, { title: "Animación" }],
   anims: BOX_ANIMS,

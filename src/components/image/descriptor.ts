@@ -60,6 +60,7 @@ export type ImageEl = ElementOf<"image", typeof fields>;
 export const image = defineComponent<ImageEl>({
   kind: "image",
   label: "Imagen",
+  icon: "Image",
   fields,
   sections: [
     { title: "Imagen" },

@@ -86,6 +86,7 @@ export type ParticlesEl = ElementOf<"particles", typeof fields>;
 export const particles = defineComponent<ParticlesEl>({
   kind: "particles",
   label: "Partículas",
+  icon: "Sparkles",
   fields,
   sections: [
     { title: "Partículas" },

@@ -76,6 +76,7 @@ export type IconEl = ElementOf<"icon", typeof fields>;
 export const icon = defineComponent<IconEl>({
   kind: "icon",
   label: "Icono",
+  icon: "Shapes",
   fields,
   sections: [
     { title: "Icono" },

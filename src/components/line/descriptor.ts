@@ -92,6 +92,7 @@ export type LineEl = ElementOf<"line", typeof fields>;
 export const line = defineComponent<LineEl>({
   kind: "line",
   label: "Línea",
+  icon: "Spline",
   fields,
   sections: [
     { title: "Conexión" },

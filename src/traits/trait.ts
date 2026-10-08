@@ -1,30 +1,11 @@
-import type {
-  Background,
-  EllipseEl,
-  GroupEl,
-  IconEl,
-  ImageEl,
-  LineEl,
-  ParticlesEl,
-  RectEl,
-  ShapeEl,
-  TextEl,
-} from "../model/model.ts";
+import type { Background, Element, ShapeEl } from "../model/model.ts";
 
 /** A trait parameter is a plain JSON value so recipes can set it. */
 export type ParamValue = string | number | boolean;
 export type TraitParams = Record<string, ParamValue>;
 
 /** What each kind of trait target is, by the name recipes use for it. */
-export type TraitTargets = {
-  rect: RectEl;
-  ellipse: EllipseEl;
-  icon: IconEl;
-  image: ImageEl;
-  group: GroupEl;
-  text: TextEl;
-  line: LineEl;
-  particles: ParticlesEl;
+export type TraitTargets = { [E in Element as E["kind"]]: E } & {
   background: Background;
 };
 export type TraitTarget = keyof TraitTargets;

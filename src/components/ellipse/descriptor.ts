@@ -11,6 +11,7 @@ export type EllipseEl = ElementOf<"ellipse", typeof fields>;
 export const ellipse = defineComponent<EllipseEl>({
   kind: "ellipse",
   label: "Elipse",
+  icon: "Circle",
   fields,
   sections: SHAPE_SECTIONS,
   anims: BOX_ANIMS,

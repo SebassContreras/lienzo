@@ -1,0 +1,371 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index dc6e5ce..e763cf7 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -18,7 +18,12 @@ What exists today:
+ 
+ - Single React 19 + Vite app at the repo root, TypeScript on Node 24 (A1, A8, A9)
+ - Everything is drawn with Canvas 2D by `drawScene(ctx, scene, t)`; preview = export (A3)
+-- Scene = plain JSON typed in `src/model/` (A4); one file per component in `src/components/` (A5)
++- Scene = plain JSON (A4); every component kind is one descriptor in `src/components/<kind>/`
++  that declares its fields, defaults, inspector sections, draw function and animations; the
++  element types, the Zod element schema, default elements, the inspector and the library's
++  basic components are derived from the descriptors (A23)
++- Time is applied only by `animate(el, t, scene)` (`src/engine/animate.ts`) before a component
++  draws; components get the result as a transform (A24)
+ - Looping animations use whole cycles per loop (A6)
+ - Presets in `presets/`, scenes in `scenes/`, images in `assets/`, via the Vite middleware;
+   no database (A7)
+@@ -31,10 +36,9 @@ What exists today:
+ - Scenes and preset recipes are validated with Zod in `src/model/schema.ts` before any
+   import is written
+ 
+-Planned (decided, not built yet — specs 007–019):
++Planned (decided, not built yet — specs 007–011, 013–019):
+ 
+-- One descriptor per component kind drives schema, inspector, keyframes, compact JSON and tools
+-  (A23, spec 012); time is applied only by `animate(el, t, scene)` before drawing (A24);
++- Descriptors also drive keyframes, compact JSON and tools (A23, specs 015, 011, 007);
+   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
+ - Animation presets in `presets/animations/`, copied or linked, relative times and offsets
+   (A26, spec 019)
+@@ -45,11 +49,15 @@ Planned (decided, not built yet — specs 007–019):
+ ## Layout
+ 
+ ```
+-src/model/       scene types, defaults, size presets, fonts; Zod schemas (schema.ts)
+-src/engine/      drawScene, painting helpers, animation state, geometry, particle field
+-src/components/  one draw function per element kind (rect, ellipse, text, icon, image, line,
+-                 group, particles)
+-src/editor/      React UI: app shell, stage, library, background library, inspector
++src/model/       scene and background types, size presets, fonts; Zod schemas (schema.ts,
++                 element-schema.ts generated from the descriptors)
++src/engine/      drawScene, animate, painting helpers, animation state, geometry, particle field
++src/components/  index.ts = the registry; descriptor.ts = the descriptor type; fields/ = field
++                 builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);
++                 <kind>/descriptor.ts + <kind>/draw.ts per element kind (rect, ellipse, icon,
++                 image, group, text, line, particles)
++src/editor/      React UI: app shell, stage, library, background library, inspector (the
++                 element inspector is generated: layout.ts + field-editor.tsx)
+ src/export/      PNG / GIF / MP4
+ src/traits/      reusable style pieces, one file per trait
+ src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
+@@ -63,12 +71,15 @@ assets/          images used by scenes, named by content hash
+ 
+ ## Rules for agents
+ 
+-- To add a component: a type, a `default…()` and its `ANIMS_BY_KIND` entry in
+-  `src/model/model.ts`; a draw file in `src/components/`; a case in `src/engine/render.ts`;
+-  an inspector section; an entry in `BASICS` (`src/editor/app.tsx`); an `apply.<kind>` in each trait
+-  that should style it (and the kind in `TraitTargets`); its schema in `src/model/schema.ts`
+-  (the element union and the recipe `kind` list) and the known-kinds list in
+-  `src/presets/resolve.test.ts`; and a built-in preset recipe with a `category`.
++- To add a component: add a descriptor folder `src/components/<kind>/` with `descriptor.ts`
++  (fields built from `src/components/fields/`, composing the shared groups; sections; the
++  animations it offers; label and library icon; `defineComponent`) and `draw.ts` (draws the
++  element with the transform `animate` gives it), then register it in
++  `src/components/index.ts` (import, `COMPONENTS`, `RegisteredElement`). Nothing else: type,
++  defaults, schema, inspector and library entry follow. A control the field types don't
++  cover is a `custom` field or a `widget` with a renderer in `WIDGETS`
++  (`src/editor/field-editor.tsx`). Optionally, an `apply.<kind>` in traits that should style
++  it and a built-in preset recipe with a `category`.
+ - To add a preset: a JSON recipe in `presets/built-in/` combining traits; add a trait in
+   `src/traits/` only when no existing one fits.
+ - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+index 51b6202..db1f825 100644
+--- a/src/components/descriptor.ts
++++ b/src/components/descriptor.ts
+@@ -49,6 +49,8 @@ export type Descriptor<E extends { kind: string } = Element> = {
+   anims: readonly AnimKind[];
+   /** Field paths ("x", "fill.opacity") that keyframes may animate. */
+   animatable: readonly string[];
++  /** Lucide icon (PascalCase name) shown for the kind in the library. */
++  icon: string;
+   /** Offered among the basic components in the library. */
+   basic: boolean;
+   /** Draws `el` as `animate` left it, with `transform` (A24). */
+diff --git a/src/components/ellipse/descriptor.ts b/src/components/ellipse/descriptor.ts
+index 22537f4..79e281a 100644
+--- a/src/components/ellipse/descriptor.ts
++++ b/src/components/ellipse/descriptor.ts
+@@ -11,6 +11,7 @@ export type EllipseEl = ElementOf<"ellipse", typeof fields>;
+ export const ellipse = defineComponent<EllipseEl>({
+   kind: "ellipse",
+   label: "Elipse",
++  icon: "Circle",
+   fields,
+   sections: SHAPE_SECTIONS,
+   anims: BOX_ANIMS,
+diff --git a/src/components/group/descriptor.ts b/src/components/group/descriptor.ts
+index e4cc618..e02594b 100644
+--- a/src/components/group/descriptor.ts
++++ b/src/components/group/descriptor.ts
+@@ -43,6 +43,7 @@ export type GroupEl = Omit<ElementOf<"group", typeof fields>, "children"> & {
+ export const group = defineComponent<GroupEl>({
+   kind: "group",
+   label: "Grupo",
++  icon: "Group",
+   fields,
+   sections: [{ title: "Grupo" }, { title: "Animación" }],
+   anims: BOX_ANIMS,
+diff --git a/src/components/icon/descriptor.ts b/src/components/icon/descriptor.ts
+index 2783fc9..6ed84d5 100644
+--- a/src/components/icon/descriptor.ts
++++ b/src/components/icon/descriptor.ts
+@@ -76,6 +76,7 @@ export type IconEl = ElementOf<"icon", typeof fields>;
+ export const icon = defineComponent<IconEl>({
+   kind: "icon",
+   label: "Icono",
++  icon: "Shapes",
+   fields,
+   sections: [
+     { title: "Icono" },
+diff --git a/src/components/image/descriptor.ts b/src/components/image/descriptor.ts
+index 272d756..dc62221 100644
+--- a/src/components/image/descriptor.ts
++++ b/src/components/image/descriptor.ts
+@@ -60,6 +60,7 @@ export type ImageEl = ElementOf<"image", typeof fields>;
+ export const image = defineComponent<ImageEl>({
+   kind: "image",
+   label: "Imagen",
++  icon: "Image",
+   fields,
+   sections: [
+     { title: "Imagen" },
+diff --git a/src/components/line/descriptor.ts b/src/components/line/descriptor.ts
+index f09a1c6..1b1160a 100644
+--- a/src/components/line/descriptor.ts
++++ b/src/components/line/descriptor.ts
+@@ -92,6 +92,7 @@ export type LineEl = ElementOf<"line", typeof fields>;
+ export const line = defineComponent<LineEl>({
+   kind: "line",
+   label: "Línea",
++  icon: "Spline",
+   fields,
+   sections: [
+     { title: "Conexión" },
+diff --git a/src/components/particles/descriptor.ts b/src/components/particles/descriptor.ts
+index f28b6b9..5705c41 100644
+--- a/src/components/particles/descriptor.ts
++++ b/src/components/particles/descriptor.ts
+@@ -86,6 +86,7 @@ export type ParticlesEl = ElementOf<"particles", typeof fields>;
+ export const particles = defineComponent<ParticlesEl>({
+   kind: "particles",
+   label: "Partículas",
++  icon: "Sparkles",
+   fields,
+   sections: [
+     { title: "Partículas" },
+diff --git a/src/components/rect/descriptor.ts b/src/components/rect/descriptor.ts
+index b87a970..17b1730 100644
+--- a/src/components/rect/descriptor.ts
++++ b/src/components/rect/descriptor.ts
+@@ -92,6 +92,7 @@ export type RectEl = ElementOf<"rect", typeof fields>;
+ export const rect = defineComponent<RectEl>({
+   kind: "rect",
+   label: "Rectángulo",
++  icon: "Square",
+   fields,
+   sections: SHAPE_SECTIONS,
+   anims: BOX_ANIMS,
+diff --git a/src/components/text/descriptor.ts b/src/components/text/descriptor.ts
+index ccf7028..f7a0622 100644
+--- a/src/components/text/descriptor.ts
++++ b/src/components/text/descriptor.ts
+@@ -59,6 +59,7 @@ export type TextEl = ElementOf<"text", typeof fields>;
+ export const text = defineComponent<TextEl>({
+   kind: "text",
+   label: "Texto",
++  icon: "Type",
+   fields,
+   sections: [
+     { title: "Texto" },
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 362fcb4..17e5f31 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -1,16 +1,10 @@
+ import {
+-  Circle,
+   FilePlus2,
+-  Image,
+   PaintBucket,
+   Pause,
+   Play,
+   Redo2,
+-  Shapes,
+   Sparkles,
+-  Spline,
+-  Square,
+-  Type,
+   Undo2,
+   Upload,
+ } from "lucide-react";
+@@ -23,6 +17,7 @@ import {
+   useRef,
+   useState,
+ } from "react";
++import { COMPONENTS, createElement } from "../components/index.ts";
+ import { demoScene } from "../demo.ts";
+ import {
+   centerOn,
+@@ -41,14 +36,7 @@ import { ExportControls } from "../export/export-controls.tsx";
+ import {
+   cloneElement,
+   cloneElements,
+-  defaultEllipse,
+-  defaultIcon,
+-  defaultImage,
+-  defaultLine,
+-  defaultParticles,
+-  defaultRect,
+   defaultScene,
+-  defaultText,
+   type Element,
+   type Scene,
+ } from "../model/model.ts";
+@@ -75,6 +63,7 @@ import {
+   BackgroundLibrary,
+   backgroundItems,
+ } from "./backgrounds.tsx";
++import { IconSvg } from "./icon-picker.tsx";
+ import {
+   ElementInspector,
+   MultiInspector,
+@@ -138,16 +127,18 @@ function loadInitialScene(): Scene {
+   return demoScene();
+ }
+ 
+-const BASICS: LibraryItem[] = [
+-  { name: "Rectángulo", element: defaultRect() },
+-  { name: "Elipse", element: defaultEllipse() },
+-  { name: "Icono", element: defaultIcon() },
+-  { name: "Imagen", element: defaultImage() },
+-  { name: "Texto", element: defaultText() },
+-  { name: "Línea", element: defaultLine() },
+-  { name: "Partículas", element: defaultParticles() },
+-];
+-const BASIC_ICONS = [Square, Circle, Shapes, Image, Type, Spline, Sparkles];
++/** Every kind its descriptor offers in the library, in registry order. */
++const BASIC_KINDS = COMPONENTS.filter((d) => d.basic);
++const BASICS: LibraryItem[] = BASIC_KINDS.map((d) => ({
++  name: d.label,
++  element: createElement(d.kind),
++}));
++const BASIC_ICONS = BASIC_KINDS.map(
++  (d) =>
++    function BasicIcon({ size }: { size?: number }) {
++      return <IconSvg name={d.icon} size={size} />;
++    },
++);
+ 
+ const BUILT_INS = recipeItems(BUILT_IN_RECIPES);
+ const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(
+diff --git a/src/editor/library.tsx b/src/editor/library.tsx
+index 2c0bc74..461ed43 100644
+--- a/src/editor/library.tsx
++++ b/src/editor/library.tsx
+@@ -1,13 +1,12 @@
+ import {
+   Download,
+-  type LucideIcon,
+   Pencil,
+   Replace,
+   Tag,
+   Trash2,
+   TriangleAlert,
+ } from "lucide-react";
+-import { useEffect, useRef } from "react";
++import { type ComponentType, useEffect, useRef } from "react";
+ import { boxOf, centerOn } from "../engine/geometry.ts";
+ import { drawScene } from "../engine/render.ts";
+ import { defaultScene, type Element, type Scene } from "../model/model.ts";
+@@ -136,7 +135,7 @@ export function Library({
+   title: string;
+   items: LibraryItem[];
+   /** Shows an icon per item instead of a canvas thumbnail. */
+-  icons?: LucideIcon[];
++  icons?: ComponentType<{ size?: number }>[];
+   background: Scene["background"];
+   onAdd: (element: Element) => void;
+   empty?: string;
+@@ -175,7 +174,10 @@ export function Library({
+     </section>
+   );
+ 
+-  function itemButton(item: LibraryItem, Icon?: LucideIcon) {
++  function itemButton(
++    item: LibraryItem,
++    Icon?: ComponentType<{ size?: number }>,
++  ) {
+     if ("error" in item) {
+       return (
+         <button
+diff --git a/src/presets/resolve.test.ts b/src/presets/resolve.test.ts
+index faa4936..c54ef36 100644
+--- a/src/presets/resolve.test.ts
++++ b/src/presets/resolve.test.ts
+@@ -1,4 +1,5 @@
+ import { describe, expect, it } from "vitest";
++import { KINDS } from "../components/index.ts";
+ import {
+   defaultLine,
+   defaultRect,
+@@ -23,18 +24,7 @@ describe("traits", () => {
+       const kinds = Object.keys(trait.apply);
+       expect(kinds.length).toBeGreaterThan(0);
+       for (const k of kinds) {
+-        expect([
+-          "shape",
+-          "rect",
+-          "ellipse",
+-          "icon",
+-          "image",
+-          "group",
+-          "text",
+-          "line",
+-          "particles",
+-          "background",
+-        ]).toContain(k);
++        expect(["shape", ...KINDS, "background"]).toContain(k);
+       }
+     }
+   });
+diff --git a/src/traits/trait.ts b/src/traits/trait.ts
+index 8aa1258..4dea02e 100644
+--- a/src/traits/trait.ts
++++ b/src/traits/trait.ts
+@@ -1,30 +1,11 @@
+-import type {
+-  Background,
+-  EllipseEl,
+-  GroupEl,
+-  IconEl,
+-  ImageEl,
+-  LineEl,
+-  ParticlesEl,
+-  RectEl,
+-  ShapeEl,
+-  TextEl,
+-} from "../model/model.ts";
++import type { Background, Element, ShapeEl } from "../model/model.ts";
+ 
+ /** A trait parameter is a plain JSON value so recipes can set it. */
+ export type ParamValue = string | number | boolean;
+ export type TraitParams = Record<string, ParamValue>;
+ 
+ /** What each kind of trait target is, by the name recipes use for it. */
+-export type TraitTargets = {
+-  rect: RectEl;
+-  ellipse: EllipseEl;
+-  icon: IconEl;
+-  image: ImageEl;
+-  group: GroupEl;
+-  text: TextEl;
+-  line: LineEl;
+-  particles: ParticlesEl;
++export type TraitTargets = { [E in Element as E["kind"]]: E } & {
+   background: Background;
+ };
+ export type TraitTarget = keyof TraitTargets;

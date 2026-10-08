@@ -92,6 +92,7 @@ export type RectEl = ElementOf<"rect", typeof fields>;
 export const rect = defineComponent<RectEl>({
   kind: "rect",
   label: "Rectángulo",
+  icon: "Square",
   fields,
   sections: SHAPE_SECTIONS,
   anims: BOX_ANIMS,

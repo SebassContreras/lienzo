@@ -1,13 +1,12 @@
 import {
   Download,
-  type LucideIcon,
   Pencil,
   Replace,
   Tag,
   Trash2,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { type ComponentType, useEffect, useRef } from "react";
 import { boxOf, centerOn } from "../engine/geometry.ts";
 import { drawScene } from "../engine/render.ts";
 import { defaultScene, type Element, type Scene } from "../model/model.ts";
@@ -136,7 +135,7 @@ export function Library({
   title: string;
   items: LibraryItem[];
   /** Shows an icon per item instead of a canvas thumbnail. */
-  icons?: LucideIcon[];
+  icons?: ComponentType<{ size?: number }>[];
   background: Scene["background"];
   onAdd: (element: Element) => void;
   empty?: string;
@@ -175,7 +174,10 @@ export function Library({
     </section>
   );
 
-  function itemButton(item: LibraryItem, Icon?: LucideIcon) {
+  function itemButton(
+    item: LibraryItem,
+    Icon?: ComponentType<{ size?: number }>,
+  ) {
     if ("error" in item) {
       return (
         <button

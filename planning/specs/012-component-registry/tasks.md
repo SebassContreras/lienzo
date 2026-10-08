@@ -46,7 +46,8 @@
       covers: R1@1, R2@1, R3@1, R4@1, R6@1
       kind: test
       changes: src/editor/field-editor.tsx (+3 -0), src/test/golden-scenes.ts (+139 -0), src/test/legacy-schema.ts (+237 -0), src/test/recording-ctx.ts (+212 -0), src/test/registry.test.ts (+214 -0), src/test/render-log.ts (+20 -0), src/test/render.golden.json (+20 -0), src/test/render.test.ts (+29 -0)
-- [ ] T016 [agent] [status:todo] AGENTS.md: "To add a component" becomes "add a descriptor folder"
+- [x] T016 [agent] [status:done] AGENTS.md: "To add a component" becomes "add a descriptor folder"
       covers: R5@1
+      changes: AGENTS.md (+26 -15), src/components/descriptor.ts (+2 -0), src/components/ellipse/descriptor.ts (+1 -0), src/components/group/descriptor.ts (+1 -0), src/components/icon/descriptor.ts (+1 -0), src/components/image/descriptor.ts (+1 -0), src/components/line/descriptor.ts (+1 -0), src/components/particles/descriptor.ts (+1 -0), src/components/rect/descriptor.ts (+1 -0), src/components/text/descriptor.ts (+1 -0), src/editor/app.tsx (+14 -23), src/editor/library.tsx (+6 -4), src/presets/resolve.test.ts (+2 -12), src/traits/trait.ts (+2 -21)
 - [ ] T017 [agent] [status:todo] Revise A5 (one file per component) to the descriptor folders of A23 through the spectrace-change flow, re-pointing the tasks that cover A5
       covers: D1@1, A5@1, A23@1

@@ -59,6 +59,7 @@ export type TextEl = ElementOf<"text", typeof fields>;
 export const text = defineComponent<TextEl>({
   kind: "text",
   label: "Texto",
+  icon: "Type",
   fields,
   sections: [
     { title: "Texto" },
