@@ -1,14 +1,19 @@
-import { animState } from "../engine/anim.ts";
-import { boxOf } from "../engine/geometry.ts";
-import { imageFor } from "../engine/images.ts";
-import { type Ctx, rgba, shadowOnly, withTransform } from "../engine/paint.ts";
-import type { ImageEl, Scene } from "../model/model.ts";
+import { animState } from "../../engine/anim.ts";
+import { boxOf } from "../../engine/geometry.ts";
+import { imageFor } from "../../engine/images.ts";
+import {
+  type Ctx,
+  rgba,
+  shadowOnly,
+  withTransform,
+} from "../../engine/paint.ts";
+import type { DrawContext } from "../descriptor.ts";
+import type { ImageEl } from "./descriptor.ts";
 
 export function drawImage(
   ctx: Ctx,
   el: ImageEl,
-  scene: Scene,
-  t: number,
+  { scene, t }: DrawContext,
 ): void {
   const st = animState(el.anim, t, scene.duration);
   const box = boxOf(el);

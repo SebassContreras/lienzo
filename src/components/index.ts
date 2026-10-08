@@ -7,12 +7,14 @@ import type { Descriptor } from "./descriptor.ts";
 import { ellipse } from "./ellipse/descriptor.ts";
 import { defaultsOf } from "./fields/index.ts";
 import { icon } from "./icon/descriptor.ts";
+import { image } from "./image/descriptor.ts";
 import { rect } from "./rect/descriptor.ts";
 
 export const COMPONENTS = [
   rect,
   ellipse,
   icon,
+  image,
 ] as const satisfies readonly Descriptor<{
   kind: string;
 }>[];
