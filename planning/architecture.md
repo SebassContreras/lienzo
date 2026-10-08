@@ -13,7 +13,7 @@ exactly what I wanted").
 - A4@1: A scene is plain JSON (size, loop duration, fps, background, ordered element list) defined by TypeScript types in `src/model/` — why: JSON is what presets and scenes are stored as; no translation layer.
 - A5@1: Each canvas component (rect, text, line, …) lives in its own file in `src/components/` and exports its draw function; shared painting helpers (glow, shadow, gradients, animation state) live in `src/engine/` — why: adding a component means adding a file.
 - A6@1: Animations are a function of time within one loop; looping animations use a whole number of cycles per loop so exported GIF and MP4 loops are seamless — why: validated in the prototype.
-- A7@2: No database. Presets and scenes are JSON files in `presets/` and `scenes/`, and the images scenes use are files in `assets/` (named by content hash), all at the repo root and versioned with it; they are read and written through a small Vite dev-server middleware (`/api/presets`, `/api/scenes`, `/api/assets`); the current scene is also autosaved to `localStorage` — why: files are easy to inspect, copy and version, and a scene that uses images opens on any clone.
+- A7@3: No database. Presets and scenes are JSON files in `presets/` and `scenes/`, and the images and 3D models (`.glb`) scenes use are files in `assets/` (named by content hash), all at the repo root and versioned with it; they are read and written through a small Vite dev-server middleware (`/api/presets`, `/api/scenes`, `/api/assets`); the current scene is also autosaved to `localStorage` — why: files are easy to inspect, copy and version, and a scene that uses images or models opens on any clone.
 
 ## Stack
 
@@ -41,3 +41,10 @@ exactly what I wanted").
 - A20@1: Every operation on scenes and presets outside the editor is a tool defined once in `src/service/tools/` (one file per tool): name, description, Zod input and output, `run(input, ctx)`; the CLI and the MCP server are thin adapters that expose every tool of the one registry and hold no logic — why: both stay identical, and a new capability is one file.
 - A21@1: Rendering outside the editor loads the app in headless Chromium through Playwright, using the installed Chrome when present so MP4 can use H.264 — why: keeps A3 (preview = export) with no second drawing path.
 - A22@1: The MCP server uses `@modelcontextprotocol/sdk` (MIT) over stdio; the CLI runs with `tsx` — why: the official SDK; no build step for a local tool.
+
+## Components and time
+
+- A23@1: Every component kind is one descriptor in `src/components/<kind>/` declaring its fields (type, range, label, inspector section), defaults, draw function and animatable properties; the scene schema, the inspector, keyframe targets, the compact format and the service tools are derived from the descriptors; shared field groups (box, fill, stroke, glow, shadow, label, anim) are reusable pieces descriptors compose — why: a new component or field is declared once and works everywhere.
+- A24@1: Time is applied by one pure layer, `animate(el, t, scene)`, that resolves preset animations and keyframe tracks into a plain element plus its transform before any component draws; components never read `t` to animate — why: every component gets every kind of animation with no code of its own.
+- A25@1: The 3D element renders with three.js into an offscreen WebGL canvas composited into the 2D canvas with `drawImage`, driven only by `t` — why: keeps `drawScene` the single drawing path (A3).
+- A26@1: Animations can be saved as animation presets: JSON files in `presets/animations/` holding an `anim` and keyframe tracks with times relative to their start and movements relative to the element; applying one copies it by default, or links it so later edits reach every linked element — why: the same reuse model as element presets (A19), without After Effects' known pitfalls (absolute positions, playhead-dependent timing, overwriting unrelated animation).

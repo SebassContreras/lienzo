@@ -7,9 +7,10 @@
       covers: D2@1, A11@1
       changes: package.json (+1 -0), pnpm-lock.yaml (+8 -0), src/components/icon.ts (+61 -0), src/editor/app.tsx (+4 -1), src/editor/icon-picker.tsx (+89 -0), src/editor/inspector.tsx (+174 -0), src/engine/icon-shapes.ts (+112 -0), src/engine/render.ts (+2 -0), src/model/model.ts (+75 -12), src/styles.css (+31 -0), src/traits/trait.ts (+2 -0)
 - [x] T003 [agent] [status:done] Image component with the `assets/` upload middleware
-      covers: D3@1, A7@2
+      covers: D3@1, A7@3
       changes: biome.json (+1 -0), src/components/image.ts (+77 -0), src/editor/app.tsx (+4 -1), src/editor/inspector.tsx (+238 -60), src/editor/stage.tsx (+5 -0), src/engine/images.ts (+67 -0), src/engine/render.ts (+2 -0), src/export/export.ts (+2 -0), src/model/model.ts (+51 -1), src/presets/store.ts (+14 -0), src/styles.css (+18 -0), src/traits/trait.ts (+2 -0), vite.config.ts (+86 -1)
       └─ reviewed 2026-10-07: A7@2 only adds `assets/` to the versioned folders; this work still holds
+      └─ reviewed 2026-10-08: A7@3 only adds 3D models to what `assets/` holds; this work still holds
 - [x] T004 [agent] [status:done] Multi-select: shift-click, selection box, move together
       covers: D4@1
       changes: src/editor/app.tsx (+62 -34), src/editor/inspector.tsx (+31 -0), src/editor/stage.tsx (+118 -47), src/engine/geometry.ts (+25 -0)
@@ -31,8 +32,10 @@
       kind: test
       changes: none
 - [x] T010 [agent] [status:done] Keep `assets/` in the repo with a `.gitkeep`
-      covers: A7@2
+      covers: A7@3
       changes: assets/.gitkeep (+0 -0)
+      └─ reviewed 2026-10-08: A7@3 only adds 3D models to what `assets/` holds; this work still holds
 - [x] T011 [agent] [status:done] README and AGENTS.md describe the new components, shortcuts, folders and the steps to add a component
-      covers: D1@1, D2@1, D3@1, D4@1, D5@1, D6@2, A7@2
+      covers: D1@1, D2@1, D3@1, D4@1, D5@1, D6@2, A7@3
       changes: AGENTS.md (+12 -5), README.md (+21 -7)
+      └─ reviewed 2026-10-08: A7@3 only adds 3D models to what `assets/` holds; this work still holds

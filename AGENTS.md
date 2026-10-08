@@ -14,6 +14,9 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 
 ## Stack & conventions
 
+- One descriptor per component kind drives schema, inspector, keyframes, compact JSON and tools
+  (A23); time is applied only by `animate(el, t, scene)` before drawing (A24); 3D = three.js in an
+  offscreen WebGL canvas composited with `drawImage` (A25)
 - CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
   in tools (A20); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
   over stdio, CLI via `tsx` (A22)

@@ -17,3 +17,8 @@
 - [ ] T008 [agent] [status:todo] Test: every tool against a temp dir; invalid writes return the failing path and write nothing; written scenes parse as editor scenes
       covers: R1@1, R2@1, R3@1, R4@1, R5@1
       kind: test
+- [ ] T009 [agent] [status:todo] Element and keyframe tool inputs derived from the descriptor registry
+      covers: D5@1, A23@1
+- [ ] T010 [agent] [status:todo] Test: a test-only descriptor is usable from every element tool with no tool change; keyframes added through the tools play in the scene
+      covers: R6@1
+      kind: test

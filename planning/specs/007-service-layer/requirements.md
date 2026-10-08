@@ -16,6 +16,7 @@ Scripts and AI agents (Claude) that build posts, and the maintainer from the ter
 - R3@1: Tools add an element to a scene (from a preset or a kind, optionally at a position), update an element with a partial patch, remove it, move it in the layer order, and set the scene background (from a background preset or values).
 - R4@1: Every tool that writes validates the result first; an invalid input or result returns an error naming the failing path, and nothing is written.
 - R5@1: Scenes written by the tools open in the editor's «Escenas guardadas» without conversion.
+- R6@1: Element tools accept every component kind and field of the descriptor registry, keyframe tracks included, so a component added later is usable from the tools with no tool change.
 
 ## Out of scope
 
@@ -24,7 +25,7 @@ Scripts and AI agents (Claude) that build posts, and the maintainer from the ter
 
 ## Dependencies
 
-003, 004, 005.
+003, 004, 005, 012, 015.
 
 ## Owner split
 

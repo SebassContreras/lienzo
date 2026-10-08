@@ -7,6 +7,8 @@
 - D3@1 (implements R3): Adding an element reuses `resolveElement`, `defaultElement` and `centerOn`; the new element gets a fresh id, returned by the tool; patches deep-merge like `deepMerge` in `src/presets/resolve.ts`.
 - D4@1 (implements R4): Every write goes through `parseScene` / `parsePresetRecipe` (`src/model/schema.ts`) before touching disk; errors are `{ code, message, path }`, messages in Spanish (A16), tool descriptions in English (read by the model).
 
+- D5@1 (implements R6): Element tools take their input schemas from the descriptor registry (A23) and add or edit keyframes through the track model of 015.
+
 ## Deliverables
 
 `src/service/` (registry, ctx, store, built-in loader), `src/service/tools/*.ts`.

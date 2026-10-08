@@ -16,10 +16,11 @@
       covers: D8@1, A10@1
       changes: src/editor/app.tsx (+10 -1), src/export/export-controls.tsx (+71 -0), src/export/export.ts (+133 -0)
 - [x] T006 [agent] [status:done] Presets and scenes as JSON files, built-in presets, autosave
-      covers: D9@2, A7@2
+      covers: D9@2, A7@3
       changes: src/editor/app.tsx (+73 -1), src/presets/built-in.ts (+220 -0), src/presets/scene-files.tsx (+70 -0), src/presets/slug.ts (+9 -0), src/presets/store.ts (+38 -0), src/styles.css (+2 -2), vite.config.ts (+65 -2)
       └─ reviewed 2026-10-07: middleware, store, scene files and autosave still hold; the preset list it wrote was replaced by recipes in 004/T007
       └─ reviewed 2026-10-07: A7@2 only adds `assets/` to the versioned folders; this work still holds
+      └─ reviewed 2026-10-08: A7@3 only adds 3D models to what `assets/` holds; this work still holds
 - [x] T007 [agent] [status:done] MCP demo scene
       covers: D10@1
       changes: src/demo.ts (+186 -0), src/editor/app.tsx (+10 -2)

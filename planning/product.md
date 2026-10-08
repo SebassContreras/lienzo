@@ -32,5 +32,4 @@ create, edit and export scenes.
 
 - Brand kits and templates.
 - Accounts, cloud hosting, collaboration, publishing to social networks.
-- Timeline/keyframe editing, audio.
-- 3D components (later, if the 2D editor proves itself).
+- Audio.

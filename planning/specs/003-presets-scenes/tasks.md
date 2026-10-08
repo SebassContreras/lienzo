@@ -4,8 +4,9 @@
       covers: D4@2
       changes: package.json (+2 -1), pnpm-lock.yaml (+8 -0), src/model/schema.ts (+276 -0)
 - [x] T002 [agent] [status:done] Delete and rename routes in the JSON middleware
-      covers: D1@2, A7@2
+      covers: D1@2, A7@3
       changes: src/presets/json-store.ts (+85 -0), src/presets/store.ts (+33 -0), vite.config.ts (+15 -33)
+      └─ reviewed 2026-10-08: A7@3 only adds 3D models to what `assets/` holds; this work still holds
 - [x] T003 [agent] [status:done] Preset actions in the library: rename, overwrite, delete
       covers: D1@2
       changes: src/editor/app.tsx (+76 -20), src/editor/backgrounds.tsx (+56 -34), src/editor/library.tsx (+128 -43), src/presets/store.ts (+17 -6), src/styles.css (+17 -0)
