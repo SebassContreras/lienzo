@@ -4,7 +4,7 @@ import { drawIcon } from "../components/icon.ts";
 import { drawImage } from "../components/image.ts";
 import { drawLine } from "../components/line.ts";
 import { drawParticles } from "../components/particles.ts";
-import { drawRect } from "../components/rect.ts";
+import { rect } from "../components/rect/descriptor.ts";
 import { drawText } from "../components/text.ts";
 import type { Background, Element, Scene } from "../model/model.ts";
 import { indexById, indexElements } from "./geometry.ts";
@@ -30,8 +30,9 @@ export function drawElements(
   t: number,
   byId: Map<string, Element> = indexElements(elements),
 ): void {
+  const dc = { scene, t, byId, drawElements };
   for (const el of elements) {
-    if (el.kind === "rect") drawRect(ctx, el, scene, t);
+    if (el.kind === "rect") rect.draw(ctx, el, dc);
     else if (el.kind === "ellipse") drawEllipse(ctx, el, scene, t);
     else if (el.kind === "icon") drawIcon(ctx, el, scene, t);
     else if (el.kind === "image") drawImage(ctx, el, scene, t);

@@ -5,8 +5,9 @@
 import { newId } from "../model/id.ts";
 import type { Descriptor } from "./descriptor.ts";
 import { defaultsOf } from "./fields/index.ts";
+import { rect } from "./rect/descriptor.ts";
 
-export const COMPONENTS = [] as const satisfies readonly Descriptor<{
+export const COMPONENTS = [rect] as const satisfies readonly Descriptor<{
   kind: string;
 }>[];
 

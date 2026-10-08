@@ -6,8 +6,9 @@
 - [x] T002 [agent] [status:done] Descriptor type and the component registry
       covers: D1@1, A23@1
       changes: src/components/descriptor.ts (+80 -0), src/components/index.ts (+52 -0), src/model/id.ts (+4 -0), src/model/model.ts (+3 -3)
-- [ ] T003 [agent] [status:todo] Descriptor for rect
+- [x] T003 [agent] [status:done] Descriptor for rect
       covers: D1@1
+      changes: src/components/ellipse.ts (+7 -2), src/components/index.ts (+2 -1), src/components/rect/descriptor.ts (+101 -0), src/components/rect.ts → src/components/rect/draw.ts (+9 -9), src/engine/render.ts (+3 -2)
 - [ ] T004 [agent] [status:todo] Descriptor for ellipse
       covers: D1@1
 - [ ] T005 [agent] [status:todo] Descriptor for icon
