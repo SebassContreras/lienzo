@@ -3,7 +3,7 @@ import { group } from "../components/group/descriptor.ts";
 import { icon } from "../components/icon/descriptor.ts";
 import { image } from "../components/image/descriptor.ts";
 import { line } from "../components/line/descriptor.ts";
-import { drawParticles } from "../components/particles.ts";
+import { particles } from "../components/particles/descriptor.ts";
 import { rect } from "../components/rect/descriptor.ts";
 import { text } from "../components/text/descriptor.ts";
 import type { Background, Element, Scene } from "../model/model.ts";
@@ -39,7 +39,7 @@ export function drawElements(
     else if (el.kind === "group") group.draw(ctx, el, dc);
     else if (el.kind === "text") text.draw(ctx, el, dc);
     else if (el.kind === "line") line.draw(ctx, el, dc);
-    else drawParticles(ctx, el, scene, t);
+    else particles.draw(ctx, el, dc);
   }
 }
 

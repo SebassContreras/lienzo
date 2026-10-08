@@ -27,8 +27,9 @@
 - [x] T009 [agent] [status:done] Descriptor for group
       covers: D1@1
       changes: src/components/group/descriptor.ts (+49 -0), src/components/group.ts → src/components/group/draw.ts (+6 -14), src/components/index.ts (+2 -0), src/engine/render.ts (+2 -2)
-- [ ] T010 [agent] [status:todo] Descriptor for particles
+- [x] T010 [agent] [status:done] Descriptor for particles
       covers: D1@1
+      changes: src/components/index.ts (+2 -0), src/components/particles/descriptor.ts (+99 -0), src/components/particles.ts → src/components/particles/draw.ts (+12 -7), src/engine/render.ts (+2 -2)
 - [ ] T011 [agent] [status:todo] Scene schema and element types generated from the descriptors
       covers: D2@1
 - [ ] T012 [agent] [status:todo] `animate(el, t, scene)` layer and the new draw signature

@@ -10,6 +10,7 @@ import { group } from "./group/descriptor.ts";
 import { icon } from "./icon/descriptor.ts";
 import { image } from "./image/descriptor.ts";
 import { line } from "./line/descriptor.ts";
+import { particles } from "./particles/descriptor.ts";
 import { rect } from "./rect/descriptor.ts";
 import { text } from "./text/descriptor.ts";
 
@@ -21,6 +22,7 @@ export const COMPONENTS = [
   group,
   text,
   line,
+  particles,
 ] as const satisfies readonly Descriptor<{
   kind: string;
 }>[];

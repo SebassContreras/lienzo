@@ -1,8 +1,14 @@
-import { animState } from "../engine/anim.ts";
-import { boxOf } from "../engine/geometry.ts";
-import { type Ctx, rgba, shadowOnly, withTransform } from "../engine/paint.ts";
-import { linkAlpha, particlePositions } from "../engine/particle-field.ts";
-import type { ParticlesEl, Scene } from "../model/model.ts";
+import { animState } from "../../engine/anim.ts";
+import { boxOf } from "../../engine/geometry.ts";
+import {
+  type Ctx,
+  rgba,
+  shadowOnly,
+  withTransform,
+} from "../../engine/paint.ts";
+import { linkAlpha, particlePositions } from "../../engine/particle-field.ts";
+import type { DrawContext } from "../descriptor.ts";
+import type { ParticlesEl } from "./descriptor.ts";
 
 /** Link opacities are rounded to this many steps so all lines draw in a few strokes. */
 const ALPHA_STEPS = 16;
@@ -11,8 +17,7 @@ const ALPHA_STEPS = 16;
 export function drawParticles(
   ctx: Ctx,
   el: ParticlesEl,
-  scene: Scene,
-  t: number,
+  { scene, t }: DrawContext,
 ): void {
   const st = animState(el.anim, t, scene.duration);
   const box = boxOf(el);
