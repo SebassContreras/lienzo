@@ -14,12 +14,8 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 
 ## Stack & conventions
 
-- One descriptor per component kind drives schema, inspector, keyframes, compact JSON and tools
-  (A23); time is applied only by `animate(el, t, scene)` before drawing (A24); 3D = three.js in an
-  offscreen WebGL canvas composited with `drawImage` (A25)
-- CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
-  in tools (A20); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
-  over stdio, CLI via `tsx` (A22)
+What exists today:
+
 - Single React 19 + Vite app at the repo root, TypeScript on Node 24 (A1, A8, A9)
 - Everything is drawn with Canvas 2D by `drawScene(ctx, scene, t)`; preview = export (A3)
 - Scene = plain JSON typed in `src/model/` (A4); one file per component in `src/components/` (A5)
@@ -32,17 +28,32 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 - pnpm only (A13); Biome + Vitest (A14); CI runs lint, typecheck, test (A15)
 - UI text in Spanish; code, comments and docs in English (A16)
 - Conventional Commits (A17); MIT-compatible deps only (A18)
+- Scenes and preset recipes are validated with Zod in `src/model/schema.ts` before any
+  import is written
+
+Planned (decided, not built yet — specs 007–019):
+
+- One descriptor per component kind drives schema, inspector, keyframes, compact JSON and tools
+  (A23, spec 012); time is applied only by `animate(el, t, scene)` before drawing (A24);
+  3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
+- Animation presets in `presets/animations/`, copied or linked, relative times and offsets
+  (A26, spec 019)
+- CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
+  in tools (A20); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
+  over stdio, CLI via `tsx` (A22) — specs 007–010, built last
 
 ## Layout
 
 ```
-src/model/       scene types, defaults, size presets, fonts
-src/engine/      drawScene, painting helpers, animation state, geometry
-src/components/  one draw function per element kind (rect, ellipse, text, icon, image, line, group)
-src/editor/      React UI: app shell, stage, library, inspector
+src/model/       scene types, defaults, size presets, fonts; Zod schemas (schema.ts)
+src/engine/      drawScene, painting helpers, animation state, geometry, particle field
+src/components/  one draw function per element kind (rect, ellipse, text, icon, image, line,
+                 group, particles)
+src/editor/      React UI: app shell, stage, library, background library, inspector
 src/export/      PNG / GIF / MP4
 src/traits/      reusable style pieces, one file per trait
-src/presets/     recipe resolver and the JSON store client
+src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
+                 store.ts), categories and filter, JSON import/export helpers, scenes dialog
 src/types/       type declarations for packages that ship none
 src/demo.ts      the "how MCP works" demo scene
 presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
@@ -55,7 +66,9 @@ assets/          images used by scenes, named by content hash
 - To add a component: a type, a `default…()` and its `ANIMS_BY_KIND` entry in
   `src/model/model.ts`; a draw file in `src/components/`; a case in `src/engine/render.ts`;
   an inspector section; an entry in `BASICS` (`src/editor/app.tsx`); an `apply.<kind>` in each trait
-  that should style it (and the kind in `TraitTargets`); and a built-in preset recipe.
+  that should style it (and the kind in `TraitTargets`); its schema in `src/model/schema.ts`
+  (the element union and the recipe `kind` list) and the known-kinds list in
+  `src/presets/resolve.test.ts`; and a built-in preset recipe with a `category`.
 - To add a preset: a JSON recipe in `presets/built-in/` combining traits; add a trait in
   `src/traits/` only when no existing one fits.
 - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports

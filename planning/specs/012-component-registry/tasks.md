@@ -33,3 +33,5 @@
       kind: test
 - [ ] T016 [agent] [status:todo] AGENTS.md: "To add a component" becomes "add a descriptor folder"
       covers: R5@1
+- [ ] T017 [agent] [status:todo] Revise A5 (one file per component) to the descriptor folders of A23 through the spectrace-change flow, re-pointing the tasks that cover A5
+      covers: D1@1, A5@1, A23@1

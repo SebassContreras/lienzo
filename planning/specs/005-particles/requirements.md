@@ -25,7 +25,7 @@ editor.
 
 - Reacting to the mouse (exports are video).
 - Particles as part of the scene background itself.
-- Images or icons as particles.
+- Images or icons as particles (lifted later by spec 014, particle-template).
 
 ## Dependencies
 
