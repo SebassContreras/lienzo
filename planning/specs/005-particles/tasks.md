@@ -22,6 +22,7 @@
       covers: R1@1, R4@1
       kind: test
       changes: src/engine/particle-field.test.ts (+75 -0)
-- [ ] T008 [agent] [status:todo] Test in the browser: edit every field, fit to canvas, layer it under a card, play 300 points at the scene fps, drop each preset
+- [x] T008 [agent] [status:done] Test in the browser: edit every field, fit to canvas, layer it under a card, play 300 points at the scene fps, drop each preset
       covers: R2@1, R3@1, R5@1, R6@1, R7@1
       kind: test
+      changes: none
