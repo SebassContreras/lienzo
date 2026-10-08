@@ -36,8 +36,9 @@
 - [x] T012 [agent] [status:done] `animate(el, t, scene)` layer and the new draw signature
       covers: D4@1, A24@1
       changes: src/components/descriptor.ts (+3 -1), src/components/ellipse/draw.ts (+8 -2), src/components/group/draw.ts (+2 -2), src/components/icon/draw.ts (+2 -8), src/components/image/draw.ts (+2 -8), src/components/line/draw.ts (+3 -3), src/components/particles/draw.ts (+2 -2), src/components/rect/draw.ts (+9 -4), src/components/text/draw.ts (+2 -8), src/engine/anim.ts (+1 -2), src/engine/animate.ts (+21 -0), src/engine/render.ts (+4 -16)
-- [ ] T013 [agent] [status:todo] Generic inspector (`FieldEditor`) with custom widgets
+- [x] T013 [agent] [status:done] Generic inspector (`FieldEditor`) with custom widgets
       covers: D3@1
+      changes: src/editor/controls.tsx (+156 -0), src/editor/field-editor.tsx (+274 -0), src/editor/inspector.tsx (+7 -173), src/editor/layout.ts (+99 -0)
 - [ ] T014 [agent] [status:todo] Remove the hand-written per-kind inspectors
       covers: D3@1
 - [ ] T015 [agent] [status:todo] Test: old scenes, built-in presets and the demo validate the same; every field of every kind is editable; the demo renders pixel-identical
