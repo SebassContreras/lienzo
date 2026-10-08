@@ -12,5 +12,8 @@ export const breathe = defineTrait({
     text: (el, p) => {
       el.anim = { kind: "breathe", ...p };
     },
+    particles: (el, p) => {
+      el.anim = { kind: "breathe", ...p };
+    },
   },
 });

@@ -1,0 +1,199 @@
+diff --git a/presets/built-in/18-constelacion.json b/presets/built-in/18-constelacion.json
+new file mode 100644
+index 0000000..1ff63d4
+--- /dev/null
++++ b/presets/built-in/18-constelacion.json
+@@ -0,0 +1,32 @@
++{
++  "name": "Constelación",
++  "category": "Partículas",
++  "kind": "particles",
++  "traits": [
++    {
++      "use": "glow",
++      "color": "#60a5fa",
++      "blur": 8,
++      "strength": 1
++    }
++  ],
++  "set": {
++    "w": 1080,
++    "h": 1080,
++    "count": 70,
++    "seed": 7,
++    "speed": 1,
++    "drift": 60,
++    "dot": {
++      "size": 3,
++      "color": "#bfdbfe",
++      "opacity": 0.95
++    },
++    "link": {
++      "distance": 160,
++      "width": 1,
++      "color": "#60a5fa",
++      "opacity": 0.45
++    }
++  }
++}
+diff --git a/presets/built-in/19-polvo-flotante.json b/presets/built-in/19-polvo-flotante.json
+new file mode 100644
+index 0000000..4879601
+--- /dev/null
++++ b/presets/built-in/19-polvo-flotante.json
+@@ -0,0 +1,31 @@
++{
++  "name": "Polvo flotante",
++  "category": "Partículas",
++  "kind": "particles",
++  "traits": [
++    "no-glow",
++    {
++      "use": "fade-in",
++      "delay": 0
++    }
++  ],
++  "set": {
++    "w": 1080,
++    "h": 1080,
++    "count": 120,
++    "seed": 21,
++    "speed": 1,
++    "drift": 90,
++    "dot": {
++      "size": 2,
++      "color": "#fde68a",
++      "opacity": 0.6
++    },
++    "link": {
++      "distance": 0,
++      "width": 1,
++      "color": "#fde68a",
++      "opacity": 0
++    }
++  }
++}
+diff --git a/presets/built-in/20-red-densa.json b/presets/built-in/20-red-densa.json
+new file mode 100644
+index 0000000..b29eb19
+--- /dev/null
++++ b/presets/built-in/20-red-densa.json
+@@ -0,0 +1,38 @@
++{
++  "name": "Red densa",
++  "category": "Partículas",
++  "kind": "particles",
++  "traits": [
++    {
++      "use": "glow",
++      "color": "#22d3ee",
++      "blur": 6,
++      "strength": 1
++    },
++    {
++      "use": "breathe",
++      "amount": 60,
++      "cycles": 1,
++      "delay": 0
++    }
++  ],
++  "set": {
++    "w": 1080,
++    "h": 1080,
++    "count": 220,
++    "seed": 42,
++    "speed": 2,
++    "drift": 35,
++    "dot": {
++      "size": 2,
++      "color": "#a5f3fc",
++      "opacity": 0.9
++    },
++    "link": {
++      "distance": 95,
++      "width": 0.75,
++      "color": "#22d3ee",
++      "opacity": 0.55
++    }
++  }
++}
+diff --git a/src/presets/resolve.test.ts b/src/presets/resolve.test.ts
+index 0145df5..faa4936 100644
+--- a/src/presets/resolve.test.ts
++++ b/src/presets/resolve.test.ts
+@@ -32,6 +32,7 @@ describe("traits", () => {
+           "group",
+           "text",
+           "line",
++          "particles",
+           "background",
+         ]).toContain(k);
+       }
+diff --git a/src/traits/breathe.ts b/src/traits/breathe.ts
+index d762401..3cb1b9f 100644
+--- a/src/traits/breathe.ts
++++ b/src/traits/breathe.ts
+@@ -12,5 +12,8 @@ export const breathe = defineTrait({
+     text: (el, p) => {
+       el.anim = { kind: "breathe", ...p };
+     },
++    particles: (el, p) => {
++      el.anim = { kind: "breathe", ...p };
++    },
+   },
+ });
+diff --git a/src/traits/fade-in.ts b/src/traits/fade-in.ts
+index 8dc0e28..19ec761 100644
+--- a/src/traits/fade-in.ts
++++ b/src/traits/fade-in.ts
+@@ -15,5 +15,8 @@ export const fadeIn = defineTrait({
+     line: (el, p) => {
+       el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
+     },
++    particles: (el, p) => {
++      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++    },
+   },
+ });
+diff --git a/src/traits/glow.ts b/src/traits/glow.ts
+index b04d6ad..8ad6e33 100644
+--- a/src/traits/glow.ts
++++ b/src/traits/glow.ts
+@@ -1,6 +1,6 @@
+ import { defineTrait } from "./trait.ts";
+ 
+-/** Neon glow: the border glow of a rectangle, the glow of a text, a line or an icon. */
++/** Neon glow: the border glow of a rectangle, the glow of a text, a line, an icon or particles. */
+ export const glow = defineTrait({
+   id: "glow",
+   label: "Brillo neón",
+@@ -18,5 +18,8 @@ export const glow = defineTrait({
+     icon: (el, p) => {
+       el.glow = { enabled: true, ...p };
+     },
++    particles: (el, p) => {
++      el.glow = { enabled: true, ...p };
++    },
+   },
+ });
+diff --git a/src/traits/no-glow.ts b/src/traits/no-glow.ts
+index f745c9d..7ca4eb9 100644
+--- a/src/traits/no-glow.ts
++++ b/src/traits/no-glow.ts
+@@ -1,6 +1,6 @@
+ import { defineTrait } from "./trait.ts";
+ 
+-/** Turns the neon glow off (border glow of a rectangle, glow of a text or a line). */
++/** Turns the neon glow off (border glow of a rectangle, glow of a text, a line or particles). */
+ export const noGlow = defineTrait({
+   id: "no-glow",
+   label: "Sin brillo",
+@@ -15,5 +15,8 @@ export const noGlow = defineTrait({
+     line: (el) => {
+       el.glow.enabled = false;
+     },
++    particles: (el) => {
++      el.glow.enabled = false;
++    },
+   },
+ });

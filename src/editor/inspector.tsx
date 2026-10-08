@@ -6,6 +6,8 @@ import {
   Group,
   ImageUp,
   Link2Off,
+  Maximize,
+  Shuffle,
   Trash2,
   Ungroup,
 } from "lucide-react";
@@ -24,6 +26,7 @@ import {
   type IconEl,
   type ImageEl,
   type LineEl,
+  type ParticlesEl,
   type Scene,
   type Shadow,
   type ShapeEl,
@@ -1390,6 +1393,190 @@ function LineInspector({
 
 /* ---------- panels ---------- */
 
+function ParticlesInspector({
+  el,
+  change,
+  canvas,
+}: {
+  el: ParticlesEl;
+  change: Change<ParticlesEl>;
+  canvas?: { width: number; height: number };
+}) {
+  return (
+    <>
+      <Section title="Partículas">
+        <Num
+          label="Cantidad"
+          value={el.count}
+          min={1}
+          max={300}
+          onChange={(v) =>
+            change((d) => {
+              d.count = Math.round(Math.min(300, Math.max(1, v)));
+            })
+          }
+        />
+        <Num
+          label="Velocidad"
+          value={el.speed}
+          min={1}
+          max={6}
+          onChange={(v) =>
+            change((d) => {
+              d.speed = Math.round(Math.max(1, v));
+            })
+          }
+        />
+        <Num
+          label="Recorrido"
+          value={el.drift}
+          max={300}
+          onChange={(v) =>
+            change((d) => {
+              d.drift = Math.max(0, v);
+            })
+          }
+        />
+        <Num
+          label="Semilla"
+          value={el.seed}
+          min={1}
+          max={9999}
+          onChange={(v) =>
+            change((d) => {
+              d.seed = Math.round(v);
+            })
+          }
+        />
+        <button
+          type="button"
+          title="Coloca los puntos en otras posiciones"
+          onClick={() =>
+            change((d) => {
+              d.seed = 1 + Math.floor(Math.random() * 9999);
+            })
+          }
+        >
+          <Shuffle size={15} /> Redistribuir
+        </button>
+        {canvas && (
+          <button
+            type="button"
+            title="Cubre toda la publicación"
+            onClick={() =>
+              change((d) => {
+                d.x = 0;
+                d.y = 0;
+                d.w = canvas.width;
+                d.h = canvas.height;
+              })
+            }
+          >
+            <Maximize size={15} /> Ajustar al lienzo
+          </button>
+        )}
+      </Section>
+      <Section title="Puntos">
+        <Num
+          label="Tamaño"
+          value={el.dot.size}
+          max={20}
+          step={0.5}
+          onChange={(v) =>
+            change((d) => {
+              d.dot.size = v;
+            })
+          }
+        />
+        <Color
+          label="Color"
+          value={el.dot.color}
+          onChange={(v) =>
+            change((d) => {
+              d.dot.color = v;
+            })
+          }
+        />
+        <Num
+          label="Opacidad"
+          value={el.dot.opacity}
+          max={1}
+          step={0.05}
+          onChange={(v) =>
+            change((d) => {
+              d.dot.opacity = v;
+            })
+          }
+        />
+      </Section>
+      <Section title="Líneas">
+        <Num
+          label="Distancia de unión"
+          value={el.link.distance}
+          max={400}
+          onChange={(v) =>
+            change((d) => {
+              d.link.distance = v;
+            })
+          }
+        />
+        <Num
+          label="Grosor"
+          value={el.link.width}
+          max={6}
+          step={0.25}
+          onChange={(v) =>
+            change((d) => {
+              d.link.width = v;
+            })
+          }
+        />
+        <Color
+          label="Color"
+          value={el.link.color}
+          onChange={(v) =>
+            change((d) => {
+              d.link.color = v;
+            })
+          }
+        />
+        <Num
+          label="Opacidad"
+          value={el.link.opacity}
+          max={1}
+          step={0.05}
+          onChange={(v) =>
+            change((d) => {
+              d.link.opacity = v;
+            })
+          }
+        />
+      </Section>
+      <Section title="Brillo">
+        <GlowFields
+          glow={el.glow}
+          onChange={(g) =>
+            change((d) => {
+              d.glow = g;
+            })
+          }
+        />
+      </Section>
+      <Section title="Animación">
+        <AnimFields
+          anim={el.anim}
+          kinds={ANIMS_BY_KIND.particles}
+          onChange={(a) =>
+            change((d) => {
+              d.anim = a;
+            })
+          }
+        />
+      </Section>
+    </>
+  );
+}
+
 export function ElementInspector({
   el,
   onChange,
@@ -1399,6 +1586,7 @@ export function ElementInspector({
   onSavePreset,
   onUngroup,
   nameOf,
+  canvas,
 }: {
   el: Element;
   onChange: (el: Element) => void;
@@ -1408,6 +1596,8 @@ export function ElementInspector({
   onSavePreset?: (name: string) => void;
   onUngroup?: () => void;
   nameOf: (id: string) => string;
+  /** Scene size, for "Ajustar al lienzo". */
+  canvas?: { width: number; height: number };
 }) {
   const [presetName, setPresetName] = useState("");
   const change = <T extends Element>(fn: (draft: T) => void) => {
@@ -1463,6 +1653,9 @@ export function ElementInspector({
       {el.kind === "text" && <TextInspector el={el} change={change} />}
       {el.kind === "line" && (
         <LineInspector el={el} change={change} nameOf={nameOf} />
+      )}
+      {el.kind === "particles" && (
+        <ParticlesInspector el={el} change={change} canvas={canvas} />
       )}
       {onSavePreset && (
         <Section title="Guardar como preset">

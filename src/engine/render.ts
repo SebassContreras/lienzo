@@ -3,6 +3,7 @@ import { drawGroup } from "../components/group.ts";
 import { drawIcon } from "../components/icon.ts";
 import { drawImage } from "../components/image.ts";
 import { drawLine } from "../components/line.ts";
+import { drawParticles } from "../components/particles.ts";
 import { drawRect } from "../components/rect.ts";
 import { drawText } from "../components/text.ts";
 import type { Background, Element, Scene } from "../model/model.ts";
@@ -36,7 +37,8 @@ export function drawElements(
     else if (el.kind === "image") drawImage(ctx, el, scene, t);
     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
     else if (el.kind === "text") drawText(ctx, el, scene, t);
-    else drawLine(ctx, el, scene, t, byId);
+    else if (el.kind === "line") drawLine(ctx, el, scene, t, byId);
+    else drawParticles(ctx, el, scene, t);
   }
 }
 

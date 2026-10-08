@@ -212,6 +212,32 @@ export type LineEl = {
   anim: Anim;
 };
 
+/**
+ * Points drifting inside the box, joined by lines when close ("constellation"). Paints no
+ * background of its own. Motion is a closed loop derived from `seed` (see particle-field).
+ */
+export type ParticlesEl = {
+  id: string;
+  kind: "particles";
+  name: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Number of points, 1–300. */
+  count: number;
+  /** Changing it redistributes the points. */
+  seed: number;
+  /** Highest number of laps a point makes per loop (integer, ≥ 1). */
+  speed: number;
+  /** How far, px, a point wanders from its resting place. */
+  drift: number;
+  dot: { size: number; color: string; opacity: number };
+  link: { distance: number; width: number; color: string; opacity: number };
+  glow: Glow;
+  anim: Anim;
+};
+
 export type Element =
   | RectEl
   | EllipseEl
@@ -219,7 +245,8 @@ export type Element =
   | ImageEl
   | GroupEl
   | TextEl
-  | LineEl;
+  | LineEl
+  | ParticlesEl;
 export type ElementKind = Element["kind"];
 
 export type Background = {
@@ -281,6 +308,7 @@ export const ANIMS_BY_KIND: Record<ElementKind, AnimKind[]> = {
   group: BOX_ANIMS,
   text: BOX_ANIMS,
   line: ["none", "fade-in", "draw"],
+  particles: ["none", "fade-in", "pop-in", "breathe"],
 };
 
 export const ANIM_LABELS: Record<AnimKind, string> = {
@@ -480,6 +508,26 @@ export function defaultLine(): LineEl {
   };
 }
 
+export function defaultParticles(): ParticlesEl {
+  return {
+    id: newId(),
+    kind: "particles",
+    name: "Partículas",
+    x: 0,
+    y: 0,
+    w: 600,
+    h: 400,
+    count: 60,
+    seed: 1,
+    speed: 1,
+    drift: 40,
+    dot: { size: 2.5, color: "#93c5fd", opacity: 0.9 },
+    link: { distance: 120, width: 1, color: "#60a5fa", opacity: 0.5 },
+    glow: noGlow("#60a5fa"),
+    anim: { ...noAnim },
+  };
+}
+
 const DEFAULTS: Record<ElementKind, () => Element> = {
   rect: defaultRect,
   ellipse: defaultEllipse,
@@ -488,6 +536,7 @@ const DEFAULTS: Record<ElementKind, () => Element> = {
   group: defaultGroup,
   text: defaultText,
   line: defaultLine,
+  particles: defaultParticles,
 };
 
 /** A fresh default element of `kind`; throws for a kind that does not exist. */

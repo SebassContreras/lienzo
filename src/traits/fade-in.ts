@@ -15,5 +15,8 @@ export const fadeIn = defineTrait({
     line: (el, p) => {
       el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
     },
+    particles: (el, p) => {
+      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
+    },
   },
 });

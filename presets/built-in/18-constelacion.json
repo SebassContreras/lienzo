@@ -1,0 +1,32 @@
+{
+  "name": "Constelación",
+  "category": "Partículas",
+  "kind": "particles",
+  "traits": [
+    {
+      "use": "glow",
+      "color": "#60a5fa",
+      "blur": 8,
+      "strength": 1
+    }
+  ],
+  "set": {
+    "w": 1080,
+    "h": 1080,
+    "count": 70,
+    "seed": 7,
+    "speed": 1,
+    "drift": 60,
+    "dot": {
+      "size": 3,
+      "color": "#bfdbfe",
+      "opacity": 0.95
+    },
+    "link": {
+      "distance": 160,
+      "width": 1,
+      "color": "#60a5fa",
+      "opacity": 0.45
+    }
+  }
+}

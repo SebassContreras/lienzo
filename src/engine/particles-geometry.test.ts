@@ -1,0 +1,33 @@
+import { describe, expect, it } from "vitest";
+import { defaultParticles, defaultScene } from "../model/model.ts";
+import { boxOf, centerOn, hitTest, translate } from "./geometry.ts";
+
+describe("particles geometry", () => {
+  const el = { ...defaultParticles(), x: 100, y: 50, w: 300, h: 200 };
+  const scene = { ...defaultScene(), elements: [el] };
+
+  it("is boxed by x, y, w, h", () => {
+    expect(boxOf(el)).toEqual({ x: 100, y: 50, w: 300, h: 200 });
+  });
+
+  it("is hit anywhere inside its box, even between points", () => {
+    expect(hitTest(scene, { x: 101, y: 51 }, 4)?.id).toBe(el.id);
+    expect(hitTest(scene, { x: 399, y: 249 }, 4)?.id).toBe(el.id);
+    expect(hitTest(scene, { x: 450, y: 60 }, 4)).toBeUndefined();
+  });
+
+  it("moves and centres like a rectangle", () => {
+    expect(boxOf(translate(el, 10, -5, new Map()))).toEqual({
+      x: 110,
+      y: 45,
+      w: 300,
+      h: 200,
+    });
+    expect(boxOf(centerOn(el, 0, 0))).toEqual({
+      x: -150,
+      y: -100,
+      w: 300,
+      h: 200,
+    });
+  });
+});

@@ -1,0 +1,168 @@
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 5a2341b..6fad3fc 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -36,7 +36,7 @@ export function drawElements(
+     else if (el.kind === "image") drawImage(ctx, el, scene, t);
+     else if (el.kind === "group") drawGroup(ctx, el, scene, t, drawElements);
+     else if (el.kind === "text") drawText(ctx, el, scene, t);
+-    else drawLine(ctx, el, scene, t, byId);
++    else if (el.kind === "line") drawLine(ctx, el, scene, t, byId);
+   }
+ }
+ 
+diff --git a/src/model/model.ts b/src/model/model.ts
+index b58b264..3d86150 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -212,6 +212,32 @@ export type LineEl = {
+   anim: Anim;
+ };
+ 
++/**
++ * Points drifting inside the box, joined by lines when close ("constellation"). Paints no
++ * background of its own. Motion is a closed loop derived from `seed` (see particle-field).
++ */
++export type ParticlesEl = {
++  id: string;
++  kind: "particles";
++  name: string;
++  x: number;
++  y: number;
++  w: number;
++  h: number;
++  /** Number of points, 1–300. */
++  count: number;
++  /** Changing it redistributes the points. */
++  seed: number;
++  /** Highest number of laps a point makes per loop (integer, ≥ 1). */
++  speed: number;
++  /** How far, px, a point wanders from its resting place. */
++  drift: number;
++  dot: { size: number; color: string; opacity: number };
++  link: { distance: number; width: number; color: string; opacity: number };
++  glow: Glow;
++  anim: Anim;
++};
++
+ export type Element =
+   | RectEl
+   | EllipseEl
+@@ -219,7 +245,8 @@ export type Element =
+   | ImageEl
+   | GroupEl
+   | TextEl
+-  | LineEl;
++  | LineEl
++  | ParticlesEl;
+ export type ElementKind = Element["kind"];
+ 
+ export type Background = {
+@@ -281,6 +308,7 @@ export const ANIMS_BY_KIND: Record<ElementKind, AnimKind[]> = {
+   group: BOX_ANIMS,
+   text: BOX_ANIMS,
+   line: ["none", "fade-in", "draw"],
++  particles: ["none", "fade-in", "pop-in", "breathe"],
+ };
+ 
+ export const ANIM_LABELS: Record<AnimKind, string> = {
+@@ -480,6 +508,26 @@ export function defaultLine(): LineEl {
+   };
+ }
+ 
++export function defaultParticles(): ParticlesEl {
++  return {
++    id: newId(),
++    kind: "particles",
++    name: "Partículas",
++    x: 0,
++    y: 0,
++    w: 600,
++    h: 400,
++    count: 60,
++    seed: 1,
++    speed: 1,
++    drift: 40,
++    dot: { size: 2.5, color: "#93c5fd", opacity: 0.9 },
++    link: { distance: 120, width: 1, color: "#60a5fa", opacity: 0.5 },
++    glow: noGlow("#60a5fa"),
++    anim: { ...noAnim },
++  };
++}
++
+ const DEFAULTS: Record<ElementKind, () => Element> = {
+   rect: defaultRect,
+   ellipse: defaultEllipse,
+@@ -488,6 +536,7 @@ const DEFAULTS: Record<ElementKind, () => Element> = {
+   group: defaultGroup,
+   text: defaultText,
+   line: defaultLine,
++  particles: defaultParticles,
+ };
+ 
+ /** A fresh default element of `kind`; throws for a kind that does not exist. */
+diff --git a/src/model/schema.ts b/src/model/schema.ts
+index 3da355a..925a1c0 100644
+--- a/src/model/schema.ts
++++ b/src/model/schema.ts
+@@ -178,6 +178,24 @@ const line = z.object({
+   anim,
+ });
+ 
++const particles = z.object({
++  ...box,
++  kind: z.literal("particles"),
++  count: z.number().int().min(1).max(300),
++  seed: z.number(),
++  speed: z.number().int().min(1),
++  drift: z.number().min(0),
++  dot: z.object({ size: z.number(), color, opacity: z.number() }),
++  link: z.object({
++    distance: z.number(),
++    width: z.number(),
++    color,
++    opacity: z.number(),
++  }),
++  glow,
++  anim,
++});
++
+ const group = z.object({
+   ...box,
+   kind: z.literal("group"),
+@@ -197,6 +215,7 @@ export const ElementSchema: z.ZodType<Element> = z.discriminatedUnion("kind", [
+   group,
+   text,
+   line,
++  particles,
+ ]);
+ 
+ export const BackgroundSchema = z.object({
+@@ -243,6 +262,7 @@ export const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
+       "group",
+       "text",
+       "line",
++      "particles",
+       "background",
+     ]),
+     traits: z.array(traitUse),
+diff --git a/src/traits/trait.ts b/src/traits/trait.ts
+index 1ec8e09..8aa1258 100644
+--- a/src/traits/trait.ts
++++ b/src/traits/trait.ts
+@@ -5,6 +5,7 @@ import type {
+   IconEl,
+   ImageEl,
+   LineEl,
++  ParticlesEl,
+   RectEl,
+   ShapeEl,
+   TextEl,
+@@ -23,6 +24,7 @@ export type TraitTargets = {
+   group: GroupEl;
+   text: TextEl;
+   line: LineEl;
++  particles: ParticlesEl;
+   background: Background;
+ };
+ export type TraitTarget = keyof TraitTargets;

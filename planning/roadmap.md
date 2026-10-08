@@ -9,5 +9,5 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 002 | more-components | done        | 001 | —     | 3 |
 | 003 | presets-scenes | done        | 001 | —     | 4 |
 | 004 | preset-traits | done        | 001 | —     | 2 |
-| 005 | particles | todo | 001, 004, 006 | build | 6 |
+| 005 | particles | in_progress | 001, 004, 006 | build | 6 |
 | 006 | background-presets | done        | 004 | —     | 5 |

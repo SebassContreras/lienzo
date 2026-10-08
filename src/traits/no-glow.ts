@@ -1,6 +1,6 @@
 import { defineTrait } from "./trait.ts";
 
-/** Turns the neon glow off (border glow of a rectangle, glow of a text or a line). */
+/** Turns the neon glow off (border glow of a rectangle, glow of a text, a line or particles). */
 export const noGlow = defineTrait({
   id: "no-glow",
   label: "Sin brillo",
@@ -13,6 +13,9 @@ export const noGlow = defineTrait({
       el.glow.enabled = false;
     },
     line: (el) => {
+      el.glow.enabled = false;
+    },
+    particles: (el) => {
       el.glow.enabled = false;
     },
   },

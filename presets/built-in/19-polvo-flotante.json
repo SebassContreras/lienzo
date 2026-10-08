@@ -1,0 +1,31 @@
+{
+  "name": "Polvo flotante",
+  "category": "Partículas",
+  "kind": "particles",
+  "traits": [
+    "no-glow",
+    {
+      "use": "fade-in",
+      "delay": 0
+    }
+  ],
+  "set": {
+    "w": 1080,
+    "h": 1080,
+    "count": 120,
+    "seed": 21,
+    "speed": 1,
+    "drift": 90,
+    "dot": {
+      "size": 2,
+      "color": "#fde68a",
+      "opacity": 0.6
+    },
+    "link": {
+      "distance": 0,
+      "width": 1,
+      "color": "#fde68a",
+      "opacity": 0
+    }
+  }
+}

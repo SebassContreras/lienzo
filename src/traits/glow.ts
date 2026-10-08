@@ -1,6 +1,6 @@
 import { defineTrait } from "./trait.ts";
 
-/** Neon glow: the border glow of a rectangle, the glow of a text, a line or an icon. */
+/** Neon glow: the border glow of a rectangle, the glow of a text, a line, an icon or particles. */
 export const glow = defineTrait({
   id: "glow",
   label: "Brillo neón",
@@ -16,6 +16,9 @@ export const glow = defineTrait({
       el.glow = { enabled: true, ...p };
     },
     icon: (el, p) => {
+      el.glow = { enabled: true, ...p };
+    },
+    particles: (el, p) => {
       el.glow = { enabled: true, ...p };
     },
   },

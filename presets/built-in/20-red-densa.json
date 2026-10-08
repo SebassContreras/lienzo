@@ -1,0 +1,38 @@
+{
+  "name": "Red densa",
+  "category": "Partículas",
+  "kind": "particles",
+  "traits": [
+    {
+      "use": "glow",
+      "color": "#22d3ee",
+      "blur": 6,
+      "strength": 1
+    },
+    {
+      "use": "breathe",
+      "amount": 60,
+      "cycles": 1,
+      "delay": 0
+    }
+  ],
+  "set": {
+    "w": 1080,
+    "h": 1080,
+    "count": 220,
+    "seed": 42,
+    "speed": 2,
+    "drift": 35,
+    "dot": {
+      "size": 2,
+      "color": "#a5f3fc",
+      "opacity": 0.9
+    },
+    "link": {
+      "distance": 95,
+      "width": 0.75,
+      "color": "#22d3ee",
+      "opacity": 0.55
+    }
+  }
+}

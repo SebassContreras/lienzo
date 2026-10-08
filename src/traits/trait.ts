@@ -5,6 +5,7 @@ import type {
   IconEl,
   ImageEl,
   LineEl,
+  ParticlesEl,
   RectEl,
   ShapeEl,
   TextEl,
@@ -23,6 +24,7 @@ export type TraitTargets = {
   group: GroupEl;
   text: TextEl;
   line: LineEl;
+  particles: ParticlesEl;
   background: Background;
 };
 export type TraitTarget = keyof TraitTargets;

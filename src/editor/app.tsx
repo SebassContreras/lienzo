@@ -45,6 +45,7 @@ import {
   defaultIcon,
   defaultImage,
   defaultLine,
+  defaultParticles,
   defaultRect,
   defaultScene,
   defaultText,
@@ -144,8 +145,9 @@ const BASICS: LibraryItem[] = [
   { name: "Imagen", element: defaultImage() },
   { name: "Texto", element: defaultText() },
   { name: "Línea", element: defaultLine() },
+  { name: "Partículas", element: defaultParticles() },
 ];
-const BASIC_ICONS = [Square, Circle, Shapes, Image, Type, Spline];
+const BASIC_ICONS = [Square, Circle, Shapes, Image, Type, Spline, Sparkles];
 
 const BUILT_INS = recipeItems(BUILT_IN_RECIPES);
 const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(
@@ -687,6 +689,7 @@ export function App() {
             onLayer={(dir) => moveLayer(selected.id, dir)}
             onSavePreset={(name) => savePreset(selected, name)}
             onUngroup={ungroupSelected}
+            canvas={scene}
           />
         ) : selection.length > 1 ? (
           <MultiInspector

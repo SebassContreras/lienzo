@@ -32,6 +32,7 @@ describe("traits", () => {
           "group",
           "text",
           "line",
+          "particles",
           "background",
         ]).toContain(k);
       }

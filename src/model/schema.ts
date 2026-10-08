@@ -178,6 +178,24 @@ const line = z.object({
   anim,
 });
 
+const particles = z.object({
+  ...box,
+  kind: z.literal("particles"),
+  count: z.number().int().min(1).max(300),
+  seed: z.number(),
+  speed: z.number().int().min(1),
+  drift: z.number().min(0),
+  dot: z.object({ size: z.number(), color, opacity: z.number() }),
+  link: z.object({
+    distance: z.number(),
+    width: z.number(),
+    color,
+    opacity: z.number(),
+  }),
+  glow,
+  anim,
+});
+
 const group = z.object({
   ...box,
   kind: z.literal("group"),
@@ -197,6 +215,7 @@ export const ElementSchema: z.ZodType<Element> = z.discriminatedUnion("kind", [
   group,
   text,
   line,
+  particles,
 ]);
 
 export const BackgroundSchema = z.object({
@@ -243,6 +262,7 @@ export const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
       "group",
       "text",
       "line",
+      "particles",
       "background",
     ]),
     traits: z.array(traitUse),
