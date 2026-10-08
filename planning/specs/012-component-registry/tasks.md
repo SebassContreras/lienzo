@@ -42,9 +42,10 @@
 - [x] T014 [agent] [status:done] Remove the hand-written per-kind inspectors
       covers: D3@1
       changes: src/editor/inspector.tsx (+3 -1415)
-- [ ] T015 [agent] [status:todo] Test: old scenes, built-in presets and the demo validate the same; every field of every kind is editable; the demo renders pixel-identical
+- [x] T015 [agent] [status:done] Test: old scenes, built-in presets and the demo validate the same; every field of every kind is editable; the demo renders pixel-identical
       covers: R1@1, R2@1, R3@1, R4@1, R6@1
       kind: test
+      changes: src/editor/field-editor.tsx (+3 -0), src/test/golden-scenes.ts (+139 -0), src/test/legacy-schema.ts (+237 -0), src/test/recording-ctx.ts (+212 -0), src/test/registry.test.ts (+214 -0), src/test/render-log.ts (+20 -0), src/test/render.golden.json (+20 -0), src/test/render.test.ts (+29 -0)
 - [ ] T016 [agent] [status:todo] AGENTS.md: "To add a component" becomes "add a descriptor folder"
       covers: R5@1
 - [ ] T017 [agent] [status:todo] Revise A5 (one file per component) to the descriptor folders of A23 through the spectrace-change flow, re-pointing the tasks that cover A5

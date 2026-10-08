@@ -1,0 +1,927 @@
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+index 8c46e0e..ffa39a4 100644
+--- a/src/editor/field-editor.tsx
++++ b/src/editor/field-editor.tsx
+@@ -185,6 +185,9 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+   },
+ };
+ 
++/** The widget names descriptors may use. */
++export const WIDGET_NAMES = Object.keys(WIDGETS);
++
+ /** One row of the inspector: the control `item`'s field type calls for. */
+ function Control({
+   el,
+diff --git a/src/test/golden-scenes.ts b/src/test/golden-scenes.ts
+new file mode 100644
+index 0000000..8127576
+--- /dev/null
++++ b/src/test/golden-scenes.ts
+@@ -0,0 +1,139 @@
++import { demoScene } from "../demo.ts";
++import {
++  ANIMS_BY_KIND,
++  defaultElement,
++  defaultScene,
++  type Element,
++  type ElementKind,
++  type Scene,
++} from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { BUILT_IN_RECIPES } from "../presets/recipes.ts";
++import { resolveElement } from "../presets/resolve.ts";
++
++const KINDS: ElementKind[] = [
++  "rect",
++  "ellipse",
++  "icon",
++  "image",
++  "group",
++  "text",
++  "line",
++  "particles",
++];
++
++/** Lays elements out on a grid so none of them share a box. */
++function grid(elements: Element[]): Scene {
++  elements.forEach((el, i) => {
++    const x = (i % 6) * 180;
++    const y = Math.floor(i / 6) * 180;
++    if (el.kind === "line") {
++      el.a = { ...el.a, x: el.a.x + x, y: el.a.y + y };
++      el.b = { ...el.b, x: el.b.x + x, y: el.b.y + y };
++    } else {
++      el.x += x;
++      el.y += y;
++    }
++  });
++  return { ...defaultScene(), elements };
++}
++
++/** Every built-in element preset. */
++function presetsScene(): Scene {
++  return grid(
++    BUILT_IN_RECIPES.map((r) => {
++      const res = resolveElement(r as PresetRecipe);
++      if ("error" in res) throw new Error(res.error);
++      return res.element;
++    }),
++  );
++}
++
++/** Every kind with every animation it offers, plus the variants of its own options. */
++function kindsScene(): Scene {
++  const els: Element[] = [];
++  for (const kind of KINDS) {
++    for (const anim of ANIMS_BY_KIND[kind]) {
++      const el = defaultElement(kind);
++      el.anim = { kind: anim, amount: 20, cycles: 2, delay: 0.2 };
++      if (el.kind === "group") {
++        el.children = [defaultElement("rect"), defaultElement("text")];
++        el.w = 200;
++        el.cw = 100;
++      }
++      els.push(el);
++    }
++  }
++  const rect = defaultElement("rect");
++  if (rect.kind === "rect") {
++    rect.border.style = "dashed";
++    rect.border.flow = 3;
++    rect.bgGlow.enabled = true;
++    rect.label.text = "Hola\nmundo";
++    rect.label.align = "left";
++    rect.fill.gradient = false;
++  }
++  const ell = defaultElement("ellipse");
++  if (ell.kind === "ellipse") {
++    ell.border.style = "dotted";
++    ell.label.text = "Elipse";
++    ell.label.align = "right";
++    ell.shadow.enabled = false;
++  }
++  const text = defaultElement("text");
++  if (text.kind === "text") {
++    text.gradient = true;
++    text.italic = true;
++    text.align = "center";
++    text.text = "Uno\ndos tres";
++    text.glow.enabled = true;
++    text.glow.strength = 2;
++  }
++  const icon = defaultElement("icon");
++  if (icon.kind === "icon") {
++    icon.tile.enabled = false;
++    icon.glow.enabled = true;
++    icon.icon = "Rocket";
++  }
++  const image = defaultElement("image");
++  if (image.kind === "image") {
++    image.border.width = 3;
++    image.shadow.enabled = true;
++  }
++  const particles = defaultElement("particles");
++  if (particles.kind === "particles") particles.glow.enabled = true;
++  els.push(rect, ell, text, icon, image, particles);
++  for (const [flow, reverse] of [
++    ["ants", false],
++    ["comet", true],
++    ["pulse", true],
++    ["none", false],
++  ] as const) {
++    const line = defaultElement("line");
++    if (line.kind === "line") {
++      line.flow.kind = flow;
++      line.flow.reverse = reverse;
++      line.bend = 60;
++      line.style = flow === "ants" ? "dashed" : "dotted";
++      line.arrowStart = true;
++    }
++    els.push(line);
++  }
++  const scene = grid(els);
++  // a line attached to a card and to an ellipse
++  const link = defaultElement("line");
++  if (link.kind === "line") {
++    link.a = { x: 0, y: 0, attach: rect.id };
++    link.b = { x: 0, y: 0, attach: ell.id };
++  }
++  scene.elements.push(link);
++  return scene;
++}
++
++export function goldenScenes(): Record<string, Scene> {
++  return {
++    demo: demoScene(),
++    presets: presetsScene(),
++    kinds: kindsScene(),
++  };
++}
+diff --git a/src/test/legacy-schema.ts b/src/test/legacy-schema.ts
+new file mode 100644
+index 0000000..a49b172
+--- /dev/null
++++ b/src/test/legacy-schema.ts
+@@ -0,0 +1,237 @@
++/**
++ * The scene schema as it was written by hand before spec 012, kept only so tests can check
++ * that the schema generated from the descriptors accepts and rejects exactly the same scenes.
++ */
++import { z } from "zod";
++
++const color = z.string();
++const align = z.enum(["left", "center", "right"]);
++const strokeStyle = z.enum(["solid", "dashed", "dotted"]);
++
++const anim = z.object({
++  kind: z.enum([
++    "none",
++    "float",
++    "pulse",
++    "breathe",
++    "fade-in",
++    "pop-in",
++    "slide-up",
++    "draw",
++  ]),
++  amount: z.number(),
++  cycles: z.number(),
++  delay: z.number(),
++});
++
++const glow = z.object({
++  enabled: z.boolean(),
++  color,
++  blur: z.number(),
++  strength: z.number(),
++});
++
++const shadow = z.object({
++  enabled: z.boolean(),
++  color,
++  opacity: z.number(),
++  blur: z.number(),
++  x: z.number(),
++  y: z.number(),
++});
++
++const box = {
++  id: z.string(),
++  name: z.string(),
++  x: z.number(),
++  y: z.number(),
++  w: z.number(),
++  h: z.number(),
++};
++
++const shapeFields = {
++  ...box,
++  fill: z.object({
++    color,
++    color2: color,
++    gradient: z.boolean(),
++    angle: z.number(),
++    opacity: z.number(),
++  }),
++  border: z.object({
++    width: z.number(),
++    color,
++    opacity: z.number(),
++    style: strokeStyle,
++    flow: z.number(),
++  }),
++  borderGlow: glow,
++  bgGlow: glow,
++  shadow,
++  label: z.object({
++    text: z.string(),
++    font: z.string(),
++    size: z.number(),
++    weight: z.number(),
++    color,
++    align,
++    padding: z.number(),
++  }),
++  anim,
++};
++
++const rect = z.object({
++  ...shapeFields,
++  kind: z.literal("rect"),
++  radius: z.number(),
++});
++
++const ellipse = z.object({ ...shapeFields, kind: z.literal("ellipse") });
++
++const icon = z.object({
++  ...box,
++  kind: z.literal("icon"),
++  icon: z.string(),
++  stroke: z.number(),
++  color,
++  opacity: z.number(),
++  tile: z.object({
++    enabled: z.boolean(),
++    color,
++    color2: color,
++    gradient: z.boolean(),
++    angle: z.number(),
++    opacity: z.number(),
++    radius: z.number(),
++    padding: z.number(),
++  }),
++  glow,
++  anim,
++});
++
++const image = z.object({
++  ...box,
++  kind: z.literal("image"),
++  src: z.string(),
++  aspect: z.number(),
++  keepAspect: z.boolean(),
++  radius: z.number(),
++  opacity: z.number(),
++  border: z.object({ width: z.number(), color, opacity: z.number() }),
++  shadow,
++  anim,
++});
++
++const text = z.object({
++  id: z.string(),
++  kind: z.literal("text"),
++  name: z.string(),
++  x: z.number(),
++  y: z.number(),
++  text: z.string(),
++  font: z.string(),
++  size: z.number(),
++  weight: z.number(),
++  italic: z.boolean(),
++  color,
++  color2: color,
++  gradient: z.boolean(),
++  align,
++  lineHeight: z.number(),
++  letterSpacing: z.number(),
++  opacity: z.number(),
++  glow,
++  anim,
++});
++
++const endpoint = z.object({
++  x: z.number(),
++  y: z.number(),
++  attach: z.string().optional(),
++});
++
++const line = z.object({
++  id: z.string(),
++  kind: z.literal("line"),
++  name: z.string(),
++  a: endpoint,
++  b: endpoint,
++  bend: z.number(),
++  width: z.number(),
++  color,
++  opacity: z.number(),
++  style: strokeStyle,
++  arrowStart: z.boolean(),
++  arrowEnd: z.boolean(),
++  glow,
++  flow: z.object({
++    kind: z.enum(["none", "ants", "pulse", "comet"]),
++    color,
++    speed: z.number(),
++    count: z.number(),
++    size: z.number(),
++    reverse: z.boolean(),
++  }),
++  anim,
++});
++
++const particles = z.object({
++  ...box,
++  kind: z.literal("particles"),
++  count: z.number().int().min(1).max(300),
++  seed: z.number(),
++  speed: z.number().int().min(1),
++  drift: z.number().min(0),
++  dot: z.object({ size: z.number(), color, opacity: z.number() }),
++  link: z.object({
++    distance: z.number(),
++    width: z.number(),
++    color,
++    opacity: z.number(),
++  }),
++  glow,
++  anim,
++});
++
++const group = z.object({
++  ...box,
++  kind: z.literal("group"),
++  cw: z.number(),
++  ch: z.number(),
++  get children() {
++    return z.array(LegacyElement);
++  },
++  anim,
++});
++
++const LegacyElement: z.ZodType<unknown> = z.discriminatedUnion("kind", [
++  rect,
++  ellipse,
++  icon,
++  image,
++  group,
++  text,
++  line,
++  particles,
++]);
++
++const BackgroundSchema = z.object({
++  color,
++  color2: color,
++  gradient: z.boolean(),
++  angle: z.number(),
++  dots: z.boolean(),
++  dotColor: color,
++  dotGap: z.number(),
++  spotlight: z.number(),
++  spotlightColor: color,
++});
++
++export const LegacySceneSchema = z.object({
++  width: z.number().positive(),
++  height: z.number().positive(),
++  duration: z.number().positive(),
++  fps: z.number().positive(),
++  background: BackgroundSchema,
++  elements: z.array(LegacyElement),
++});
+diff --git a/src/test/recording-ctx.ts b/src/test/recording-ctx.ts
+new file mode 100644
+index 0000000..9794751
+--- /dev/null
++++ b/src/test/recording-ctx.ts
+@@ -0,0 +1,212 @@
++/**
++ * A fake 2D context for Node tests: it records every drawing call and property write as
++ * text, so two renders of the same scene can be compared without a browser. Identical logs
++ * mean identical pixels.
++ */
++
++type M = [number, number, number, number, number, number];
++
++const fmt = (v: unknown): string => {
++  if (typeof v === "number") return Number(v.toFixed(6)).toString();
++  if (Array.isArray(v)) return `[${v.map(fmt).join(",")}]`;
++  if (v && typeof v === "object" && "log" in v)
++    return `{${(v as { log: string[] }).log.join(";")}}`;
++  return String(v);
++};
++
++class Recorder {
++  log: string[] = [];
++  protected rec(name: string, args: unknown[]) {
++    this.log.push(`${name}(${args.map(fmt).join(",")})`);
++  }
++}
++
++class FakePath2D extends Recorder {
++  constructor(d?: unknown) {
++    super();
++    if (d !== undefined) this.rec("d", [d]);
++  }
++}
++for (const m of [
++  "moveTo",
++  "lineTo",
++  "arc",
++  "ellipse",
++  "rect",
++  "roundRect",
++  "closePath",
++  "bezierCurveTo",
++  "quadraticCurveTo",
++  "arcTo",
++  "addPath",
++]) {
++  (FakePath2D.prototype as unknown as Record<string, unknown>)[m] = function (
++    this: FakePath2D,
++    ...args: unknown[]
++  ) {
++    this.rec(m, args);
++  };
++}
++
++class FakeGradient extends Recorder {
++  constructor(kind: string, args: unknown[]) {
++    super();
++    this.rec(kind, args);
++  }
++  addColorStop(...args: unknown[]) {
++    this.rec("stop", args);
++  }
++}
++
++const mul = (a: M, b: M): M => [
++  a[0] * b[0] + a[2] * b[1],
++  a[1] * b[0] + a[3] * b[1],
++  a[0] * b[2] + a[2] * b[3],
++  a[1] * b[2] + a[3] * b[3],
++  a[0] * b[4] + a[2] * b[5] + a[4],
++  a[1] * b[4] + a[3] * b[5] + a[5],
++];
++
++/** Widths are a fixed function of the text and font size, like a monospace font. */
++function measure(font: string, text: string) {
++  const size = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? 10);
++  return { width: text.length * size * 0.55 };
++}
++
++const STATE = [
++  "fillStyle",
++  "strokeStyle",
++  "globalAlpha",
++  "lineWidth",
++  "lineCap",
++  "lineJoin",
++  "lineDashOffset",
++  "shadowColor",
++  "shadowBlur",
++  "shadowOffsetX",
++  "shadowOffsetY",
++  "font",
++  "letterSpacing",
++  "textBaseline",
++  "textAlign",
++  "globalCompositeOperation",
++] as const;
++
++export class RecordingCtx extends Recorder {
++  private m: M = [1, 0, 0, 1, 0, 0];
++  private props: Record<string, unknown> = {
++    globalAlpha: 1,
++    lineWidth: 1,
++    lineDashOffset: 0,
++    shadowBlur: 0,
++    shadowOffsetX: 0,
++    shadowOffsetY: 0,
++    font: "10px sans-serif",
++    letterSpacing: "0px",
++  };
++  private dash: number[] = [];
++  private stack: { m: M; props: Record<string, unknown>; dash: number[] }[] =
++    [];
++
++  constructor() {
++    super();
++    for (const p of STATE) {
++      Object.defineProperty(this, p, {
++        get: () => this.props[p],
++        set: (v) => {
++          this.props[p] = v;
++          this.rec(`${p}=`, [v]);
++        },
++      });
++    }
++  }
++  save() {
++    this.stack.push({ m: this.m, props: { ...this.props }, dash: this.dash });
++    this.rec("save", []);
++  }
++  restore() {
++    const s = this.stack.pop();
++    if (s) ({ m: this.m, props: this.props, dash: this.dash } = s);
++    this.rec("restore", []);
++  }
++  translate(x: number, y: number) {
++    this.m = mul(this.m, [1, 0, 0, 1, x, y]);
++    this.rec("translate", [x, y]);
++  }
++  scale(x: number, y: number) {
++    this.m = mul(this.m, [x, 0, 0, y, 0, 0]);
++    this.rec("scale", [x, y]);
++  }
++  rotate(a: number) {
++    const c = Math.cos(a);
++    const s = Math.sin(a);
++    this.m = mul(this.m, [c, s, -s, c, 0, 0]);
++    this.rec("rotate", [a]);
++  }
++  setTransform(...args: number[]) {
++    this.m = (args.length === 6 ? args : [1, 0, 0, 1, 0, 0]) as M;
++    this.rec("setTransform", args);
++  }
++  getTransform() {
++    const [a, b, c, d, e, f] = this.m;
++    return { a, b, c, d, e, f };
++  }
++  setLineDash(d: number[]) {
++    this.dash = [...d];
++    this.rec("setLineDash", [d]);
++  }
++  getLineDash() {
++    return [...this.dash];
++  }
++  measureText(text: string) {
++    return measure(String(this.props.font), text);
++  }
++  createLinearGradient(...args: number[]) {
++    return new FakeGradient("linear", args);
++  }
++  createRadialGradient(...args: number[]) {
++    return new FakeGradient("radial", args);
++  }
++}
++for (const m of [
++  "beginPath",
++  "closePath",
++  "moveTo",
++  "lineTo",
++  "arc",
++  "ellipse",
++  "rect",
++  "roundRect",
++  "bezierCurveTo",
++  "quadraticCurveTo",
++  "fill",
++  "stroke",
++  "clip",
++  "fillRect",
++  "strokeRect",
++  "clearRect",
++  "fillText",
++  "strokeText",
++  "drawImage",
++]) {
++  (RecordingCtx.prototype as unknown as Record<string, unknown>)[m] = function (
++    this: RecordingCtx,
++    ...args: unknown[]
++  ) {
++    (this as unknown as { rec: (n: string, a: unknown[]) => void }).rec(
++      m,
++      args,
++    );
++  };
++}
++
++/** Puts the fakes where the engine looks for `Path2D` and `OffscreenCanvas`. */
++export function installCanvasFakes(): void {
++  const g = globalThis as Record<string, unknown>;
++  g.Path2D = FakePath2D;
++  g.OffscreenCanvas = class {
++    getContext() {
++      return new RecordingCtx();
++    }
++  };
++}
+diff --git a/src/test/registry.test.ts b/src/test/registry.test.ts
+new file mode 100644
+index 0000000..63b9100
+--- /dev/null
++++ b/src/test/registry.test.ts
+@@ -0,0 +1,214 @@
++import { describe, expect, it } from "vitest";
++import type { Descriptor } from "../components/descriptor.ts";
++import {
++  anim,
++  BOX_ANIMS,
++  dataFields,
++  type Fields,
++  glow,
++  noGlow,
++  shadow,
++  softShadow,
++} from "../components/fields/index.ts";
++import { COMPONENTS, createElement, KINDS } from "../components/index.ts";
++import { WIDGET_NAMES } from "../editor/field-editor.tsx";
++import { inspectorLayout } from "../editor/layout.ts";
++import { defaultScene, type Element, type Scene } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { parsePresetRecipe, parseScene } from "../model/schema.ts";
++import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
++import { LegacySceneSchema } from "./legacy-schema.ts";
++import { installCanvasFakes } from "./recording-ctx.ts";
++
++installCanvasFakes();
++const { goldenScenes } = await import("./golden-scenes.ts");
++
++const descriptors = COMPONENTS as unknown as Descriptor<Element>[];
++
++/** Every leaf value's path in `v` (objects and arrays opened). */
++function leaves(
++  v: unknown,
++  path: (string | number)[] = [],
++): (string | number)[][] {
++  if (v && typeof v === "object") {
++    return Object.entries(v).flatMap(([k, x]) =>
++      leaves(x, [...path, Array.isArray(v) ? Number(k) : k]),
++    );
++  }
++  return [path];
++}
++
++function setAt(root: unknown, path: (string | number)[], value: unknown) {
++  const copy = structuredClone(root) as Record<string | number, unknown>;
++  let o = copy;
++  for (const k of path.slice(0, -1)) o = o[k] as typeof o;
++  const last = path[path.length - 1] as string | number;
++  if (value === undefined) delete o[last];
++  else o[last] = value;
++  return copy;
++}
++
++/** A value of the wrong type for whatever is at `path`. */
++const wrong = (v: unknown) => (typeof v === "string" ? 3 : "x");
++
++function sameVerdict(data: unknown) {
++  const now = parseScene(data);
++  const before = LegacySceneSchema.safeParse(data);
++  expect(now.ok, JSON.stringify(data).slice(0, 200)).toBe(before.success);
++  if (now.ok && before.success) expect(now.value).toEqual(before.data);
++}
++
++describe("the generated scene schema", () => {
++  const scenes = goldenScenes();
++
++  it.each(Object.keys(scenes))("accepts «%s» as the old schema did", (name) => {
++    sameVerdict(scenes[name]);
++  });
++
++  it("agrees with the old schema on every broken or missing value", () => {
++    const scene = scenes.kinds as Scene;
++    for (const path of leaves(scene.elements)) {
++      const full = ["elements", ...path];
++      const value = full.reduce<unknown>(
++        (o, k) => (o as Record<string | number, unknown>)[k],
++        scene,
++      );
++      sameVerdict(setAt(scene, full, wrong(value)));
++      sameVerdict(setAt(scene, full, undefined));
++    }
++  });
++
++  it("agrees on the particle limits and on unknown kinds", () => {
++    const particles = createElement("particles");
++    for (const [key, values] of [
++      ["count", [0, 1, 300, 301, 1.5]],
++      ["speed", [0, 1, 2.5, 6]],
++      ["drift", [-1, 0, 500]],
++    ] as const) {
++      for (const v of values) {
++        sameVerdict({
++          ...defaultScene(),
++          elements: [{ ...particles, [key]: v }],
++        });
++      }
++    }
++    sameVerdict({
++      ...defaultScene(),
++      elements: [{ ...createElement("rect"), kind: "star" }],
++    });
++  });
++
++  it("opens every built-in preset and background", () => {
++    for (const r of [...BUILT_IN_RECIPES, ...BUILT_IN_BACKGROUNDS]) {
++      expect(parsePresetRecipe(r as PresetRecipe).ok, r.name).toBe(true);
++    }
++  });
++
++  it("accepts a new element of every kind", () => {
++    const elements = KINDS.map((k) => createElement(k));
++    expect(parseScene({ ...defaultScene(), elements }).ok).toBe(true);
++  });
++});
++
++/** Fields kept out of the inspector on purpose, and why. */
++const NOT_IN_INSPECTOR: Record<string, string[]> = {
++  // dragged on the stage
++  "*": ["x", "y"],
++  // square: the size control sets both sides
++  icon: ["h"],
++  // read from the uploaded file
++  image: ["aspect"],
++  // the content and its space follow from grouping
++  group: ["cw", "ch", "children"],
++  // resized on the stage, or with "Ajustar al lienzo"
++  particles: ["w", "h"],
++};
++
++/** Every data field's path, objects opened into their fields. */
++function fieldPaths(fields: Fields, prefix = ""): string[] {
++  return dataFields(fields).flatMap(([k, f]) =>
++    f.type === "object" ? fieldPaths(f.fields, `${prefix}${k}.`) : [prefix + k],
++  );
++}
++
++describe("the generated inspector", () => {
++  it.each(descriptors.map((d) => [d.kind, d] as const))(
++    "edits every field of «%s»",
++    (kind, d) => {
++      const shown = inspectorLayout(d, createElement(d.kind as never), true)
++        .flatMap((s) => s.items)
++        .filter((it) => it.field.type !== "widget")
++        .map((it) => it.path.join("."));
++      const hidden = [
++        ...(NOT_IN_INSPECTOR["*"] ?? []),
++        ...(NOT_IN_INSPECTOR[kind] ?? []),
++      ];
++      const missing = fieldPaths(d.fields).filter(
++        (p) => !shown.includes(p) && !hidden.includes(p),
++      );
++      expect(missing).toEqual([]);
++      // and nothing is hidden that the inspector shows anyway
++      expect(shown.filter((p) => hidden.includes(p))).toEqual([]);
++    },
++  );
++
++  it.each(descriptors.map((d) => [d.kind, d] as const))(
++    "«%s» puts every control in a section it declares, and has a widget for each custom one",
++    (_kind, d) => {
++      const layout = inspectorLayout(d, createElement(d.kind as never), true);
++      const placed = layout.flatMap((s) => s.items).length;
++      const all = Object.values(d.fields).filter(
++        (f) => f.type === "widget" || f.inspector !== false,
++      );
++      // every top-level control lands in one of the sections
++      for (const f of all) {
++        expect(d.sections.map((s) => s.title)).toContain(f.section);
++      }
++      expect(placed).toBeGreaterThan(0);
++      for (const s of layout) expect(s.items.length).toBeGreaterThan(0);
++      for (const { field } of layout.flatMap((s) => s.items)) {
++        if (field.type === "widget" || field.type === "custom") {
++          expect(WIDGET_NAMES).toContain(field.widget);
++        }
++      }
++    },
++  );
++});
++
++describe("descriptors", () => {
++  it("cover every kind once, each with a draw function and its animations", () => {
++    expect(KINDS).toEqual([
++      "rect",
++      "ellipse",
++      "icon",
++      "image",
++      "group",
++      "text",
++      "line",
++      "particles",
++    ]);
++    for (const d of descriptors) {
++      expect(typeof d.draw).toBe("function");
++      expect(d.anims).toContain("none");
++      expect(d.animatable.length).toBeGreaterThan(0);
++      // what keyframes may animate are real number or color fields
++      for (const p of d.animatable) expect(fieldPaths(d.fields)).toContain(p);
++    }
++  });
++
++  it("compose the shared field groups instead of redefining them", () => {
++    const keys = (f: { fields: Fields }) => Object.keys(f.fields);
++    const glowKeys = keys(glow(noGlow("#000000"), ""));
++    const animKeys = keys(anim(BOX_ANIMS));
++    const shadowKeys = keys(shadow(softShadow(true)));
++    for (const d of descriptors) {
++      for (const [name, f] of dataFields(d.fields)) {
++        if (f.type !== "object") continue;
++        if (/glow/i.test(name)) expect(keys(f), d.kind).toEqual(glowKeys);
++        if (name === "anim") expect(keys(f), d.kind).toEqual(animKeys);
++        if (name === "shadow") expect(keys(f), d.kind).toEqual(shadowKeys);
++      }
++      expect(dataFields(d.fields).some(([k]) => k === "anim")).toBe(true);
++    }
++  });
++});
+diff --git a/src/test/render-log.ts b/src/test/render-log.ts
+new file mode 100644
+index 0000000..907a373
+--- /dev/null
++++ b/src/test/render-log.ts
+@@ -0,0 +1,20 @@
++import { createHash } from "node:crypto";
++import { demoScene } from "../demo.ts";
++import type { Ctx } from "../engine/paint.ts";
++import { drawScene } from "../engine/render.ts";
++import type { Scene } from "../model/model.ts";
++import { RecordingCtx } from "./recording-ctx.ts";
++
++/** Frames compared for each scene: the start, mid-entry, mid-loop and near the end. */
++export const FRAMES = [0, 0.37, 1.25, 2.9];
++
++/** The hash of every call `drawScene` makes for each frame of `scene`. */
++export function renderHashes(scene: Scene): string[] {
++  return FRAMES.map((t) => {
++    const ctx = new RecordingCtx();
++    drawScene(ctx as unknown as Ctx, scene, t);
++    return createHash("sha256").update(ctx.log.join("\n")).digest("hex");
++  });
++}
++
++export { demoScene };
+diff --git a/src/test/render.golden.json b/src/test/render.golden.json
+new file mode 100644
+index 0000000..726927a
+--- /dev/null
++++ b/src/test/render.golden.json
+@@ -0,0 +1,20 @@
++{
++  "demo": [
++    "8ef074d84c590346e5fcb5ebf62b3569d2e1cf71d891a212d62ca22d9814c1cf",
++    "82eca89d3c866fffd0c771a4a8803ac510a7abddbaaadc8d0168be77b16c5119",
++    "d682d92af3f011243ec9cbebc85faaa814b7119df67925b275eabff9aa6910e6",
++    "d52c82d57a8da47c64d57bae47f54c4572140e01954ffb26d2129f395ec151a6"
++  ],
++  "presets": [
++    "f4178623dbf0266581442fe177858ec8e9a79c3d40b0a909f474c3da76a7b048",
++    "167d0ed984f5accd06470ab4dc853bf5647497f011d1fa6cbda8cce3c9d47f51",
++    "8801a2737c17df0aff69ca3d5e3414dd905f0418f43877ce8037c0da3e384ac4",
++    "47fb61ff4964ab7e2504628dc914dfb6f815b74c3d0e6b8aaecedcb30c093b50"
++  ],
++  "kinds": [
++    "54ebab94065651759850d8835ff8aed849d28c5e39485e9c623253cd5717cced",
++    "0caf58a6a3a85699354cc2412c013d6b5676fc6dae4619ed9d3da6b6c91d47ec",
++    "d6a300c4f85b828f25bb4f791858402f200acf559f64c888564ba9fb0759ed9e",
++    "27aa96f46de0057a3df71f72fc46fe0a2211a9ea3143f679acfa1f019922394e"
++  ]
++}
+diff --git a/src/test/render.test.ts b/src/test/render.test.ts
+new file mode 100644
+index 0000000..3a81934
+--- /dev/null
++++ b/src/test/render.test.ts
+@@ -0,0 +1,29 @@
++import { existsSync, readFileSync, writeFileSync } from "node:fs";
++import { describe, expect, it } from "vitest";
++import { installCanvasFakes } from "./recording-ctx.ts";
++
++installCanvasFakes();
++const { goldenScenes } = await import("./golden-scenes.ts");
++const { renderHashes } = await import("./render-log.ts");
++
++/**
++ * `render.golden.json` holds the hash of every canvas call made for each frame of the
++ * golden scenes, recorded before the component registry (spec 012). Matching hashes mean
++ * the scenes draw exactly as they did. `UPDATE_GOLDEN=1` rewrites it.
++ */
++const GOLDEN = new URL("./render.golden.json", import.meta.url);
++
++describe("rendering", () => {
++  const scenes = goldenScenes();
++  const now = Object.fromEntries(
++    Object.entries(scenes).map(([name, s]) => [name, renderHashes(s)]),
++  );
++  if (process.env.UPDATE_GOLDEN || !existsSync(GOLDEN)) {
++    writeFileSync(GOLDEN, `${JSON.stringify(now, null, 2)}\n`);
++  }
++  const golden = JSON.parse(readFileSync(GOLDEN, "utf8"));
++
++  it.each(Object.keys(scenes))("«%s» draws exactly as before", (name) => {
++    expect(now[name]).toEqual(golden[name]);
++  });
++});

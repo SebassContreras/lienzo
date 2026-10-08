@@ -185,6 +185,9 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
   },
 };
 
+/** The widget names descriptors may use. */
+export const WIDGET_NAMES = Object.keys(WIDGETS);
+
 /** One row of the inspector: the control `item`'s field type calls for. */
 function Control({
   el,
