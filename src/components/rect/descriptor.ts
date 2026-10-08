@@ -1,4 +1,5 @@
 import { defineComponent, type ElementOf } from "../descriptor.ts";
+import type { EllipseEl } from "../ellipse/descriptor.ts";
 import {
   anim,
   BOX_ANIMS,
@@ -72,11 +73,8 @@ export const SHAPE_SECTIONS = [
   { title: "Animación" },
 ];
 
-/** Anything drawn like a rectangle (see `drawShape`). */
-export type ShapeEl = ElementOf<
-  "rect" | "ellipse",
-  ReturnType<typeof shapeFields>
->;
+/** Shapes that share the rectangle's fill, border, glows, shadow and label. */
+export type ShapeEl = RectEl | EllipseEl;
 
 const { x, y, w, h, ...style } = shapeFields(280, 180);
 

@@ -30,8 +30,9 @@
 - [x] T010 [agent] [status:done] Descriptor for particles
       covers: D1@1
       changes: src/components/index.ts (+2 -0), src/components/particles/descriptor.ts (+99 -0), src/components/particles.ts → src/components/particles/draw.ts (+12 -7), src/engine/render.ts (+2 -2)
-- [ ] T011 [agent] [status:todo] Scene schema and element types generated from the descriptors
+- [x] T011 [agent] [status:done] Scene schema and element types generated from the descriptors
       covers: D2@1
+      changes: src/components/fields/field.ts (+6 -3), src/components/group/descriptor.ts (+10 -7), src/components/index.ts (+33 -27), src/components/rect/descriptor.ts (+3 -5), src/editor/inspector.tsx (+1 -1), src/model/element-schema.ts (+41 -0), src/model/model.ts (+47 -493), src/model/schema.ts (+6 -221)
 - [ ] T012 [agent] [status:todo] `animate(el, t, scene)` layer and the new draw signature
       covers: D4@1, A24@1
 - [ ] T013 [agent] [status:todo] Generic inspector (`FieldEditor`) with custom widgets

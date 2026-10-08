@@ -320,7 +320,7 @@ function AnimFields({
   onChange,
 }: {
   anim: Anim;
-  kinds: AnimKind[];
+  kinds: readonly AnimKind[];
   onChange: (a: Anim) => void;
 }) {
   const loops = ["float", "pulse", "breathe"].includes(anim.kind);

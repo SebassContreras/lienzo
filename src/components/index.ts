@@ -1,20 +1,36 @@
 /**
- * The component registry. A kind exists once its descriptor is listed here; order is the
- * library's.
+ * The component registry. A kind exists once its descriptor is imported here, listed in
+ * `COMPONENTS` and its element type added to `RegisteredElement`; order is the library's.
  */
+import { registerElementKinds } from "../model/element-schema.ts";
 import { newId } from "../model/id.ts";
 import type { Descriptor } from "./descriptor.ts";
-import { ellipse } from "./ellipse/descriptor.ts";
+import { type EllipseEl, ellipse } from "./ellipse/descriptor.ts";
 import { defaultsOf } from "./fields/index.ts";
-import { group } from "./group/descriptor.ts";
-import { icon } from "./icon/descriptor.ts";
-import { image } from "./image/descriptor.ts";
-import { line } from "./line/descriptor.ts";
-import { particles } from "./particles/descriptor.ts";
-import { rect } from "./rect/descriptor.ts";
-import { text } from "./text/descriptor.ts";
+import { type GroupEl, group } from "./group/descriptor.ts";
+import { type IconEl, icon } from "./icon/descriptor.ts";
+import { type ImageEl, image } from "./image/descriptor.ts";
+import { type LineEl, line } from "./line/descriptor.ts";
+import { type ParticlesEl, particles } from "./particles/descriptor.ts";
+import { type RectEl, rect } from "./rect/descriptor.ts";
+import { type TextEl, text } from "./text/descriptor.ts";
 
-export const COMPONENTS = [
+/** Every element kind's type, as a union. */
+export type RegisteredElement =
+  | RectEl
+  | EllipseEl
+  | IconEl
+  | ImageEl
+  | GroupEl
+  | TextEl
+  | LineEl
+  | ParticlesEl;
+
+export type RegisteredKind = RegisteredElement["kind"];
+
+type DescriptorOf<E> = E extends RegisteredElement ? Descriptor<E> : never;
+
+export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = [
   rect,
   ellipse,
   icon,
@@ -23,25 +39,15 @@ export const COMPONENTS = [
   text,
   line,
   particles,
-] as const satisfies readonly Descriptor<{
-  kind: string;
-}>[];
+];
 
-type Described<D> = D extends Descriptor<infer E> ? E : never;
+registerElementKinds(COMPONENTS);
 
-/** The element type each registered descriptor describes, as a union. */
-export type RegisteredElement = Described<(typeof COMPONENTS)[number]>;
-
-export type RegisteredKind = RegisteredElement["kind"];
-
-const BY_KIND = new Map<string, Descriptor<RegisteredElement>>(
-  (COMPONENTS as readonly Descriptor<RegisteredElement>[]).map((d) => [
-    d.kind,
-    d,
-  ]),
+const BY_KIND = new Map<string, DescriptorOf<RegisteredElement>>(
+  COMPONENTS.map((d) => [d.kind, d]),
 );
 
-export const KINDS = [...BY_KIND.keys()] as RegisteredKind[];
+export const KINDS = COMPONENTS.map((d) => d.kind);
 
 /** The descriptor of `kind`, or undefined for a kind that does not exist. */
 export function descriptorOf<K extends RegisteredKind>(
@@ -49,7 +55,7 @@ export function descriptorOf<K extends RegisteredKind>(
 ): Descriptor<Extract<RegisteredElement, { kind: K }>>;
 export function descriptorOf(
   kind: string,
-): Descriptor<RegisteredElement> | undefined;
+): DescriptorOf<RegisteredElement> | undefined;
 export function descriptorOf(kind: string) {
   return BY_KIND.get(kind);
 }

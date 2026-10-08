@@ -249,11 +249,14 @@ export function defaultsOf<F extends Fields>(fields: F): ValueOf<F> {
   ) as ValueOf<F>;
 }
 
+/** The Zod shape (key → schema) of the value `fields` describe. */
+export function shapeOf(fields: Fields): Record<string, z.ZodType> {
+  return Object.fromEntries(dataFields(fields).map(([k, f]) => [k, f.schema]));
+}
+
 /** The Zod object for the value `fields` describe. */
 export function schemaOf<F extends Fields>(fields: F): z.ZodType<ValueOf<F>> {
-  return z.object(
-    Object.fromEntries(dataFields(fields).map(([k, f]) => [k, f.schema])),
-  ) as unknown as z.ZodType<ValueOf<F>>;
+  return z.object(shapeOf(fields)) as unknown as z.ZodType<ValueOf<F>>;
 }
 
 export function obj<F extends Fields, P = Parent>(

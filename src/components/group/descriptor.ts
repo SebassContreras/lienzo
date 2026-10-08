@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { ElementSchema } from "../../model/element-schema.ts";
 import type { Element } from "../../model/model.ts";
-import { ElementSchema } from "../../model/schema.ts";
 import { defineComponent, type ElementOf } from "../descriptor.ts";
 import { anim, BOX_ANIMS, box, custom, num, widget } from "../fields/index.ts";
 import { drawGroup } from "./draw.ts";
@@ -10,6 +10,11 @@ const { x, y, w, h } = box(100, 100, {
   min: 10,
   max: 4000,
 });
+
+/** Annotated so the element types do not depend on themselves through the schema. */
+const childrenSchema: z.ZodType<unknown[]> = z.array(
+  z.lazy(() => ElementSchema),
+);
 
 /**
  * Elements moved, resized, duplicated and animated as one. Children live in their own
@@ -24,12 +29,10 @@ const fields = {
   ungroup: widget("ungroup", { section: "Grupo" }),
   cw: num(100, { label: "Ancho interior", inspector: false }),
   ch: num(100, { label: "Alto interior", inspector: false }),
-  children: custom(
-    "children",
-    [] as unknown[],
-    z.array(z.lazy(() => ElementSchema)),
-    { label: "Elementos", inspector: false },
-  ),
+  children: custom("children", [] as unknown[], childrenSchema, {
+    label: "Elementos",
+    inspector: false,
+  }),
   anim: anim(BOX_ANIMS),
 };
 
