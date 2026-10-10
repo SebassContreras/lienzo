@@ -31,7 +31,7 @@ export function ElementInspector({
   onUngroup?: () => void;
   nameOf: (id: string) => string;
   /** Scene size, for "Ajustar al lienzo". */
-  canvas?: { width: number; height: number };
+  canvas?: { width: number; height: number; duration?: number };
 }) {
   const [presetName, setPresetName] = useState("");
   const change = <T extends Element>(fn: (draft: T) => void) => {

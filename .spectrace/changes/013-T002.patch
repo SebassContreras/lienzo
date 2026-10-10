@@ -1,0 +1,150 @@
+diff --git a/src/engine/timing.test.ts b/src/engine/timing.test.ts
+new file mode 100644
+index 0000000..48836cb
+--- /dev/null
++++ b/src/engine/timing.test.ts
+@@ -0,0 +1,69 @@
++import { describe, expect, it } from "vitest";
++import { localProgress, type Timing } from "./timing.ts";
++
++const timing = (patch: Partial<Timing>): Timing => ({
++  delay: 0,
++  duration: 1,
++  iterations: 1,
++  direction: "normal",
++  fill: "none",
++  easing: (x) => x,
++  ...patch,
++});
++
++describe("localProgress", () => {
++  it("has no effect outside its active time without fill", () => {
++    const tm = timing({ delay: 1, duration: 2 });
++    expect(localProgress(tm, 0.5)).toBeNull();
++    expect(localProgress(tm, 2)).toBeCloseTo(0.5);
++    expect(localProgress(tm, 3)).toBeNull();
++  });
++
++  it("fill holds the start before the delay and the end after the last iteration", () => {
++    const tm = timing({ delay: 1, fill: "both" });
++    expect(localProgress(tm, 0)).toBe(0);
++    expect(localProgress(tm, 5)).toBe(1);
++    expect(localProgress(timing({ fill: "forwards", delay: 1 }), 0)).toBeNull();
++    expect(localProgress(timing({ fill: "backwards" }), 5)).toBeNull();
++  });
++
++  it("repeats N times then holds the end of the last iteration", () => {
++    const tm = timing({ iterations: 3, fill: "forwards" });
++    expect(localProgress(tm, 1.25)).toBeCloseTo(0.25);
++    expect(localProgress(tm, 2.5)).toBeCloseTo(0.5);
++    expect(localProgress(tm, 10)).toBe(1);
++    // A fractional count stops part-way through.
++    expect(
++      localProgress(timing({ iterations: 1.5, fill: "forwards" }), 9),
++    ).toBe(0.5);
++  });
++
++  it("directions: reverse plays backwards, alternate swaps every iteration", () => {
++    expect(localProgress(timing({ direction: "reverse" }), 0.25)).toBeCloseTo(
++      0.75,
++    );
++    const alt = timing({
++      direction: "alternate",
++      iterations: 2,
++      fill: "forwards",
++    });
++    expect(localProgress(alt, 0.25)).toBeCloseTo(0.25);
++    expect(localProgress(alt, 1.25)).toBeCloseTo(0.75);
++    expect(localProgress(alt, 9)).toBe(0);
++  });
++
++  it("forever is periodic for every t, before the delay too", () => {
++    const tm = timing({ iterations: Infinity, delay: 0.3, duration: 0.5 });
++    for (const t of [-1, 0, 0.1, 0.77, 3.9]) {
++      expect(localProgress(tm, t + 0.5)).toBeCloseTo(
++        localProgress(tm, t) ?? NaN,
++      );
++    }
++    expect(localProgress(tm, 0.3)).toBeCloseTo(0);
++  });
++
++  it("applies the easing after the direction", () => {
++    const tm = timing({ direction: "reverse", easing: (x) => x * x });
++    expect(localProgress(tm, 0.25)).toBeCloseTo(0.75 ** 2);
++  });
++});
+diff --git a/src/engine/timing.ts b/src/engine/timing.ts
+new file mode 100644
+index 0000000..8ff93a7
+--- /dev/null
++++ b/src/engine/timing.ts
+@@ -0,0 +1,69 @@
++/**
++ * The Web Animations timing model, reduced to what preset animations use: from a slot's
++ * timing and `t`, the eased progress of its current iteration. Pure, so exports stay
++ * deterministic.
++ */
++import type { EasingFn } from "./easing.ts";
++
++export type Direction = "normal" | "reverse" | "alternate";
++export type Fill = "none" | "forwards" | "backwards" | "both";
++
++export type Timing = {
++  /** Seconds before the first iteration starts. */
++  delay: number;
++  /** Seconds per iteration. */
++  duration: number;
++  /** How many times it plays; `Infinity` repeats forever. */
++  iterations: number;
++  direction: Direction;
++  /** Whether the start state shows before `delay` and the end state after the last iteration. */
++  fill: Fill;
++  easing: EasingFn;
++};
++
++const fillsBackwards = (f: Fill) => f === "backwards" || f === "both";
++const fillsForwards = (f: Fill) => f === "forwards" || f === "both";
++
++/**
++ * Eased progress (0–1, past either end for easings that overshoot) at `t`, or `null` when
++ * the animation has no effect then (outside its active time, without fill). One that
++ * repeats forever is periodic for every `t`, before its delay too, so a loop of whole cycles
++ * closes at the scene's end (A6).
++ */
++export function localProgress(timing: Timing, t: number): number | null {
++  const { delay, duration, iterations, direction, fill, easing } = timing;
++  const local = t - delay;
++  let iteration: number;
++  let p: number;
++  if (duration <= 0) {
++    if (local < 0 && !fillsBackwards(fill)) return null;
++    if (local >= 0 && !fillsForwards(fill)) return null;
++    iteration = local < 0 ? 0 : Math.max(0, iterations - 1);
++    p = local < 0 ? 0 : 1;
++  } else if (iterations === Infinity) {
++    const overall = local / duration;
++    iteration = Math.floor(overall);
++    p = overall - iteration;
++  } else if (local < 0) {
++    if (!fillsBackwards(fill)) return null;
++    iteration = 0;
++    p = 0;
++  } else if (local >= duration * iterations) {
++    if (!fillsForwards(fill)) return null;
++    const end = iterations;
++    iteration = Number.isInteger(end) ? end - 1 : Math.floor(end);
++    p = Number.isInteger(end) ? 1 : end - Math.floor(end);
++  } else {
++    const overall = local / duration;
++    iteration = Math.floor(overall);
++    p = overall - iteration;
++  }
++  const reversed =
++    direction === "reverse" ||
++    (direction === "alternate" && Math.abs(iteration) % 2 === 1);
++  return easing(reversed ? 1 - p : p);
++}
++
++/** A loop's iteration length: whole cycles per scene, so it closes at the scene's end (A6). */
++export const loopDuration = (sceneDuration: number, cycles: number) =>
++  sceneDuration / Math.max(1, cycles);

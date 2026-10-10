@@ -1,0 +1,302 @@
+diff --git a/src/demo.ts b/src/demo.ts
+index 949d0d9..efe8f18 100644
+--- a/src/demo.ts
++++ b/src/demo.ts
+@@ -1,3 +1,4 @@
++import { migrateAnim } from "./components/fields/index.ts";
+ import {
+   defaultLine,
+   defaultRect,
+@@ -89,14 +90,32 @@ export function demoScene(): Scene {
+     el.fill.color = "#1e1b4b";
+     el.border.color = "#8b5cf6";
+     el.borderGlow = { enabled: true, color: "#8b5cf6", blur: 18, strength: 1 };
+-    el.anim = { kind: "float", amount: 8, cycles: 1, delay: 0.5 };
++    el.anim = {
++      ...el.anim,
++      loop: {
++        ...el.anim.loop,
++        kind: "float",
++        amount: 8,
++        cycles: 1,
++        delay: 0.5,
++      },
++    };
+   });
+   const server = card("MCP\nServer", 420, 560, 240, 150, (el) => {
+     el.label.size = 34;
+     el.label.weight = 800;
+     el.bgGlow = { enabled: true, color: "#1d4ed8", blur: 60, strength: 1 };
+     el.borderGlow = { enabled: true, color: "#60a5fa", blur: 18, strength: 2 };
+-    el.anim = { kind: "breathe", amount: 60, cycles: 2, delay: 0 };
++    el.anim = {
++      ...el.anim,
++      loop: {
++        ...el.anim.loop,
++        kind: "breathe",
++        amount: 60,
++        cycles: 2,
++        delay: 0,
++      },
++    };
+   });
+   const tool = (text: string, y: number, color: string, delay: number) =>
+     card(text, 770, y, 220, 96, (el) => {
+@@ -110,7 +129,10 @@ export function demoScene(): Scene {
+       };
+       el.border = { ...el.border, width: 1.5, color, opacity: 0.7 };
+       el.borderGlow = { enabled: true, color, blur: 12, strength: 1 };
+-      el.anim = { kind: "float", amount: 6, cycles: 1, delay };
++      el.anim = {
++        ...el.anim,
++        loop: { ...el.anim.loop, kind: "float", amount: 6, cycles: 1, delay },
++      };
+     });
+   const tools = tool("🛠  Tools", 470, "#22d3ee", 0);
+   const data = tool("🗄  Datos", 587, "#4ade80", 1);
+@@ -162,7 +184,7 @@ export function demoScene(): Scene {
+     weight: 700,
+     font: "Caveat",
+     color: "#60a5fa",
+-    anim: { kind: "fade-in", amount: 0, cycles: 1, delay: 0.6 },
++    anim: migrateAnim({ kind: "fade-in", amount: 0, cycles: 1, delay: 0.6 }),
+   });
+   const cta = fromPreset("Botón CTA") as RectEl;
+   Object.assign(cta, { x: 770, y: 930 });
+diff --git a/src/presets/recipes.test.ts b/src/presets/recipes.test.ts
+index bd27486..80f1a16 100644
+--- a/src/presets/recipes.test.ts
++++ b/src/presets/recipes.test.ts
+@@ -1,4 +1,5 @@
+ import { describe, expect, it } from "vitest";
++import { migrateAnim } from "../components/fields/index.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import fixture from "./built-in.fixture.json";
+ import { BUILT_IN_RECIPES } from "./recipes.ts";
+@@ -25,7 +26,11 @@ describe("built-in recipes", () => {
+     if ("error" in r) throw new Error(r.error);
+     const { id, ...element } = r.element;
+     expect(typeof id).toBe("string");
+-    expect(element).toEqual(fixture[i]);
++    // Recorded before spec 013: its flat `anim` now lives in the slot of its kind.
++    const before = fixture[i] as (typeof fixture)[number] & { anim?: unknown };
++    expect(element).toEqual(
++      before.anim ? { ...before, anim: migrateAnim(before.anim) } : before,
++    );
+   });
+ 
+   it.each(
+diff --git a/src/presets/resolve.test.ts b/src/presets/resolve.test.ts
+index c54ef36..5cdcfcf 100644
+--- a/src/presets/resolve.test.ts
++++ b/src/presets/resolve.test.ts
+@@ -51,7 +51,12 @@ describe("traits", () => {
+       kind: "rect",
+       traits: [{ use: "float", amount: 30 }],
+     }) as RectEl;
+-    expect(el.anim).toEqual({ kind: "float", amount: 30, cycles: 1, delay: 0 });
++    expect(el.anim.loop).toMatchObject({
++      kind: "float",
++      amount: 30,
++      cycles: 1,
++      delay: 0,
++    });
+   });
+ });
+ 
+diff --git a/src/test/golden-scenes.ts b/src/test/golden-scenes.ts
+index 8127576..291df87 100644
+--- a/src/test/golden-scenes.ts
++++ b/src/test/golden-scenes.ts
+@@ -1,6 +1,8 @@
++import { migrateAnim } from "../components/fields/index.ts";
+ import { demoScene } from "../demo.ts";
+ import {
+   ANIMS_BY_KIND,
++  type Anim,
+   defaultElement,
+   defaultScene,
+   type Element,
+@@ -55,7 +57,12 @@ function kindsScene(): Scene {
+   for (const kind of KINDS) {
+     for (const anim of ANIMS_BY_KIND[kind]) {
+       const el = defaultElement(kind);
+-      el.anim = { kind: anim, amount: 20, cycles: 2, delay: 0.2 };
++      el.anim = migrateAnim({
++        kind: anim,
++        amount: 20,
++        cycles: 2,
++        delay: 0.2,
++      }) as Anim;
+       if (el.kind === "group") {
+         el.children = [defaultElement("rect"), defaultElement("text")];
+         el.w = 200;
+diff --git a/src/test/legacy-schema.ts b/src/test/legacy-schema.ts
+index a49b172..6af0e62 100644
+--- a/src/test/legacy-schema.ts
++++ b/src/test/legacy-schema.ts
+@@ -3,26 +3,18 @@
+  * that the schema generated from the descriptors accepts and rejects exactly the same scenes.
+  */
+ import { z } from "zod";
++import { ANIM_KINDS, anim as animField } from "../components/fields/anim.ts";
+ 
+ const color = z.string();
+ const align = z.enum(["left", "center", "right"]);
+ const strokeStyle = z.enum(["solid", "dashed", "dotted"]);
+ 
+-const anim = z.object({
+-  kind: z.enum([
+-    "none",
+-    "float",
+-    "pulse",
+-    "breathe",
+-    "fade-in",
+-    "pop-in",
+-    "slide-up",
+-    "draw",
+-  ]),
+-  amount: z.number(),
+-  cycles: z.number(),
+-  delay: z.number(),
+-});
++/**
++ * The one group spec 013 reshaped after 012: `anim` became entry/loop/exit slots. The old flat
++ * shape is still read (and migrated into the slots), so both sides check it with the same
++ * schema here; the migration itself is tested in `src/engine/anim.test.ts`.
++ */
++const anim = animField(ANIM_KINDS).schema;
+ 
+ const glow = z.object({
+   enabled: z.boolean(),
+diff --git a/src/test/registry.test.ts b/src/test/registry.test.ts
+index 63b9100..2f5672e 100644
+--- a/src/test/registry.test.ts
++++ b/src/test/registry.test.ts
+@@ -76,7 +76,8 @@ describe("the generated scene schema", () => {
+       sameVerdict(setAt(scene, full, wrong(value)));
+       sameVerdict(setAt(scene, full, undefined));
+     }
+-  });
++    // One full-scene parse per leaf, twice; the anim slots (013) add many leaves.
++  }, 60_000);
+ 
+   it("agrees on the particle limits and on unknown kinds", () => {
+     const particles = createElement("particles");
+diff --git a/src/traits/breathe.ts b/src/traits/breathe.ts
+index 3cb1b9f..d3036ab 100644
+--- a/src/traits/breathe.ts
++++ b/src/traits/breathe.ts
+@@ -7,13 +7,22 @@ export const breathe = defineTrait({
+   params: { amount: 60, cycles: 2, delay: 0 },
+   apply: {
+     shape: (el, p) => {
+-      el.anim = { kind: "breathe", ...p };
++      el.anim = {
++        ...el.anim,
++        loop: { ...el.anim.loop, kind: "breathe", ...p },
++      };
+     },
+     text: (el, p) => {
+-      el.anim = { kind: "breathe", ...p };
++      el.anim = {
++        ...el.anim,
++        loop: { ...el.anim.loop, kind: "breathe", ...p },
++      };
+     },
+     particles: (el, p) => {
+-      el.anim = { kind: "breathe", ...p };
++      el.anim = {
++        ...el.anim,
++        loop: { ...el.anim.loop, kind: "breathe", ...p },
++      };
+     },
+   },
+ });
+diff --git a/src/traits/fade-in.ts b/src/traits/fade-in.ts
+index 19ec761..5f8c127 100644
+--- a/src/traits/fade-in.ts
++++ b/src/traits/fade-in.ts
+@@ -7,16 +7,28 @@ export const fadeIn = defineTrait({
+   params: { delay: 0 },
+   apply: {
+     shape: (el, p) => {
+-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++      el.anim = {
++        ...el.anim,
++        in: { ...el.anim.in, kind: "fade", delay: p.delay },
++      };
+     },
+     text: (el, p) => {
+-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++      el.anim = {
++        ...el.anim,
++        in: { ...el.anim.in, kind: "fade", delay: p.delay },
++      };
+     },
+     line: (el, p) => {
+-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++      el.anim = {
++        ...el.anim,
++        in: { ...el.anim.in, kind: "fade", delay: p.delay },
++      };
+     },
+     particles: (el, p) => {
+-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
++      el.anim = {
++        ...el.anim,
++        in: { ...el.anim.in, kind: "fade", delay: p.delay },
++      };
+     },
+   },
+ });
+diff --git a/src/traits/float.ts b/src/traits/float.ts
+index 2e0ea02..998df32 100644
+--- a/src/traits/float.ts
++++ b/src/traits/float.ts
+@@ -7,16 +7,16 @@ export const float = defineTrait({
+   params: { amount: 12, cycles: 1, delay: 0 },
+   apply: {
+     shape: (el, p) => {
+-      el.anim = { kind: "float", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
+     },
+     text: (el, p) => {
+-      el.anim = { kind: "float", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
+     },
+     icon: (el, p) => {
+-      el.anim = { kind: "float", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
+     },
+     group: (el, p) => {
+-      el.anim = { kind: "float", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
+     },
+   },
+ });
+diff --git a/src/traits/pulse.ts b/src/traits/pulse.ts
+index 25838dc..4d991a3 100644
+--- a/src/traits/pulse.ts
++++ b/src/traits/pulse.ts
+@@ -7,16 +7,16 @@ export const pulse = defineTrait({
+   params: { amount: 6, cycles: 2, delay: 0 },
+   apply: {
+     shape: (el, p) => {
+-      el.anim = { kind: "pulse", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
+     },
+     text: (el, p) => {
+-      el.anim = { kind: "pulse", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
+     },
+     icon: (el, p) => {
+-      el.anim = { kind: "pulse", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
+     },
+     group: (el, p) => {
+-      el.anim = { kind: "pulse", ...p };
++      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
+     },
+   },
+ });

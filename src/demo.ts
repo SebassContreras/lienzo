@@ -1,3 +1,4 @@
+import { migrateAnim } from "./components/fields/index.ts";
 import {
   defaultLine,
   defaultRect,
@@ -89,14 +90,32 @@ export function demoScene(): Scene {
     el.fill.color = "#1e1b4b";
     el.border.color = "#8b5cf6";
     el.borderGlow = { enabled: true, color: "#8b5cf6", blur: 18, strength: 1 };
-    el.anim = { kind: "float", amount: 8, cycles: 1, delay: 0.5 };
+    el.anim = {
+      ...el.anim,
+      loop: {
+        ...el.anim.loop,
+        kind: "float",
+        amount: 8,
+        cycles: 1,
+        delay: 0.5,
+      },
+    };
   });
   const server = card("MCP\nServer", 420, 560, 240, 150, (el) => {
     el.label.size = 34;
     el.label.weight = 800;
     el.bgGlow = { enabled: true, color: "#1d4ed8", blur: 60, strength: 1 };
     el.borderGlow = { enabled: true, color: "#60a5fa", blur: 18, strength: 2 };
-    el.anim = { kind: "breathe", amount: 60, cycles: 2, delay: 0 };
+    el.anim = {
+      ...el.anim,
+      loop: {
+        ...el.anim.loop,
+        kind: "breathe",
+        amount: 60,
+        cycles: 2,
+        delay: 0,
+      },
+    };
   });
   const tool = (text: string, y: number, color: string, delay: number) =>
     card(text, 770, y, 220, 96, (el) => {
@@ -110,7 +129,10 @@ export function demoScene(): Scene {
       };
       el.border = { ...el.border, width: 1.5, color, opacity: 0.7 };
       el.borderGlow = { enabled: true, color, blur: 12, strength: 1 };
-      el.anim = { kind: "float", amount: 6, cycles: 1, delay };
+      el.anim = {
+        ...el.anim,
+        loop: { ...el.anim.loop, kind: "float", amount: 6, cycles: 1, delay },
+      };
     });
   const tools = tool("🛠  Tools", 470, "#22d3ee", 0);
   const data = tool("🗄  Datos", 587, "#4ade80", 1);
@@ -162,7 +184,7 @@ export function demoScene(): Scene {
     weight: 700,
     font: "Caveat",
     color: "#60a5fa",
-    anim: { kind: "fade-in", amount: 0, cycles: 1, delay: 0.6 },
+    anim: migrateAnim({ kind: "fade-in", amount: 0, cycles: 1, delay: 0.6 }),
   });
   const cta = fromPreset("Botón CTA") as RectEl;
   Object.assign(cta, { x: 770, y: 930 });

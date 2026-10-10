@@ -1,6 +1,8 @@
+import { migrateAnim } from "../components/fields/index.ts";
 import { demoScene } from "../demo.ts";
 import {
   ANIMS_BY_KIND,
+  type Anim,
   defaultElement,
   defaultScene,
   type Element,
@@ -55,7 +57,12 @@ function kindsScene(): Scene {
   for (const kind of KINDS) {
     for (const anim of ANIMS_BY_KIND[kind]) {
       const el = defaultElement(kind);
-      el.anim = { kind: anim, amount: 20, cycles: 2, delay: 0.2 };
+      el.anim = migrateAnim({
+        kind: anim,
+        amount: 20,
+        cycles: 2,
+        delay: 0.2,
+      }) as Anim;
       if (el.kind === "group") {
         el.children = [defaultElement("rect"), defaultElement("text")];
         el.w = 200;

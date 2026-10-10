@@ -7,13 +7,22 @@ export const breathe = defineTrait({
   params: { amount: 60, cycles: 2, delay: 0 },
   apply: {
     shape: (el, p) => {
-      el.anim = { kind: "breathe", ...p };
+      el.anim = {
+        ...el.anim,
+        loop: { ...el.anim.loop, kind: "breathe", ...p },
+      };
     },
     text: (el, p) => {
-      el.anim = { kind: "breathe", ...p };
+      el.anim = {
+        ...el.anim,
+        loop: { ...el.anim.loop, kind: "breathe", ...p },
+      };
     },
     particles: (el, p) => {
-      el.anim = { kind: "breathe", ...p };
+      el.anim = {
+        ...el.anim,
+        loop: { ...el.anim.loop, kind: "breathe", ...p },
+      };
     },
   },
 });

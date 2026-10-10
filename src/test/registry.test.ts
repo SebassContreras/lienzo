@@ -76,7 +76,8 @@ describe("the generated scene schema", () => {
       sameVerdict(setAt(scene, full, wrong(value)));
       sameVerdict(setAt(scene, full, undefined));
     }
-  });
+    // One full-scene parse per leaf, twice; the anim slots (013) add many leaves.
+  }, 60_000);
 
   it("agrees on the particle limits and on unknown kinds", () => {
     const particles = createElement("particles");

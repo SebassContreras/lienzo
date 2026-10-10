@@ -5,6 +5,7 @@
 import { ImageUp, Link2Off, Maximize, Shuffle, Ungroup } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { descriptorOf } from "../components/index.ts";
+import { lateSlots } from "../engine/anim.ts";
 import { imageSize } from "../engine/images.ts";
 import type {
   Element,
@@ -29,8 +30,8 @@ export type Change = (fn: (draft: Element) => void) => void;
 /** What widgets may need from the editor around the inspector. */
 export type EditorContext = {
   nameOf: (id: string) => string;
-  /** Scene size, for "Ajustar al lienzo". */
-  canvas?: { width: number; height: number };
+  /** Scene size, for "Ajustar al lienzo"; its duration, for the animation warning. */
+  canvas?: { width: number; height: number; duration?: number };
   onUngroup?: () => void;
   onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
 };
@@ -142,6 +143,18 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
       y se animan juntos.
     </div>
   ),
+  "anim-late": ({ el, ctx }) => {
+    const duration = ctx.canvas?.duration;
+    const late = duration === undefined ? [] : lateSlots(el.anim, duration);
+    return (
+      late.length > 0 && (
+        <div className="hint error">
+          {late.join(" y ")} {late.length > 1 ? "terminan" : "termina"} después
+          del final de la escena ({duration} s); no se verá completa.
+        </div>
+      )
+    );
+  },
   ungroup: ({ ctx }) =>
     ctx.onUngroup && (
       <button type="button" onClick={ctx.onUngroup}>

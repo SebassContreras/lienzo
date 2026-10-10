@@ -51,7 +51,12 @@ describe("traits", () => {
       kind: "rect",
       traits: [{ use: "float", amount: 30 }],
     }) as RectEl;
-    expect(el.anim).toEqual({ kind: "float", amount: 30, cycles: 1, delay: 0 });
+    expect(el.anim.loop).toMatchObject({
+      kind: "float",
+      amount: 30,
+      cycles: 1,
+      delay: 0,
+    });
   });
 });
 
