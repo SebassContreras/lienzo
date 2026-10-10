@@ -1,38 +1,20 @@
 import { Save, Upload } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
+import type { AnimPreset } from "../model/anim-preset.ts";
 import type { Element, Scene } from "../model/model.ts";
 import { applyToSelection, capturePreset } from "../presets/anim-presets.ts";
 import { groupByCategory } from "../presets/categories.ts";
-import {
-  downloadJson,
-  freeSlug,
-  oneLine,
-  readJsonFile,
-} from "../presets/json-files.ts";
+import { downloadJson, freeSlug, readJsonFile } from "../presets/json-files.ts";
 import {
   deleteStored,
   loadAnimPresetFiles,
   renameStored,
   saveAnimPreset,
+  toAnimPreset,
 } from "../presets/store.ts";
 import { ItemActions, type StoredRef } from "./library.tsx";
 
 type Stored = { file: string; preset: AnimPreset };
-
-/** `data` as a preset, or an error naming `what` (019/D11: nothing invalid is written). */
-function validated(data: unknown, what: string): AnimPreset {
-  const parsed = parseAnimPreset(data);
-  if (!parsed.ok)
-    throw new Error(
-      `${what} no es una animación válida: ${oneLine(parsed.error)}`,
-    );
-  return parsed.value;
-}
-
-/** Validates, then writes; an invalid preset rejects without writing. */
-const save = async (data: unknown, file?: string) =>
-  saveAnimPreset(validated(data, `«${file ?? "la animación"}»`), file);
 
 const withCategory = (preset: AnimPreset, category?: string): AnimPreset => {
   const { category: _old, ...rest } = preset;
@@ -100,7 +82,7 @@ export function AnimLibrary({
       stored.map((s) => s.file),
     );
     change(
-      save({ name, ...capturePreset(selected) }, file),
+      saveAnimPreset({ name, ...capturePreset(selected) }, file),
       `Animación «${name}» guardada`,
     );
   };
@@ -122,7 +104,7 @@ export function AnimLibrary({
   const importFile = (file: File) =>
     change(
       readJsonFile(file).then((data) => {
-        const preset = validated(data, `«${file.name}»`);
+        const preset = toAnimPreset(data, `«${file.name}»`);
         return saveAnimPreset(
           preset,
           freeSlug(
@@ -228,7 +210,10 @@ export function AnimLibrary({
                     setCategory: (ref, category) =>
                       change(
                         Promise.resolve().then(() =>
-                          save(withCategory(find(ref), category), ref.file),
+                          saveAnimPreset(
+                            withCategory(find(ref), category),
+                            ref.file,
+                          ),
                         ),
                         category
                           ? `«${ref.name}» en «${category}»`
@@ -237,7 +222,7 @@ export function AnimLibrary({
                     overwrite: selected
                       ? (ref) =>
                           change(
-                            save(
+                            saveAnimPreset(
                               {
                                 name: ref.name,
                                 category: ref.category,

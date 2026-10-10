@@ -19,6 +19,7 @@
 - [x] T014 [agent] [status:done] Library section "Animaciones" in `src/editor/anim-library.tsx`: save, rename, overwrite, delete, export, import, validated before writing
       covers: D11@1
       changes: src/editor/anim-library.tsx (+275 -0), src/editor/app.tsx (+17 -0), src/styles.css (+20 -0)
-- [ ] T015 [agent] [status:todo] Test: save/apply round trip on another kind; relative keyframes and delays; offsets only on `relative` fields; merge keeps other slots and tracks; type mismatches and missing paths skipped; stagger order and duration cut; editing a preset leaves applied elements alone; a scene with `animPreset` expands on load and an unknown name loads with a notice; an invalid import writes nothing
+- [x] T015 [agent] [status:done] Test: save/apply round trip on another kind; relative keyframes and delays; offsets only on `relative` fields; merge keeps other slots and tracks; type mismatches and missing paths skipped; stagger order and duration cut; editing a preset leaves applied elements alone; a scene with `animPreset` expands on load and an unknown name loads with a notice; an invalid import writes nothing
       covers: R1@1, R2@2, R3@2, R4@2, R5@2, R6@2, R7@2, R8@2
       kind: test
+      changes: src/editor/anim-library.tsx (+10 -25), src/presets/anim-presets.test.ts (+207 -0), src/presets/anim-presets.ts (+2 -1), src/presets/store.ts (+20 -4)

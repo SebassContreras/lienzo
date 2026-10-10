@@ -124,7 +124,8 @@ export function applyPreset(
 ): { el: Element; skipped: string[] } {
   const skipped: string[] = [];
   let out = el;
-  const anim = shiftDelays(preset.anim ?? {}, start);
+  // A copy: editing the preset later must not reach the element (R6).
+  const anim = shiftDelays(structuredClone(preset.anim ?? {}), start);
   const slots: Record<string, unknown> = {};
   for (const s of SLOTS) {
     const slot = anim[s];

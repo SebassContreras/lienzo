@@ -1,6 +1,7 @@
 import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
+import { oneLine } from "./json-files.ts";
 
 /** Before recipes, a user preset stored the whole element. */
 type LegacyPreset = { name: string; element: Element };
@@ -67,12 +68,27 @@ export async function loadAnimPresetFiles(): Promise<
   });
 }
 
-/** Writes an animation preset to `presets/animations/<file>.json`. */
+/** `data` as an animation preset, or an error naming `what`. */
+export function toAnimPreset(data: unknown, what: string): AnimPreset {
+  const parsed = parseAnimPreset(data);
+  if (!parsed.ok)
+    throw new Error(
+      `${what} no es una animación válida: ${oneLine(parsed.error)}`,
+    );
+  return parsed.value;
+}
+
+/**
+ * Writes an animation preset to `presets/animations/<file>.json`, validated first: an
+ * invalid one rejects and nothing is written (019/D11).
+ */
 export async function saveAnimPreset(
-  preset: AnimPreset,
-  file = preset.name,
+  data: unknown,
+  file?: string,
 ): Promise<void> {
-  await postJson(`/api/animations?name=${encodeURIComponent(file)}`, preset);
+  const preset = toAnimPreset(data, `«${file ?? "la animación"}»`);
+  const name = file ?? preset.name;
+  await postJson(`/api/animations?name=${encodeURIComponent(name)}`, preset);
 }
 
 /** Scenes live as JSON files in `scenes/`. */
