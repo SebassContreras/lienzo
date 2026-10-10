@@ -143,6 +143,10 @@ export class RecordingCtx extends Recorder {
     this.m = mul(this.m, [c, s, -s, c, 0, 0]);
     this.rec("rotate", [a]);
   }
+  transform(a: number, b: number, c: number, d: number, e: number, f: number) {
+    this.m = mul(this.m, [a, b, c, d, e, f]);
+    this.rec("transform", [a, b, c, d, e, f]);
+  }
   setTransform(...args: number[]) {
     this.m = (args.length === 6 ? args : [1, 0, 0, 1, 0, 0]) as M;
     this.rec("setTransform", args);
