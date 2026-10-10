@@ -93,3 +93,69 @@ export function linkAlpha(
   if (distance <= 0 || d >= distance) return 0;
   return opacity * (1 - d / distance);
 }
+
+/** Each point's own look, from the seed: scale, starting angle, turns per loop, opacity, hue. */
+export type Looks = {
+  scale: Float64Array;
+  angle: Float64Array;
+  spin: Int32Array;
+  alpha: Float64Array;
+  /** Index into `HUE_STEPS`. */
+  hue: Uint8Array;
+};
+
+/** How many hue variants a field has at most: each is one sprite (014/D5). */
+export const HUE_STEPS = 6;
+
+/** The hue turn, degrees, of variant `k` when hues vary up to `shift` either way. */
+export const hueOf = (k: number, shift: number): number =>
+  Math.round(-shift + (2 * shift * k) / (HUE_STEPS - 1));
+
+const looksCache = new Map<string, Looks>();
+
+/**
+ * Every point's look, computed once per seed, count and variation. Drawn from its own
+ * generator so the orbits stay where they were before 014.
+ */
+export function looksOf(
+  el: Pick<ParticlesEl, "seed" | "count" | "variation">,
+): Looks {
+  const n = Math.max(0, Math.min(300, Math.floor(el.count)));
+  const v = el.variation;
+  const key = `${el.seed}|${n}|${JSON.stringify(v)}`;
+  const hit = looksCache.get(key);
+  if (hit) return hit;
+  const rand = mulberry32(Math.floor(el.seed * 7919) ^ 0x85ebca6b);
+  const between = (a: number, b: number) => a + rand() * (b - a);
+  const looks: Looks = {
+    scale: new Float64Array(n),
+    angle: new Float64Array(n),
+    spin: new Int32Array(n),
+    alpha: new Float64Array(n),
+    hue: new Uint8Array(n),
+  };
+  const turns = Math.max(0, Math.floor(v.spin));
+  for (let i = 0; i < n; i++) {
+    looks.scale[i] = between(v.sizeMin, v.sizeMax);
+    looks.angle[i] = (between(-v.rotation, v.rotation) * Math.PI) / 180;
+    looks.spin[i] = Math.floor(rand() * (2 * turns + 1)) - turns;
+    looks.alpha[i] = between(v.opacityMin, v.opacityMax);
+    looks.hue[i] = v.hueShift > 0 ? Math.floor(rand() * HUE_STEPS) : 0;
+  }
+  if (looksCache.size >= MAX_CACHED) looksCache.clear();
+  looksCache.set(key, looks);
+  return looks;
+}
+
+/** True when every point looks the same, the way particles drew before 014. */
+export function uniformLooks(v: ParticlesEl["variation"]): boolean {
+  return (
+    v.sizeMin === 1 &&
+    v.sizeMax === 1 &&
+    v.rotation === 0 &&
+    v.spin === 0 &&
+    v.opacityMin === 1 &&
+    v.opacityMax === 1 &&
+    v.hueShift === 0
+  );
+}

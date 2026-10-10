@@ -4,6 +4,10 @@
  */
 import { z } from "zod";
 import { ANIM_KINDS, anim as animField } from "../components/fields/anim.ts";
+import {
+  templateSchema as template,
+  variationSchema as variation,
+} from "../components/particles/descriptor.ts";
 
 const color = z.string();
 const align = z.enum(["left", "center", "right"]);
@@ -174,6 +178,9 @@ const particles = z.object({
   seed: z.number(),
   speed: z.number().int().min(1),
   drift: z.number().min(0),
+  // added by spec 014; missing in old scenes, they read as `null` and alike points
+  template,
+  variation,
   dot: z.object({ size: z.number(), color, opacity: z.number() }),
   link: z.object({
     distance: z.number(),

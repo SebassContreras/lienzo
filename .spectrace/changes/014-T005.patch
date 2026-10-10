@@ -1,0 +1,171 @@
+diff --git a/presets/built-in/21-chispas.json b/presets/built-in/21-chispas.json
+new file mode 100644
+index 0000000..f8deaeb
+--- /dev/null
++++ b/presets/built-in/21-chispas.json
+@@ -0,0 +1,50 @@
++{
++  "name": "Chispas",
++  "category": "Partículas",
++  "kind": "particles",
++  "traits": [
++    "no-glow",
++    {
++      "use": "fade-in",
++      "delay": 0
++    }
++  ],
++  "set": {
++    "w": 1080,
++    "h": 1080,
++    "count": 90,
++    "seed": 7,
++    "speed": 2,
++    "drift": 120,
++    "template": {
++      "kind": "icon",
++      "name": "Chispa",
++      "w": 28,
++      "h": 28,
++      "icon": "Sparkle",
++      "stroke": 2,
++      "color": "#fde68a",
++      "glow": {
++        "enabled": true,
++        "color": "#f59e0b",
++        "blur": 14,
++        "strength": 2
++      }
++    },
++    "variation": {
++      "sizeMin": 0.4,
++      "sizeMax": 1.2,
++      "rotation": 45,
++      "spin": 1,
++      "opacityMin": 0.4,
++      "opacityMax": 1,
++      "hueShift": 25
++    },
++    "link": {
++      "distance": 0,
++      "width": 1,
++      "color": "#fde68a",
++      "opacity": 0
++    }
++  }
++}
+diff --git a/presets/built-in/22-iconos-flotantes.json b/presets/built-in/22-iconos-flotantes.json
+new file mode 100644
+index 0000000..0eec68a
+--- /dev/null
++++ b/presets/built-in/22-iconos-flotantes.json
+@@ -0,0 +1,44 @@
++{
++  "name": "Iconos flotantes",
++  "category": "Partículas",
++  "kind": "particles",
++  "traits": [
++    "no-glow",
++    {
++      "use": "fade-in",
++      "delay": 0
++    }
++  ],
++  "set": {
++    "w": 1080,
++    "h": 1080,
++    "count": 24,
++    "seed": 12,
++    "speed": 1,
++    "drift": 60,
++    "template": {
++      "kind": "icon",
++      "name": "Icono",
++      "w": 56,
++      "h": 56,
++      "icon": "Heart",
++      "stroke": 2,
++      "color": "#f9a8d4"
++    },
++    "variation": {
++      "sizeMin": 0.6,
++      "sizeMax": 1.4,
++      "rotation": 25,
++      "spin": 0,
++      "opacityMin": 0.35,
++      "opacityMax": 0.9,
++      "hueShift": 120
++    },
++    "link": {
++      "distance": 0,
++      "width": 1,
++      "color": "#f9a8d4",
++      "opacity": 0
++    }
++  }
++}
+diff --git a/src/presets/diff.ts b/src/presets/diff.ts
+index a6377ed..ad79b41 100644
+--- a/src/presets/diff.ts
++++ b/src/presets/diff.ts
+@@ -72,7 +72,7 @@ function localIds(children: Element[]): Map<string, string> {
+ 
+ /**
+  * A recipe that rebuilds `el` from its kind's default: no traits, only what differs. A
+- * group keeps its children, each stored the same compact way.
++ * group keeps its children, each stored the same compact way, and so does a particle.
+  */
+ export function recipeFromElement(name: string, el: Element): PresetRecipe {
+   const { id: _id, name: _name, ...own } = el;
+@@ -91,6 +91,15 @@ export function recipeFromElement(name: string, el: Element): PresetRecipe {
+     } as DeepPartial<Element>;
+     return { name, kind: "group", traits: [], set };
+   }
++  if (el.kind === "particles" && el.template) {
++    // the particle is stored like a group child, with no canvas ids
++    const { template, ...fields } = own as typeof own & { template: Element };
++    const set = {
++      ...((deepDiff(fields, base) as object | undefined) ?? {}),
++      template: compactChild(template, localIds([template])),
++    } as DeepPartial<Element>;
++    return { name, kind: "particles", traits: [], set };
++  }
+   const set = deepDiff(own, base) as DeepPartial<Element> | undefined;
+   return { name, kind: el.kind, traits: [], ...(set ? { set } : {}) };
+ }
+diff --git a/src/presets/resolve.ts b/src/presets/resolve.ts
+index 536ed39..2d3b28d 100644
+--- a/src/presets/resolve.ts
++++ b/src/presets/resolve.ts
+@@ -82,12 +82,18 @@ export function resolvePreset(recipe: PresetRecipe): Resolved {
+     // fresh ids for the whole tree, with lines inside re-attached to the new ids
+     target = cloneElement({ ...target, children: children.elements });
+   }
++  if (target.kind === "particles" && target.template) {
++    // the particle is stored compact too, and built like a group child
++    const built = expandChildren([target.template]);
++    if ("error" in built) return built;
++    target.template = cloneElement(built.elements[0] as Element);
++  }
+   target.id = newId();
+   return { element: target };
+ }
+ 
+ /**
+- * A group recipe's children, each built from its kind's default plus the values it stores;
++ * A group recipe's children (or a particles recipe's particle), each built from its kind's default plus the values it stores;
+  * groups inside are built the same way.
+  */
+ function expandChildren(
+diff --git a/src/presets/round-trip.test.ts b/src/presets/round-trip.test.ts
+index 015073d..71da04c 100644
+--- a/src/presets/round-trip.test.ts
++++ b/src/presets/round-trip.test.ts
+@@ -31,6 +31,7 @@ function withoutId(el: Element): Record<string, unknown> {
+   const number = (e: Element) => {
+     order.set(e.id, `#${order.size}`);
+     if (e.kind === "group") e.children.forEach(number);
++    if (e.kind === "particles" && e.template) number(e.template);
+   };
+   number(el);
+   const { id: _id, ...rest } = el;

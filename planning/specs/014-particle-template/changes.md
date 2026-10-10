@@ -11,3 +11,9 @@ Why: review before building: 300 `drawElements` calls per frame can't hold the s
 - ADDED D5@1, D6@1, D7@1
 - Tasks: T001–T007 (never started) replaced by new T001–T007
 - Setting a template from the CLI/MCP is left to 007, which builds after this spec.
+
+## 2026-10-10 — "Usar como partícula" lives in the inspector
+Why: the editor has no context menu, and building one for a single action goes against KISS; the multi-selection inspector already holds the actions on several elements.
+- REMOVED D6@1
+- ADDED D8@1
+- Tasks: T004 re-pointed to D8@1 (still valid)
