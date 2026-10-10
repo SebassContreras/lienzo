@@ -8,7 +8,7 @@ import {
   QUALITY_HIGH,
   WebMOutputFormat,
 } from "mediabunny";
-import { loadSceneImages } from "../engine/images.ts";
+import { loadSceneAssets } from "../engine/assets.ts";
 import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
 
@@ -53,7 +53,7 @@ export async function exportScene(
   onProgress: Progress,
 ): Promise<Blob> {
   await document.fonts.ready;
-  await loadSceneImages(scene);
+  await loadSceneAssets(scene);
   if (options.format === "png") return exportPng(scene, options);
   if (options.format === "gif") return exportGif(scene, options, onProgress);
   return exportVideo(scene, options, onProgress);

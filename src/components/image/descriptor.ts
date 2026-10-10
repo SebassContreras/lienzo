@@ -70,5 +70,6 @@ export const image = defineComponent<ImageEl>({
     { title: "Animación" },
   ],
   anims: BOX_ANIMS,
+  assets: (el) => [el.src],
   draw: drawImage,
 });
