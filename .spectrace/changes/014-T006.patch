@@ -1,0 +1,160 @@
+diff --git a/src/engine/particle-template.test.ts b/src/engine/particle-template.test.ts
+new file mode 100644
+index 0000000..ce15f4a
+--- /dev/null
++++ b/src/engine/particle-template.test.ts
+@@ -0,0 +1,96 @@
++import { describe, expect, it } from "vitest";
++import { installCanvasFakes, RecordingCtx } from "../test/recording-ctx.ts";
++
++installCanvasFakes();
++const { createElement } = await import("../components/index.ts");
++const { drawElements } = await import("./render.ts");
++const { defaultScene } = await import("../model/model.ts");
++const { parseScene } = await import("../model/schema.ts");
++const { looksOf } = await import("./particle-field.ts");
++type ParticlesEl = import("../model/model.ts").ParticlesEl;
++type Ctx = import("./paint.ts").Ctx;
++
++const scene = defaultScene();
++
++/** A small field whose points vary in every way but hue (the fake canvas has no pixels). */
++function field(): ParticlesEl {
++  const p = createElement("particles");
++  p.count = 12;
++  p.variation = {
++    sizeMin: 0.5,
++    sizeMax: 2,
++    rotation: 90,
++    spin: 3,
++    opacityMin: 0.2,
++    opacityMax: 1,
++    hueShift: 0,
++  };
++  return p;
++}
++
++function log(p: ParticlesEl, t: number): string[] {
++  const ctx = new RecordingCtx();
++  drawElements(ctx as unknown as Ctx, [p], scene, t);
++  return ctx.log;
++}
++
++describe("particle templates", () => {
++  it("same seed, same field; another seed, another one", () => {
++    const p = field();
++    expect(looksOf({ ...p })).toEqual(looksOf(p));
++    expect(log({ ...p }, 1.3)).toEqual(log(p, 1.3));
++    expect(looksOf({ ...p, seed: 2 })).not.toEqual(looksOf(p));
++  });
++
++  it("closes the loop, spins included", () => {
++    const p = { ...field(), template: createElement("rect") };
++    expect(log(p, scene.duration)).toEqual(log(p, 0));
++    expect(log(p, scene.duration / 2)).not.toEqual(log(p, 0));
++  });
++
++  it("draws a group template, children and all, at every point", () => {
++    const group = createElement("group");
++    const text = createElement("text");
++    text.text = "hola";
++    group.children = [createElement("rect"), text];
++    const p = { ...field(), template: group };
++    const lines = log(p, 0);
++    const draws = lines.filter((l) => l.startsWith("drawImage"));
++    expect(draws).toHaveLength(12);
++    expect(draws[0]).toContain("fillText(hola");
++  });
++
++  it("ignores the template's own animation", () => {
++    const still = createElement("rect");
++    const animated = {
++      ...structuredClone(still),
++      anim: { ...still.anim, in: { ...still.anim.in, kind: "fade" as const } },
++    };
++    const at = (template: typeof still) =>
++      log({ ...field(), template }, 0).filter((l) => l.startsWith("drawImage"));
++    expect(at(animated)).toEqual(at(still));
++  });
++
++  it("rejects a particle that is or holds particles", () => {
++    const nested = { ...field(), template: createElement("particles") };
++    const group = createElement("group");
++    group.children = [createElement("particles")];
++    const inGroup = { ...field(), template: group };
++    for (const p of [nested, inGroup]) {
++      expect(parseScene({ ...scene, elements: [p] }).ok).toBe(false);
++    }
++    const ok = { ...field(), template: createElement("rect") };
++    expect(parseScene({ ...scene, elements: [ok] }).ok).toBe(true);
++  });
++
++  it("reads a particles element saved before templates as plain alike dots", () => {
++    const { template: _t, variation: _v, ...old } = createElement("particles");
++    const parsed = parseScene({ ...scene, elements: [old] });
++    expect(parsed.ok).toBe(true);
++    const p = (parsed.ok && parsed.value.elements[0]) as ParticlesEl;
++    expect(p.template).toBe(null);
++    expect(p.variation).toEqual(createElement("particles").variation);
++    // the dots draw as one path, not as sprites
++    expect(log(p, 0).some((l) => l.startsWith("drawImage"))).toBe(false);
++  });
++});
+diff --git a/src/test/recording-ctx.ts b/src/test/recording-ctx.ts
+index 9794751..b8d9857 100644
+--- a/src/test/recording-ctx.ts
++++ b/src/test/recording-ctx.ts
+@@ -167,6 +167,14 @@ export class RecordingCtx extends Recorder {
+   createRadialGradient(...args: number[]) {
+     return new FakeGradient("radial", args);
+   }
++  /** Blank pixels: what was painted is in the log, not in a bitmap. */
++  getImageData(x: number, y: number, w: number, h: number) {
++    this.rec("getImageData", [x, y, w, h]);
++    return { data: new Uint8ClampedArray(w * h * 4), width: w, height: h };
++  }
++  putImageData(_data: unknown, x: number, y: number) {
++    this.rec("putImageData", [x, y]);
++  }
+ }
+ for (const m of [
+   "beginPath",
+@@ -204,9 +212,18 @@ for (const m of [
+ export function installCanvasFakes(): void {
+   const g = globalThis as Record<string, unknown>;
+   g.Path2D = FakePath2D;
++  // a canvas drawn onto another one shows up in the log as what was painted on it
+   g.OffscreenCanvas = class {
++    private ctx = new RecordingCtx();
++    constructor(
++      readonly width = 300,
++      readonly height = 150,
++    ) {}
++    get log() {
++      return [`${this.width}x${this.height}`, ...this.ctx.log];
++    }
+     getContext() {
+-      return new RecordingCtx();
++      return this.ctx;
+     }
+   };
+ }
+diff --git a/src/test/render.golden.json b/src/test/render.golden.json
+index 726927a..c645c28 100644
+--- a/src/test/render.golden.json
++++ b/src/test/render.golden.json
+@@ -6,10 +6,10 @@
+     "d52c82d57a8da47c64d57bae47f54c4572140e01954ffb26d2129f395ec151a6"
+   ],
+   "presets": [
+-    "f4178623dbf0266581442fe177858ec8e9a79c3d40b0a909f474c3da76a7b048",
+-    "167d0ed984f5accd06470ab4dc853bf5647497f011d1fa6cbda8cce3c9d47f51",
+-    "8801a2737c17df0aff69ca3d5e3414dd905f0418f43877ce8037c0da3e384ac4",
+-    "47fb61ff4964ab7e2504628dc914dfb6f815b74c3d0e6b8aaecedcb30c093b50"
++    "5bb068d6edc66072d27ec3c8846b876036be24888d9b88965781bb4e8b36be24",
++    "9b9f9a73ff6089dbcdd9c6bc9d412ddf0904f52f70ad07d0a6ff01374c8f6671",
++    "2f50d7f5c659dbee20023d877dbf49b22eaa61bcc8eb24676c9745892004b68b",
++    "a233e2439627e0d08cf2b647d64369a179888f0ad53a918571f81dd8a2415f96"
+   ],
+   "kinds": [
+     "54ebab94065651759850d8835ff8aed849d28c5e39485e9c623253cd5717cced",

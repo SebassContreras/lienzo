@@ -167,6 +167,14 @@ export class RecordingCtx extends Recorder {
   createRadialGradient(...args: number[]) {
     return new FakeGradient("radial", args);
   }
+  /** Blank pixels: what was painted is in the log, not in a bitmap. */
+  getImageData(x: number, y: number, w: number, h: number) {
+    this.rec("getImageData", [x, y, w, h]);
+    return { data: new Uint8ClampedArray(w * h * 4), width: w, height: h };
+  }
+  putImageData(_data: unknown, x: number, y: number) {
+    this.rec("putImageData", [x, y]);
+  }
 }
 for (const m of [
   "beginPath",
@@ -204,9 +212,18 @@ for (const m of [
 export function installCanvasFakes(): void {
   const g = globalThis as Record<string, unknown>;
   g.Path2D = FakePath2D;
+  // a canvas drawn onto another one shows up in the log as what was painted on it
   g.OffscreenCanvas = class {
+    private ctx = new RecordingCtx();
+    constructor(
+      readonly width = 300,
+      readonly height = 150,
+    ) {}
+    get log() {
+      return [`${this.width}x${this.height}`, ...this.ctx.log];
+    }
     getContext() {
-      return new RecordingCtx();
+      return this.ctx;
     }
   };
 }

@@ -15,9 +15,10 @@
 - [x] T005 [agent] [status:done] Built-in presets: sparks, floating icons
       covers: D4@1, A19@1
       changes: presets/built-in/21-chispas.json (+50 -0), presets/built-in/22-iconos-flotantes.json (+44 -0), src/presets/diff.ts (+10 -1), src/presets/resolve.ts (+7 -1), src/presets/round-trip.test.ts (+1 -0)
-- [ ] T006 [agent] [status:todo] Test: same seed gives the same field, loop closes, a template group draws, nested particles rejected, old particle scenes match a pixel snapshot
+- [x] T006 [agent] [status:done] Test: same seed gives the same field, loop closes, a template group draws, nested particles rejected, old particle scenes match a pixel snapshot
       covers: R1@2, R2@2, R4@1
       kind: test
+      changes: src/engine/particle-template.test.ts (+96 -0), src/test/recording-ctx.ts (+18 -1), src/test/render.golden.json (+4 -4)
 - [ ] T007 [agent] [status:todo] Test in the browser: use an element as particle and edit it back, 300 particles at the scene fps, drop each preset
       covers: R3@2, R5@1, R6@1
       kind: test
