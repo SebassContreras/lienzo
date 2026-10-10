@@ -2,7 +2,11 @@ import { listJson, removeJson, renameJson, writeJson } from "./json-fs.ts";
 
 export type StoreReply = { status: number; body: unknown };
 
-const RENAME_STATUS = { "empty name": 400, "not found": 404, "name taken": 409 };
+const RENAME_STATUS = {
+  "empty name": 400,
+  "not found": 404,
+  "name taken": 409,
+};
 
 /**
  * The JSON store behind `/api/presets` and `/api/scenes`, one file per item in `dir`:
