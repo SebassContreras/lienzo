@@ -39,7 +39,7 @@ function holdsParticles(el: { kind: string; children?: unknown }): boolean {
  * templates, so it defaults to `null`. Annotated so the element types do not depend on
  * themselves through the schema.
  */
-const templateSchema = z
+export const templateSchema = z
   .lazy(() => ElementSchema)
   .refine((el) => !holdsParticles(el), "a particle cannot hold particles")
   .nullable()

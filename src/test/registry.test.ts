@@ -122,7 +122,8 @@ const NOT_IN_INSPECTOR: Record<string, string[]> = {
   // the content and its space follow from grouping
   group: ["cw", "ch", "children"],
   // resized on the stage, or with "Ajustar al lienzo"
-  particles: ["w", "h"],
+  // and the template is set with "Usar como partícula"
+  particles: ["w", "h", "template"],
 };
 
 /** Every data field's path, objects opened into their fields. */
