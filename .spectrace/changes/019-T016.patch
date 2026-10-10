@@ -1,0 +1,164 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 9275d14..93e2fc1 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -39,12 +39,15 @@ What exists today:
+   evaluating and editing goes through `src/engine/tracks.ts`, applied by `animate` before
+   the preset animation (spec 015)
+ 
+-Planned (decided, not built yet — specs 007–011, 016, 017, 019):
++- Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
++  offsets on `relative` fields; applying always copies; `animPreset` on an element is
++  provenance only, and a scene naming one is expanded on load; pure logic in
++  `src/presets/anim-presets.ts` (A26, spec 019)
++
++Planned (decided, not built yet — specs 007–011, 016, 017):
+ 
+ - Descriptors also drive compact JSON and tools (A23, specs 011, 007);
+   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
+-- Animation presets in `presets/animations/`, copied or linked, relative times and offsets
+-  (A26, spec 019)
+ - CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
+   in tools (A20); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
+   over stdio, CLI via `tsx` (A22) — specs 007–010, built last
+@@ -62,16 +65,19 @@ src/components/  index.ts = the registry; descriptor.ts = the descriptor type; f
+                  builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);
+                  <kind>/descriptor.ts + <kind>/draw.ts per element kind (rect, ellipse, icon,
+                  image, group, text, line, particles)
+-src/editor/      React UI: app shell, stage, library, background library, inspector (the
++src/editor/      React UI: app shell, stage, library, background library, animation library
++                 (anim-library.tsx), inspector (the
+                  element inspector is generated: layout.ts + field-editor.tsx; keyframe
+                  buttons in keyframe-controls.tsx; timeline/ = the keyframe tracks panel)
+ src/export/      PNG / GIF / MP4
+ src/traits/      reusable style pieces, one file per trait
+ src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
+-                 store.ts), categories and filter, JSON import/export helpers, scenes dialog
++                 store.ts), categories and filter, JSON import/export helpers, scenes dialog,
++                 animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
+ src/types/       type declarations for packages that ship none
+ src/demo.ts      the "how MCP works" demo scene
+ presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
++presets/animations/  animation presets (JSON)
+ scenes/          saved scenes (JSON)
+ assets/          images used by scenes, named by content hash
+ ```
+diff --git a/README.md b/README.md
+index 9c32d32..9d82928 100644
+--- a/README.md
++++ b/README.md
+@@ -26,6 +26,14 @@ the canvas, edit them live, and export PNG, GIF or MP4.
+   group as your own preset in `presets/`; each of your presets can be renamed, given a
+   category, overwritten with the selected element, exported as `.json` or deleted.
+   "Importar preset" adds one from a `.json` file.
++- **Animation presets:** the "Animaciones" library section saves the selected element's
++  animation (entry, loop, exit and keyframes) under a name, in `presets/animations/`, and
++  applies it to the selection from a chosen start, with an optional stagger between
++  elements. Times are relative to the start and movements to each element's position;
++  what an element cannot take is skipped and listed. Applying copies the animation, so
++  editing a preset later changes nothing already applied. Presets can be renamed, given a
++  category, overwritten, exported, imported and deleted. A scene can name one
++  (`"animPreset": "mi-entrada"`), and it is copied in when the scene opens.
+ - **Backgrounds:** the "Fondo" button (or a click on an empty part of the canvas) opens the
+   background settings: color or gradient, dots, spotlight. The "Fondos" library section
+   applies a background preset (undoable); "Guardar fondo como preset" saves yours.
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 565e254..85874eb 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -42,7 +42,7 @@ import {
+ } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { parsePresetRecipe } from "../model/schema.ts";
+-import { expandAnimPresets } from "../presets/anim-presets.ts";
++import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
+ import { filterByName } from "../presets/categories.ts";
+ import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
+ import {
+@@ -287,7 +287,7 @@ export function App() {
+         setScene(next);
+         setSelection([]);
+       };
+-      if (!s.elements.some((el) => el.animPreset)) {
++      if (!namesAnimPreset(s.elements)) {
+         open(s);
+         return;
+       }
+diff --git a/src/presets/anim-presets.test.ts b/src/presets/anim-presets.test.ts
+index 206e623..f7fc1a0 100644
+--- a/src/presets/anim-presets.test.ts
++++ b/src/presets/anim-presets.test.ts
+@@ -9,6 +9,7 @@ import {
+   applyToSelection,
+   capturePreset,
+   expandAnimPresets,
++  namesAnimPreset,
+   staggerStarts,
+ } from "./anim-presets.ts";
+ import { saveAnimPreset } from "./store.ts";
+@@ -182,6 +183,22 @@ describe("scenes naming a preset", () => {
+     expect(scene.elements[0]).toBe(own);
+   });
+ 
++  it("expand inside groups", () => {
++    const child = {
++      ...createElement("rect"),
++      x: 0,
++      animPreset: { name: "entrada", start: 0 },
++    };
++    const group = { ...createElement("group"), children: [child] };
++    const { scene } = expandAnimPresets(sceneWith(group), library);
++    expect(namesAnimPreset([group])).toBe(true);
++    const [out] = (scene.elements[0] as typeof group).children;
++    expect(pairs(out?.tracks?.x)).toEqual([
++      [0, 0],
++      [1, 50],
++    ]);
++  });
++
+   it("load with an unknown name, with a notice", () => {
+     const el = {
+       ...createElement("rect"),
+diff --git a/src/presets/anim-presets.ts b/src/presets/anim-presets.ts
+index 0a6ac55..3f51cc2 100644
+--- a/src/presets/anim-presets.ts
++++ b/src/presets/anim-presets.ts
+@@ -198,9 +198,18 @@ const animates = (el: Element) =>
+   Object.keys(activeSlots(el)).length > 0 ||
+   Object.keys(el.tracks ?? {}).length > 0;
+ 
++/** Whether any element of `elements`, group children included, names a preset. */
++export const namesAnimPreset = (elements: readonly Element[]): boolean =>
++  elements.some(
++    (el) =>
++      el.animPreset !== undefined ||
++      (el.kind === "group" && namesAnimPreset(el.children)),
++  );
++
+ /**
+  * `scene` with every `animPreset` of an element that does not animate on its own copied in
+- * from `library` (019/D10), run once on load; an unknown name leaves the element as it is.
++ * from `library` (019/D10), group children included, run once on load; an unknown name
++ * leaves the element as it is.
+  */
+ export function expandAnimPresets(
+   scene: Scene,
+@@ -208,7 +217,8 @@ export function expandAnimPresets(
+ ): { scene: Scene; notices: string[] } {
+   const byName = new Map(library.map((p) => [p.name, p]));
+   const notices: string[] = [];
+-  const elements = scene.elements.map((el) => {
++  const expand = (el: Element): Element => {
++    if (el.kind === "group") el = { ...el, children: el.children.map(expand) };
+     if (!el.animPreset || animates(el)) return el;
+     const preset = byName.get(el.animPreset.name);
+     if (!preset) {
+@@ -220,6 +230,6 @@ export function expandAnimPresets(
+     const { el: out, skipped } = applyPreset(el, preset, el.animPreset.start);
+     for (const s of skipped) notices.push(`${el.name}: ${s}`);
+     return out;
+-  });
+-  return { scene: { ...scene, elements }, notices };
++  };
++  return { scene: { ...scene, elements: scene.elements.map(expand) }, notices };
+ }

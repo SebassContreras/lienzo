@@ -198,9 +198,18 @@ const animates = (el: Element) =>
   Object.keys(activeSlots(el)).length > 0 ||
   Object.keys(el.tracks ?? {}).length > 0;
 
+/** Whether any element of `elements`, group children included, names a preset. */
+export const namesAnimPreset = (elements: readonly Element[]): boolean =>
+  elements.some(
+    (el) =>
+      el.animPreset !== undefined ||
+      (el.kind === "group" && namesAnimPreset(el.children)),
+  );
+
 /**
  * `scene` with every `animPreset` of an element that does not animate on its own copied in
- * from `library` (019/D10), run once on load; an unknown name leaves the element as it is.
+ * from `library` (019/D10), group children included, run once on load; an unknown name
+ * leaves the element as it is.
  */
 export function expandAnimPresets(
   scene: Scene,
@@ -208,7 +217,8 @@ export function expandAnimPresets(
 ): { scene: Scene; notices: string[] } {
   const byName = new Map(library.map((p) => [p.name, p]));
   const notices: string[] = [];
-  const elements = scene.elements.map((el) => {
+  const expand = (el: Element): Element => {
+    if (el.kind === "group") el = { ...el, children: el.children.map(expand) };
     if (!el.animPreset || animates(el)) return el;
     const preset = byName.get(el.animPreset.name);
     if (!preset) {
@@ -220,6 +230,6 @@ export function expandAnimPresets(
     const { el: out, skipped } = applyPreset(el, preset, el.animPreset.start);
     for (const s of skipped) notices.push(`${el.name}: ${s}`);
     return out;
-  });
-  return { scene: { ...scene, elements }, notices };
+  };
+  return { scene: { ...scene, elements: scene.elements.map(expand) }, notices };
 }

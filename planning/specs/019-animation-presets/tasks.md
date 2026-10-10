@@ -23,3 +23,6 @@
       covers: R1@1, R2@2, R3@2, R4@2, R5@2, R6@2, R7@2, R8@2
       kind: test
       changes: src/editor/anim-library.tsx (+10 -25), src/presets/anim-presets.test.ts (+207 -0), src/presets/anim-presets.ts (+2 -1), src/presets/store.ts (+20 -4)
+- [x] T016 [agent] [status:done] `expandAnimPresets` also expands elements inside groups, with a test
+      covers: D10@1
+      changes: AGENTS.md (+11 -5), README.md (+8 -0), src/editor/app.tsx (+2 -2), src/presets/anim-presets.test.ts (+17 -0), src/presets/anim-presets.ts (+14 -4)

@@ -42,7 +42,7 @@ import {
 } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parsePresetRecipe } from "../model/schema.ts";
-import { expandAnimPresets } from "../presets/anim-presets.ts";
+import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
 import { filterByName } from "../presets/categories.ts";
 import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
 import {
@@ -287,7 +287,7 @@ export function App() {
         setScene(next);
         setSelection([]);
       };
-      if (!s.elements.some((el) => el.animPreset)) {
+      if (!namesAnimPreset(s.elements)) {
         open(s);
         return;
       }

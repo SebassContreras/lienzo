@@ -9,6 +9,7 @@ import {
   applyToSelection,
   capturePreset,
   expandAnimPresets,
+  namesAnimPreset,
   staggerStarts,
 } from "./anim-presets.ts";
 import { saveAnimPreset } from "./store.ts";
@@ -180,6 +181,22 @@ describe("scenes naming a preset", () => {
     const own = { ...rect(), animPreset: { name: "entrada", start: 3 } };
     const { scene } = expandAnimPresets(sceneWith(own), library);
     expect(scene.elements[0]).toBe(own);
+  });
+
+  it("expand inside groups", () => {
+    const child = {
+      ...createElement("rect"),
+      x: 0,
+      animPreset: { name: "entrada", start: 0 },
+    };
+    const group = { ...createElement("group"), children: [child] };
+    const { scene } = expandAnimPresets(sceneWith(group), library);
+    expect(namesAnimPreset([group])).toBe(true);
+    const [out] = (scene.elements[0] as typeof group).children;
+    expect(pairs(out?.tracks?.x)).toEqual([
+      [0, 0],
+      [1, 50],
+    ]);
   });
 
   it("load with an unknown name, with a notice", () => {
