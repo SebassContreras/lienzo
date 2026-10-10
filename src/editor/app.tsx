@@ -60,6 +60,7 @@ import {
   renameStored,
   saveUserPreset,
 } from "../presets/store.ts";
+import { AnimLibrary } from "./anim-library.tsx";
 import {
   type BackgroundItem,
   BackgroundLibrary,
@@ -304,6 +305,15 @@ export function App() {
           open(s);
           setStatus(`Error: ${error instanceof Error ? error.message : error}`);
         });
+    },
+    [checkpoint, setScene],
+  );
+
+  /** A scene change made outside the canvas, as one undoable step. */
+  const applyScene = useCallback(
+    (s: Scene) => {
+      checkpoint();
+      setScene(s);
     },
     [checkpoint, setScene],
   );
@@ -697,6 +707,13 @@ export function App() {
               ? "Sobrescribir con el elemento seleccionado"
               : "Selecciona un elemento para sobrescribir",
           }}
+        />
+        <AnimLibrary
+          scene={scene}
+          selection={selection}
+          filter={matching}
+          onApply={applyScene}
+          setStatus={setStatus}
         />
         <BackgroundLibrary
           items={matching([...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds])}

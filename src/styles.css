@@ -635,3 +635,23 @@ code {
   font-size: 12px;
   color: var(--muted);
 }
+
+/* Animation presets: start and stagger inputs, save and import buttons. */
+.library .anim-apply,
+.library .anim-tools {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.library .anim-apply label {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  font-size: 11px;
+  gap: 2px;
+}
+
+.library .anim-apply input {
+  width: 100%;
+}
