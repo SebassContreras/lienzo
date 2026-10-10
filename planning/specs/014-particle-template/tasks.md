@@ -20,6 +20,7 @@
       covers: R1@2, R2@2, R4@1
       kind: test
       changes: src/engine/particle-template.test.ts (+96 -0), src/test/recording-ctx.ts (+18 -1), src/test/render.golden.json (+4 -4)
-- [ ] T007 [agent] [status:todo] Test in the browser: use an element as particle and edit it back, 300 particles at the scene fps, drop each preset
+- [x] T007 [agent] [status:done] Test in the browser: use an element as particle and edit it back, 300 particles at the scene fps, drop each preset
       covers: R3@2, R5@1, R6@1
       kind: test
+      changes: none
