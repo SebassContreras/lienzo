@@ -12,8 +12,9 @@
 - [x] T004 [agent] [status:done] "Usar como partícula" and "Editar partícula" actions; hide the dot section when a template is set
       covers: D6@1, D7@1
       changes: src/components/particles/descriptor.ts (+8 -2), src/editor/app.tsx (+60 -0), src/editor/field-editor.tsx (+40 -1), src/editor/inspector.tsx (+14 -1)
-- [ ] T005 [agent] [status:todo] Built-in presets: sparks, floating icons
+- [x] T005 [agent] [status:done] Built-in presets: sparks, floating icons
       covers: D4@1, A19@1
+      changes: presets/built-in/21-chispas.json (+50 -0), presets/built-in/22-iconos-flotantes.json (+44 -0), src/presets/diff.ts (+10 -1), src/presets/resolve.ts (+7 -1), src/presets/round-trip.test.ts (+1 -0)
 - [ ] T006 [agent] [status:todo] Test: same seed gives the same field, loop closes, a template group draws, nested particles rejected, old particle scenes match a pixel snapshot
       covers: R1@2, R2@2, R4@1
       kind: test

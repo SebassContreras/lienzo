@@ -72,7 +72,7 @@ function localIds(children: Element[]): Map<string, string> {
 
 /**
  * A recipe that rebuilds `el` from its kind's default: no traits, only what differs. A
- * group keeps its children, each stored the same compact way.
+ * group keeps its children, each stored the same compact way, and so does a particle.
  */
 export function recipeFromElement(name: string, el: Element): PresetRecipe {
   const { id: _id, name: _name, ...own } = el;
@@ -90,6 +90,15 @@ export function recipeFromElement(name: string, el: Element): PresetRecipe {
       children: el.children.map((c) => compactChild(c, local)),
     } as DeepPartial<Element>;
     return { name, kind: "group", traits: [], set };
+  }
+  if (el.kind === "particles" && el.template) {
+    // the particle is stored like a group child, with no canvas ids
+    const { template, ...fields } = own as typeof own & { template: Element };
+    const set = {
+      ...((deepDiff(fields, base) as object | undefined) ?? {}),
+      template: compactChild(template, localIds([template])),
+    } as DeepPartial<Element>;
+    return { name, kind: "particles", traits: [], set };
   }
   const set = deepDiff(own, base) as DeepPartial<Element> | undefined;
   return { name, kind: el.kind, traits: [], ...(set ? { set } : {}) };

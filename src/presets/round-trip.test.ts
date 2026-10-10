@@ -31,6 +31,7 @@ function withoutId(el: Element): Record<string, unknown> {
   const number = (e: Element) => {
     order.set(e.id, `#${order.size}`);
     if (e.kind === "group") e.children.forEach(number);
+    if (e.kind === "particles" && e.template) number(e.template);
   };
   number(el);
   const { id: _id, ...rest } = el;

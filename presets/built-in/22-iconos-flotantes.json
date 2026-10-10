@@ -1,0 +1,44 @@
+{
+  "name": "Iconos flotantes",
+  "category": "Partículas",
+  "kind": "particles",
+  "traits": [
+    "no-glow",
+    {
+      "use": "fade-in",
+      "delay": 0
+    }
+  ],
+  "set": {
+    "w": 1080,
+    "h": 1080,
+    "count": 24,
+    "seed": 12,
+    "speed": 1,
+    "drift": 60,
+    "template": {
+      "kind": "icon",
+      "name": "Icono",
+      "w": 56,
+      "h": 56,
+      "icon": "Heart",
+      "stroke": 2,
+      "color": "#f9a8d4"
+    },
+    "variation": {
+      "sizeMin": 0.6,
+      "sizeMax": 1.4,
+      "rotation": 25,
+      "spin": 0,
+      "opacityMin": 0.35,
+      "opacityMax": 0.9,
+      "hueShift": 120
+    },
+    "link": {
+      "distance": 0,
+      "width": 1,
+      "color": "#f9a8d4",
+      "opacity": 0
+    }
+  }
+}

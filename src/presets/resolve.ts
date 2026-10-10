@@ -82,12 +82,18 @@ export function resolvePreset(recipe: PresetRecipe): Resolved {
     // fresh ids for the whole tree, with lines inside re-attached to the new ids
     target = cloneElement({ ...target, children: children.elements });
   }
+  if (target.kind === "particles" && target.template) {
+    // the particle is stored compact too, and built like a group child
+    const built = expandChildren([target.template]);
+    if ("error" in built) return built;
+    target.template = cloneElement(built.elements[0] as Element);
+  }
   target.id = newId();
   return { element: target };
 }
 
 /**
- * A group recipe's children, each built from its kind's default plus the values it stores;
+ * A group recipe's children (or a particles recipe's particle), each built from its kind's default plus the values it stores;
  * groups inside are built the same way.
  */
 function expandChildren(

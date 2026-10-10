@@ -1,0 +1,50 @@
+{
+  "name": "Chispas",
+  "category": "Partículas",
+  "kind": "particles",
+  "traits": [
+    "no-glow",
+    {
+      "use": "fade-in",
+      "delay": 0
+    }
+  ],
+  "set": {
+    "w": 1080,
+    "h": 1080,
+    "count": 90,
+    "seed": 7,
+    "speed": 2,
+    "drift": 120,
+    "template": {
+      "kind": "icon",
+      "name": "Chispa",
+      "w": 28,
+      "h": 28,
+      "icon": "Sparkle",
+      "stroke": 2,
+      "color": "#fde68a",
+      "glow": {
+        "enabled": true,
+        "color": "#f59e0b",
+        "blur": 14,
+        "strength": 2
+      }
+    },
+    "variation": {
+      "sizeMin": 0.4,
+      "sizeMax": 1.2,
+      "rotation": 45,
+      "spin": 1,
+      "opacityMin": 0.4,
+      "opacityMax": 1,
+      "hueShift": 25
+    },
+    "link": {
+      "distance": 0,
+      "width": 1,
+      "color": "#fde68a",
+      "opacity": 0
+    }
+  }
+}
