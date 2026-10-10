@@ -3,26 +3,18 @@
  * that the schema generated from the descriptors accepts and rejects exactly the same scenes.
  */
 import { z } from "zod";
+import { ANIM_KINDS, anim as animField } from "../components/fields/anim.ts";
 
 const color = z.string();
 const align = z.enum(["left", "center", "right"]);
 const strokeStyle = z.enum(["solid", "dashed", "dotted"]);
 
-const anim = z.object({
-  kind: z.enum([
-    "none",
-    "float",
-    "pulse",
-    "breathe",
-    "fade-in",
-    "pop-in",
-    "slide-up",
-    "draw",
-  ]),
-  amount: z.number(),
-  cycles: z.number(),
-  delay: z.number(),
-});
+/**
+ * The one group spec 013 reshaped after 012: `anim` became entry/loop/exit slots. The old flat
+ * shape is still read (and migrated into the slots), so both sides check it with the same
+ * schema here; the migration itself is tested in `src/engine/anim.test.ts`.
+ */
+const anim = animField(ANIM_KINDS).schema;
 
 const glow = z.object({
   enabled: z.boolean(),

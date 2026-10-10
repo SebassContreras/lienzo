@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { migrateAnim } from "../components/fields/index.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import fixture from "./built-in.fixture.json";
 import { BUILT_IN_RECIPES } from "./recipes.ts";
@@ -25,7 +26,11 @@ describe("built-in recipes", () => {
     if ("error" in r) throw new Error(r.error);
     const { id, ...element } = r.element;
     expect(typeof id).toBe("string");
-    expect(element).toEqual(fixture[i]);
+    // Recorded before spec 013: its flat `anim` now lives in the slot of its kind.
+    const before = fixture[i] as (typeof fixture)[number] & { anim?: unknown };
+    expect(element).toEqual(
+      before.anim ? { ...before, anim: migrateAnim(before.anim) } : before,
+    );
   });
 
   it.each(

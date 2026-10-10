@@ -7,16 +7,16 @@ export const pulse = defineTrait({
   params: { amount: 6, cycles: 2, delay: 0 },
   apply: {
     shape: (el, p) => {
-      el.anim = { kind: "pulse", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
     },
     text: (el, p) => {
-      el.anim = { kind: "pulse", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
     },
     icon: (el, p) => {
-      el.anim = { kind: "pulse", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
     },
     group: (el, p) => {
-      el.anim = { kind: "pulse", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "pulse", ...p } };
     },
   },
 });

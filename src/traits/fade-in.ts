@@ -7,16 +7,28 @@ export const fadeIn = defineTrait({
   params: { delay: 0 },
   apply: {
     shape: (el, p) => {
-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
+      el.anim = {
+        ...el.anim,
+        in: { ...el.anim.in, kind: "fade", delay: p.delay },
+      };
     },
     text: (el, p) => {
-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
+      el.anim = {
+        ...el.anim,
+        in: { ...el.anim.in, kind: "fade", delay: p.delay },
+      };
     },
     line: (el, p) => {
-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
+      el.anim = {
+        ...el.anim,
+        in: { ...el.anim.in, kind: "fade", delay: p.delay },
+      };
     },
     particles: (el, p) => {
-      el.anim = { ...el.anim, kind: "fade-in", delay: p.delay };
+      el.anim = {
+        ...el.anim,
+        in: { ...el.anim.in, kind: "fade", delay: p.delay },
+      };
     },
   },
 });

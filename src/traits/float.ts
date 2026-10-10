@@ -7,16 +7,16 @@ export const float = defineTrait({
   params: { amount: 12, cycles: 1, delay: 0 },
   apply: {
     shape: (el, p) => {
-      el.anim = { kind: "float", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
     },
     text: (el, p) => {
-      el.anim = { kind: "float", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
     },
     icon: (el, p) => {
-      el.anim = { kind: "float", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
     },
     group: (el, p) => {
-      el.anim = { kind: "float", ...p };
+      el.anim = { ...el.anim, loop: { ...el.anim.loop, kind: "float", ...p } };
     },
   },
 });
