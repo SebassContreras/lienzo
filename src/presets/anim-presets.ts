@@ -14,10 +14,16 @@ export type PresetBody = Pick<AnimPreset, "anim" | "tracks">;
 
 const SLOTS = ["in", "loop", "out"] as const;
 
-/** Entry and exit delays are times; a loop's delay is a phase and stays as it is. */
-const TIMED = ["in", "out"] as const;
-
 type Slot = (typeof SLOTS)[number];
+
+/**
+ * The slots whose delay is a start time: entry and exit, and a loop that ends; a loop that
+ * repeats forever uses its delay as a phase, which stays as it is.
+ */
+const timed = (anim: AnimSlots): Slot[] =>
+  SLOTS.filter((s) =>
+    s === "loop" ? anim.loop && anim.loop.iterations !== "infinite" : anim[s],
+  );
 
 /** True when `path` or an object holding it is a position (019/D6). */
 function isRelative(fields: Fields, path: string): boolean {
@@ -56,9 +62,9 @@ function activeSlots(el: Element): AnimSlots {
 
 function shiftDelays(anim: AnimSlots, dt: number): AnimSlots {
   const out = { ...anim };
-  for (const s of TIMED) {
-    const slot = out[s];
-    if (slot) out[s] = { ...slot, delay: Math.max(0, slot.delay + dt) };
+  for (const s of timed(anim)) {
+    const slot = out[s] as { delay: number };
+    out[s] = { ...slot, delay: Math.max(0, slot.delay + dt) } as never;
   }
   return out;
 }
@@ -68,7 +74,7 @@ export function animStart(el: Element): number {
   const anim = activeSlots(el);
   const times = [
     ...Object.values(el.tracks ?? {}).flatMap((keys) => keys.map((k) => k.t)),
-    ...TIMED.flatMap((s) => (anim[s] ? [anim[s].delay] : [])),
+    ...timed(anim).map((s) => (anim[s] as { delay: number }).delay),
   ];
   return times.length ? Math.min(...times) : 0;
 }
