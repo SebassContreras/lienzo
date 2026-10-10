@@ -8,3 +8,8 @@ Why: review before building against SRP, DRY and KISS: one file per animation an
 - ADDED D6@1, D7@1, D8@1, D9@1, D10@1
 - Tasks: T001–T011 (never started) replaced by new T001–T010
 - Underline draw and spotlight focus are left for a later spec; per-glyph text motion waits for real demand.
+
+## 2026-10-10 — stagger sits beside the group's anim
+Why: inside `anim` it would make the group's animation fields differ from every other kind's; and shifting the children's own animations would not stagger an entry set on the group, which is what R5 asks.
+- MODIFIED D9@1 → D9@2
+- Tasks: T007 re-pointed to D9@2 (still valid)
