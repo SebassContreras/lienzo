@@ -188,6 +188,7 @@ describe("descriptors", () => {
       "text",
       "line",
       "particles",
+      "three",
     ]);
     for (const d of descriptors) {
       expect(typeof d.draw).toBe("function");
