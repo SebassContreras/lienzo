@@ -1,27 +1,8 @@
-import {
-  access,
-  mkdir,
-  readdir,
-  readFile,
-  unlink,
-  writeFile,
-} from "node:fs/promises";
-import { join } from "node:path";
-import { slugify } from "./slug.ts";
+import { listJson, removeJson, renameJson, writeJson } from "./json-fs.ts";
 
 export type StoreReply = { status: number; body: unknown };
 
-const fileOf = (dir: string, name: string) =>
-  join(dir, `${slugify(name)}.json`);
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
+const RENAME_STATUS = { "empty name": 400, "not found": 404, "name taken": 409 };
 
 /**
  * The JSON store behind `/api/presets` and `/api/scenes`, one file per item in `dir`:
@@ -36,50 +17,26 @@ export async function handleStore(
   url: URL,
   body: () => Promise<string>,
 ): Promise<StoreReply> {
-  await mkdir(dir, { recursive: true });
   const rest = url.pathname.replace(/^\/api\/\w+/, "");
   const q = url.searchParams;
   if (method === "GET" && rest === "") {
-    const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
-    const items = await Promise.all(
-      files.map(async (f) => ({
-        name: f.replace(/\.json$/, ""),
-        data: JSON.parse(await readFile(join(dir, f), "utf8")),
-      })),
-    );
-    return { status: 200, body: items };
+    return { status: 200, body: await listJson(dir) };
   }
   if (method === "POST" && rest === "") {
-    const name = slugify(q.get("name") ?? "untitled");
     const data = JSON.parse(await body());
-    await writeFile(
-      join(dir, `${name}.json`),
-      `${JSON.stringify(data, null, 2)}\n`,
-    );
+    const name = await writeJson(dir, q.get("name") ?? "untitled", data);
     return { status: 200, body: { name } };
   }
   if (method === "DELETE" && rest === "") {
-    const path = fileOf(dir, q.get("name") ?? "");
-    if (!(await exists(path)))
+    if (!(await removeJson(dir, q.get("name") ?? "")))
       return { status: 404, body: { error: "not found" } };
-    await unlink(path);
     return { status: 200, body: {} };
   }
   if (method === "POST" && rest === "/rename") {
-    const from = fileOf(dir, q.get("from") ?? "");
-    const toName = q.get("to") ?? "";
-    const to = fileOf(dir, toName);
-    if (!toName.trim()) return { status: 400, body: { error: "empty name" } };
-    if (!(await exists(from)))
-      return { status: 404, body: { error: "not found" } };
-    if (from !== to && (await exists(to))) {
-      return { status: 409, body: { error: "name taken" } };
-    }
-    const data = JSON.parse(await readFile(from, "utf8"));
-    if (data && typeof data.name === "string") data.name = toName;
-    await writeFile(to, `${JSON.stringify(data, null, 2)}\n`);
-    if (from !== to) await unlink(from);
-    return { status: 200, body: { name: slugify(toName) } };
+    const r = await renameJson(dir, q.get("from") ?? "", q.get("to") ?? "");
+    if ("error" in r)
+      return { status: RENAME_STATUS[r.error], body: { error: r.error } };
+    return { status: 200, body: r };
   }
   return { status: 405, body: {} };
 }
