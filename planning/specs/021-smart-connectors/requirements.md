@@ -12,8 +12,8 @@ Creators building architecture diagrams, flowcharts, data pipelines, and system 
 
 ## Requirements
 
-- R1@1: A line/connector can specify optional `sourceId` and `targetId` referencing existing element IDs in the scene, along with optional anchor points (top, bottom, left, right, center, or auto-nearest).
-- R2@1: When elements bound to a connector move, resize, or rotate, the connector's endpoints update dynamically to attach to the boundary of the source and target elements.
+- R1@2: A line end attached to an element (the existing `attach`) can name an anchor: top, bottom, left, right, center, or auto (nearest point of the outline, the default).
+- R2@2: When an element a connector is attached to moves or resizes, the connector's ends follow its outline at their anchors. Rotation is out of scope until rotation is an element property (see the note from 015).
 - R3@1: Connectors support routing styles: direct/straight, orthogonal (stepped/elbow), and smooth curved (bezier).
 - R4@1: If a referenced source or target element is deleted, the connector detaches cleanly, retaining its last calculated absolute coordinates without breaking the scene.
 - R5@1: The canvas editor provides visual connection handles when dragging a line endpoint near another element's perimeter.
@@ -26,9 +26,14 @@ box and hit test do not rotate with the element. If R2 needs rotation as a prope
 a `rotate` field in the box group, `@rotate` tracks move onto it (see 015's `changes.md`), and
 the selection box and hit test rotate with it.
 
+## Context
+
+Already built before this spec: attaching an end by dragging it onto an element (R5 in part),
+ends on the outline (`attachedOutline`), and detaching on delete (R4).
+
 ## Dependencies
 
-001, 012.
+001, 012, 020.
 
 ## Owner split
 

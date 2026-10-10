@@ -17,7 +17,7 @@ previous states quickly without manual re-adjustments.
 - R3@1: Keyboard shortcuts (`Ctrl+Z` / `Cmd+Z` for undo; `Ctrl+Shift+Z` / `Cmd+Shift+Z` or `Ctrl+Y` / `Cmd+Y` for redo) restore the previous/next scene snapshot.
 - R4@1: Visual Undo and Redo buttons exist in the editor header with active/disabled states indicating stack availability.
 - R5@1: Undo stack does not break or desync the auto-save mechanism (`localStorage`).
-- R6@1: History buffer is capped to a reasonable memory threshold (e.g. 50 states) to prevent memory leaks during long editing sessions.
+- R6@2: The history keeps at most 75 undo states; the oldest is dropped first, so memory stays bounded during long editing sessions.
 
 ## Dependencies
 

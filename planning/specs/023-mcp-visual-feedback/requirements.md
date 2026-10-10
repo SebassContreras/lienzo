@@ -13,14 +13,22 @@ correctness before finalizing a post.
 
 ## Requirements
 
-- R1@1: A `scene_preview` tool in `src/service/tools/` renders a given scene JSON into a lightweight PNG snapshot (data URL / base64 or temporary asset path) without requiring a full export workflow.
-- R2@1: A `scene_inspect_layout` tool analyzes element bounding boxes and returns diagnostic warnings (e.g. overlapping text, elements outside canvas boundary, unanchored connectors).
-- R3@1: Both tools are registered in the service layer tool registry (A20) and automatically available to the MCP server (009) and CLI (008).
-- R4@1: Execution utilizes the headless renderer (010) or fast offscreen canvas fallback to guarantee parity with the editor preview (A3).
+- ~~R1@1: A `scene_preview` tool in `src/service/tools/` renders a given scene JSON into a lightweight PNG snapshot (data URL / base64 or temporary asset path) without requiring a full export workflow.~~ retired 2026-10-10 → 010/R2
+- R2@2: A `scene_inspect_layout` tool analyses the element boxes at given times (by default the start, middle and end of the loop) and returns diagnostics naming the element and the time: overlapping text, elements outside the canvas, and line ends attached to ids that do not exist.
+- R3@2: `scene_inspect_layout` is a registry tool (A20), so the MCP server (009) and the CLI (008) expose it with no change; agents see the picture through 010's `scene_preview`.
+- ~~R4@1: Execution utilizes the headless renderer (010) or fast offscreen canvas fallback to guarantee parity with the editor preview (A3).~~ retired 2026-10-10
+
+- R5@1: Every text element is checked for contrast against what is actually drawn under it (the elements below it in draw order whose boxes cover it, over the scene background), so an agent is warned before it makes an unreadable post.
+- R6@1: Thresholds follow WCAG 2.2 AA (§1.4.3): 4.5:1 for normal text, 3:1 for large text (at least 24 px, or at least 18.66 px and bold).
+- R7@1: The effective colours account for opacity (of the text, of the elements below and of their groups), composited in draw order.
+- R8@1: Under a gradient the worst point over the text's box counts; under an image, particles, a 3D element or any backdrop that cannot be reduced to colours, the result is `unverifiable` instead of a guess.
+- R9@1: A text stroke counts: when the text has a visible stroke, the better of fill and stroke contrast is used.
+- R10@1: Contrast is checked at the same times as the layout (R2), so a text that fades or moves over a different backdrop is reported at the time it is unreadable.
+- R11@1: Each contrast diagnostic gives the element, the time, the measured ratio, the required ratio, the two colours, and a suggested text colour (same hue, adjusted lightness) that meets the threshold.
 
 ## Dependencies
 
-007, 008, 009, 010.
+007.
 
 ## Owner split
 

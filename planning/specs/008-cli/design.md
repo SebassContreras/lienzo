@@ -2,7 +2,7 @@
 
 ## Approach
 
-- D1@1 (implements R1, R3): `src/cli/main.ts` is a generic adapter over the registry: flags map onto the tool's Zod input (`z.toJSONSchema` gives names and types), `--json` passes the whole input; no per-tool code.
+- D1@2 (implements R1, R3): `src/cli/main.ts` is a generic adapter over the registry: top-level scalar fields of the tool's Zod input become flags parsed with `node:util.parseArgs` (`z.toJSONSchema` gives names and types); nested input goes through `--json`; no per-tool code and no CLI library.
 - D2@1 (implements R2): Help text is generated from each tool's description and input schema.
 
 ## Deliverables

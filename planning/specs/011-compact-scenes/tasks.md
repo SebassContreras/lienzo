@@ -10,8 +10,8 @@
       covers: D3@1
 - [ ] T005 [agent] [status:todo] Readable ids and `from` / `to` line connections
       covers: D4@1
-- [ ] T006 [agent] [status:todo] `scene.build` service tool with optional save
-      covers: D5@1, A20@1
+- [ ] T006 [agent] [status:todo] `scene_build` service tool with optional save
+      covers: D5@1, A20@2
 - [ ] T007 [agent] [status:todo] Generate `schemas/compact-scene.json`; README example post
       covers: D1@1
 - [ ] T008 [agent] [status:todo] Test: defaults, presets with overrides, groups, templates, anchors, fit, connections, tracks; invalid input names its compact path and writes nothing; a test-only descriptor is accepted with no compact code; the README example builds

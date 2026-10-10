@@ -15,7 +15,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 008 | cli | todo | 007 | build | 17 |
 | 009 | mcp-server | todo | 007, 008 | build | 18 |
 | 010 | headless-export | todo | 007, 008, 009 | build | 19 |
-| 011 | compact-scenes | todo | 012, 013, 014, 015, 016, 017, 018, 019, 007 | build | 15 |
+| 011 | compact-scenes | todo | 007, 012, 013, 014, 015, 018, 019 | build | 15 |
 | 012 | component-registry | done        | 001, 002, 005 | —     | 7 |
 | 013 | animation-playback | done        | 012 | —     | 8 |
 | 014 | particle-template | done        | 012, 013 | —     | 10 |
@@ -24,7 +24,9 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 017 | more-elements | todo | 012, 013, 015 | build | 13 |
 | 018 | more-animations | done        | 012, 013 | —     | 9 |
 | 019 | animation-presets | done        | 003, 013, 015, 018 | —     | 12 |
-| 020 | history-undo | todo | 001 | design | 20 |
-| 021 | smart-connectors | todo | 001, 012 | design | 21 |
-| 022 | canvas-alignment | todo | 001, 012 | design | 22 |
-| 023 | mcp-visual-feedback | todo | 007, 008, 009, 010 | design | 23 |
+| 020 | history-undo | todo | 001 | build  | 20 |
+| 021 | smart-connectors | todo | 001, 012, 020 | build  | 21 |
+| 022 | canvas-alignment | todo | 001, 012, 020 | build  | 22 |
+| 023 | mcp-visual-feedback | todo | 007 | build  | 23 |
+| 024 | free-path | todo | 012, 013, 015 | build | 24 |
+| 025 | effects | todo | 012, 013, 015, 017 | build | 25 |

@@ -17,7 +17,7 @@ The maintainer writing posts by hand, and Claude writing them through MCP.
 - R3@1: Placement shortcuts: `at` (anchor on the canvas with an optional offset) and `fit: canvas`.
 - R4@1: Elements have readable ids; lines connect elements with `from` / `to`.
 - R5@1: `anim` is a kind name or a partial object; `tracks` take a short keyframe form (`[time, value, easing?]`).
-- R6@1: Tool `scene.build` expands a compact scene into a full scene, optionally saving it; an invalid compact scene is rejected naming the path in the compact input, and nothing is written.
+- R6@1: Tool `scene_build` expands a compact scene into a full scene, optionally saving it; an invalid compact scene is rejected naming the path in the compact input, and nothing is written.
 - R7@1: The compact format's JSON Schema is generated from the descriptors, and the README shows a full example post.
 - R8@1: A component or field added later is accepted by the compact format with no change to it.
 - R9@1: A compact element may name an animation preset with `animPreset` (019), expanded like in a full scene.
@@ -28,7 +28,7 @@ The maintainer writing posts by hand, and Claude writing them through MCP.
 
 ## Dependencies
 
-012, 013, 014, 015, 016, 017, 018, 019, 007.
+007, 012, 013, 014, 015, 018, 019. Components from 016, 017, 024 and 025 work with no change (R8).
 
 ## Owner split
 

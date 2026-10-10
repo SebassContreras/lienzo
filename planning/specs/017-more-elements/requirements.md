@@ -21,14 +21,15 @@ Creators explaining processes, data and software visually.
 - R8@1: Table and bullet list: rows and columns or items, with header style, and a row-by-row reveal.
 - R9@1: Steps / timeline: numbered steps along a line, where the active step can be animated to light up one after another.
 - R10@1: Charts: bar, line, pie and donut from a list of values and labels, drawing themselves in.
-- R11@1: Free path: an SVG path (imported or pasted) as a shape with fill and stroke, with draw-on and morph between two paths of the same element.
-- R12@1: Effects on any element: blur, blend mode, and a mask that clips an element (or group) to another shape.
+- ~~R11@1: Free path: an SVG path (imported or pasted) as a shape with fill and stroke, with draw-on and morph between two paths of the same element.~~ retired 2026-10-10 → 024/R1
+- ~~R12@1: Effects on any element: blur, blend mode, and a mask that clips an element (or group) to another shape.~~ retired 2026-10-10 → 025/R1
 - R13@1: Every new component has at least one built-in preset in a fitting category.
 
 ## Out of scope
 
 - Live data sources for charts (values are typed in the scene).
 - Video as an element.
+- Free paths (024) and effects (025), split out of this spec.
 
 ## Dependencies
 

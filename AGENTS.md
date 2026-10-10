@@ -44,12 +44,12 @@ What exists today:
   provenance only, and a scene naming one is expanded on load; pure logic in
   `src/presets/anim-presets.ts` (A26, spec 019)
 
-Planned (decided, not built yet — specs 007–011, 016, 017):
+Planned (decided, not built yet — specs 007–011, 016, 017, 020–025):
 
 - Descriptors also drive compact JSON and tools (A23, specs 011, 007);
   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
 - CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
-  in tools (A20); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
+  in tools (A20); tool names are `snake_case` noun_verb (`scene_export`); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
   over stdio, CLI via `tsx` (A22) — specs 007–010, built last
 
 ## Layout

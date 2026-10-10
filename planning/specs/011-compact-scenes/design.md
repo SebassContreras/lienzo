@@ -6,10 +6,10 @@
 - D2@1 (implements R1, R2): `expandScene` builds each element with `resolvePreset` or the descriptor defaults and deep-merges the given fields.
 - D3@1 (implements R3): Anchors and `fit` are resolved after building, from `boxOf` and the scene size.
 - D4@1 (implements R4): Readable ids stay as element ids (checked unique); `from` / `to` become line attachments.
-- D5@1 (implements R6): `scene.build` is a service tool (A20); the result goes through the scene schema before any write.
+- D5@1 (implements R6): `scene_build` is a service tool (A20); the result goes through the scene schema before any write.
 - D6@1 (implements R9): `expandScene` passes `animPreset` through and calls `expandAnimPresets` (019/D10) after building the elements; no second resolver.
 
 ## Deliverables
 
-`src/model/compact.ts`, `src/service/compact/expand.ts`, `scene.build` tool,
+`src/model/compact.ts`, `src/service/compact/expand.ts`, `scene_build` tool,
 `schemas/compact-scene.json`, README example.
