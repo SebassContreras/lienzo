@@ -13,3 +13,8 @@ Why: review before building against SRP, DRY and KISS/YAGNI: linked presets reso
 - ADDED D6@1, D7@1, D8@1, D9@1, D10@1, D11@1
 - Tasks: T001–T008 (never started) replaced by T009–T015
 - Follow-ups: 007 takes R7 (tools use animation presets) and 011 takes R9 (compact `animPreset`), both through `expandAnimPresets`. Live linked presets can come back later as a "re-sync" over the stored `animPreset`, with no format change.
+
+## 2026-10-10 — which delays shift, `none` slots and negative times
+Why: details left open by D7@1, settled while building T010: a loop's delay is a start time only when the loop ends (a phase while it repeats forever); a `none` slot in a preset would clear the target's slot, against R3; capturing from a later start than the first keyframe would give negative times, which the schema rejects.
+- MODIFIED D7@1 → D7@2
+- Tasks: T010 still valid, re-pointed to D7@2

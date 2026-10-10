@@ -4,7 +4,8 @@
       covers: D6@1, A26@2
       changes: src/components/fields/box.ts (+2 -2), src/components/fields/field.ts (+6 -0), src/components/line/descriptor.ts (+1 -0), src/model/anim-preset.ts (+40 -0), src/model/schema.ts (+1 -1), src/presets/store.ts (+1 -1), vite.config.ts (+8 -4)
 - [x] T010 [agent] [status:done] `capturePreset` and `applyPreset`: relative times (keyframes and entry/exit delays), positional offsets, per-slot and per-path merge, skipped list
-      covers: D7@1
+      covers: D7@2
+      └─ reviewed 2026-10-10: the code already follows D7@2 (commit 662d177 shifts a loop that ends)
       changes: src/presets/anim-presets.ts (+139 -0)
 - [ ] T011 [agent] [status:todo] Apply to the selection in selection order with stagger and a chosen start, dropping keyframes past the duration
       covers: D8@1
