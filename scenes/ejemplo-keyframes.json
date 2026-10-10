@@ -1,0 +1,433 @@
+{
+  "width": 1080,
+  "height": 1080,
+  "duration": 4,
+  "fps": 30,
+  "background": {
+    "color": "#0a1430",
+    "color2": "#030712",
+    "gradient": true,
+    "angle": 120,
+    "dots": true,
+    "dotColor": "#1e3a8a",
+    "dotGap": 36,
+    "spotlight": 0.35,
+    "spotlightColor": "#1d4ed8"
+  },
+  "elements": [
+    {
+      "id": "titulo",
+      "kind": "text",
+      "name": "Título",
+      "x": 190,
+      "y": 200,
+      "text": "Paso a paso",
+      "font": "Inter",
+      "size": 80,
+      "weight": 800,
+      "italic": false,
+      "color": "#ffffff",
+      "gradient": false,
+      "color2": "#60a5fa",
+      "align": "left",
+      "lineHeight": 1.15,
+      "letterSpacing": 0,
+      "opacity": 1,
+      "glow": {
+        "enabled": false,
+        "color": "#60a5fa",
+        "blur": 24,
+        "strength": 1
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      }
+    },
+    {
+      "id": "paso1",
+      "kind": "rect",
+      "name": "Paso 1",
+      "x": 190,
+      "y": 560,
+      "w": 160,
+      "h": 160,
+      "radius": 24,
+      "fill": {
+        "color": "#1f2937",
+        "gradient": false,
+        "color2": "#0b1630",
+        "angle": 90,
+        "opacity": 0.9
+      },
+      "border": {
+        "width": 2,
+        "color": "#475569",
+        "opacity": 0.8,
+        "style": "solid",
+        "flow": 0
+      },
+      "borderGlow": {
+        "enabled": false,
+        "color": "#3b82f6",
+        "blur": 18,
+        "strength": 1
+      },
+      "bgGlow": {
+        "enabled": false,
+        "color": "#2563eb",
+        "blur": 24,
+        "strength": 1
+      },
+      "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "opacity": 0.5,
+        "blur": 40,
+        "x": 0,
+        "y": 16
+      },
+      "label": {
+        "text": "1",
+        "font": "Inter",
+        "size": 56,
+        "weight": 600,
+        "color": "#ffffff",
+        "align": "center",
+        "padding": 24
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      },
+      "tracks": {
+        "fill.color": [
+          {
+            "t": 1.2,
+            "value": "#1f2937",
+            "easing": "auto"
+          },
+          {
+            "t": 1.45,
+            "value": "#2563eb",
+            "easing": "auto"
+          }
+        ]
+      }
+    },
+    {
+      "id": "paso2",
+      "kind": "rect",
+      "name": "Paso 2",
+      "x": 460,
+      "y": 560,
+      "w": 160,
+      "h": 160,
+      "radius": 24,
+      "fill": {
+        "color": "#1f2937",
+        "gradient": false,
+        "color2": "#0b1630",
+        "angle": 90,
+        "opacity": 0.9
+      },
+      "border": {
+        "width": 2,
+        "color": "#475569",
+        "opacity": 0.8,
+        "style": "solid",
+        "flow": 0
+      },
+      "borderGlow": {
+        "enabled": false,
+        "color": "#3b82f6",
+        "blur": 18,
+        "strength": 1
+      },
+      "bgGlow": {
+        "enabled": false,
+        "color": "#2563eb",
+        "blur": 24,
+        "strength": 1
+      },
+      "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "opacity": 0.5,
+        "blur": 40,
+        "x": 0,
+        "y": 16
+      },
+      "label": {
+        "text": "2",
+        "font": "Inter",
+        "size": 56,
+        "weight": 600,
+        "color": "#ffffff",
+        "align": "center",
+        "padding": 24
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      },
+      "tracks": {
+        "fill.color": [
+          {
+            "t": 2.2,
+            "value": "#1f2937",
+            "easing": "auto"
+          },
+          {
+            "t": 2.45,
+            "value": "#2563eb",
+            "easing": "auto"
+          }
+        ]
+      }
+    },
+    {
+      "id": "paso3",
+      "kind": "rect",
+      "name": "Paso 3",
+      "x": 730,
+      "y": 560,
+      "w": 160,
+      "h": 160,
+      "radius": 24,
+      "fill": {
+        "color": "#1f2937",
+        "gradient": false,
+        "color2": "#0b1630",
+        "angle": 90,
+        "opacity": 0.9
+      },
+      "border": {
+        "width": 2,
+        "color": "#475569",
+        "opacity": 0.8,
+        "style": "solid",
+        "flow": 0
+      },
+      "borderGlow": {
+        "enabled": false,
+        "color": "#3b82f6",
+        "blur": 18,
+        "strength": 1
+      },
+      "bgGlow": {
+        "enabled": false,
+        "color": "#2563eb",
+        "blur": 24,
+        "strength": 1
+      },
+      "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "opacity": 0.5,
+        "blur": 40,
+        "x": 0,
+        "y": 16
+      },
+      "label": {
+        "text": "3",
+        "font": "Inter",
+        "size": 56,
+        "weight": 600,
+        "color": "#ffffff",
+        "align": "center",
+        "padding": 24
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      },
+      "tracks": {
+        "fill.color": [
+          {
+            "t": 3.2,
+            "value": "#1f2937",
+            "easing": "auto"
+          },
+          {
+            "t": 3.45,
+            "value": "#2563eb",
+            "easing": "auto"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flecha",
+      "kind": "icon",
+      "name": "Flecha",
+      "x": 0,
+      "y": 400,
+      "w": 120,
+      "h": 120,
+      "icon": "ArrowDown",
+      "stroke": 2,
+      "color": "#fde68a",
+      "opacity": 1,
+      "tile": {
+        "enabled": false,
+        "color": "#1e3a8a",
+        "gradient": true,
+        "color2": "#0b1630",
+        "angle": 135,
+        "opacity": 1,
+        "radius": 28,
+        "padding": 28
+      },
+      "glow": {
+        "enabled": false,
+        "color": "#60a5fa",
+        "blur": 24,
+        "strength": 1
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      },
+      "tracks": {
+        "x": [
+          {
+            "t": 0,
+            "value": -160,
+            "easing": "ease-in-out"
+          },
+          {
+            "t": 1.2,
+            "value": 210,
+            "easing": "ease-in-out"
+          },
+          {
+            "t": 2.2,
+            "value": 480,
+            "easing": "ease-in-out"
+          },
+          {
+            "t": 3.2,
+            "value": 750,
+            "easing": "auto"
+          }
+        ]
+      }
+    }
+  ]
+}

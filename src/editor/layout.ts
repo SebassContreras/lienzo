@@ -74,6 +74,14 @@ export function valueAt(el: unknown, path: string[]): unknown {
   return path.reduce<unknown>((v, k) => (v as Parent)?.[k], el);
 }
 
+/** `value` as the field takes it: clamped to its bounds and rounded when whole. */
+export function fieldValue(field: DataField, value: unknown): unknown {
+  if (field.type !== "number" || typeof value !== "number") return value;
+  let v = value;
+  if (field.bounds) v = Math.min(field.bounds[1], Math.max(field.bounds[0], v));
+  return field.int ? Math.round(v) : v;
+}
+
 /**
  * Writes `value` into `draft` at `path` the way the field says: clamped and rounded for
  * numbers with bounds or `int`, through the field's own `set` when it has one (on the
@@ -85,13 +93,7 @@ export function writeField(
   field: DataField,
   value: unknown,
 ): void {
-  let v = value;
-  if (field.type === "number" && typeof v === "number") {
-    if (field.bounds) {
-      v = Math.min(field.bounds[1], Math.max(field.bounds[0], v));
-    }
-    if (field.int) v = Math.round(v as number);
-  }
+  const v = fieldValue(field, value);
   const holder = valueAt(draft, path.slice(0, -1)) as Parent;
   const key = path[path.length - 1] as string;
   if (field.set) field.set(holder, v);

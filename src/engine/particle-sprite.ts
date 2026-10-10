@@ -25,7 +25,10 @@ type DrawElements = (
 const cache = new Map<string, Sprite>();
 const MAX_CACHED = 32;
 
-/** The element with its animation, and its children's, set to none: a template is drawn still. */
+/**
+ * The element with its animation and keyframe tracks, and its children's, set to none: a
+ * template is drawn still (015/D5).
+ */
 function still(el: Element): Element {
   const anim = descriptorOf(el.kind)?.fields.anim;
   const copy = (
@@ -33,6 +36,7 @@ function still(el: Element): Element {
       ? { ...el, anim: structuredClone(anim.default) }
       : { ...el }
   ) as Element;
+  delete copy.tracks;
   if (copy.kind === "group") copy.children = copy.children.map(still);
   return copy;
 }

@@ -1,0 +1,308 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 8517aba..8900b65 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -76,6 +76,7 @@ import {
+   type StoredRef,
+ } from "./library.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
++import { TracksPanel } from "./timeline/tracks-panel.tsx";
+ 
+ /**
+  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
+@@ -725,6 +726,25 @@ export function App() {
+           togglePlay={togglePlay}
+           onScrub={seek}
+         />
++        {selected && (
++          <TracksPanel
++            el={selected}
++            duration={scene.duration}
++            clock={clock}
++            seek={seek}
++            checkpoint={checkpoint}
++            change={(fn) => {
++              const draft = structuredClone(selected);
++              fn(draft);
++              setScene({
++                ...sceneRef.current,
++                elements: sceneRef.current.elements.map((e) =>
++                  e.id === draft.id ? draft : e,
++                ),
++              });
++            }}
++          />
++        )}
+       </main>
+       <Panel
+         checkpoint={() => {
+diff --git a/src/editor/timeline/tracks-panel.tsx b/src/editor/timeline/tracks-panel.tsx
+new file mode 100644
+index 0000000..b2f15f2
+--- /dev/null
++++ b/src/editor/timeline/tracks-panel.tsx
+@@ -0,0 +1,182 @@
++/**
++ * The keyframe panel under the scrub bar (015/D8): the selected element's tracks, one row
++ * each, on the same clock. A mark is selected (and the clock seeks to it) with a click,
++ * moved by dragging, removed with Delete, and its easing set below.
++ */
++import { type MutableRefObject, useEffect, useRef, useState } from "react";
++import { descriptorOf } from "../../components/index.ts";
++import { EASING_NAMES } from "../../engine/easing.ts";
++import {
++  fieldAt,
++  movedKeyframe,
++  withoutKeyframe,
++} from "../../engine/tracks.ts";
++import type { Element } from "../../model/model.ts";
++import type { Keyframe } from "../../model/track.ts";
++import type { Change } from "../field-editor.tsx";
++import type { Clock } from "../stage.tsx";
++
++const CHANNEL_LABELS: Record<string, string> = {
++  "@rotate": "Rotación",
++  "@scale": "Escala",
++};
++
++/** The name a row shows: the field's label, or its path when the label depends on state. */
++function labelOf(el: Element, path: string): string {
++  const f = fieldAt(descriptorOf(el.kind)?.fields ?? {}, path);
++  const label = f && typeof f.label === "string" ? f.label : undefined;
++  return CHANNEL_LABELS[path] ?? label ?? path;
++}
++
++type Picked = { path: string; i: number };
++
++export function TracksPanel({
++  el,
++  duration,
++  clock,
++  seek,
++  change,
++  checkpoint,
++}: {
++  el: Element;
++  duration: number;
++  clock: MutableRefObject<Clock>;
++  seek: (t: number) => void;
++  change: Change;
++  checkpoint: () => void;
++}) {
++  const [picked, setPicked] = useState<Picked | null>(null);
++  const dragging = useRef<{ path: string; i: number; lane: DOMRect } | null>(
++    null,
++  );
++  const playheads = useRef<HTMLDivElement[]>([]);
++  const panel = useRef<HTMLDivElement>(null);
++
++  // the playhead line in every lane follows the clock
++  useEffect(() => {
++    let frame = 0;
++    const tick = () => {
++      const left = `${(clock.current.t / duration) * 100}%`;
++      for (const line of playheads.current) if (line) line.style.left = left;
++      frame = requestAnimationFrame(tick);
++    };
++    frame = requestAnimationFrame(tick);
++    return () => cancelAnimationFrame(frame);
++  }, [clock, duration]);
++
++  const tracks = Object.entries(el.tracks ?? {});
++  if (tracks.length === 0) return null;
++
++  const setKeys = (path: string, keys: Keyframe[]) =>
++    change((d) => {
++      d.tracks = { ...d.tracks, [path]: keys };
++    });
++
++  const timeAt = (lane: DOMRect, clientX: number) =>
++    Math.min(
++      duration,
++      Math.max(0, ((clientX - lane.left) / lane.width) * duration),
++    );
++
++  const pickedKey = picked && el.tracks?.[picked.path]?.[picked.i];
++
++  return (
++    // biome-ignore lint/a11y/noStaticElementInteractions: Delete acts on the picked keyframe
++    <div
++      className="tracks-panel"
++      ref={panel}
++      tabIndex={-1}
++      onKeyDown={(e) => {
++        if ((e.key === "Delete" || e.key === "Backspace") && picked) {
++          e.preventDefault();
++          e.stopPropagation(); // the editor would delete the element
++          checkpoint();
++          const keys = el.tracks?.[picked.path] ?? [];
++          setKeys(picked.path, withoutKeyframe(keys, picked.i));
++          setPicked(null);
++        }
++      }}
++      onPointerMove={(e) => {
++        const d = dragging.current;
++        if (!d) return;
++        const keys = el.tracks?.[d.path] ?? [];
++        const t = timeAt(d.lane, e.clientX);
++        const moved = movedKeyframe(keys, d.i, t);
++        const i = moved.findIndex((k) => k.t === Math.max(0, t));
++        setKeys(d.path, moved);
++        dragging.current = { ...d, i };
++        setPicked({ path: d.path, i });
++        seek(t);
++      }}
++      onPointerUp={() => {
++        dragging.current = null;
++      }}
++    >
++      {tracks.map(([path, keys], row) => (
++        <div className="track-row" key={path}>
++          <span className="track-label" title={path}>
++            {labelOf(el, path)}
++          </span>
++          <div className="track-lane">
++            <div
++              className="track-playhead"
++              ref={(r) => {
++                if (r) playheads.current[row] = r;
++              }}
++            />
++            {keys.map((k, i) => (
++              <button
++                type="button"
++                key={k.t}
++                className={
++                  picked?.path === path && picked.i === i
++                    ? "keyframe picked"
++                    : "keyframe"
++                }
++                style={{ left: `${(k.t / duration) * 100}%` }}
++                title={`${k.t.toFixed(2)} s · ${k.value}`}
++                onPointerDown={(e) => {
++                  const lane = (
++                    e.currentTarget.parentElement as HTMLElement
++                  ).getBoundingClientRect();
++                  checkpoint();
++                  dragging.current = { path, i, lane };
++                  panel.current?.focus();
++                  panel.current?.setPointerCapture(e.pointerId);
++                  setPicked({ path, i });
++                  seek(k.t);
++                }}
++              />
++            ))}
++          </div>
++        </div>
++      ))}
++      {picked && pickedKey && (
++        <label className="track-easing">
++          <span>
++            Curva desde {pickedKey.t.toFixed(2)} s ({labelOf(el, picked.path)})
++          </span>
++          <select
++            value={pickedKey.easing}
++            onChange={(e) => {
++              checkpoint();
++              const keys = [...(el.tracks?.[picked.path] ?? [])];
++              keys[picked.i] = {
++                ...pickedKey,
++                easing: e.target.value as Keyframe["easing"],
++              };
++              setKeys(picked.path, keys);
++            }}
++          >
++            <option value="auto">lineal</option>
++            {EASING_NAMES.map((n) => (
++              <option key={n} value={n}>
++                {n}
++              </option>
++            ))}
++          </select>
++        </label>
++      )}
++    </div>
++  );
++}
+diff --git a/src/styles.css b/src/styles.css
+index 1e4f66c..f1c47b0 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -206,7 +206,7 @@ textarea {
+ 
+ .center {
+   display: grid;
+-  grid-template-rows: 1fr 44px;
++  grid-template-rows: 1fr 44px auto;
+   min-width: 0;
+   min-height: 0;
+ }
+@@ -570,3 +570,68 @@ code {
+   color: var(--accent);
+   opacity: 1;
+ }
++
++/* keyframe tracks under the scrub bar (015) */
++.tracks-panel {
++  display: flex;
++  flex-direction: column;
++  gap: 2px;
++  padding: 6px 12px 8px;
++  max-height: 180px;
++  overflow-y: auto;
++  background: var(--panel);
++  outline: none;
++}
++.track-row {
++  display: grid;
++  grid-template-columns: 110px 1fr;
++  align-items: center;
++  gap: 10px;
++  height: 22px;
++}
++.track-label {
++  color: var(--muted);
++  font-size: 12px;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++.track-lane {
++  position: relative;
++  height: 100%;
++  margin: 0 7px;
++  border-bottom: 1px solid var(--line);
++}
++.track-playhead {
++  position: absolute;
++  top: 0;
++  bottom: 0;
++  width: 1px;
++  background: var(--accent);
++  opacity: 0.6;
++  pointer-events: none;
++}
++.tracks-panel .keyframe {
++  position: absolute;
++  top: 50%;
++  width: 11px;
++  height: 11px;
++  padding: 0;
++  border: 1px solid var(--muted);
++  border-radius: 2px;
++  background: var(--panel);
++  transform: translate(-50%, -50%) rotate(45deg);
++  cursor: ew-resize;
++}
++.tracks-panel .keyframe.picked {
++  border-color: var(--accent);
++  background: var(--accent);
++}
++.track-easing {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  margin-top: 4px;
++  font-size: 12px;
++  color: var(--muted);
++}

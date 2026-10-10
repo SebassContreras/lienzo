@@ -15,6 +15,7 @@ import { type ReactNode, useState } from "react";
 import { descriptorOf } from "../components/index.ts";
 import { lateSlots } from "../engine/anim.ts";
 import { imageSize } from "../engine/images.ts";
+import { applyTracks, writeAt } from "../engine/tracks.ts";
 import type {
   Element,
   Endpoint,
@@ -26,7 +27,9 @@ import { uploadAsset } from "../presets/store.ts";
 import { AnimPicker } from "./anim-picker.tsx";
 import { Check, Color, Num, Section, Select, TextArea } from "./controls.tsx";
 import { IconPicker } from "./icon-picker.tsx";
+import { ChannelSection, KeyButton } from "./keyframe-controls.tsx";
 import {
+  fieldValue,
   inspectorLayout,
   type LayoutItem,
   resolve,
@@ -45,6 +48,8 @@ export type EditorContext = {
   /** Puts a particles element's template back on the canvas to be edited. */
   onEditParticle?: () => void;
   onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
+  /** The playhead (s): fields show their value there and keyframes are set there (015). */
+  time?: number;
 };
 
 type WidgetProps = {
@@ -282,7 +287,21 @@ function Control({
     if (!render) throw new Error(`unknown inspector widget ${field.widget}`);
     return render({ el, item, value, label, change, ctx });
   }
-  const write = (v: unknown) => change((d) => writeField(d, path, field, v));
+  const key = path.join(".");
+  const t = ctx.time;
+  const keyed = t !== undefined && isAnimatable(el.kind, key);
+  const write = (v: unknown) =>
+    change((d) =>
+      keyed
+        ? writeAt(
+            d,
+            key,
+            fieldValue(field, v) as number | string,
+            t,
+            (dd, vv) => writeField(dd, path, field, vv),
+          )
+        : writeField(d, path, field, v),
+    );
   switch (field.type) {
     case "number":
       return (
@@ -333,19 +352,45 @@ export function FieldEditor({
 }) {
   const d = descriptorOf(el.kind);
   if (!d) return null;
-  return inspectorLayout(d as never, el)
+  const t = ctx.time;
+  // what the element is at the playhead, so keyframed fields show their value there
+  const shown = t !== undefined && el.tracks ? applyTracks(el, t).el : el;
+  const sections = inspectorLayout(d as never, shown)
     .filter((s) => s.items.length > 0)
     .map((s) => (
       <Section key={s.title} title={s.title} open={s.open}>
-        {s.items.map((item) => (
-          <Control
-            key={item.path.join(".")}
-            el={el}
-            item={item}
-            change={change}
-            ctx={ctx}
-          />
-        ))}
+        {s.items.map((item) => {
+          const key = item.path.join(".");
+          const control = (
+            <Control
+              key={key}
+              el={shown}
+              item={item}
+              change={change}
+              ctx={ctx}
+            />
+          );
+          return t !== undefined && d.animatable.includes(key) ? (
+            <div className="keyed" key={key}>
+              {control}
+              <KeyButton el={el} path={key} t={t} change={change} />
+            </div>
+          ) : (
+            control
+          );
+        })}
       </Section>
     ));
+  return (
+    <>
+      {sections}
+      {t !== undefined && el.kind !== "line" && (
+        <ChannelSection el={el} t={t} change={change} />
+      )}
+    </>
+  );
 }
+
+/** Keyframes may drive `path` of an element of `kind`. */
+const isAnimatable = (kind: string, path: string) =>
+  descriptorOf(kind)?.animatable.includes(path) ?? false;

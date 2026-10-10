@@ -12,6 +12,7 @@ import {
   translate,
 } from "../engine/geometry.ts";
 import { drawScene } from "../engine/render.ts";
+import { applyTracks, commitAt } from "../engine/tracks.ts";
 import type { Element, LineEl, Scene } from "../model/model.ts";
 
 export type Clock = { t: number; playing: boolean };
@@ -93,6 +94,15 @@ const CURSORS: Record<Handle, string> = {
   b: "crosshair",
   bend: "grab",
 };
+
+/** `s` with each element's keyframe tracks applied at `t` (015). */
+function atTime(s: Scene, t: number): Scene {
+  if (!s.elements.some((el) => el.tracks)) return s;
+  return {
+    ...s,
+    elements: s.elements.map((el) => (el.tracks ? applyTracks(el, t).el : el)),
+  };
+}
 
 /** Every element moved by the drag, from where it was when the drag started. */
 function applyMove(drag: Extract<Drag, { mode: "move" }>, p: Pt): Element[] {
@@ -289,6 +299,7 @@ export function Stage({
   setSelection,
   clock,
   checkpoint,
+  stopClock,
   onDropElement,
   hint,
 }: {
@@ -300,6 +311,8 @@ export function Stage({
   setSelection: (ids: string[]) => void;
   clock: MutableRefObject<Clock>;
   checkpoint: () => void;
+  /** Stops the clock where it is: dragging a keyframed element edits it at that moment. */
+  stopClock: () => void;
   onDropElement: (el: Element, at: Pt) => void;
   /** A short tip shown over the bottom of the stage. */
   hint?: string;
@@ -351,7 +364,7 @@ export function Stage({
         const d = drag.current;
         drawOverlay(
           ctx,
-          s,
+          atTime(s, clock.current.t),
           selectionRef.current,
           hover.current,
           attachTarget.current,
@@ -370,19 +383,26 @@ export function Stage({
     return { x: (e.clientX - r.left) / zoom, y: (e.clientY - r.top) / zoom };
   };
 
+  /** Writes edited elements back; keyframed fields get a keyframe at the playhead (015). */
   const replace = (...changed: Element[]) => {
     const byId = new Map(changed.map((el) => [el.id, el]));
     const s = sceneRef.current;
     setScene({
       ...s,
-      elements: s.elements.map((e) => byId.get(e.id) ?? e),
+      elements: s.elements.map((e) => {
+        const next = byId.get(e.id);
+        return next ? commitAt(e, next, clock.current.t) : e;
+      }),
     });
   };
+
+  /** The scene as it shows now: what the pointer hits and drags. */
+  const shown = () => atTime(sceneRef.current, clock.current.t);
 
   /** The single selected element, which shows resize and line handles. */
   const single = () =>
     selection.length === 1
-      ? sceneRef.current.elements.find((el) => el.id === selection[0])
+      ? shown().elements.find((el) => el.id === selection[0])
       : undefined;
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -390,12 +410,13 @@ export function Stage({
     e.currentTarget.setPointerCapture(e.pointerId);
     const p = toScene(e);
     const tol = 9 / zoom;
-    const s = sceneRef.current;
+    const s = shown();
     const sel = single();
     if (sel && !e.shiftKey) {
       const h = handleAt(s, sel, p, tol);
       if (h) {
         checkpoint();
+        if (clock.current.playing && sel.tracks) stopClock();
         if (sel.kind === "line" && (h === "a" || h === "b")) {
           drag.current = { mode: "end", which: h, orig: sel };
         } else if (sel.kind === "line") {
@@ -426,6 +447,11 @@ export function Stage({
     const ids = selection.includes(hit.id) ? selection : [hit.id];
     if (ids !== selection) setSelection(ids);
     checkpoint();
+    if (
+      clock.current.playing &&
+      s.elements.some((el) => ids.includes(el.id) && el.tracks)
+    )
+      stopClock();
     drag.current = {
       mode: "move",
       start: p,
@@ -437,7 +463,7 @@ export function Stage({
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const p = toScene(e);
     const tol = 9 / zoom;
-    const s = sceneRef.current;
+    const s = shown();
     const canvas = e.currentTarget;
     if (!drag.current) {
       const sel = single();

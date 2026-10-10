@@ -8,6 +8,7 @@ import {
   templateSchema as template,
   variationSchema as variation,
 } from "../components/particles/descriptor.ts";
+import { TracksSchema } from "../model/track.ts";
 
 const color = z.string();
 const align = z.enum(["left", "center", "right"]);
@@ -39,6 +40,8 @@ const shadow = z.object({
 const box = {
   id: z.string(),
   name: z.string(),
+  // added by 015, optional, so scenes without it still read
+  tracks: TracksSchema.optional(),
   x: z.number(),
   y: z.number(),
   w: z.number(),
@@ -122,6 +125,8 @@ const text = z.object({
   id: z.string(),
   kind: z.literal("text"),
   name: z.string(),
+  // added by 015, optional, so scenes without it still read
+  tracks: TracksSchema.optional(),
   x: z.number(),
   y: z.number(),
   text: z.string(),
@@ -150,6 +155,8 @@ const line = z.object({
   id: z.string(),
   kind: z.literal("line"),
   name: z.string(),
+  // added by 015, optional, so scenes without it still read
+  tracks: TracksSchema.optional(),
   a: endpoint,
   b: endpoint,
   bend: z.number(),

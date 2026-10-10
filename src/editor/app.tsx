@@ -76,6 +76,7 @@ import {
   type StoredRef,
 } from "./library.tsx";
 import { type Clock, Stage } from "./stage.tsx";
+import { TracksPanel } from "./timeline/tracks-panel.tsx";
 
 /**
  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
@@ -152,6 +153,8 @@ export function App() {
   const [selection, setSelection] = useState<string[]>([]);
   const clock = useRef<Clock>({ t: 0, playing: true });
   const [playing, setPlaying] = useState(true);
+  /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
+  const [playhead, setPlayhead] = useState(0);
   const undoStack = useRef<Scene[]>([]);
   const redoStack = useRef<Scene[]>([]);
   const [, rerender] = useReducer((x: number) => x + 1, 0);
@@ -425,6 +428,15 @@ export function App() {
   const togglePlay = useCallback(() => {
     clock.current.playing = !clock.current.playing;
     setPlaying(clock.current.playing);
+    if (!clock.current.playing) setPlayhead(clock.current.t);
+  }, []);
+
+  /** Stops the clock at `t` (by default where it is now) and makes it the playhead. */
+  const seek = useCallback((t: number = clock.current.t) => {
+    clock.current.playing = false;
+    clock.current.t = t;
+    setPlaying(false);
+    setPlayhead(t);
   }, []);
 
   useEffect(() => {
@@ -699,6 +711,7 @@ export function App() {
           setSelection={setSelection}
           clock={clock}
           checkpoint={checkpoint}
+          stopClock={() => seek()}
           onDropElement={addElement}
           hint={
             selection.length > 0
@@ -711,13 +724,35 @@ export function App() {
           duration={scene.duration}
           playing={playing}
           togglePlay={togglePlay}
-          onScrub={() => {
-            clock.current.playing = false;
-            setPlaying(false);
-          }}
+          onScrub={seek}
         />
+        {selected && (
+          <TracksPanel
+            el={selected}
+            duration={scene.duration}
+            clock={clock}
+            seek={seek}
+            checkpoint={checkpoint}
+            change={(fn) => {
+              const draft = structuredClone(selected);
+              fn(draft);
+              setScene({
+                ...sceneRef.current,
+                elements: sceneRef.current.elements.map((e) =>
+                  e.id === draft.id ? draft : e,
+                ),
+              });
+            }}
+          />
+        )}
       </main>
-      <Panel checkpoint={checkpoint}>
+      <Panel
+        checkpoint={() => {
+          checkpoint();
+          // editing a keyframed element stops the clock where it is, to edit there
+          if (playing && selected?.tracks) seek();
+        }}
+      >
         {selected ? (
           <ElementInspector
             key={selected.id}
@@ -740,6 +775,7 @@ export function App() {
             onUngroup={ungroupSelected}
             onEditParticle={editParticle}
             canvas={scene}
+            time={playhead}
           />
         ) : selection.length > 1 ? (
           <MultiInspector
@@ -797,7 +833,7 @@ function Timeline({
   duration: number;
   playing: boolean;
   togglePlay: () => void;
-  onScrub: () => void;
+  onScrub: (t: number) => void;
 }) {
   const range = useRef<HTMLInputElement>(null);
   const readout = useRef<HTMLSpanElement>(null);
@@ -831,10 +867,7 @@ function Timeline({
         max={duration}
         step={0.01}
         defaultValue={0}
-        onInput={(e) => {
-          onScrub();
-          clock.current.t = Number((e.target as HTMLInputElement).value);
-        }}
+        onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
       />
       <span ref={readout} className="readout" />
     </div>
