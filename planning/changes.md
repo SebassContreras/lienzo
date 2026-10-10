@@ -34,3 +34,7 @@ Why: spec 012 moved each component into a descriptor folder (A23).
 Why: the 019 review found that linked presets resolved at draw time would couple `animate` (A24) to the preset store and make export, tests and undo depend on the library.
 - MODIFIED A26@1 → A26@2
 - Tasks: 019/T001 (never started) replaced by 019/T009, which covers A26@2
+
+## 2026-10-10 — A7 lists `/api/animations`
+Why: wording fix; the endpoint was added by 019 under A26, and A7's list of endpoints left it out. Meaning unchanged.
+- REWORDED A7@3

@@ -13,7 +13,7 @@ exactly what I wanted").
 - A4@1: A scene is plain JSON (size, loop duration, fps, background, ordered element list) defined by TypeScript types in `src/model/` — why: JSON is what presets and scenes are stored as; no translation layer.
 - A5@2: Each canvas component kind lives in its own folder `src/components/<kind>/` (its descriptor and its draw function, see A23); shared painting helpers (glow, shadow, gradients, animation state, `animate`) live in `src/engine/` — why: adding a component means adding a folder.
 - A6@1: Animations are a function of time within one loop; looping animations use a whole number of cycles per loop so exported GIF and MP4 loops are seamless — why: validated in the prototype.
-- A7@3: No database. Presets and scenes are JSON files in `presets/` and `scenes/`, and the images and 3D models (`.glb`) scenes use are files in `assets/` (named by content hash), all at the repo root and versioned with it; they are read and written through a small Vite dev-server middleware (`/api/presets`, `/api/scenes`, `/api/assets`); the current scene is also autosaved to `localStorage` — why: files are easy to inspect, copy and version, and a scene that uses images or models opens on any clone.
+- A7@3: No database. Presets and scenes are JSON files in `presets/` and `scenes/`, and the images and 3D models (`.glb`) scenes use are files in `assets/` (named by content hash), all at the repo root and versioned with it; they are read and written through a small Vite dev-server middleware (`/api/presets`, `/api/animations`, `/api/scenes`, `/api/assets`); the current scene is also autosaved to `localStorage` — why: files are easy to inspect, copy and version, and a scene that uses images or models opens on any clone.
 
 ## Stack
 
