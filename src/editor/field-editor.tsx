@@ -2,7 +2,15 @@
  * The inspector generated from a descriptor (D3): one control per field by its type, and a
  * widget of its own for each custom field or widget a descriptor names.
  */
-import { ImageUp, Link2Off, Maximize, Shuffle, Ungroup } from "lucide-react";
+import {
+  CircleDot,
+  ImageUp,
+  Link2Off,
+  Maximize,
+  Pencil,
+  Shuffle,
+  Ungroup,
+} from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { descriptorOf } from "../components/index.ts";
 import { lateSlots } from "../engine/anim.ts";
@@ -33,6 +41,8 @@ export type EditorContext = {
   /** Scene size, for "Ajustar al lienzo"; its duration, for the animation warning. */
   canvas?: { width: number; height: number; duration?: number };
   onUngroup?: () => void;
+  /** Puts a particles element's template back on the canvas to be edited. */
+  onEditParticle?: () => void;
   onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
 };
 
@@ -174,6 +184,35 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
       <Shuffle size={15} /> Redistribuir
     </button>
   ),
+  "particle-template": ({ el, change, ctx }) =>
+    (el as ParticlesEl).template ? (
+      <>
+        <div className="hint">
+          Cada punto dibuja <b>{(el as ParticlesEl).template?.name}</b>.
+        </div>
+        {ctx.onEditParticle && (
+          <button type="button" onClick={ctx.onEditParticle}>
+            <Pencil size={15} /> Editar partícula
+          </button>
+        )}
+        <button
+          type="button"
+          title="Vuelve al punto simple"
+          onClick={() =>
+            change((d) => {
+              (d as ParticlesEl).template = null;
+            })
+          }
+        >
+          <CircleDot size={15} /> Usar puntos
+        </button>
+      </>
+    ) : (
+      <div className="hint">
+        Para que cada punto sea otro elemento, selecciónalo junto con estas
+        partículas (Mayús + clic) y pulsa «Usar como partícula».
+      </div>
+    ),
   "fit-canvas": ({ change, ctx }) => {
     const { canvas } = ctx;
     return (

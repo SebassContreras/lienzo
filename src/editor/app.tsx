@@ -350,6 +350,64 @@ export function App() {
     setSelection(ids);
   }, [checkpoint, selection, setScene]);
 
+  /** With a particles element and one other selected: the other becomes its particle. */
+  const particlePair = (() => {
+    if (selection.length !== 2) return undefined;
+    const picked = scene.elements.filter((e) => selection.includes(e.id));
+    const field = picked.find((e) => e.kind === "particles");
+    const other = picked.find((e) => e !== field && e.kind !== "particles");
+    return field && other ? { field, other } : undefined;
+  })();
+
+  const makeParticle = useCallback(() => {
+    if (!particlePair) return;
+    const { field, other } = particlePair;
+    const s = sceneRef.current;
+    checkpoint();
+    // a line keeps where it was drawn: its attachments point at elements it leaves behind
+    const template =
+      other.kind === "line"
+        ? (() => {
+            const r = resolveLine(other, indexById(s));
+            return {
+              ...other,
+              a: { x: r.a.x, y: r.a.y },
+              b: { x: r.b.x, y: r.b.y },
+            };
+          })()
+        : other;
+    setScene({
+      ...s,
+      elements: removeElements(s, new Set([other.id])).map((e) =>
+        e.id === field.id ? { ...e, template: structuredClone(template) } : e,
+      ),
+    });
+    setSelection([field.id]);
+  }, [checkpoint, particlePair, setScene]);
+
+  /** The selected field's particle back on the canvas, over the field, to be edited. */
+  const editParticle = useCallback(() => {
+    const s = sceneRef.current;
+    const field = s.elements.find((e) => e.id === selection[0]);
+    if (field?.kind !== "particles" || !field.template) return;
+    checkpoint();
+    const el = centerOn(
+      cloneElement(field.template),
+      field.x + field.w / 2,
+      field.y + field.h / 2,
+    );
+    setScene({
+      ...s,
+      elements: [
+        ...s.elements.map((e) =>
+          e.id === field.id ? { ...field, template: null } : e,
+        ),
+        el,
+      ],
+    });
+    setSelection([el.id]);
+  }, [checkpoint, selection, setScene]);
+
   const moveLayer = useCallback(
     (id: string, dir: 1 | -1) => {
       const s = sceneRef.current;
@@ -680,6 +738,7 @@ export function App() {
             onLayer={(dir) => moveLayer(selected.id, dir)}
             onSavePreset={(name) => savePreset(selected, name)}
             onUngroup={ungroupSelected}
+            onEditParticle={editParticle}
             canvas={scene}
           />
         ) : selection.length > 1 ? (
@@ -688,6 +747,7 @@ export function App() {
             onDelete={removeSelected}
             onDuplicate={duplicateSelected}
             onGroup={groupSelected}
+            onUseAsParticle={particlePair && makeParticle}
           />
         ) : (
           <SceneInspector

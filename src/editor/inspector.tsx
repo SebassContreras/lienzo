@@ -4,6 +4,7 @@ import {
   BookmarkPlus,
   Copy,
   Group,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -19,6 +20,7 @@ export function ElementInspector({
   onLayer,
   onSavePreset,
   onUngroup,
+  onEditParticle,
   nameOf,
   canvas,
 }: {
@@ -29,6 +31,7 @@ export function ElementInspector({
   onLayer: (dir: 1 | -1) => void;
   onSavePreset?: (name: string) => void;
   onUngroup?: () => void;
+  onEditParticle?: () => void;
   nameOf: (id: string) => string;
   /** Scene size, for "Ajustar al lienzo". */
   canvas?: { width: number; height: number; duration?: number };
@@ -77,7 +80,7 @@ export function ElementInspector({
       <FieldEditor
         el={el}
         change={change}
-        ctx={{ nameOf, canvas, onUngroup }}
+        ctx={{ nameOf, canvas, onUngroup, onEditParticle }}
       />
       {onSavePreset && (
         <Section title="Guardar como preset">
@@ -113,11 +116,14 @@ export function MultiInspector({
   onDelete,
   onDuplicate,
   onGroup,
+  onUseAsParticle,
 }: {
   count: number;
   onDelete: () => void;
   onDuplicate: () => void;
   onGroup: () => void;
+  /** Set when the selection is a particles element and one other element. */
+  onUseAsParticle?: () => void;
 }) {
   return (
     <div className="inspector">
@@ -139,6 +145,13 @@ export function MultiInspector({
         Arrastra cualquiera de ellos para moverlos juntos. Mayús + clic añade o
         quita elementos de la selección. Ctrl+G los agrupa.
       </div>
+      {onUseAsParticle && (
+        <div className="pad">
+          <button type="button" onClick={onUseAsParticle}>
+            <Sparkles size={15} /> Usar como partícula
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   noGlow,
   num,
   obj,
+  type Parent,
   widget,
 } from "../fields/index.ts";
 import { drawParticles } from "./draw.ts";
@@ -24,6 +25,9 @@ const PARTICLE_ANIMS: readonly AnimKind[] = [
 ];
 
 const P = { section: "Partículas" };
+
+/** The dot's controls only matter while no template replaces it. */
+const dotShown = (p: Parent) => p.template == null;
 
 /** True when `el` is, or holds, a particles element (a template may not nest one). */
 function holdsParticles(el: { kind: string; children?: unknown }): boolean {
@@ -144,7 +148,7 @@ const fields = {
       color: color("#93c5fd", { label: "Color" }),
       opacity: opacity(0.9),
     },
-    { section: "Puntos" },
+    { section: "Puntos", visible: dotShown },
   ),
   variation: variationField,
   link: obj(
@@ -156,7 +160,8 @@ const fields = {
     },
     { section: "Líneas" },
   ),
-  glow: glow(noGlow("#60a5fa"), "Brillo"),
+  glow: { ...glow(noGlow("#60a5fa"), "Brillo"), visible: dotShown },
+  particle: widget("particle-template", { section: "Partícula" }),
   anim: anim(PARTICLE_ANIMS),
 };
 
@@ -172,6 +177,7 @@ export const particles = defineComponent<ParticlesEl>({
   fields,
   sections: [
     { title: "Partículas" },
+    { title: "Partícula" },
     { title: "Puntos" },
     { title: "Variación" },
     { title: "Líneas" },

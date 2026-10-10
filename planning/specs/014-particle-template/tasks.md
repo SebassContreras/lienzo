@@ -9,8 +9,9 @@
 - [x] T003 [agent] [status:done] `variation` field group: seeded size, rotation, spin, opacity and hue shift, for template and dot
       covers: D2@2, A6@1
       changes: src/components/particles/descriptor.ts (+50 -2), src/components/particles/draw.ts (+67 -22), src/engine/particle-field.ts (+66 -0), src/engine/particle-sprite.ts (+62 -18), src/test/legacy-schema.ts (+6 -2)
-- [ ] T004 [agent] [status:todo] "Usar como partícula" and "Editar partícula" actions; hide the dot section when a template is set
+- [x] T004 [agent] [status:done] "Usar como partícula" and "Editar partícula" actions; hide the dot section when a template is set
       covers: D6@1, D7@1
+      changes: src/components/particles/descriptor.ts (+8 -2), src/editor/app.tsx (+60 -0), src/editor/field-editor.tsx (+40 -1), src/editor/inspector.tsx (+14 -1)
 - [ ] T005 [agent] [status:todo] Built-in presets: sparks, floating icons
       covers: D4@1, A19@1
 - [ ] T006 [agent] [status:todo] Test: same seed gives the same field, loop closes, a template group draws, nested particles rejected, old particle scenes match a pixel snapshot
