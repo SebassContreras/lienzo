@@ -821,7 +821,14 @@ export function App() {
   );
 }
 
-/** Right-hand panel; any interaction inside it starts an undo step. */
+/** Inputs whose edits start on the first keystroke rather than on pointer down. */
+const TYPED =
+  "input:not([type=range]):not([type=color]):not([type=checkbox]), textarea, select";
+
+/**
+ * Right-hand panel; records one undo step per gesture: on pointer down (buttons, sliders,
+ * colours) or on the first change of a typed field. Focus alone records nothing (R2).
+ */
 function Panel({
   checkpoint,
   children,
@@ -829,11 +836,24 @@ function Panel({
   checkpoint: () => void;
   children: ReactNode;
 }) {
+  const armed = useRef(true);
+  const onFirstChange = () => {
+    if (!armed.current) return;
+    armed.current = false;
+    checkpoint();
+  };
   return (
     <aside
       className="panel"
-      onPointerDownCapture={checkpoint}
-      onFocusCapture={checkpoint}
+      onPointerDownCapture={(e) => {
+        armed.current = true;
+        if (!(e.target as HTMLElement).closest(TYPED)) checkpoint();
+      }}
+      onFocusCapture={() => {
+        armed.current = true;
+      }}
+      onInputCapture={onFirstChange}
+      onChangeCapture={onFirstChange}
     >
       {children}
     </aside>
