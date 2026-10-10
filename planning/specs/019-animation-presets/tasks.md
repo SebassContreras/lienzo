@@ -13,8 +13,9 @@
 - [x] T012 [agent] [status:done] `animPreset` provenance on applied elements; `animate` unchanged
       covers: D9@1, A24@1
       changes: src/components/descriptor.ts (+5 -0), src/presets/anim-presets.ts (+7 -3)
-- [ ] T013 [agent] [status:todo] `animPreset` in the scene schema and `expandAnimPresets` on scene load with notices
+- [x] T013 [agent] [status:done] `animPreset` in the scene schema and `expandAnimPresets` on scene load with notices
       covers: D10@1
+      changes: src/editor/app.tsx (+29 -4), src/model/element-schema.ts (+7 -0), src/presets/anim-presets.ts (+31 -0), src/presets/store.ts (+21 -0)
 - [ ] T014 [agent] [status:todo] Library section "Animaciones" in `src/editor/anim-library.tsx`: save, rename, overwrite, delete, export, import, validated before writing
       covers: D11@1
 - [ ] T015 [agent] [status:todo] Test: save/apply round trip on another kind; relative keyframes and delays; offsets only on `relative` fields; merge keeps other slots and tracks; type mismatches and missing paths skipped; stagger order and duration cut; editing a preset leaves applied elements alone; a scene with `animPreset` expands on load and an unknown name loads with a notice; an invalid import writes nothing

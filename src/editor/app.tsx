@@ -42,6 +42,7 @@ import {
 } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parsePresetRecipe } from "../model/schema.ts";
+import { expandAnimPresets } from "../presets/anim-presets.ts";
 import { filterByName } from "../presets/categories.ts";
 import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
 import {
@@ -54,6 +55,7 @@ import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
 import { SceneFiles } from "../presets/scene-files.tsx";
 import {
   deleteStored,
+  loadAnimPresetFiles,
   loadUserPresetFiles,
   renameStored,
   saveUserPreset,
@@ -273,12 +275,35 @@ export function App() {
     [presetChange],
   );
 
-  /** Replaces the whole scene as one undoable step. */
+  /**
+   * Replaces the whole scene as one undoable step, first copying in the animation presets
+   * its elements name (019/D10); what could not be copied is shown as a notice.
+   */
   const loadScene = useCallback(
     (s: Scene) => {
-      checkpoint();
-      setScene(s);
-      setSelection([]);
+      const open = (next: Scene) => {
+        checkpoint();
+        setScene(next);
+        setSelection([]);
+      };
+      if (!s.elements.some((el) => el.animPreset)) {
+        open(s);
+        return;
+      }
+      loadAnimPresetFiles()
+        .then((files) => {
+          const expanded = expandAnimPresets(
+            s,
+            files.map((f) => f.preset),
+          );
+          open(expanded.scene);
+          if (expanded.notices.length)
+            setStatus(`Animaciones: ${expanded.notices.join(" · ")}`);
+        })
+        .catch((error) => {
+          open(s);
+          setStatus(`Error: ${error instanceof Error ? error.message : error}`);
+        });
     },
     [checkpoint, setScene],
   );

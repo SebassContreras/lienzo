@@ -8,6 +8,12 @@ import { type Fields, shapeOf } from "../components/fields/index.ts";
 import type { Element } from "./model.ts";
 import { TracksSchema } from "./track.ts";
 
+/** A preset name alone starts it at 0 (019/D10); the library is not checked here. */
+const AnimPresetRefSchema = z.preprocess(
+  (v) => (typeof v === "string" ? { name: v, start: 0 } : v),
+  z.object({ name: z.string().min(1), start: z.number().min(0) }),
+);
+
 let components: readonly { kind: string; fields: Fields }[] = [];
 let union: z.ZodType<Element> | undefined;
 
@@ -26,6 +32,7 @@ function elementUnion(): z.ZodType<Element> {
       kind: z.literal(d.kind),
       name: z.string(),
       tracks: TracksSchema.optional(),
+      animPreset: AnimPresetRefSchema.optional(),
       ...shapeOf(d.fields),
     }),
   );

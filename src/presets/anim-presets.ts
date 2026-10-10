@@ -191,3 +191,34 @@ export function applyToSelection(
   });
   return { scene: { ...scene, elements }, skipped };
 }
+
+/** Whether `el` animates on its own: an active slot or a track. */
+const animates = (el: Element) =>
+  Object.keys(activeSlots(el)).length > 0 ||
+  Object.keys(el.tracks ?? {}).length > 0;
+
+/**
+ * `scene` with every `animPreset` of an element that does not animate on its own copied in
+ * from `library` (019/D10), run once on load; an unknown name leaves the element as it is.
+ */
+export function expandAnimPresets(
+  scene: Scene,
+  library: readonly AnimPreset[],
+): { scene: Scene; notices: string[] } {
+  const byName = new Map(library.map((p) => [p.name, p]));
+  const notices: string[] = [];
+  const elements = scene.elements.map((el) => {
+    if (!el.animPreset || animates(el)) return el;
+    const preset = byName.get(el.animPreset.name);
+    if (!preset) {
+      notices.push(
+        `${el.name}: no existe la animación «${el.animPreset.name}»`,
+      );
+      return el;
+    }
+    const { el: out, skipped } = applyPreset(el, preset, el.animPreset.start);
+    for (const s of skipped) notices.push(`${el.name}: ${s}`);
+    return out;
+  });
+  return { scene: { ...scene, elements }, notices };
+}

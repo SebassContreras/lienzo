@@ -1,3 +1,4 @@
+import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 
@@ -52,6 +53,26 @@ export async function saveUserPreset(
   file = preset.name,
 ): Promise<void> {
   await postJson(`/api/presets?name=${encodeURIComponent(file)}`, preset);
+}
+
+/** Animation presets in `presets/animations/`; files that fail the schema are left out. */
+export async function loadAnimPresetFiles(): Promise<
+  { file: string; preset: AnimPreset }[]
+> {
+  const items =
+    await getJson<{ name: string; data: unknown }[]>("/api/animations");
+  return items.flatMap((item) => {
+    const parsed = parseAnimPreset(item.data);
+    return parsed.ok ? [{ file: item.name, preset: parsed.value }] : [];
+  });
+}
+
+/** Writes an animation preset to `presets/animations/<file>.json`. */
+export async function saveAnimPreset(
+  preset: AnimPreset,
+  file = preset.name,
+): Promise<void> {
+  await postJson(`/api/animations?name=${encodeURIComponent(file)}`, preset);
 }
 
 /** Scenes live as JSON files in `scenes/`. */
