@@ -6,7 +6,7 @@ import type { Fields } from "../components/fields/index.ts";
 import { descriptorOf } from "../components/index.ts";
 import { baseValue, fieldAt, valueKind } from "../engine/tracks.ts";
 import type { AnimPreset, AnimSlots } from "../model/anim-preset.ts";
-import type { Element } from "../model/model.ts";
+import type { Element, Scene } from "../model/model.ts";
 import { isChannel, type Keyframe, type Tracks } from "../model/track.ts";
 
 /** What a preset holds besides its name and category. */
@@ -142,4 +142,48 @@ export function applyPreset(
   if (Object.keys(tracks).length)
     out = { ...out, tracks: { ...el.tracks, ...tracks } };
   return { el: out, skipped };
+}
+
+/** Each of `count` elements' start, `step` seconds apart from `start` (019/D8). */
+export const staggerStarts = (count: number, start: number, step: number) =>
+  Array.from({ length: count }, (_, i) => start + i * step);
+
+/** `el` without keyframes past `duration`; `cut` lists the paths that lost any. */
+function within(el: Element, duration: number): { el: Element; cut: string[] } {
+  if (!el.tracks) return { el, cut: [] };
+  const cut: string[] = [];
+  const tracks: Tracks = {};
+  for (const [path, keys] of Object.entries(el.tracks)) {
+    const kept = keys.filter((k) => k.t <= duration);
+    if (kept.length < keys.length)
+      cut.push(`${path} (después de ${duration}s)`);
+    if (kept.length) tracks[path] = kept;
+  }
+  return { el: { ...el, tracks }, cut };
+}
+
+/**
+ * `preset` applied to the elements `ids` of `scene` in that order, each `step` seconds
+ * after the previous from `start`, as one scene change. `skipped` names the element.
+ */
+export function applyToSelection(
+  scene: Scene,
+  ids: readonly string[],
+  preset: PresetBody,
+  start: number,
+  step = 0,
+): { scene: Scene; skipped: string[] } {
+  const at = staggerStarts(ids.length, start, step);
+  const starts = new Map(ids.map((id, i) => [id, at[i] as number]));
+  const skipped: string[] = [];
+  const elements = scene.elements.map((el) => {
+    const t = starts.get(el.id);
+    if (t === undefined) return el;
+    const applied = applyPreset(el, preset, t);
+    const { el: out, cut } = within(applied.el, scene.duration);
+    for (const s of [...applied.skipped, ...cut])
+      skipped.push(`${el.name}: ${s}`);
+    return out;
+  });
+  return { scene: { ...scene, elements }, skipped };
 }

@@ -7,8 +7,9 @@
       covers: D7@2
       └─ reviewed 2026-10-10: the code already follows D7@2 (commit 662d177 shifts a loop that ends)
       changes: src/presets/anim-presets.ts (+139 -0)
-- [ ] T011 [agent] [status:todo] Apply to the selection in selection order with stagger and a chosen start, dropping keyframes past the duration
+- [x] T011 [agent] [status:done] Apply to the selection in selection order with stagger and a chosen start, dropping keyframes past the duration
       covers: D8@1
+      changes: src/presets/anim-presets.ts (+58 -8)
 - [ ] T012 [agent] [status:todo] `animPreset` provenance on applied elements; `animate` unchanged
       covers: D9@1, A24@1
 - [ ] T013 [agent] [status:todo] `animPreset` in the scene schema and `expandAnimPresets` on scene load with notices
