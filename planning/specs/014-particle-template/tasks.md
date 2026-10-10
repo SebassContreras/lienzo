@@ -6,8 +6,9 @@
 - [x] T002 [agent] [status:done] Sprite cache: draw the template once (with hue variants) and each point with `drawImage`
       covers: D5@1
       changes: src/components/particles/draw.ts (+23 -3), src/engine/particle-sprite.ts (+125 -0)
-- [ ] T003 [agent] [status:todo] `variation` field group: seeded size, rotation, spin, opacity and hue shift, for template and dot
+- [x] T003 [agent] [status:done] `variation` field group: seeded size, rotation, spin, opacity and hue shift, for template and dot
       covers: D2@2, A6@1
+      changes: src/components/particles/descriptor.ts (+50 -2), src/components/particles/draw.ts (+67 -22), src/engine/particle-field.ts (+66 -0), src/engine/particle-sprite.ts (+62 -18), src/test/legacy-schema.ts (+6 -2)
 - [ ] T004 [agent] [status:todo] "Usar como partícula" and "Editar partícula" actions; hide the dot section when a template is set
       covers: D6@1, D7@1
 - [ ] T005 [agent] [status:todo] Built-in presets: sparks, floating icons

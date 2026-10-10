@@ -44,8 +44,54 @@ export const templateSchema = z
   .refine((el) => !holdsParticles(el), "a particle cannot hold particles")
   .nullable()
   .default(null) as unknown as z.ZodType<unknown>;
-const opacity = (value: number) =>
-  num(value, { label: "Opacidad", max: 1, step: 0.05 });
+
+const opacity = (value: number, label = "Opacidad") =>
+  num(value, { label, max: 1, step: 0.05 });
+
+/**
+ * How points differ from each other, drawn from the seed. The defaults leave every point
+ * alike, as particles were before 014; scenes saved then have no `variation` and read them.
+ */
+function variation() {
+  const V = obj(
+    {
+      sizeMin: num(1, {
+        label: "Tamaño mínimo",
+        max: 4,
+        step: 0.05,
+        bounds: [0, Infinity],
+      }),
+      sizeMax: num(1, {
+        label: "Tamaño máximo",
+        max: 4,
+        step: 0.05,
+        bounds: [0, Infinity],
+      }),
+      /** Each point starts turned up to this many degrees either way. */
+      rotation: num(0, { label: "Rotación", max: 180, bounds: [0, 180] }),
+      /** Most whole turns per loop a point makes, either way (A6). */
+      spin: num(0, {
+        label: "Giros por ciclo",
+        max: 6,
+        int: true,
+        bounds: [0, Infinity],
+      }),
+      opacityMin: opacity(1, "Opacidad mínima"),
+      opacityMax: opacity(1, "Opacidad máxima"),
+      /** Hues are turned up to this many degrees either way, in a few fixed steps. */
+      hueShift: num(0, {
+        label: "Variación de color",
+        max: 180,
+        bounds: [0, 180],
+      }),
+    },
+    { section: "Variación" },
+  );
+  return { ...V, schema: V.schema.default(V.default) as typeof V.schema };
+}
+
+const variationField = variation();
+export const variationSchema = variationField.schema;
 
 /**
  * Points drifting inside the box, joined by lines when close ("constellation"). Paints no
@@ -100,6 +146,7 @@ const fields = {
     },
     { section: "Puntos" },
   ),
+  variation: variationField,
   link: obj(
     {
       distance: num(120, { label: "Distancia de unión", max: 400 }),
@@ -126,6 +173,7 @@ export const particles = defineComponent<ParticlesEl>({
   sections: [
     { title: "Partículas" },
     { title: "Puntos" },
+    { title: "Variación" },
     { title: "Líneas" },
     { title: "Brillo" },
     { title: "Animación" },

@@ -4,9 +4,9 @@
  */
 import { descriptorOf } from "../components/index.ts";
 import type { Element, Scene } from "../model/model.ts";
-import { boxOf } from "./geometry.ts";
+import { type Box, boxOf } from "./geometry.ts";
 import { imageFor } from "./images.ts";
-import type { Ctx } from "./paint.ts";
+import { type Ctx, rgba, shadowOnly } from "./paint.ts";
 
 export type Sprite = {
   image: OffscreenCanvas;
@@ -74,23 +74,22 @@ function hueRotate(data: Uint8ClampedArray, deg: number): void {
 }
 
 /**
- * The template drawn centred in a bitmap `res` times its size, its hues turned by `hue`
- * degrees. Room is left around the box for strokes, glows and shadows. Cached by the
- * template's JSON, `hue` and `res`.
+ * `paint` drawn once into a bitmap `res` times the size of `box` plus room around it for
+ * strokes, glows and shadows, its hues turned by `hue` degrees, centred on the sprite's middle.
+ * Cached under `key` (with `hue` and `res`) unless `keep` is false.
  */
-export function spriteOf(
-  template: Element,
+function sprite(
+  key: string,
+  box: Box,
   hue: number,
   res: number,
-  scene: Scene,
-  drawElements: DrawElements,
+  paint: (ctx: Ctx) => void,
+  keep = true,
 ): Sprite {
-  const ready = imagesReady(template);
-  const key = `${JSON.stringify(template)}|${hue}|${res}`;
-  const hit = cache.get(key);
+  const full = `${key}|${hue}|${res}`;
+  const hit = cache.get(full);
   if (hit) return hit;
 
-  const box = boxOf(template);
   const pad = Math.ceil(Math.max(box.w, box.h) * 0.25 + 40);
   const w = box.w + pad * 2;
   const h = box.h + pad * 2;
@@ -101,19 +100,64 @@ export function spriteOf(
   const ctx = image.getContext("2d") as OffscreenCanvasRenderingContext2D;
   ctx.scale(res, res);
   ctx.translate(pad - box.x, pad - box.y);
-  drawElements(ctx, [still(template)], scene, 0);
+  paint(ctx);
   if (hue % 360 !== 0) {
     const pixels = ctx.getImageData(0, 0, image.width, image.height);
     hueRotate(pixels.data, hue);
     ctx.putImageData(pixels, 0, 0);
   }
 
-  const sprite = { image, w, h };
-  if (ready) {
+  const out = { image, w, h };
+  if (keep) {
     if (cache.size >= MAX_CACHED) cache.clear();
-    cache.set(key, sprite);
+    cache.set(full, out);
   }
-  return sprite;
+  return out;
+}
+
+/** The template, drawn still and centred. Not kept while an image in it is still loading. */
+export function templateSprite(
+  template: Element,
+  hue: number,
+  res: number,
+  scene: Scene,
+  drawElements: DrawElements,
+): Sprite {
+  return sprite(
+    JSON.stringify(template),
+    boxOf(template),
+    hue,
+    res,
+    (ctx) => drawElements(ctx, [still(template)], scene, 0),
+    imagesReady(template),
+  );
+}
+
+/** The default dot: a disc `size` wide, with its glow. */
+export function dotSprite(
+  dot: { size: number; color: string; opacity: number },
+  glow: { enabled: boolean; color: string; blur: number; strength: number },
+  hue: number,
+  res: number,
+): Sprite {
+  const r = dot.size / 2;
+  return sprite(
+    JSON.stringify(["dot", dot, glow]),
+    { x: -r, y: -r, w: dot.size, h: dot.size },
+    hue,
+    res,
+    (ctx) => {
+      const disc = new Path2D();
+      disc.arc(0, 0, r, 0, Math.PI * 2);
+      if (glow.enabled) {
+        for (let i = 0; i < glow.strength; i++) {
+          shadowOnly(ctx, () => ctx.fill(disc), glow.color, glow.blur);
+        }
+      }
+      ctx.fillStyle = rgba(dot.color, dot.opacity);
+      ctx.fill(disc);
+    },
+  );
 }
 
 /** The sprite resolution for drawing at `scale` on `ctx`: a power of two, so zooming reuses it. */
