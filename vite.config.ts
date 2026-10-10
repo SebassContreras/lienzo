@@ -57,11 +57,12 @@ const ASSET_TYPES: Record<string, string> = {
   jpeg: "image/jpeg",
   svg: "image/svg+xml",
   webp: "image/webp",
+  glb: "model/gltf-binary",
 };
 const MAX_ASSET_BYTES = 20 * 1024 * 1024;
 
 /**
- * Stores images used by scenes in `assets/` at the repo root:
+ * Stores images and 3D models used by scenes in `assets/` at the repo root:
  * POST /api/assets?ext=png  -> writes assets/<content hash>.png, returns { path }
  * GET  /assets/<file>       -> the stored file
  */
@@ -75,7 +76,9 @@ function assetStore(): Plugin {
     if (req.method !== "POST" || !ASSET_TYPES[ext]) {
       res.statusCode = 400;
       res.end(
-        JSON.stringify({ error: "expected POST with ext=png|jpg|svg|webp" }),
+        JSON.stringify({
+          error: "expected POST with ext=png|jpg|svg|webp|glb",
+        }),
       );
       return;
     }
