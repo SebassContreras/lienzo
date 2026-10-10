@@ -23,6 +23,7 @@ export function ElementInspector({
   onEditParticle,
   nameOf,
   canvas,
+  time,
 }: {
   el: Element;
   onChange: (el: Element) => void;
@@ -35,6 +36,8 @@ export function ElementInspector({
   nameOf: (id: string) => string;
   /** Scene size, for "Ajustar al lienzo". */
   canvas?: { width: number; height: number; duration?: number };
+  /** The playhead, for keyframes (015). */
+  time?: number;
 }) {
   const [presetName, setPresetName] = useState("");
   const change = <T extends Element>(fn: (draft: T) => void) => {
@@ -80,7 +83,7 @@ export function ElementInspector({
       <FieldEditor
         el={el}
         change={change}
-        ctx={{ nameOf, canvas, onUngroup, onEditParticle }}
+        ctx={{ nameOf, canvas, onUngroup, onEditParticle, time }}
       />
       {onSavePreset && (
         <Section title="Guardar como preset">

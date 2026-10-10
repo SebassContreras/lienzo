@@ -5,7 +5,8 @@ import type { Box, Pt } from "./geometry.ts";
 
 export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
-export function rgba(hex: string, alpha: number): string {
+/** The red, green and blue (0–255) of a `#rgb` or `#rrggbb` color. */
+export function hexRgb(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
   const full =
     h.length === 3
@@ -15,7 +16,12 @@ export function rgba(hex: string, alpha: number): string {
           .join("")
       : h.slice(0, 6);
   const n = Number.parseInt(full, 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${clamp01(alpha)})`;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+export function rgba(hex: string, alpha: number): string {
+  const [r, g, b] = hexRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${clamp01(alpha)})`;
 }
 
 /** A two-color gradient across `box` at `angleDeg` (0 = left to right). */

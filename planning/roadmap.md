@@ -19,7 +19,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 012 | component-registry | done        | 001, 002, 005 | —     | 7 |
 | 013 | animation-playback | done        | 012 | —     | 8 |
 | 014 | particle-template | done        | 012, 013 | —     | 10 |
-| 015 | keyframes-timeline | todo | 012, 013 | build | 11 |
+| 015 | keyframes-timeline | done        | 012, 013 | —     | 11 |
 | 016 | three-d | todo | 012, 013, 015 | build | 14 |
 | 017 | more-elements | todo | 012, 013, 015 | build | 13 |
 | 018 | more-animations | done        | 012, 013 | —     | 9 |

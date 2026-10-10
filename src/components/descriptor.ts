@@ -5,6 +5,7 @@
 import type { AnimState } from "../engine/anim.ts";
 import type { Ctx } from "../engine/paint.ts";
 import type { Element, Scene } from "../model/model.ts";
+import { CHANNELS, type Tracks } from "../model/track.ts";
 import {
   type AnimOffer,
   type DataField,
@@ -35,6 +36,8 @@ export type ElementOf<K extends string, F extends Fields> = {
   id: string;
   kind: K;
   name: string;
+  /** Keyframe tracks by path (015); absent when the element has none. */
+  tracks?: Tracks;
 } & ValueOf<F>;
 
 export type Section = { title: string; open?: boolean };
@@ -58,13 +61,13 @@ export type Descriptor<E extends { kind: string } = Element> = {
   draw(ctx: Ctx, el: E, transform: AnimState, dc: DrawContext): void;
 };
 
-/** Number and color field paths, the ones that can be interpolated. */
+/** Number and color field paths, the ones keyframes can drive (whole numbers step). */
 export function interpolatable(fields: Fields, prefix = ""): string[] {
   return dataFields(fields).flatMap(([key, f]: [string, DataField]) => {
     const path = prefix + key;
     if (f.type === "object") return interpolatable(f.fields, `${path}.`);
     if (f.type === "color") return [path];
-    if (f.type === "number" && !f.int) return [path];
+    if (f.type === "number") return [path];
     return [];
   });
 }
@@ -83,3 +86,9 @@ export function defineComponent<E extends { kind: string }>(
     basic: d.basic ?? true,
   };
 }
+
+/** Every path a track of an element of `d`'s kind may have: its fields, then the channels. */
+export const trackPaths = (d: { animatable: readonly string[] }): string[] => [
+  ...d.animatable,
+  ...Object.keys(CHANNELS),
+];

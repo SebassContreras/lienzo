@@ -1,0 +1,553 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 7a8e136..8517aba 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -152,6 +152,8 @@ export function App() {
+   const [selection, setSelection] = useState<string[]>([]);
+   const clock = useRef<Clock>({ t: 0, playing: true });
+   const [playing, setPlaying] = useState(true);
++  /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
++  const [playhead, setPlayhead] = useState(0);
+   const undoStack = useRef<Scene[]>([]);
+   const redoStack = useRef<Scene[]>([]);
+   const [, rerender] = useReducer((x: number) => x + 1, 0);
+@@ -425,6 +427,15 @@ export function App() {
+   const togglePlay = useCallback(() => {
+     clock.current.playing = !clock.current.playing;
+     setPlaying(clock.current.playing);
++    if (!clock.current.playing) setPlayhead(clock.current.t);
++  }, []);
++
++  /** Stops the clock at `t` (by default where it is now) and makes it the playhead. */
++  const seek = useCallback((t: number = clock.current.t) => {
++    clock.current.playing = false;
++    clock.current.t = t;
++    setPlaying(false);
++    setPlayhead(t);
+   }, []);
+ 
+   useEffect(() => {
+@@ -699,6 +710,7 @@ export function App() {
+           setSelection={setSelection}
+           clock={clock}
+           checkpoint={checkpoint}
++          stopClock={() => seek()}
+           onDropElement={addElement}
+           hint={
+             selection.length > 0
+@@ -711,13 +723,16 @@ export function App() {
+           duration={scene.duration}
+           playing={playing}
+           togglePlay={togglePlay}
+-          onScrub={() => {
+-            clock.current.playing = false;
+-            setPlaying(false);
+-          }}
++          onScrub={seek}
+         />
+       </main>
+-      <Panel checkpoint={checkpoint}>
++      <Panel
++        checkpoint={() => {
++          checkpoint();
++          // editing a keyframed element stops the clock where it is, to edit there
++          if (playing && selected?.tracks) seek();
++        }}
++      >
+         {selected ? (
+           <ElementInspector
+             key={selected.id}
+@@ -740,6 +755,7 @@ export function App() {
+             onUngroup={ungroupSelected}
+             onEditParticle={editParticle}
+             canvas={scene}
++            time={playhead}
+           />
+         ) : selection.length > 1 ? (
+           <MultiInspector
+@@ -797,7 +813,7 @@ function Timeline({
+   duration: number;
+   playing: boolean;
+   togglePlay: () => void;
+-  onScrub: () => void;
++  onScrub: (t: number) => void;
+ }) {
+   const range = useRef<HTMLInputElement>(null);
+   const readout = useRef<HTMLSpanElement>(null);
+@@ -831,10 +847,7 @@ function Timeline({
+         max={duration}
+         step={0.01}
+         defaultValue={0}
+-        onInput={(e) => {
+-          onScrub();
+-          clock.current.t = Number((e.target as HTMLInputElement).value);
+-        }}
++        onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
+       />
+       <span ref={readout} className="readout" />
+     </div>
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+index 9b506a5..f88bc8a 100644
+--- a/src/editor/field-editor.tsx
++++ b/src/editor/field-editor.tsx
+@@ -15,6 +15,7 @@ import { type ReactNode, useState } from "react";
+ import { descriptorOf } from "../components/index.ts";
+ import { lateSlots } from "../engine/anim.ts";
+ import { imageSize } from "../engine/images.ts";
++import { applyTracks, writeAt } from "../engine/tracks.ts";
+ import type {
+   Element,
+   Endpoint,
+@@ -26,7 +27,9 @@ import { uploadAsset } from "../presets/store.ts";
+ import { AnimPicker } from "./anim-picker.tsx";
+ import { Check, Color, Num, Section, Select, TextArea } from "./controls.tsx";
+ import { IconPicker } from "./icon-picker.tsx";
++import { ChannelSection, KeyButton } from "./keyframe-controls.tsx";
+ import {
++  fieldValue,
+   inspectorLayout,
+   type LayoutItem,
+   resolve,
+@@ -45,6 +48,8 @@ export type EditorContext = {
+   /** Puts a particles element's template back on the canvas to be edited. */
+   onEditParticle?: () => void;
+   onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
++  /** The playhead (s): fields show their value there and keyframes are set there (015). */
++  time?: number;
+ };
+ 
+ type WidgetProps = {
+@@ -282,7 +287,21 @@ function Control({
+     if (!render) throw new Error(`unknown inspector widget ${field.widget}`);
+     return render({ el, item, value, label, change, ctx });
+   }
+-  const write = (v: unknown) => change((d) => writeField(d, path, field, v));
++  const key = path.join(".");
++  const t = ctx.time;
++  const keyed = t !== undefined && isAnimatable(el.kind, key);
++  const write = (v: unknown) =>
++    change((d) =>
++      keyed
++        ? writeAt(
++            d,
++            key,
++            fieldValue(field, v) as number | string,
++            t,
++            (dd, vv) => writeField(dd, path, field, vv),
++          )
++        : writeField(d, path, field, v),
++    );
+   switch (field.type) {
+     case "number":
+       return (
+@@ -333,19 +352,45 @@ export function FieldEditor({
+ }) {
+   const d = descriptorOf(el.kind);
+   if (!d) return null;
+-  return inspectorLayout(d as never, el)
++  const t = ctx.time;
++  // what the element is at the playhead, so keyframed fields show their value there
++  const shown = t !== undefined && el.tracks ? applyTracks(el, t).el : el;
++  const sections = inspectorLayout(d as never, shown)
+     .filter((s) => s.items.length > 0)
+     .map((s) => (
+       <Section key={s.title} title={s.title} open={s.open}>
+-        {s.items.map((item) => (
+-          <Control
+-            key={item.path.join(".")}
+-            el={el}
+-            item={item}
+-            change={change}
+-            ctx={ctx}
+-          />
+-        ))}
++        {s.items.map((item) => {
++          const key = item.path.join(".");
++          const control = (
++            <Control
++              key={key}
++              el={shown}
++              item={item}
++              change={change}
++              ctx={ctx}
++            />
++          );
++          return t !== undefined && d.animatable.includes(key) ? (
++            <div className="keyed" key={key}>
++              {control}
++              <KeyButton el={el} path={key} t={t} change={change} />
++            </div>
++          ) : (
++            control
++          );
++        })}
+       </Section>
+     ));
++  return (
++    <>
++      {sections}
++      {t !== undefined && el.kind !== "line" && (
++        <ChannelSection el={el} t={t} change={change} />
++      )}
++    </>
++  );
+ }
++
++/** Keyframes may drive `path` of an element of `kind`. */
++const isAnimatable = (kind: string, path: string) =>
++  descriptorOf(kind)?.animatable.includes(path) ?? false;
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 9268edf..6aac7ea 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -23,6 +23,7 @@ export function ElementInspector({
+   onEditParticle,
+   nameOf,
+   canvas,
++  time,
+ }: {
+   el: Element;
+   onChange: (el: Element) => void;
+@@ -35,6 +36,8 @@ export function ElementInspector({
+   nameOf: (id: string) => string;
+   /** Scene size, for "Ajustar al lienzo". */
+   canvas?: { width: number; height: number; duration?: number };
++  /** The playhead, for keyframes (015). */
++  time?: number;
+ }) {
+   const [presetName, setPresetName] = useState("");
+   const change = <T extends Element>(fn: (draft: T) => void) => {
+@@ -80,7 +83,7 @@ export function ElementInspector({
+       <FieldEditor
+         el={el}
+         change={change}
+-        ctx={{ nameOf, canvas, onUngroup, onEditParticle }}
++        ctx={{ nameOf, canvas, onUngroup, onEditParticle, time }}
+       />
+       {onSavePreset && (
+         <Section title="Guardar como preset">
+diff --git a/src/editor/keyframe-controls.tsx b/src/editor/keyframe-controls.tsx
+new file mode 100644
+index 0000000..e9b56eb
+--- /dev/null
++++ b/src/editor/keyframe-controls.tsx
+@@ -0,0 +1,83 @@
++/**
++ * The inspector's keyframe controls (015/D7): the button that starts or removes a field's
++ * track, and the rotation and scale channels, which have no field of their own.
++ */
++import { Diamond } from "lucide-react";
++import {
++  applyTracks,
++  keyframeAt,
++  toggleTrack,
++  writeAt,
++} from "../engine/tracks.ts";
++import type { Element } from "../model/model.ts";
++import type { Channel } from "../model/track.ts";
++import { Num, Section } from "./controls.tsx";
++import type { Change } from "./field-editor.tsx";
++
++/** ◇ no track; ◆ muted: a track, no keyframe here; ◆ accent: a keyframe at `t`. */
++export function KeyButton({
++  el,
++  path,
++  t,
++  change,
++}: {
++  el: Element;
++  path: string;
++  t: number;
++  change: Change;
++}) {
++  const keys = el.tracks?.[path];
++  const here = keys !== undefined && keyframeAt(keys, t) >= 0;
++  const state = !keys ? "" : here ? "on" : "track";
++  return (
++    <button
++      type="button"
++      className={`key-button ${state}`}
++      title={keys ? "Quitar keyframes" : "Animar con keyframes"}
++      onClick={() => change((d) => toggleTrack(d, path, t))}
++    >
++      <Diamond size={12} fill={keys ? "currentColor" : "none"} />
++    </button>
++  );
++}
++
++const CHANNEL_ROWS: readonly {
++  path: Channel;
++  label: string;
++  min: number;
++  max: number;
++  step: number;
++}[] = [
++  { path: "@rotate", label: "Rotación °", min: -360, max: 360, step: 1 },
++  { path: "@scale", label: "Escala", min: 0, max: 4, step: 0.01 },
++];
++
++/** Rotation and scale, keyframed only: an edit always sets the keyframe at `t`. */
++export function ChannelSection({
++  el,
++  t,
++  change,
++}: {
++  el: Element;
++  t: number;
++  change: Change;
++}) {
++  const { channels } = applyTracks(el, t);
++  return (
++    <Section title="Transformación" open={el.tracks !== undefined}>
++      {CHANNEL_ROWS.map((c) => (
++        <div className="keyed" key={c.path}>
++          <Num
++            label={c.label}
++            value={channels[c.path]}
++            min={c.min}
++            max={c.max}
++            step={c.step}
++            onChange={(v) => change((d) => writeAt(d, c.path, v, t, () => {}))}
++          />
++          <KeyButton el={el} path={c.path} t={t} change={change} />
++        </div>
++      ))}
++    </Section>
++  );
++}
+diff --git a/src/editor/layout.ts b/src/editor/layout.ts
+index 3d954f1..440a5d2 100644
+--- a/src/editor/layout.ts
++++ b/src/editor/layout.ts
+@@ -74,6 +74,14 @@ export function valueAt(el: unknown, path: string[]): unknown {
+   return path.reduce<unknown>((v, k) => (v as Parent)?.[k], el);
+ }
+ 
++/** `value` as the field takes it: clamped to its bounds and rounded when whole. */
++export function fieldValue(field: DataField, value: unknown): unknown {
++  if (field.type !== "number" || typeof value !== "number") return value;
++  let v = value;
++  if (field.bounds) v = Math.min(field.bounds[1], Math.max(field.bounds[0], v));
++  return field.int ? Math.round(v) : v;
++}
++
+ /**
+  * Writes `value` into `draft` at `path` the way the field says: clamped and rounded for
+  * numbers with bounds or `int`, through the field's own `set` when it has one (on the
+@@ -85,13 +93,7 @@ export function writeField(
+   field: DataField,
+   value: unknown,
+ ): void {
+-  let v = value;
+-  if (field.type === "number" && typeof v === "number") {
+-    if (field.bounds) {
+-      v = Math.min(field.bounds[1], Math.max(field.bounds[0], v));
+-    }
+-    if (field.int) v = Math.round(v as number);
+-  }
++  const v = fieldValue(field, value);
+   const holder = valueAt(draft, path.slice(0, -1)) as Parent;
+   const key = path[path.length - 1] as string;
+   if (field.set) field.set(holder, v);
+diff --git a/src/editor/stage.tsx b/src/editor/stage.tsx
+index 58945e2..2e47822 100644
+--- a/src/editor/stage.tsx
++++ b/src/editor/stage.tsx
+@@ -12,6 +12,7 @@ import {
+   translate,
+ } from "../engine/geometry.ts";
+ import { drawScene } from "../engine/render.ts";
++import { applyTracks, commitAt } from "../engine/tracks.ts";
+ import type { Element, LineEl, Scene } from "../model/model.ts";
+ 
+ export type Clock = { t: number; playing: boolean };
+@@ -94,6 +95,15 @@ const CURSORS: Record<Handle, string> = {
+   bend: "grab",
+ };
+ 
++/** `s` with each element's keyframe tracks applied at `t` (015). */
++function atTime(s: Scene, t: number): Scene {
++  if (!s.elements.some((el) => el.tracks)) return s;
++  return {
++    ...s,
++    elements: s.elements.map((el) => (el.tracks ? applyTracks(el, t).el : el)),
++  };
++}
++
+ /** Every element moved by the drag, from where it was when the drag started. */
+ function applyMove(drag: Extract<Drag, { mode: "move" }>, p: Pt): Element[] {
+   const dx = p.x - drag.start.x;
+@@ -289,6 +299,7 @@ export function Stage({
+   setSelection,
+   clock,
+   checkpoint,
++  stopClock,
+   onDropElement,
+   hint,
+ }: {
+@@ -300,6 +311,8 @@ export function Stage({
+   setSelection: (ids: string[]) => void;
+   clock: MutableRefObject<Clock>;
+   checkpoint: () => void;
++  /** Stops the clock where it is: dragging a keyframed element edits it at that moment. */
++  stopClock: () => void;
+   onDropElement: (el: Element, at: Pt) => void;
+   /** A short tip shown over the bottom of the stage. */
+   hint?: string;
+@@ -351,7 +364,7 @@ export function Stage({
+         const d = drag.current;
+         drawOverlay(
+           ctx,
+-          s,
++          atTime(s, clock.current.t),
+           selectionRef.current,
+           hover.current,
+           attachTarget.current,
+@@ -370,19 +383,26 @@ export function Stage({
+     return { x: (e.clientX - r.left) / zoom, y: (e.clientY - r.top) / zoom };
+   };
+ 
++  /** Writes edited elements back; keyframed fields get a keyframe at the playhead (015). */
+   const replace = (...changed: Element[]) => {
+     const byId = new Map(changed.map((el) => [el.id, el]));
+     const s = sceneRef.current;
+     setScene({
+       ...s,
+-      elements: s.elements.map((e) => byId.get(e.id) ?? e),
++      elements: s.elements.map((e) => {
++        const next = byId.get(e.id);
++        return next ? commitAt(e, next, clock.current.t) : e;
++      }),
+     });
+   };
+ 
++  /** The scene as it shows now: what the pointer hits and drags. */
++  const shown = () => atTime(sceneRef.current, clock.current.t);
++
+   /** The single selected element, which shows resize and line handles. */
+   const single = () =>
+     selection.length === 1
+-      ? sceneRef.current.elements.find((el) => el.id === selection[0])
++      ? shown().elements.find((el) => el.id === selection[0])
+       : undefined;
+ 
+   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+@@ -390,12 +410,13 @@ export function Stage({
+     e.currentTarget.setPointerCapture(e.pointerId);
+     const p = toScene(e);
+     const tol = 9 / zoom;
+-    const s = sceneRef.current;
++    const s = shown();
+     const sel = single();
+     if (sel && !e.shiftKey) {
+       const h = handleAt(s, sel, p, tol);
+       if (h) {
+         checkpoint();
++        if (clock.current.playing && sel.tracks) stopClock();
+         if (sel.kind === "line" && (h === "a" || h === "b")) {
+           drag.current = { mode: "end", which: h, orig: sel };
+         } else if (sel.kind === "line") {
+@@ -426,6 +447,11 @@ export function Stage({
+     const ids = selection.includes(hit.id) ? selection : [hit.id];
+     if (ids !== selection) setSelection(ids);
+     checkpoint();
++    if (
++      clock.current.playing &&
++      s.elements.some((el) => ids.includes(el.id) && el.tracks)
++    )
++      stopClock();
+     drag.current = {
+       mode: "move",
+       start: p,
+@@ -437,7 +463,7 @@ export function Stage({
+   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+     const p = toScene(e);
+     const tol = 9 / zoom;
+-    const s = sceneRef.current;
++    const s = shown();
+     const canvas = e.currentTarget;
+     if (!drag.current) {
+       const sel = single();
+diff --git a/src/engine/tracks.ts b/src/engine/tracks.ts
+index 446844d..4554855 100644
+--- a/src/engine/tracks.ts
++++ b/src/engine/tracks.ts
+@@ -158,12 +158,39 @@ export function writeAt(
+     writeField(draft, value);
+     return;
+   }
+-  const i = keyframeAt(keys ?? [], t);
+-  const easing = keys?.[i]?.easing ?? "auto";
+-  draft.tracks = {
+-    ...draft.tracks,
+-    [path]: withKeyframe(keys ?? [], { t, value, easing }),
+-  };
++  draft.tracks = { ...draft.tracks, [path]: setKeyframe(keys ?? [], t, value) };
++}
++
++/** `keys` with `value` at `t`, keeping the easing of a keyframe already there. */
++function setKeyframe(
++  keys: readonly Keyframe[],
++  t: number,
++  value: number | string,
++): Keyframe[] {
++  const easing = keys[keyframeAt(keys, t)]?.easing ?? "auto";
++  return withKeyframe(keys, { t, value, easing });
++}
++
++/**
++ * `edited`, made from `el` as it shows at `t` (a drag on the stage), written back onto
++ * `el`: each tracked field it changed becomes a keyframe at `t` and keeps its base value;
++ * everything else is taken as edited.
++ */
++export function commitAt(el: Element, edited: Element, t: number): Element {
++  if (!el.tracks) return edited;
++  const shown = applyTracks(el, t).el;
++  let out: Element = { ...edited, tracks: el.tracks };
++  for (const [path, keys] of Object.entries(el.tracks)) {
++    if (isChannel(path)) continue;
++    const v = getPath(edited, path);
++    out = setPath(out, path, getPath(el, path));
++    if (v !== getPath(shown, path))
++      out.tracks = {
++        ...out.tracks,
++        [path]: setKeyframe(keys, t, v as number | string),
++      };
++  }
++  return out;
+ }
+ 
+ /**
+diff --git a/src/styles.css b/src/styles.css
+index 78b87f7..1e4f66c 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -545,3 +545,28 @@ code {
+   font-size: 11px;
+   text-align: center;
+ }
++
++/* keyframe controls (015) */
++.keyed {
++  display: flex;
++  align-items: center;
++  gap: 4px;
++}
++.keyed > :first-child {
++  flex: 1;
++  min-width: 0;
++}
++.panel .keyed > .key-button {
++  padding: 2px;
++  border-color: transparent;
++  background: none;
++  color: var(--muted);
++  opacity: 0.6;
++}
++.panel .keyed > .key-button.track {
++  opacity: 1;
++}
++.panel .keyed > .key-button.on {
++  color: var(--accent);
++  opacity: 1;
++}

@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { type Fields, shapeOf } from "../components/fields/index.ts";
 import type { Element } from "./model.ts";
+import { TracksSchema } from "./track.ts";
 
 let components: readonly { kind: string; fields: Fields }[] = [];
 let union: z.ZodType<Element> | undefined;
@@ -24,6 +25,7 @@ function elementUnion(): z.ZodType<Element> {
       id: z.string(),
       kind: z.literal(d.kind),
       name: z.string(),
+      tracks: TracksSchema.optional(),
       ...shapeOf(d.fields),
     }),
   );
