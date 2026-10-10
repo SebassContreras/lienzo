@@ -1,8 +1,8 @@
 import { migrateAnim } from "../components/fields/index.ts";
 import { demoScene } from "../demo.ts";
 import {
-  ANIMS_BY_KIND,
   type Anim,
+  type AnimKind,
   defaultElement,
   defaultScene,
   type Element,
@@ -51,11 +51,33 @@ function presetsScene(): Scene {
   );
 }
 
-/** Every kind with every animation it offers, plus the variants of its own options. */
+const BOX: readonly AnimKind[] = [
+  "none",
+  "float",
+  "pulse",
+  "breathe",
+  "fade-in",
+  "pop-in",
+  "slide-up",
+];
+
+/** What each kind offered when the hashes were recorded, by pre-slot names. */
+const RECORDED_ANIMS: Record<ElementKind, readonly AnimKind[]> = {
+  rect: BOX,
+  ellipse: BOX,
+  icon: BOX,
+  image: BOX,
+  group: BOX,
+  text: BOX,
+  line: ["none", "fade-in", "draw"],
+  particles: ["none", "fade-in", "pop-in", "breathe"],
+};
+
+/** Every kind with every animation it offered, plus the variants of its own options. */
 function kindsScene(): Scene {
   const els: Element[] = [];
   for (const kind of KINDS) {
-    for (const anim of ANIMS_BY_KIND[kind]) {
+    for (const anim of RECORDED_ANIMS[kind]) {
       const el = defaultElement(kind);
       el.anim = migrateAnim({
         kind: anim,

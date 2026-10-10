@@ -7,6 +7,7 @@ import {
   withTransform,
 } from "../../engine/paint.ts";
 import type { TextEl } from "./descriptor.ts";
+import { revealLines, type ShownLine } from "./reveal.ts";
 
 export function drawText(ctx: Ctx, el: TextEl, st: AnimState): void {
   const layout = textLayout(el);
@@ -15,8 +16,13 @@ export function drawText(ctx: Ctx, el: TextEl, st: AnimState): void {
     ctx.font = fontString(el);
     ctx.letterSpacing = `${el.letterSpacing}px`;
     ctx.textBaseline = "top";
+    const shown =
+      st.reveal < 1
+        ? revealLines(layout.lines, st.reveal, st.revealUnit, st.revealSoft)
+        : undefined;
     const paint = () => {
-      layout.lines.forEach((line, i) => {
+      layout.lines.forEach((full, i) => {
+        const line = shown ? (shown[i] as ShownLine) : { text: full };
         const lw = layout.widths[i] as number;
         const x =
           el.align === "left"
@@ -25,7 +31,17 @@ export function drawText(ctx: Ctx, el: TextEl, st: AnimState): void {
               ? el.x + (layout.w - lw) / 2
               : el.x + layout.w - lw;
         const y = el.y + i * layout.lineStep + (layout.lineStep - el.size) / 2;
-        ctx.fillText(line, x, y);
+        ctx.fillText(line.text, x, y);
+        if (line.partial) {
+          const a = ctx.globalAlpha;
+          ctx.globalAlpha = a * line.partial.alpha;
+          ctx.fillText(
+            line.partial.text,
+            x + ctx.measureText(line.text).width,
+            y,
+          );
+          ctx.globalAlpha = a;
+        }
       });
     };
     if (el.glow.enabled) {

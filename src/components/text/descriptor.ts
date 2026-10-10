@@ -2,7 +2,6 @@ import { defineComponent, type ElementOf } from "../descriptor.ts";
 import {
   align,
   anim,
-  BOX_ANIMS,
   check,
   color,
   font,
@@ -11,6 +10,7 @@ import {
   num,
   type Parent,
   position,
+  TEXT_ANIMS,
   text as textField,
   weight,
 } from "../fields/index.ts";
@@ -51,7 +51,7 @@ const fields = {
   }),
   opacity: num(1, { label: "Opacidad", max: 1, step: 0.01, ...C }),
   glow: glow(noGlow("#60a5fa"), "Brillo"),
-  anim: anim(BOX_ANIMS),
+  anim: anim(TEXT_ANIMS),
 };
 
 export type TextEl = ElementOf<"text", typeof fields>;
@@ -67,6 +67,6 @@ export const text = defineComponent<TextEl>({
     { title: "Brillo" },
     { title: "Animación" },
   ],
-  anims: BOX_ANIMS,
+  anims: TEXT_ANIMS,
   draw: drawText,
 });

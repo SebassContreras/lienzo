@@ -34,6 +34,20 @@ const fields = {
     inspector: false,
   }),
   anim: anim(BOX_ANIMS),
+  /**
+   * Seconds between children: when set, the group's entry and exit play on each child in
+   * turn instead of on the group as a whole (018/D9). Scenes from before 018 have none.
+   */
+  stagger: {
+    ...num(0, {
+      label: "Escalonar hijos (s)",
+      section: "Animación",
+      max: 2,
+      step: 0.05,
+      bounds: [0, Infinity],
+    }),
+    schema: z.number().min(0).default(0) as unknown as z.ZodType<number>,
+  },
 };
 
 export type GroupEl = Omit<ElementOf<"group", typeof fields>, "children"> & {

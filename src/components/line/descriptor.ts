@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { defineComponent, type ElementOf } from "../descriptor.ts";
 import {
-  type AnimKind,
+  type AnimOffer,
   anim,
   check,
   color,
@@ -42,7 +42,10 @@ const end = (x: number, label: string) =>
     section: "Conexión",
   });
 
-const LINE_ANIMS: readonly AnimKind[] = ["none", "fade-in", "draw"];
+const LINE_ANIMS: AnimOffer = {
+  motions: ["none", "fade", "draw"],
+  loops: ["none"],
+};
 
 const C = { section: "Conexión" };
 const S = { section: "Trazo" };

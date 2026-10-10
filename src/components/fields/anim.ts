@@ -1,5 +1,16 @@
 import { z } from "zod";
 import {
+  type DirName,
+  type KindDef,
+  LOOP_IDS,
+  LOOPS,
+  type LoopId,
+  MOTION_IDS,
+  MOTIONS,
+  type MotionId,
+  TEXT_MOTION_IDS,
+} from "../../animations/index.ts";
+import {
   EASING_NAMES,
   type Easing,
   EasingSchema,
@@ -31,23 +42,12 @@ export const ANIM_LABELS: Record<AnimKind, string> = {
   draw: "Dibujarse",
 };
 
-/** Animations for anything with a box: shapes, icons, images, text, groups. */
-export const BOX_ANIMS: readonly AnimKind[] = [
-  "none",
-  "float",
-  "pulse",
-  "breathe",
-  "fade-in",
-  "pop-in",
-  "slide-up",
-];
-
 /** What an entry or exit does; an exit plays its kind in reverse. */
-export const MOTION_KINDS = ["none", "fade", "pop", "slide", "draw"] as const;
-export type MotionKind = (typeof MOTION_KINDS)[number];
+export const MOTION_KINDS = ["none", ...MOTION_IDS] as const;
+export type MotionKind = "none" | MotionId;
 
-export const LOOP_KINDS = ["none", "float", "pulse", "breathe"] as const;
-export type LoopKind = (typeof LOOP_KINDS)[number];
+export const LOOP_KINDS = ["none", ...LOOP_IDS] as const;
+export type LoopKind = "none" | LoopId;
 
 /** The entry kind each pre-slot entry animation became. */
 export const MOTION_OF: Partial<Record<AnimKind, MotionKind>> = {
@@ -57,20 +57,58 @@ export const MOTION_OF: Partial<Record<AnimKind, MotionKind>> = {
   draw: "draw",
 };
 
-const MOTION_LABELS: Record<MotionKind, string> = {
-  none: "Ninguna",
-  fade: "Desvanecer",
-  pop: "Pop",
-  slide: "Deslizar",
-  draw: "Dibujarse",
+/** What a component offers in its entry and exit slots, and in its loop slot. */
+export type AnimOffer = {
+  motions: readonly MotionKind[];
+  loops: readonly LoopKind[];
 };
 
-const LOOP_LABELS: Record<LoopKind, string> = {
-  none: "Ninguna",
-  float: ANIM_LABELS.float,
-  pulse: ANIM_LABELS.pulse,
-  breathe: ANIM_LABELS.breathe,
+const TEXT_MOTIONS: readonly MotionKind[] = TEXT_MOTION_IDS;
+
+/** Entrances that move the element as a whole (no line drawing, no text reveal). */
+const BOX_MOTIONS = MOTION_KINDS.filter(
+  (k) => k !== "draw" && !TEXT_MOTIONS.includes(k),
+);
+
+/** Animations for anything with a box: shapes, icons, images, groups. */
+export const BOX_ANIMS: AnimOffer = { motions: BOX_MOTIONS, loops: LOOP_KINDS };
+
+/** A box's animations plus the text reveals. */
+export const TEXT_ANIMS: AnimOffer = {
+  motions: [...BOX_MOTIONS, ...TEXT_MOTIONS],
+  loops: LOOP_KINDS,
 };
+
+/** Every kind, for code that reads any scene. */
+export const ALL_ANIMS: AnimOffer = {
+  motions: MOTION_KINDS,
+  loops: LOOP_KINDS,
+};
+
+type Defs = Record<string, KindDef>;
+
+const defOf = (defs: Defs, k: unknown): KindDef | undefined =>
+  typeof k === "string" ? defs[k] : undefined;
+
+const labelOf = (defs: Defs, k: string) =>
+  k === "none" ? "Ninguna" : (defOf(defs, k)?.label ?? k);
+
+/** The `amount` control, labelled and bounded by what the kind says it means. */
+const amountOf = (defs: Defs, name: string) =>
+  num(12, {
+    label: (p: Parent) => `${name}: ${defOf(defs, p.kind)?.amount?.label}`,
+    max: (p: Parent) => defOf(defs, p.kind)?.amount?.max ?? 80,
+    visible: (p: Parent) => defOf(defs, p.kind)?.amount !== undefined,
+  });
+
+const DIR_OPTIONS = [
+  ["down", "Abajo"],
+  ["up", "Arriba"],
+  ["left", "Izquierda"],
+  ["right", "Derecha"],
+] as const satisfies readonly (readonly [DirName, string])[];
+
+const DIR_NAMES = DIR_OPTIONS.map(([d]) => d) as [DirName, ...DirName[]];
 
 export const ENTRY_SEC = 0.8;
 
@@ -87,19 +125,31 @@ const easing = (label: string) =>
   });
 
 /** An entry or an exit: one pass of a motion kind, held at its end. */
-function motion(kinds: readonly MotionKind[], name: string, delay: number) {
+function motion(
+  kinds: readonly MotionKind[],
+  name: string,
+  side: string,
+  delay: number,
+) {
   return obj(
     {
       kind: select(
-        kinds.map((k) => [k, MOTION_LABELS[k]] as const),
+        kinds.map((k) => [k, labelOf(MOTIONS, k)] as const),
         "none" as MotionKind,
-        { label: `${name}: tipo`, schema: z.enum(MOTION_KINDS) },
+        {
+          label: `${name}: tipo`,
+          widget: "anim-kind",
+          schema: z.enum(
+            MOTION_KINDS as unknown as [MotionKind, ...MotionKind[]],
+          ),
+        },
       ),
-      /** px, for slide. */
-      amount: num(12, {
-        label: `${name}: distancia`,
-        max: 80,
-        visible: (p: Parent) => p.kind === "slide",
+      amount: amountOf(MOTIONS, name),
+      /** The side it comes from (entry) or goes to (exit). */
+      from: select<DirName>(DIR_OPTIONS, "down", {
+        label: `${name}: ${side}`,
+        schema: z.enum(DIR_NAMES),
+        visible: (p: Parent) => defOf(MOTIONS, p.kind)?.directional === true,
       }),
       /** Seconds from the scene's start. */
       delay: num(delay, {
@@ -134,17 +184,15 @@ function loop(kinds: readonly LoopKind[]) {
   return obj(
     {
       kind: select(
-        kinds.map((k) => [k, LOOP_LABELS[k]] as const),
+        kinds.map((k) => [k, labelOf(LOOPS, k)] as const),
         "none" as LoopKind,
-        { label: "Loop: tipo", schema: z.enum(LOOP_KINDS) },
+        {
+          label: "Loop: tipo",
+          widget: "anim-kind",
+          schema: z.enum(LOOP_KINDS as unknown as [LoopKind, ...LoopKind[]]),
+        },
       ),
-      /** px for float, % for pulse/breathe. */
-      amount: num(12, {
-        label: (p: Parent) =>
-          p.kind === "float" ? "Loop: distancia" : "Loop: intensidad %",
-        max: (p: Parent) => (p.kind === "breathe" ? 100 : 80),
-        visible: shown,
-      }),
+      amount: amountOf(LOOPS, "Loop"),
       /** Full cycles per scene; integers keep GIF/MP4 loops seamless (A6). */
       cycles: num(1, {
         label: "Loop: ciclos por escena",
@@ -180,11 +228,16 @@ function loop(kinds: readonly LoopKind[]) {
   );
 }
 
-const LOOPS: readonly unknown[] = LOOP_KINDS;
+const LEGACY_LOOPS: readonly unknown[] = LOOP_KINDS;
 
-/** The slot shape of a pre-slot `{ kind, amount, cycles, delay }`, or `v` itself. */
+/**
+ * The current shape of an `anim` written earlier: a pre-slot `{ kind, amount, cycles, delay }`
+ * moves into its slot, and entry and exit slots without a side (before 018) come from below,
+ * which is how they moved then.
+ */
 export function migrateAnim(v: unknown): unknown {
-  if (!v || typeof v !== "object" || !("kind" in v)) return v;
+  if (!v || typeof v !== "object") return v;
+  if (!("kind" in v)) return withSides(v as Parent);
   const old = v as {
     kind: AnimKind;
     amount?: number;
@@ -194,11 +247,11 @@ export function migrateAnim(v: unknown): unknown {
   const amount = old.amount ?? 12;
   const delay = old.delay ?? 0;
   const slots = {
-    in: defaultsOf(motion(MOTION_KINDS, "", 0)),
+    in: defaultsOf(motion(MOTION_KINDS, "", "", 0)),
     loop: defaultsOf(loop(LOOP_KINDS)),
-    out: defaultsOf(motion(MOTION_KINDS, "", 3)),
+    out: defaultsOf(motion(MOTION_KINDS, "", "", 3)),
   };
-  if (LOOPS.includes(old.kind) && old.kind !== "none") {
+  if (LEGACY_LOOPS.includes(old.kind) && old.kind !== "none") {
     Object.assign(slots.loop, {
       kind: old.kind,
       amount,
@@ -211,24 +264,28 @@ export function migrateAnim(v: unknown): unknown {
   return slots;
 }
 
+function withSides(v: Parent): Parent {
+  const side = (slot: unknown) =>
+    slot && typeof slot === "object" && !("from" in slot)
+      ? { ...slot, from: "down" }
+      : slot;
+  return { ...v, in: side(v.in), out: side(v.out) };
+}
+
 function defaultsOf(f: { default: Parent }): Parent {
   return structuredClone(f.default);
 }
 
 /**
  * The element's preset animation: an entry, a loop and an exit, each optional (spec 013).
- * `kinds` are the ones the inspector offers, by their pre-slot names; any kind opens, so
- * scenes edited by hand keep working. Scenes written before slots are read into them.
+ * `offer` is what the inspector offers; any kind opens, so scenes edited by hand keep
+ * working. Scenes written before slots are read into them.
  */
-export function anim(kinds: readonly AnimKind[], section = "Animación") {
-  const motions = MOTION_KINDS.filter(
-    (k) => k === "none" || kinds.some((a) => MOTION_OF[a] === k),
-  );
-  const loops = LOOP_KINDS.filter((k) => kinds.includes(k));
+export function anim(offer: AnimOffer, section = "Animación") {
   const fields = {
-    in: motion(motions, "Entrada", 0),
-    loop: loop(loops),
-    out: motion(motions, "Salida", 3),
+    in: motion(offer.motions, "Entrada", "desde", 0),
+    loop: loop(offer.loops),
+    out: motion(offer.motions, "Salida", "hacia", 3),
     late: widget("anim-late"),
   };
   const group = obj(fields, { section });

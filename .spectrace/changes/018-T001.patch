@@ -1,0 +1,312 @@
+diff --git a/src/animations/attention.ts b/src/animations/attention.ts
+new file mode 100644
+index 0000000..ee3f957
+--- /dev/null
++++ b/src/animations/attention.ts
+@@ -0,0 +1,27 @@
++/** Attention kinds, played in the loop slot: at 0 and 1 they leave the element as it is (A6). */
++import { EASINGS } from "../engine/easing.ts";
++import type { KindDef } from "./kind.ts";
++
++const TAU = Math.PI * 2;
++
++export const ATTENTION = {
++  float: {
++    label: "Flotar",
++    ease: EASINGS.linear,
++    fn: (p, e, amount) => ({ dy: -Math.sin(e(p) * TAU) * amount }),
++  },
++  pulse: {
++    label: "Pulso (escala)",
++    ease: EASINGS.linear,
++    fn: (p, e, amount) => ({
++      scale: 1 + (amount / 100) * (0.5 - 0.5 * Math.cos(e(p) * TAU)),
++    }),
++  },
++  breathe: {
++    label: "Brillo que respira",
++    ease: EASINGS.linear,
++    fn: (p, e, amount) => ({
++      glowMul: Math.max(0, 1 + (amount / 100) * Math.sin(e(p) * TAU)),
++    }),
++  },
++} satisfies Record<string, KindDef>;
+diff --git a/src/animations/index.ts b/src/animations/index.ts
+new file mode 100644
+index 0000000..163d563
+--- /dev/null
++++ b/src/animations/index.ts
+@@ -0,0 +1,17 @@
++/**
++ * The animation registry (018/D6): every kind a slot can play, one file per family. Entry and
++ * exit slots play `MOTIONS`; the loop slot plays `LOOPS`.
++ */
++import { ATTENTION } from "./attention.ts";
++import { MOTIONS } from "./motion.ts";
++
++export * from "./kind.ts";
++export { MOTIONS };
++
++export const LOOPS = { ...ATTENTION };
++
++export type MotionId = keyof typeof MOTIONS;
++export type LoopId = keyof typeof LOOPS;
++
++export const MOTION_IDS = Object.keys(MOTIONS) as MotionId[];
++export const LOOP_IDS = Object.keys(LOOPS) as LoopId[];
+diff --git a/src/animations/kind.ts b/src/animations/kind.ts
+new file mode 100644
+index 0000000..f818441
+--- /dev/null
++++ b/src/animations/kind.ts
+@@ -0,0 +1,31 @@
++import type { EasingFn } from "../engine/easing.ts";
++
++export const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
++
++/** How an element looks at one moment: what its animations change, composed. */
++export type AnimState = {
++  dx: number;
++  dy: number;
++  scale: number;
++  alpha: number;
++  glowMul: number;
++  /** 0–1, how much of a line is drawn ("draw"); 1 for every other kind. */
++  progress: number;
++};
++
++/** What one kind changes; anything left out stays as it is. */
++export type Delta = Partial<AnimState>;
++
++/**
++ * A kind: what it changes at linear progress `p` (0 → 1, already turned around by the
++ * direction), given its easing and amount. Pure, so any slot can play it (013/D6).
++ */
++export type KindFn = (p: number, ease: EasingFn, amount: number) => Delta;
++
++export type KindDef = {
++  /** Its name in the inspector. */
++  label: string;
++  /** The curve it uses when its easing is `auto`. */
++  ease: EasingFn;
++  fn: KindFn;
++};
+diff --git a/src/animations/motion.ts b/src/animations/motion.ts
+new file mode 100644
+index 0000000..bb2951e
+--- /dev/null
++++ b/src/animations/motion.ts
+@@ -0,0 +1,29 @@
++/**
++ * Entrances: at progress 1 they leave the element as it is, at 0 it is hidden. An exit plays
++ * the same kind from 1 to 0 (013/D6), so exits have no code of their own.
++ */
++import { EASINGS } from "../engine/easing.ts";
++import { clamp01, type KindDef } from "./kind.ts";
++
++export const MOTIONS = {
++  fade: {
++    label: "Desvanecer",
++    ease: EASINGS["cubic-out"],
++    fn: (p, e) => ({ alpha: e(p) }),
++  },
++  pop: {
++    label: "Pop",
++    ease: EASINGS["back-out"],
++    fn: (p, e) => ({ alpha: clamp01(p * 2), scale: Math.max(0, e(p)) }),
++  },
++  slide: {
++    label: "Deslizar",
++    ease: EASINGS["cubic-out"],
++    fn: (p, e, amount) => ({ alpha: e(p), dy: (1 - e(p)) * amount }),
++  },
++  draw: {
++    label: "Dibujarse",
++    ease: EASINGS["cubic-out"],
++    fn: (p, e) => ({ progress: e(p) }),
++  },
++} satisfies Record<string, KindDef>;
+diff --git a/src/components/fields/anim.ts b/src/components/fields/anim.ts
+index 8e2dd98..9326314 100644
+--- a/src/components/fields/anim.ts
++++ b/src/components/fields/anim.ts
+@@ -1,4 +1,12 @@
+ import { z } from "zod";
++import {
++  LOOP_IDS,
++  LOOPS,
++  type LoopId,
++  MOTION_IDS,
++  MOTIONS,
++  type MotionId,
++} from "../../animations/index.ts";
+ import {
+   EASING_NAMES,
+   type Easing,
+@@ -43,11 +51,11 @@ export const BOX_ANIMS: readonly AnimKind[] = [
+ ];
+ 
+ /** What an entry or exit does; an exit plays its kind in reverse. */
+-export const MOTION_KINDS = ["none", "fade", "pop", "slide", "draw"] as const;
+-export type MotionKind = (typeof MOTION_KINDS)[number];
++export const MOTION_KINDS = ["none", ...MOTION_IDS] as const;
++export type MotionKind = "none" | MotionId;
+ 
+-export const LOOP_KINDS = ["none", "float", "pulse", "breathe"] as const;
+-export type LoopKind = (typeof LOOP_KINDS)[number];
++export const LOOP_KINDS = ["none", ...LOOP_IDS] as const;
++export type LoopKind = "none" | LoopId;
+ 
+ /** The entry kind each pre-slot entry animation became. */
+ export const MOTION_OF: Partial<Record<AnimKind, MotionKind>> = {
+@@ -57,20 +65,8 @@ export const MOTION_OF: Partial<Record<AnimKind, MotionKind>> = {
+   draw: "draw",
+ };
+ 
+-const MOTION_LABELS: Record<MotionKind, string> = {
+-  none: "Ninguna",
+-  fade: "Desvanecer",
+-  pop: "Pop",
+-  slide: "Deslizar",
+-  draw: "Dibujarse",
+-};
+-
+-const LOOP_LABELS: Record<LoopKind, string> = {
+-  none: "Ninguna",
+-  float: ANIM_LABELS.float,
+-  pulse: ANIM_LABELS.pulse,
+-  breathe: ANIM_LABELS.breathe,
+-};
++const labelOf = (defs: Record<string, { label: string }>, k: string) =>
++  k === "none" ? "Ninguna" : (defs[k]?.label ?? k);
+ 
+ export const ENTRY_SEC = 0.8;
+ 
+@@ -91,9 +87,14 @@ function motion(kinds: readonly MotionKind[], name: string, delay: number) {
+   return obj(
+     {
+       kind: select(
+-        kinds.map((k) => [k, MOTION_LABELS[k]] as const),
++        kinds.map((k) => [k, labelOf(MOTIONS, k)] as const),
+         "none" as MotionKind,
+-        { label: `${name}: tipo`, schema: z.enum(MOTION_KINDS) },
++        {
++          label: `${name}: tipo`,
++          schema: z.enum(
++            MOTION_KINDS as unknown as [MotionKind, ...MotionKind[]],
++          ),
++        },
+       ),
+       /** px, for slide. */
+       amount: num(12, {
+@@ -134,9 +135,12 @@ function loop(kinds: readonly LoopKind[]) {
+   return obj(
+     {
+       kind: select(
+-        kinds.map((k) => [k, LOOP_LABELS[k]] as const),
++        kinds.map((k) => [k, labelOf(LOOPS, k)] as const),
+         "none" as LoopKind,
+-        { label: "Loop: tipo", schema: z.enum(LOOP_KINDS) },
++        {
++          label: "Loop: tipo",
++          schema: z.enum(LOOP_KINDS as unknown as [LoopKind, ...LoopKind[]]),
++        },
+       ),
+       /** px for float, % for pulse/breathe. */
+       amount: num(12, {
+@@ -180,7 +184,7 @@ function loop(kinds: readonly LoopKind[]) {
+   );
+ }
+ 
+-const LOOPS: readonly unknown[] = LOOP_KINDS;
++const LEGACY_LOOPS: readonly unknown[] = LOOP_KINDS;
+ 
+ /** The slot shape of a pre-slot `{ kind, amount, cycles, delay }`, or `v` itself. */
+ export function migrateAnim(v: unknown): unknown {
+@@ -198,7 +202,7 @@ export function migrateAnim(v: unknown): unknown {
+     loop: defaultsOf(loop(LOOP_KINDS)),
+     out: defaultsOf(motion(MOTION_KINDS, "", 3)),
+   };
+-  if (LOOPS.includes(old.kind) && old.kind !== "none") {
++  if (LEGACY_LOOPS.includes(old.kind) && old.kind !== "none") {
+     Object.assign(slots.loop, {
+       kind: old.kind,
+       amount,
+diff --git a/src/engine/anim.ts b/src/engine/anim.ts
+index e173095..7a8aef1 100644
+--- a/src/engine/anim.ts
++++ b/src/engine/anim.ts
+@@ -1,64 +1,16 @@
+-import type { LoopKind, MotionKind } from "../components/fields/index.ts";
++import {
++  type AnimState,
++  type Delta,
++  LOOPS,
++  MOTIONS,
++} from "../animations/index.ts";
+ import type { Anim } from "../model/model.ts";
+-import { EASINGS, type EasingFn, easingFn } from "./easing.ts";
++import { EASINGS, easingFn } from "./easing.ts";
+ import { localProgress, loopDuration, type Timing } from "./timing.ts";
+ 
+-export const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+-export const frac = (x: number) => x - Math.floor(x);
+-
+-export type AnimState = {
+-  dx: number;
+-  dy: number;
+-  scale: number;
+-  alpha: number;
+-  glowMul: number;
+-  /** 0–1, how much of a line is drawn ("draw"); 1 for every other kind. */
+-  progress: number;
+-};
+-
+-type Delta = Partial<AnimState>;
++export { type AnimState, clamp01 } from "../animations/index.ts";
+ 
+-/**
+- * A kind: what it changes at linear progress `p` (0 → 1, already turned around by the
+- * direction), given its easing and amount. Pure, so any slot can play it (D6).
+- */
+-type KindFn = (p: number, ease: EasingFn, amount: number) => Delta;
+-
+-type KindDef = { fn: KindFn; ease: EasingFn };
+-
+-/** Entry kinds at progress 1 leave the element as it is; exits play them from 1 to 0. */
+-const MOTIONS: Record<Exclude<MotionKind, "none">, KindDef> = {
+-  fade: { ease: EASINGS["cubic-out"], fn: (p, e) => ({ alpha: e(p) }) },
+-  pop: {
+-    ease: EASINGS["back-out"],
+-    fn: (p, e) => ({ alpha: clamp01(p * 2), scale: Math.max(0, e(p)) }),
+-  },
+-  slide: {
+-    ease: EASINGS["cubic-out"],
+-    fn: (p, e, amount) => ({ alpha: e(p), dy: (1 - e(p)) * amount }),
+-  },
+-  draw: { ease: EASINGS["cubic-out"], fn: (p, e) => ({ progress: e(p) }) },
+-};
+-
+-/** Loop kinds over one cycle; at 0 and 1 they leave the element as it is. */
+-const LOOPS: Record<Exclude<LoopKind, "none">, KindDef> = {
+-  float: {
+-    ease: EASINGS.linear,
+-    fn: (p, e, amount) => ({ dy: -Math.sin(e(p) * Math.PI * 2) * amount }),
+-  },
+-  pulse: {
+-    ease: EASINGS.linear,
+-    fn: (p, e, amount) => ({
+-      scale: 1 + (amount / 100) * (0.5 - 0.5 * Math.cos(e(p) * Math.PI * 2)),
+-    }),
+-  },
+-  breathe: {
+-    ease: EASINGS.linear,
+-    fn: (p, e, amount) => ({
+-      glowMul: Math.max(0, 1 + (amount / 100) * Math.sin(e(p) * Math.PI * 2)),
+-    }),
+-  },
+-};
++export const frac = (x: number) => x - Math.floor(x);
+ 
+ const linear = EASINGS.linear;
+ 

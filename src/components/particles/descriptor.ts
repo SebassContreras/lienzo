@@ -3,7 +3,7 @@ import { ElementSchema } from "../../model/element-schema.ts";
 import type { Element } from "../../model/model.ts";
 import { defineComponent, type ElementOf } from "../descriptor.ts";
 import {
-  type AnimKind,
+  type AnimOffer,
   anim,
   box,
   color,
@@ -17,12 +17,10 @@ import {
 } from "../fields/index.ts";
 import { drawParticles } from "./draw.ts";
 
-const PARTICLE_ANIMS: readonly AnimKind[] = [
-  "none",
-  "fade-in",
-  "pop-in",
-  "breathe",
-];
+const PARTICLE_ANIMS: AnimOffer = {
+  motions: ["none", "fade", "pop"],
+  loops: ["none", "breathe"],
+};
 
 const P = { section: "Partículas" };
 
