@@ -39,12 +39,15 @@ What exists today:
   evaluating and editing goes through `src/engine/tracks.ts`, applied by `animate` before
   the preset animation (spec 015)
 
-Planned (decided, not built yet — specs 007–011, 016, 017, 019):
+- Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
+  offsets on `relative` fields; applying always copies; `animPreset` on an element is
+  provenance only, and a scene naming one is expanded on load; pure logic in
+  `src/presets/anim-presets.ts` (A26, spec 019)
+
+Planned (decided, not built yet — specs 007–011, 016, 017):
 
 - Descriptors also drive compact JSON and tools (A23, specs 011, 007);
   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
-- Animation presets in `presets/animations/`, copied or linked, relative times and offsets
-  (A26, spec 019)
 - CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
   in tools (A20); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
   over stdio, CLI via `tsx` (A22) — specs 007–010, built last
@@ -62,16 +65,19 @@ src/components/  index.ts = the registry; descriptor.ts = the descriptor type; f
                  builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);
                  <kind>/descriptor.ts + <kind>/draw.ts per element kind (rect, ellipse, icon,
                  image, group, text, line, particles)
-src/editor/      React UI: app shell, stage, library, background library, inspector (the
+src/editor/      React UI: app shell, stage, library, background library, animation library
+                 (anim-library.tsx), inspector (the
                  element inspector is generated: layout.ts + field-editor.tsx; keyframe
                  buttons in keyframe-controls.tsx; timeline/ = the keyframe tracks panel)
 src/export/      PNG / GIF / MP4
 src/traits/      reusable style pieces, one file per trait
 src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
-                 store.ts), categories and filter, JSON import/export helpers, scenes dialog
+                 store.ts), categories and filter, JSON import/export helpers, scenes dialog,
+                 animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
 src/types/       type declarations for packages that ship none
 src/demo.ts      the "how MCP works" demo scene
 presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
+presets/animations/  animation presets (JSON)
 scenes/          saved scenes (JSON)
 assets/          images used by scenes, named by content hash
 ```

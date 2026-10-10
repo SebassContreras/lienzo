@@ -26,6 +26,14 @@ the canvas, edit them live, and export PNG, GIF or MP4.
   group as your own preset in `presets/`; each of your presets can be renamed, given a
   category, overwritten with the selected element, exported as `.json` or deleted.
   "Importar preset" adds one from a `.json` file.
+- **Animation presets:** the "Animaciones" library section saves the selected element's
+  animation (entry, loop, exit and keyframes) under a name, in `presets/animations/`, and
+  applies it to the selection from a chosen start, with an optional stagger between
+  elements. Times are relative to the start and movements to each element's position;
+  what an element cannot take is skipped and listed. Applying copies the animation, so
+  editing a preset later changes nothing already applied. Presets can be renamed, given a
+  category, overwritten, exported, imported and deleted. A scene can name one
+  (`"animPreset": "mi-entrada"`), and it is copied in when the scene opens.
 - **Backgrounds:** the "Fondo" button (or a click on an empty part of the canvas) opens the
   background settings: color or gradient, dots, spotlight. The "Fondos" library section
   applies a background preset (undoable); "Guardar fondo como preset" saves yours.
