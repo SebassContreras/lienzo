@@ -8,6 +8,7 @@
 - D4@1 (implements R4): Every write goes through `parseScene` / `parsePresetRecipe` (`src/model/schema.ts`) before touching disk; errors are `{ code, message, path }`, messages in Spanish (A16), tool descriptions in English (read by the model).
 
 - D5@1 (implements R6): Element tools take their input schemas from the descriptor registry (A23) and add or edit keyframes through the track model of 015.
+- D6@1 (implements R7): Tools load `presets/animations/` through `ctx.store` and call `expandAnimPresets` (019/D10) before `parseScene`.
 
 ## Deliverables
 

@@ -7,6 +7,7 @@
 - D3@1 (implements R3): Anchors and `fit` are resolved after building, from `boxOf` and the scene size.
 - D4@1 (implements R4): Readable ids stay as element ids (checked unique); `from` / `to` become line attachments.
 - D5@1 (implements R6): `scene.build` is a service tool (A20); the result goes through the scene schema before any write.
+- D6@1 (implements R9): `expandScene` passes `animPreset` through and calls `expandAnimPresets` (019/D10) after building the elements; no second resolver.
 
 ## Deliverables
 

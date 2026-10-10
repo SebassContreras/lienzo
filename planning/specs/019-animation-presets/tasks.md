@@ -1,19 +1,17 @@
 # 019 — animation-presets — Tasks
 
-- [ ] T001 [agent] [status:todo] Animation preset JSON schema and store in `presets/animations/`
-      covers: D1@1, A26@1
-- [ ] T002 [agent] [status:todo] Save an element's animation as a preset with relative times and offsets
-      covers: D1@1
-- [ ] T003 [agent] [status:todo] Apply with per-property merge and a notice for skipped properties
-      covers: D2@1
-- [ ] T004 [agent] [status:todo] Apply to the selection with stagger and a chosen start
-      covers: D3@1
-- [ ] T005 [agent] [status:todo] Linked presets resolved in `animate`, and unlink
-      covers: D4@1, A24@1
-- [ ] T006 [agent] [status:todo] Library section "Animaciones": rename, overwrite, delete, export, import
-      covers: D1@1
-- [ ] T007 [agent] [status:todo] Preset names accepted wherever an `anim` is
-      covers: D5@1
-- [ ] T008 [agent] [status:todo] Test: save/apply round trip on another kind, relative times and offsets, merge keeps other animations, linked update and unlink, invalid import writes nothing
-      covers: R1@1, R2@1, R3@1, R4@1, R5@1, R6@1, R7@1, R8@1
+- [ ] T009 [agent] [status:todo] Animation preset schema in `src/model/anim-preset.ts`, `/api/animations` store, and `relative: true` on positional descriptor fields
+      covers: D6@1, A26@2
+- [ ] T010 [agent] [status:todo] `capturePreset` and `applyPreset`: relative times (keyframes and entry/exit delays), positional offsets, per-slot and per-path merge, skipped list
+      covers: D7@1
+- [ ] T011 [agent] [status:todo] Apply to the selection in selection order with stagger and a chosen start, dropping keyframes past the duration
+      covers: D8@1
+- [ ] T012 [agent] [status:todo] `animPreset` provenance on applied elements; `animate` unchanged
+      covers: D9@1, A24@1
+- [ ] T013 [agent] [status:todo] `animPreset` in the scene schema and `expandAnimPresets` on scene load with notices
+      covers: D10@1
+- [ ] T014 [agent] [status:todo] Library section "Animaciones" in `src/editor/anim-library.tsx`: save, rename, overwrite, delete, export, import, validated before writing
+      covers: D11@1
+- [ ] T015 [agent] [status:todo] Test: save/apply round trip on another kind; relative keyframes and delays; offsets only on `relative` fields; merge keeps other slots and tracks; type mismatches and missing paths skipped; stagger order and duration cut; editing a preset leaves applied elements alone; a scene with `animPreset` expands on load and an unknown name loads with a notice; an invalid import writes nothing
+      covers: R1@1, R2@2, R3@2, R4@2, R5@2, R6@2, R7@2, R8@2
       kind: test

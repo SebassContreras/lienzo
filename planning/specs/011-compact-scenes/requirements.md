@@ -20,6 +20,7 @@ The maintainer writing posts by hand, and Claude writing them through MCP.
 - R6@1: Tool `scene.build` expands a compact scene into a full scene, optionally saving it; an invalid compact scene is rejected naming the path in the compact input, and nothing is written.
 - R7@1: The compact format's JSON Schema is generated from the descriptors, and the README shows a full example post.
 - R8@1: A component or field added later is accepted by the compact format with no change to it.
+- R9@1: A compact element may name an animation preset with `animPreset` (019), expanded like in a full scene.
 
 ## Out of scope
 

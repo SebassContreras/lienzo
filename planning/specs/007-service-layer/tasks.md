@@ -22,3 +22,5 @@
 - [ ] T010 [agent] [status:todo] Test: a test-only descriptor is usable from every element tool with no tool change; keyframes added through the tools play in the scene
       covers: R6@1
       kind: test
+- [ ] T011 [agent] [status:todo] Expand `animPreset` names through `expandAnimPresets` before validating and writing; test that an unknown name is reported
+      covers: D6@1, R7@1

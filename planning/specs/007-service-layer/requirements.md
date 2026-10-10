@@ -17,6 +17,7 @@ Scripts and AI agents (Claude) that build posts, and the maintainer from the ter
 - R4@1: Every tool that writes validates the result first; an invalid input or result returns an error naming the failing path, and nothing is written.
 - R5@1: Scenes written by the tools open in the editor's «Escenas guardadas» without conversion.
 - R6@1: Element tools accept every component kind and field of the descriptor registry, keyframe tracks included, so a component added later is usable from the tools with no tool change.
+- R7@1: A scene created or edited through the tools may name animation presets (`animPreset`, 019); they are expanded into copied values before validation and writing.
 
 ## Out of scope
 

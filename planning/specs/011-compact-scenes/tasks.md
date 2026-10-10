@@ -17,3 +17,5 @@
 - [ ] T008 [agent] [status:todo] Test: defaults, presets with overrides, groups, templates, anchors, fit, connections, tracks; invalid input names its compact path and writes nothing; a test-only descriptor is accepted with no compact code; the README example builds
       covers: R1@1, R2@1, R3@1, R4@1, R5@1, R6@1, R7@1, R8@1
       kind: test
+- [ ] T009 [agent] [status:todo] `animPreset` in the compact schema, expanded through `expandAnimPresets`; test included
+      covers: D6@1, R9@1

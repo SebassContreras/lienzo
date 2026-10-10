@@ -29,3 +29,8 @@ Why: the maintainer wants a wider range of elements and animations for explainer
 Why: spec 012 moved each component into a descriptor folder (A23).
 - MODIFIED A5@1 → A5@2
 - Tasks: 001/T003 and 005/T003 re-pointed to A5@2 (still valid: their drawing code moved into `<kind>/draw.ts`); 012/T017 re-pointed to A5@2
+
+## 2026-10-10 — animation presets copy and expand on load
+Why: the 019 review found that linked presets resolved at draw time would couple `animate` (A24) to the preset store and make export, tests and undo depend on the library.
+- MODIFIED A26@1 → A26@2
+- Tasks: 019/T001 (never started) replaced by 019/T009, which covers A26@2
