@@ -3,7 +3,7 @@
  * that the schema generated from the descriptors accepts and rejects exactly the same scenes.
  */
 import { z } from "zod";
-import { ANIM_KINDS, anim as animField } from "../components/fields/anim.ts";
+import { ALL_ANIMS, anim as animField } from "../components/fields/anim.ts";
 import {
   templateSchema as template,
   variationSchema as variation,
@@ -18,7 +18,7 @@ const strokeStyle = z.enum(["solid", "dashed", "dotted"]);
  * shape is still read (and migrated into the slots), so both sides check it with the same
  * schema here; the migration itself is tested in `src/engine/anim.test.ts`.
  */
-const anim = animField(ANIM_KINDS).schema;
+const anim = animField(ALL_ANIMS).schema;
 
 const glow = z.object({
   enabled: z.boolean(),
@@ -201,6 +201,8 @@ const group = z.object({
     return z.array(LegacyElement);
   },
   anim,
+  // added by 018 with a default, so scenes without it still read
+  stagger: z.number().min(0).default(0),
 });
 
 const LegacyElement: z.ZodType<unknown> = z.discriminatedUnion("kind", [

@@ -23,6 +23,7 @@ import type {
   ParticlesEl,
 } from "../model/model.ts";
 import { uploadAsset } from "../presets/store.ts";
+import { AnimPicker } from "./anim-picker.tsx";
 import { Check, Color, Num, Section, Select, TextArea } from "./controls.tsx";
 import { IconPicker } from "./icon-picker.tsx";
 import {
@@ -54,6 +55,22 @@ type WidgetProps = {
   change: Change;
   ctx: EditorContext;
 };
+
+/** A slot's kind, picked from previews of the element itself playing each one. */
+function AnimKindPicker({ el, item, value, label, change }: WidgetProps) {
+  const { field, path } = item;
+  if (field.type !== "select") return null;
+  return (
+    <AnimPicker
+      el={el}
+      slot={path[1] as "in" | "loop" | "out"}
+      label={label}
+      value={value as string}
+      options={field.options as readonly (readonly [string, string])[]}
+      onChange={(v) => change((d) => writeField(d, path, field, v))}
+    />
+  );
+}
 
 /** Stores a picked file in `assets/` and reads its shape once it decodes. */
 async function uploadImage(file: File) {
@@ -146,6 +163,7 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
     />
   ),
   image: (p) => <ImageUpload {...p} />,
+  "anim-kind": (p) => <AnimKindPicker {...p} />,
   connection: (p) => <Connection {...p} />,
   "group-info": ({ el }) => (
     <div className="hint">
@@ -255,8 +273,12 @@ function Control({
   const { field, parent, path } = item;
   const value = valueAt(el, path);
   const label = field.type === "widget" ? "" : resolve(field.label, parent);
-  if (field.type === "widget" || field.type === "custom") {
-    const render = WIDGETS[field.widget];
+  if (
+    field.type === "widget" ||
+    field.type === "custom" ||
+    (field.type === "select" && field.widget)
+  ) {
+    const render = WIDGETS[field.widget as string];
     if (!render) throw new Error(`unknown inspector widget ${field.widget}`);
     return render({ el, item, value, label, change, ctx });
   }

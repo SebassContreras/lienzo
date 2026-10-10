@@ -6,7 +6,7 @@ import type { AnimState } from "../engine/anim.ts";
 import type { Ctx } from "../engine/paint.ts";
 import type { Element, Scene } from "../model/model.ts";
 import {
-  type AnimKind,
+  type AnimOffer,
   type DataField,
   dataFields,
   type Fields,
@@ -26,6 +26,7 @@ export type DrawContext = {
     elements: Element[],
     scene: Scene,
     t: number,
+    byId?: Map<string, Element>,
   ) => void;
 };
 
@@ -46,7 +47,7 @@ export type Descriptor<E extends { kind: string } = Element> = {
   /** Inspector sections, in order; a field names its own in `section`. */
   sections: readonly Section[];
   /** Preset animations the inspector offers for this kind. */
-  anims: readonly AnimKind[];
+  anims: AnimOffer;
   /** Field paths ("x", "fill.opacity") that keyframes may animate. */
   animatable: readonly string[];
   /** Lucide icon (PascalCase name) shown for the kind in the library. */

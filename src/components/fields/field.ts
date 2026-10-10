@@ -65,6 +65,8 @@ export type SelectField = Common & {
   default: string | number;
   schema: z.ZodType<string | number>;
   options: readonly Option[];
+  /** Shown by this widget instead of a drop-down (it gets the options from the field). */
+  widget?: string;
 };
 
 /** A value edited by a control of its own, named by `widget` (icon picker, image upload…). */
@@ -198,7 +200,7 @@ export function text<P = Parent>(
 export function select<T extends string | number, P = Parent>(
   options: readonly (readonly [T, string])[],
   value: NoInfer<T>,
-  o: Opts<P, T> & { schema?: z.ZodType<T> },
+  o: Opts<P, T> & { schema?: z.ZodType<T>; widget?: string },
 ): Typed<SelectField, T> {
   const values = options.map(([v]) => v);
   const schema =

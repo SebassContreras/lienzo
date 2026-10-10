@@ -36,7 +36,7 @@ What exists today:
 - Scenes and preset recipes are validated with Zod in `src/model/schema.ts` before any
   import is written
 
-Planned (decided, not built yet — specs 007–011, 013–019):
+Planned (decided, not built yet — specs 007–011, 015–017, 019):
 
 - Descriptors also drive keyframes, compact JSON and tools (A23, specs 015, 011, 007);
   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
@@ -51,6 +51,8 @@ Planned (decided, not built yet — specs 007–011, 013–019):
 ```
 src/model/       scene and background types, size presets, fonts; Zod schemas (schema.ts,
                  element-schema.ts generated from the descriptors)
+src/animations/  the animation registry, one file per family (entrances, attention, emphasis,
+                 text): pure functions of progress; exits replay entrances backwards
 src/engine/      drawScene, animate, painting helpers, animation state, geometry, particle field
 src/components/  index.ts = the registry; descriptor.ts = the descriptor type; fields/ = field
                  builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);

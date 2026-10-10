@@ -1,0 +1,50 @@
+diff --git a/src/animations/emphasis.ts b/src/animations/emphasis.ts
+new file mode 100644
+index 0000000..d7c4d73
+--- /dev/null
++++ b/src/animations/emphasis.ts
+@@ -0,0 +1,20 @@
++/**
++ * Emphasis kinds, played in the loop slot: they draw the eye without moving the element. At
++ * progress 0 and 1 they leave it as it is (A6).
++ */
++import { EASINGS } from "../engine/easing.ts";
++import type { KindDef } from "./kind.ts";
++
++export const EMPHASIS = {
++  highlight: {
++    label: "Resaltar (brillo)",
++    ease: EASINGS.linear,
++    amount: { label: "intensidad %", max: 300 },
++    // one flare of its glow early in the cycle, a touch of scale with it
++    fn: (p, e, a) => {
++      const q = e(p);
++      const flare = q < 0.4 ? Math.sin((q / 0.4) * Math.PI) ** 2 : 0;
++      return { glowMul: 1 + (a / 100) * flare, scale: 1 + 0.03 * flare };
++    },
++  },
++} satisfies Record<string, KindDef>;
+diff --git a/src/animations/index.ts b/src/animations/index.ts
+index a42fffa..22d8eea 100644
+--- a/src/animations/index.ts
++++ b/src/animations/index.ts
+@@ -3,16 +3,17 @@
+  * exit slots play `MOTIONS`; the loop slot plays `LOOPS`.
+  */
+ import { ATTENTION } from "./attention.ts";
++import { EMPHASIS } from "./emphasis.ts";
+ import type { KindDef } from "./kind.ts";
+ import { ENTRANCES } from "./motion.ts";
+ 
+ export * from "./kind.ts";
+ 
+ export type MotionId = keyof typeof ENTRANCES;
+-export type LoopId = keyof typeof ATTENTION;
++export type LoopId = keyof typeof ATTENTION | keyof typeof EMPHASIS;
+ 
+ export const MOTIONS: Record<MotionId, KindDef> = ENTRANCES;
+-export const LOOPS: Record<LoopId, KindDef> = ATTENTION;
++export const LOOPS: Record<LoopId, KindDef> = { ...ATTENTION, ...EMPHASIS };
+ 
+ export const MOTION_IDS = Object.keys(MOTIONS) as MotionId[];
+ export const LOOP_IDS = Object.keys(LOOPS) as LoopId[];

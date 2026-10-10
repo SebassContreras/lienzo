@@ -60,8 +60,9 @@ export function shadowOnly(
   ctx.save();
   ctx.shadowColor = color;
   ctx.shadowBlur = blur * k;
-  ctx.shadowOffsetX = (OFF + ox) * k;
-  ctx.shadowOffsetY = oy * k;
+  // the off-canvas shift, as it lands on the device once rotated or skewed (018/D7)
+  ctx.shadowOffsetX = OFF * m.a + ox * k;
+  ctx.shadowOffsetY = OFF * m.b + oy * k;
   ctx.translate(-OFF, 0);
   ctx.fillStyle = "#000";
   ctx.strokeStyle = "#000";
@@ -75,7 +76,12 @@ export function dashFor(style: StrokeStyle, width: number): number[] {
   return [];
 }
 
-/** Runs `draw` with the animation's offset, scale (around the box centre) and alpha applied. */
+const RAD = Math.PI / 180;
+
+/**
+ * Runs `draw` with the animation's transform applied around the box centre, in one fixed
+ * order as CSS `transform` would read it: translate, rotate, skew, scale; then alpha.
+ */
 export function withTransform(
   ctx: Ctx,
   box: Box,
@@ -87,7 +93,17 @@ export function withTransform(
   ctx.save();
   ctx.globalAlpha *= st.alpha;
   ctx.translate(cx + st.dx, cy + st.dy);
-  ctx.scale(st.scale, st.scale);
+  if (st.rotate) ctx.rotate(st.rotate * RAD);
+  if (st.skewX || st.skewY)
+    ctx.transform(
+      1,
+      Math.tan(st.skewY * RAD),
+      Math.tan(st.skewX * RAD),
+      1,
+      0,
+      0,
+    );
+  ctx.scale(st.scale * st.scaleX, st.scale * st.scaleY);
   ctx.translate(-cx, -cy);
   draw();
   ctx.restore();

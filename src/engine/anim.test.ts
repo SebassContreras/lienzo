@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { rest } from "../animations/index.ts";
 import {
   ANIM_KINDS,
   type AnimKind,
@@ -34,7 +35,7 @@ function before(
   const back = (x: number) =>
     1 + 2.70158 * (x - 1) ** 3 + 1.70158 * (x - 1) ** 2;
   const clamp = (x: number) => Math.min(1, Math.max(0, x));
-  const s = { dx: 0, dy: 0, scale: 1, alpha: 1, glowMul: 1, progress: 1 };
+  const s = rest();
   const phase = ((t - a.delay) / duration) * a.cycles * Math.PI * 2;
   const e = clamp((t - a.delay) / 0.8);
   if (a.kind === "float") s.dy = -Math.sin(phase) * a.amount;
@@ -57,7 +58,10 @@ function before(
 
 function expectState(a: AnimState, b: AnimState, msg = "") {
   for (const k of Object.keys(b) as (keyof AnimState)[]) {
-    expect(a[k], `${msg} ${k}`).toBeCloseTo(b[k], 9);
+    const [x, y] = [a[k], b[k]];
+    if (typeof x === "number" && typeof y === "number")
+      expect(x, `${msg} ${k}`).toBeCloseTo(y, 9);
+    else expect(x, `${msg} ${k}`).toBe(y);
   }
 }
 

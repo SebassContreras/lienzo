@@ -22,7 +22,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 015 | keyframes-timeline | todo | 012, 013 | build | 11 |
 | 016 | three-d | todo | 012, 013, 015 | build | 14 |
 | 017 | more-elements | todo | 012, 013, 015 | build | 13 |
-| 018 | more-animations | todo | 012, 013 | build | 9 |
+| 018 | more-animations | done        | 012, 013 | —     | 9 |
 | 019 | animation-presets | todo | 003, 013, 015, 018 | build | 12 |
 | 020 | history-undo | todo | 001 | design | 20 |
 | 021 | smart-connectors | todo | 001, 012 | design | 21 |

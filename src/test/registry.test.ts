@@ -191,7 +191,8 @@ describe("descriptors", () => {
     ]);
     for (const d of descriptors) {
       expect(typeof d.draw).toBe("function");
-      expect(d.anims).toContain("none");
+      expect(d.anims.motions).toContain("none");
+      expect(d.anims.loops).toContain("none");
       expect(d.animatable.length).toBeGreaterThan(0);
       // what keyframes may animate are real number or color fields
       for (const p of d.animatable) expect(fieldPaths(d.fields)).toContain(p);

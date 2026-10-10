@@ -4,9 +4,7 @@
  * descriptors in `src/components/` (A23); this module re-exports them under their usual names.
  */
 
-import type { AnimKind } from "../components/fields/index.ts";
 import {
-  COMPONENTS,
   createElement,
   descriptorOf,
   type RegisteredElement,
@@ -70,10 +68,6 @@ export const SIZE_PRESETS = [
   { label: "Horizontal 1920×1080", width: 1920, height: 1080 },
   { label: "LinkedIn 1200×627", width: 1200, height: 627 },
 ];
-
-export const ANIMS_BY_KIND = Object.fromEntries(
-  COMPONENTS.map((d) => [d.kind, d.anims]),
-) as Record<ElementKind, readonly AnimKind[]>;
 
 export { newId };
 

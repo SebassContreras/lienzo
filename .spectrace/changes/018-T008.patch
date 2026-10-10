@@ -1,0 +1,319 @@
+diff --git a/src/components/fields/anim.ts b/src/components/fields/anim.ts
+index 4aaf1cb..fe7465c 100644
+--- a/src/components/fields/anim.ts
++++ b/src/components/fields/anim.ts
+@@ -138,6 +138,7 @@ function motion(
+         "none" as MotionKind,
+         {
+           label: `${name}: tipo`,
++          widget: "anim-kind",
+           schema: z.enum(
+             MOTION_KINDS as unknown as [MotionKind, ...MotionKind[]],
+           ),
+@@ -187,6 +188,7 @@ function loop(kinds: readonly LoopKind[]) {
+         "none" as LoopKind,
+         {
+           label: "Loop: tipo",
++          widget: "anim-kind",
+           schema: z.enum(LOOP_KINDS as unknown as [LoopKind, ...LoopKind[]]),
+         },
+       ),
+diff --git a/src/components/fields/field.ts b/src/components/fields/field.ts
+index 064fbd5..b934920 100644
+--- a/src/components/fields/field.ts
++++ b/src/components/fields/field.ts
+@@ -65,6 +65,8 @@ export type SelectField = Common & {
+   default: string | number;
+   schema: z.ZodType<string | number>;
+   options: readonly Option[];
++  /** Shown by this widget instead of a drop-down (it gets the options from the field). */
++  widget?: string;
+ };
+ 
+ /** A value edited by a control of its own, named by `widget` (icon picker, image upload…). */
+@@ -198,7 +200,7 @@ export function text<P = Parent>(
+ export function select<T extends string | number, P = Parent>(
+   options: readonly (readonly [T, string])[],
+   value: NoInfer<T>,
+-  o: Opts<P, T> & { schema?: z.ZodType<T> },
++  o: Opts<P, T> & { schema?: z.ZodType<T>; widget?: string },
+ ): Typed<SelectField, T> {
+   const values = options.map(([v]) => v);
+   const schema =
+diff --git a/src/editor/anim-picker.tsx b/src/editor/anim-picker.tsx
+new file mode 100644
+index 0000000..90f03a4
+--- /dev/null
++++ b/src/editor/anim-picker.tsx
+@@ -0,0 +1,163 @@
++/**
++ * The animation picker (018/D10): one tile per kind, each drawing the element itself playing
++ * that kind with the same `animate` the export uses. Only the hovered tile (else the chosen
++ * one) moves, on one `requestAnimationFrame`; the rest show a still frame.
++ */
++import { useEffect, useRef, useState } from "react";
++import { boxOf } from "../engine/geometry.ts";
++import { drawElements } from "../engine/render.ts";
++import { type Anim, defaultScene, type Element } from "../model/model.ts";
++
++type Slot = "in" | "loop" | "out";
++
++const W = 72;
++const H = 54;
++const DPR = 2;
++/** Seconds a loop preview takes per cycle; entries and exits rest this long after playing. */
++const LOOP_SEC = 1.6;
++const REST_SEC = 0.8;
++const DELAY = 0.1;
++
++/** `el` with only `slot` playing `kind`, from the start of the preview. */
++function sample(el: Element, slot: Slot, kind: string): Element {
++  const off = { ...el.anim };
++  const anim: Anim = {
++    in: { ...off.in, kind: "none" },
++    loop: { ...off.loop, kind: "none" },
++    out: { ...off.out, kind: "none" },
++  };
++  if (slot === "loop")
++    anim.loop = {
++      ...off.loop,
++      kind: kind as Anim["loop"]["kind"],
++      delay: 0,
++      cycles: 1,
++      iterations: "infinite",
++    };
++  else
++    anim[slot] = {
++      ...off[slot],
++      kind: kind as Anim["in"]["kind"],
++      delay: DELAY,
++    };
++  return { ...el, anim } as Element;
++}
++
++/** How long one run of the preview lasts. */
++function period(el: Element, slot: Slot): number {
++  return slot === "loop" ? LOOP_SEC : DELAY + el.anim[slot].duration + REST_SEC;
++}
++
++/** Draws `el` playing `kind` at `t`, fitted into the tile with room to move. */
++function drawTile(
++  canvas: HTMLCanvasElement,
++  el: Element,
++  slot: Slot,
++  kind: string,
++  t: number,
++): void {
++  const ctx = canvas.getContext("2d");
++  if (!ctx) return;
++  const shown = sample(el, slot, kind);
++  const box = boxOf(shown);
++  const fit = Math.min(W / (box.w * 1.8 || 1), H / (box.h * 1.8 || 1));
++  const scene = { ...defaultScene(), duration: period(el, slot) };
++  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
++  ctx.clearRect(0, 0, W, H);
++  ctx.translate(W / 2, H / 2);
++  ctx.scale(fit, fit);
++  ctx.translate(-(box.x + box.w / 2), -(box.y + box.h / 2));
++  drawElements(ctx, [shown], scene, t);
++}
++
++/** A moment that shows what the kind does, for tiles that are not playing. */
++function stillAt(el: Element, slot: Slot): number {
++  return slot === "loop" ? LOOP_SEC / 4 : DELAY + el.anim[slot].duration * 0.5;
++}
++
++export function AnimPicker({
++  el,
++  slot,
++  label,
++  value,
++  options,
++  onChange,
++}: {
++  el: Element;
++  slot: Slot;
++  label: string;
++  value: string;
++  options: readonly (readonly [string, string])[];
++  onChange: (kind: string) => void;
++}) {
++  const [open, setOpen] = useState(false);
++  const [hover, setHover] = useState<string | null>(null);
++  const canvases = useRef(new Map<string, HTMLCanvasElement>());
++  const playing = hover ?? value;
++
++  // every tile once, still
++  useEffect(() => {
++    if (!open) return;
++    for (const [kind, canvas] of canvases.current)
++      drawTile(canvas, el, slot, kind, stillAt(el, slot));
++  }, [open, el, slot]);
++
++  // the playing tile, on one frame loop
++  useEffect(() => {
++    const canvas = canvases.current.get(playing);
++    if (!open || !canvas || playing === "none") return;
++    const start = performance.now();
++    let frame = 0;
++    const tick = (now: number) => {
++      const t = ((now - start) / 1000) % period(el, slot);
++      drawTile(canvas, el, slot, playing, t);
++      frame = requestAnimationFrame(tick);
++    };
++    frame = requestAnimationFrame(tick);
++    return () => {
++      cancelAnimationFrame(frame);
++      drawTile(canvas, el, slot, playing, stillAt(el, slot));
++    };
++  }, [open, playing, el, slot]);
++
++  const current = options.find(([v]) => v === value)?.[1] ?? value;
++  return (
++    <div className="field anim-picker">
++      <span>{label}</span>
++      <button type="button" onClick={() => setOpen(!open)}>
++        {current}
++      </button>
++      {open && (
++        <div className="anim-grid">
++          {options.map(([kind, name]) => (
++            <button
++              type="button"
++              key={kind}
++              title={name}
++              className={kind === value ? "active" : undefined}
++              onMouseEnter={() => setHover(kind)}
++              onMouseLeave={() => setHover(null)}
++              onClick={() => {
++                onChange(kind);
++                setOpen(false);
++              }}
++            >
++              {kind !== "none" && (
++                <canvas
++                  width={W * DPR}
++                  height={H * DPR}
++                  style={{ width: W, height: H }}
++                  ref={(c) => {
++                    if (c) canvases.current.set(kind, c);
++                    else canvases.current.delete(kind);
++                  }}
++                />
++              )}
++              <small>{name}</small>
++            </button>
++          ))}
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+index 8f55867..9b506a5 100644
+--- a/src/editor/field-editor.tsx
++++ b/src/editor/field-editor.tsx
+@@ -23,6 +23,7 @@ import type {
+   ParticlesEl,
+ } from "../model/model.ts";
+ import { uploadAsset } from "../presets/store.ts";
++import { AnimPicker } from "./anim-picker.tsx";
+ import { Check, Color, Num, Section, Select, TextArea } from "./controls.tsx";
+ import { IconPicker } from "./icon-picker.tsx";
+ import {
+@@ -55,6 +56,22 @@ type WidgetProps = {
+   ctx: EditorContext;
+ };
+ 
++/** A slot's kind, picked from previews of the element itself playing each one. */
++function AnimKindPicker({ el, item, value, label, change }: WidgetProps) {
++  const { field, path } = item;
++  if (field.type !== "select") return null;
++  return (
++    <AnimPicker
++      el={el}
++      slot={path[1] as "in" | "loop" | "out"}
++      label={label}
++      value={value as string}
++      options={field.options as readonly (readonly [string, string])[]}
++      onChange={(v) => change((d) => writeField(d, path, field, v))}
++    />
++  );
++}
++
+ /** Stores a picked file in `assets/` and reads its shape once it decodes. */
+ async function uploadImage(file: File) {
+   const src = await uploadAsset(file);
+@@ -146,6 +163,7 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+     />
+   ),
+   image: (p) => <ImageUpload {...p} />,
++  "anim-kind": (p) => <AnimKindPicker {...p} />,
+   connection: (p) => <Connection {...p} />,
+   "group-info": ({ el }) => (
+     <div className="hint">
+@@ -255,8 +273,12 @@ function Control({
+   const { field, parent, path } = item;
+   const value = valueAt(el, path);
+   const label = field.type === "widget" ? "" : resolve(field.label, parent);
+-  if (field.type === "widget" || field.type === "custom") {
+-    const render = WIDGETS[field.widget];
++  if (
++    field.type === "widget" ||
++    field.type === "custom" ||
++    (field.type === "select" && field.widget)
++  ) {
++    const render = WIDGETS[field.widget as string];
+     if (!render) throw new Error(`unknown inspector widget ${field.widget}`);
+     return render({ el, item, value, label, change, ctx });
+   }
+diff --git a/src/engine/paint.ts b/src/engine/paint.ts
+index f8c7205..fe0adc2 100644
+--- a/src/engine/paint.ts
++++ b/src/engine/paint.ts
+@@ -60,8 +60,9 @@ export function shadowOnly(
+   ctx.save();
+   ctx.shadowColor = color;
+   ctx.shadowBlur = blur * k;
+-  ctx.shadowOffsetX = (OFF + ox) * k;
+-  ctx.shadowOffsetY = oy * k;
++  // the off-canvas shift, as it lands on the device once rotated or skewed (018/D7)
++  ctx.shadowOffsetX = OFF * m.a + ox * k;
++  ctx.shadowOffsetY = OFF * m.b + oy * k;
+   ctx.translate(-OFF, 0);
+   ctx.fillStyle = "#000";
+   ctx.strokeStyle = "#000";
+diff --git a/src/styles.css b/src/styles.css
+index fba0293..78b87f7 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -519,3 +519,29 @@ code {
+   margin-left: auto;
+   margin-right: 8px;
+ }
++
++.field.anim-picker > button {
++  grid-column: 2 / -1;
++  justify-content: space-between;
++}
++.anim-grid {
++  grid-column: 1 / -1;
++  display: grid;
++  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
++  gap: 4px;
++  max-height: 260px;
++  overflow-y: auto;
++}
++.anim-picker .anim-grid > button {
++  flex-direction: column;
++  gap: 2px;
++  padding: 4px;
++}
++.anim-picker .anim-grid > button.active {
++  border-color: var(--accent);
++  color: var(--accent);
++}
++.anim-grid small {
++  font-size: 11px;
++  text-align: center;
++}
