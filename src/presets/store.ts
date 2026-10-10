@@ -88,7 +88,7 @@ async function call(url: string, method: string): Promise<void> {
   );
 }
 
-export type StoreKind = "presets" | "scenes";
+export type StoreKind = "presets" | "animations" | "scenes";
 
 /** Removes a stored preset or scene by its file name. */
 export async function deleteStored(

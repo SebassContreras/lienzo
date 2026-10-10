@@ -70,7 +70,7 @@ function describe(error: z.ZodError): string {
     .join("\n");
 }
 
-function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
+export function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
   const r = schema.safeParse(data);
   return r.success
     ? { ok: true, value: r.data }

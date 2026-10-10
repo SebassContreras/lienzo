@@ -6,9 +6,13 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { handleStore } from "./src/presets/json-store.ts";
 
-/** Serves `presets/` and `scenes/` at the repo root through `handleStore`. */
+/** Serves `presets/`, `presets/animations/` and `scenes/` at the repo root through `handleStore`. */
 function jsonStore(): Plugin {
-  const kinds = ["presets", "scenes"];
+  const dirs: Record<string, string> = {
+    presets: "presets",
+    animations: "presets/animations",
+    scenes: "scenes",
+  };
 
   async function handle(
     kind: string,
@@ -22,7 +26,7 @@ function jsonStore(): Plugin {
       return Buffer.concat(chunks).toString("utf8");
     };
     const reply = await handleStore(
-      join(import.meta.dirname, kind),
+      join(import.meta.dirname, dirs[kind]),
       req.method ?? "GET",
       url,
       body,
@@ -37,7 +41,7 @@ function jsonStore(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const kind = req.url?.match(/^\/api\/(\w+)/)?.[1];
-        if (!kind || !kinds.includes(kind)) return next();
+        if (!kind || !(kind in dirs)) return next();
         handle(kind, req, res).catch((error: unknown) => {
           res.statusCode = 500;
           res.end(JSON.stringify({ error: String(error) }));

@@ -1,0 +1,161 @@
+diff --git a/src/components/fields/box.ts b/src/components/fields/box.ts
+index ebf12c2..a32cfcf 100644
+--- a/src/components/fields/box.ts
++++ b/src/components/fields/box.ts
+@@ -3,8 +3,8 @@ import { num } from "./field.ts";
+ /** Where an element sits; moved by dragging it on the stage. */
+ export function position() {
+   return {
+-    x: num(0, { label: "X", inspector: false }),
+-    y: num(0, { label: "Y", inspector: false }),
++    x: num(0, { label: "X", inspector: false, relative: true }),
++    y: num(0, { label: "Y", inspector: false, relative: true }),
+   };
+ }
+ 
+diff --git a/src/components/fields/field.ts b/src/components/fields/field.ts
+index b934920..c588364 100644
+--- a/src/components/fields/field.ts
++++ b/src/components/fields/field.ts
+@@ -24,6 +24,11 @@ type Common = {
+   inspector?: false;
+   /** Writes an edited value into the element draft; by default the field itself is set. */
+   set?: (el: Parent, value: unknown) => void;
++  /**
++   * A position on the canvas (or an object holding `x`/`y`): animation presets store it as an
++   * offset from the element and add the element's own value back on apply (019/D6).
++   */
++  relative?: true;
+ };
+ 
+ export type NumberField = Common & {
+@@ -130,6 +135,7 @@ type Opts<P, T> = {
+   inspector?: false;
+   // biome-ignore lint/suspicious/noExplicitAny: setters are written against the element type
+   set?: (el: any, value: T) => void;
++  relative?: true;
+ };
+ 
+ /** Stores typed callbacks under the field's uniform `Parent` signatures. */
+diff --git a/src/components/line/descriptor.ts b/src/components/line/descriptor.ts
+index 2033390..9ea32d1 100644
+--- a/src/components/line/descriptor.ts
++++ b/src/components/line/descriptor.ts
+@@ -40,6 +40,7 @@ const end = (x: number, label: string) =>
+   custom("connection", { x, y: 0 } as Endpoint, endpointSchema, {
+     label,
+     section: "Conexión",
++    relative: true,
+   });
+ 
+ const LINE_ANIMS: AnimOffer = {
+diff --git a/src/model/anim-preset.ts b/src/model/anim-preset.ts
+new file mode 100644
+index 0000000..59b064a
+--- /dev/null
++++ b/src/model/anim-preset.ts
+@@ -0,0 +1,40 @@
++/**
++ * Animation presets (019/D6): an element's `anim` slots and keyframe tracks saved under a
++ * name, stored as JSON in `presets/animations/`. Times are relative to the preset's start
++ * and `relative` fields hold offsets from the element, so one preset fits any element.
++ */
++import { z } from "zod";
++import { ALL_ANIMS, anim } from "../components/fields/index.ts";
++import type { Anim } from "./model.ts";
++import { type Parsed, parseWith } from "./schema.ts";
++import { type Tracks, TracksSchema } from "./track.ts";
++
++/** Only the slots a preset sets; applying replaces those and keeps the element's others. */
++export type AnimSlots = Partial<Pick<Anim, "in" | "loop" | "out">>;
++
++export type AnimPreset = {
++  name: string;
++  /** Library section it is listed under. */
++  category?: string;
++  anim?: AnimSlots;
++  tracks?: Tracks;
++};
++
++/** Every kind is accepted, as in scenes: what an element cannot play is skipped on apply. */
++const slots = anim(ALL_ANIMS).fields;
++
++const AnimSlotsSchema = z.object({
++  in: slots.in.schema.optional(),
++  loop: slots.loop.schema.optional(),
++  out: slots.out.schema.optional(),
++}) as unknown as z.ZodType<AnimSlots>;
++
++export const AnimPresetSchema: z.ZodType<AnimPreset> = z.object({
++  name: z.string().min(1),
++  category: z.string().optional(),
++  anim: AnimSlotsSchema.optional(),
++  tracks: TracksSchema.optional(),
++});
++
++export const parseAnimPreset = (data: unknown): Parsed<AnimPreset> =>
++  parseWith(AnimPresetSchema, data);
+diff --git a/src/model/schema.ts b/src/model/schema.ts
+index 4c93084..0517640 100644
+--- a/src/model/schema.ts
++++ b/src/model/schema.ts
+@@ -70,7 +70,7 @@ function describe(error: z.ZodError): string {
+     .join("\n");
+ }
+ 
+-function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
++export function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
+   const r = schema.safeParse(data);
+   return r.success
+     ? { ok: true, value: r.data }
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index c9e93ac..157c8fc 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -88,7 +88,7 @@ async function call(url: string, method: string): Promise<void> {
+   );
+ }
+ 
+-export type StoreKind = "presets" | "scenes";
++export type StoreKind = "presets" | "animations" | "scenes";
+ 
+ /** Removes a stored preset or scene by its file name. */
+ export async function deleteStored(
+diff --git a/vite.config.ts b/vite.config.ts
+index de935c3..d38a1ab 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -6,9 +6,13 @@ import react from "@vitejs/plugin-react";
+ import { defineConfig, type Plugin } from "vite";
+ import { handleStore } from "./src/presets/json-store.ts";
+ 
+-/** Serves `presets/` and `scenes/` at the repo root through `handleStore`. */
++/** Serves `presets/`, `presets/animations/` and `scenes/` at the repo root through `handleStore`. */
+ function jsonStore(): Plugin {
+-  const kinds = ["presets", "scenes"];
++  const dirs: Record<string, string> = {
++    presets: "presets",
++    animations: "presets/animations",
++    scenes: "scenes",
++  };
+ 
+   async function handle(
+     kind: string,
+@@ -22,7 +26,7 @@ function jsonStore(): Plugin {
+       return Buffer.concat(chunks).toString("utf8");
+     };
+     const reply = await handleStore(
+-      join(import.meta.dirname, kind),
++      join(import.meta.dirname, dirs[kind]),
+       req.method ?? "GET",
+       url,
+       body,
+@@ -37,7 +41,7 @@ function jsonStore(): Plugin {
+     configureServer(server) {
+       server.middlewares.use((req, res, next) => {
+         const kind = req.url?.match(/^\/api\/(\w+)/)?.[1];
+-        if (!kind || !kinds.includes(kind)) return next();
++        if (!kind || !(kind in dirs)) return next();
+         handle(kind, req, res).catch((error: unknown) => {
+           res.statusCode = 500;
+           res.end(JSON.stringify({ error: String(error) }));

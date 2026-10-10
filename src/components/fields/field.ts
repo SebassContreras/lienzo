@@ -24,6 +24,11 @@ type Common = {
   inspector?: false;
   /** Writes an edited value into the element draft; by default the field itself is set. */
   set?: (el: Parent, value: unknown) => void;
+  /**
+   * A position on the canvas (or an object holding `x`/`y`): animation presets store it as an
+   * offset from the element and add the element's own value back on apply (019/D6).
+   */
+  relative?: true;
 };
 
 export type NumberField = Common & {
@@ -130,6 +135,7 @@ type Opts<P, T> = {
   inspector?: false;
   // biome-ignore lint/suspicious/noExplicitAny: setters are written against the element type
   set?: (el: any, value: T) => void;
+  relative?: true;
 };
 
 /** Stores typed callbacks under the field's uniform `Parent` signatures. */

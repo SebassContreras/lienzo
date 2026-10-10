@@ -1,7 +1,8 @@
 # 019 — animation-presets — Tasks
 
-- [ ] T009 [agent] [status:todo] Animation preset schema in `src/model/anim-preset.ts`, `/api/animations` store, and `relative: true` on positional descriptor fields
+- [x] T009 [agent] [status:done] Animation preset schema in `src/model/anim-preset.ts`, `/api/animations` store, and `relative: true` on positional descriptor fields
       covers: D6@1, A26@2
+      changes: src/components/fields/box.ts (+2 -2), src/components/fields/field.ts (+6 -0), src/components/line/descriptor.ts (+1 -0), src/model/anim-preset.ts (+40 -0), src/model/schema.ts (+1 -1), src/presets/store.ts (+1 -1), vite.config.ts (+8 -4)
 - [ ] T010 [agent] [status:todo] `capturePreset` and `applyPreset`: relative times (keyframes and entry/exit delays), positional offsets, per-slot and per-path merge, skipped list
       covers: D7@1
 - [ ] T011 [agent] [status:todo] Apply to the selection in selection order with stagger and a chosen start, dropping keyframes past the duration

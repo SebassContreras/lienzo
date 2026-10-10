@@ -3,8 +3,8 @@ import { num } from "./field.ts";
 /** Where an element sits; moved by dragging it on the stage. */
 export function position() {
   return {
-    x: num(0, { label: "X", inspector: false }),
-    y: num(0, { label: "Y", inspector: false }),
+    x: num(0, { label: "X", inspector: false, relative: true }),
+    y: num(0, { label: "Y", inspector: false, relative: true }),
   };
 }
 

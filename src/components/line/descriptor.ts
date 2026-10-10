@@ -40,6 +40,7 @@ const end = (x: number, label: string) =>
   custom("connection", { x, y: 0 } as Endpoint, endpointSchema, {
     label,
     section: "Conexión",
+    relative: true,
   });
 
 const LINE_ANIMS: AnimOffer = {
