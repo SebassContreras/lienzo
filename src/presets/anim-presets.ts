@@ -12,6 +12,9 @@ import { isChannel, type Keyframe, type Tracks } from "../model/track.ts";
 /** What a preset holds besides its name and category. */
 export type PresetBody = Pick<AnimPreset, "anim" | "tracks">;
 
+/** A body to apply; with a `name`, applied elements remember it (019/D9). */
+type Applied = PresetBody & { name?: string };
+
 const SLOTS = ["in", "loop", "out"] as const;
 
 type Slot = (typeof SLOTS)[number];
@@ -111,12 +114,12 @@ function fits(el: Element, path: string, keys: readonly Keyframe[]): boolean {
 }
 
 /**
- * `preset` merged onto `el` starting at `start`: each slot and track path it has replaces
+ * `preset` merged onto `el` starting at `start` (the copy remembers a named preset): each slot and track path it has replaces
  * the element's, the rest stay. `skipped` lists what `el` cannot take ("anim.in", "x").
  */
 export function applyPreset(
   el: Element,
-  preset: PresetBody,
+  preset: Applied,
   start: number,
 ): { el: Element; skipped: string[] } {
   const skipped: string[] = [];
@@ -141,6 +144,7 @@ export function applyPreset(
   }
   if (Object.keys(tracks).length)
     out = { ...out, tracks: { ...el.tracks, ...tracks } };
+  if (preset.name) out = { ...out, animPreset: { name: preset.name, start } };
   return { el: out, skipped };
 }
 
@@ -169,7 +173,7 @@ function within(el: Element, duration: number): { el: Element; cut: string[] } {
 export function applyToSelection(
   scene: Scene,
   ids: readonly string[],
-  preset: PresetBody,
+  preset: Applied,
   start: number,
   step = 0,
 ): { scene: Scene; skipped: string[] } {

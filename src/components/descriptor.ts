@@ -38,7 +38,12 @@ export type ElementOf<K extends string, F extends Fields> = {
   name: string;
   /** Keyframe tracks by path (015); absent when the element has none. */
   tracks?: Tracks;
+  /** The animation preset last applied, as information only: nothing reads it to draw (019/D9). */
+  animPreset?: AnimPresetRef;
 } & ValueOf<F>;
+
+/** Which animation preset an element's animation was copied from, and where it started. */
+export type AnimPresetRef = { name: string; start: number };
 
 export type Section = { title: string; open?: boolean };
 

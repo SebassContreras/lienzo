@@ -10,8 +10,9 @@
 - [x] T011 [agent] [status:done] Apply to the selection in selection order with stagger and a chosen start, dropping keyframes past the duration
       covers: D8@1
       changes: src/presets/anim-presets.ts (+58 -8)
-- [ ] T012 [agent] [status:todo] `animPreset` provenance on applied elements; `animate` unchanged
+- [x] T012 [agent] [status:done] `animPreset` provenance on applied elements; `animate` unchanged
       covers: D9@1, A24@1
+      changes: src/components/descriptor.ts (+5 -0), src/presets/anim-presets.ts (+7 -3)
 - [ ] T013 [agent] [status:todo] `animPreset` in the scene schema and `expandAnimPresets` on scene load with notices
       covers: D10@1
 - [ ] T014 [agent] [status:todo] Library section "Animaciones" in `src/editor/anim-library.tsx`: save, rename, overwrite, delete, export, import, validated before writing

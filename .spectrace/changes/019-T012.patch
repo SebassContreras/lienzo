@@ -1,0 +1,64 @@
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+index b43a741..07211eb 100644
+--- a/src/components/descriptor.ts
++++ b/src/components/descriptor.ts
+@@ -38,8 +38,13 @@ export type ElementOf<K extends string, F extends Fields> = {
+   name: string;
+   /** Keyframe tracks by path (015); absent when the element has none. */
+   tracks?: Tracks;
++  /** The animation preset last applied, as information only: nothing reads it to draw (019/D9). */
++  animPreset?: AnimPresetRef;
+ } & ValueOf<F>;
+ 
++/** Which animation preset an element's animation was copied from, and where it started. */
++export type AnimPresetRef = { name: string; start: number };
++
+ export type Section = { title: string; open?: boolean };
+ 
+ export type Descriptor<E extends { kind: string } = Element> = {
+diff --git a/src/presets/anim-presets.ts b/src/presets/anim-presets.ts
+index 9750cf2..2b4abac 100644
+--- a/src/presets/anim-presets.ts
++++ b/src/presets/anim-presets.ts
+@@ -12,6 +12,9 @@ import { isChannel, type Keyframe, type Tracks } from "../model/track.ts";
+ /** What a preset holds besides its name and category. */
+ export type PresetBody = Pick<AnimPreset, "anim" | "tracks">;
+ 
++/** A body to apply; with a `name`, applied elements remember it (019/D9). */
++type Applied = PresetBody & { name?: string };
++
+ const SLOTS = ["in", "loop", "out"] as const;
+ 
+ type Slot = (typeof SLOTS)[number];
+@@ -111,12 +114,12 @@ function fits(el: Element, path: string, keys: readonly Keyframe[]): boolean {
+ }
+ 
+ /**
+- * `preset` merged onto `el` starting at `start`: each slot and track path it has replaces
++ * `preset` merged onto `el` starting at `start` (the copy remembers a named preset): each slot and track path it has replaces
+  * the element's, the rest stay. `skipped` lists what `el` cannot take ("anim.in", "x").
+  */
+ export function applyPreset(
+   el: Element,
+-  preset: PresetBody,
++  preset: Applied,
+   start: number,
+ ): { el: Element; skipped: string[] } {
+   const skipped: string[] = [];
+@@ -141,6 +144,7 @@ export function applyPreset(
+   }
+   if (Object.keys(tracks).length)
+     out = { ...out, tracks: { ...el.tracks, ...tracks } };
++  if (preset.name) out = { ...out, animPreset: { name: preset.name, start } };
+   return { el: out, skipped };
+ }
+ 
+@@ -169,7 +173,7 @@ function within(el: Element, duration: number): { el: Element; cut: string[] } {
+ export function applyToSelection(
+   scene: Scene,
+   ids: readonly string[],
+-  preset: PresetBody,
++  preset: Applied,
+   start: number,
+   step = 0,
+ ): { scene: Scene; skipped: string[] } {
