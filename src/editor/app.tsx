@@ -13,7 +13,6 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
-  useReducer,
   useRef,
   useState,
 } from "react";
@@ -66,6 +65,7 @@ import {
   BackgroundLibrary,
   backgroundItems,
 } from "./backgrounds.tsx";
+import { useHistory } from "./history.ts";
 import { IconSvg } from "./icon-picker.tsx";
 import {
   ElementInspector,
@@ -158,9 +158,6 @@ export function App() {
   const [playing, setPlaying] = useState(true);
   /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
   const [playhead, setPlayhead] = useState(0);
-  const undoStack = useRef<Scene[]>([]);
-  const redoStack = useRef<Scene[]>([]);
-  const [, rerender] = useReducer((x: number) => x + 1, 0);
   const [status, setStatus] = useState("");
   const [sceneName, setSceneName] = useState("mi-publicacion");
   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
@@ -173,32 +170,11 @@ export function App() {
     setSceneState(s);
   }, []);
 
-  /** Records the current scene as an undo step (call before a change starts). */
-  const checkpoint = useCallback(() => {
-    const current = sceneRef.current;
-    const top = undoStack.current.at(-1);
-    if (top && JSON.stringify(top) === JSON.stringify(current)) return;
-    undoStack.current.push(structuredClone(current));
-    if (undoStack.current.length > 200) undoStack.current.shift();
-    redoStack.current = [];
-    rerender();
-  }, []);
-
-  const undo = useCallback(() => {
-    const prev = undoStack.current.pop();
-    if (!prev) return;
-    redoStack.current.push(sceneRef.current);
-    setScene(prev);
-    rerender();
-  }, [setScene]);
-
-  const redo = useCallback(() => {
-    const next = redoStack.current.pop();
-    if (!next) return;
-    undoStack.current.push(sceneRef.current);
-    setScene(next);
-    rerender();
-  }, [setScene]);
+  const getScene = useCallback(() => sceneRef.current, []);
+  const { checkpoint, undo, redo, canUndo, canRedo } = useHistory(
+    getScene,
+    setScene,
+  );
 
   useEffect(() => {
     try {
@@ -596,7 +572,7 @@ export function App() {
           <button
             type="button"
             title="Deshacer (Ctrl+Z)"
-            disabled={undoStack.current.length === 0}
+            disabled={!canUndo}
             onClick={undo}
           >
             <Undo2 size={16} />
@@ -604,7 +580,7 @@ export function App() {
           <button
             type="button"
             title="Rehacer (Ctrl+Shift+Z)"
-            disabled={redoStack.current.length === 0}
+            disabled={!canRedo}
             onClick={redo}
           >
             <Redo2 size={16} />
@@ -845,7 +821,14 @@ export function App() {
   );
 }
 
-/** Right-hand panel; any interaction inside it starts an undo step. */
+/** Inputs whose edits start on the first keystroke rather than on pointer down. */
+const TYPED =
+  "input:not([type=range]):not([type=color]):not([type=checkbox]), textarea, select";
+
+/**
+ * Right-hand panel; records one undo step per gesture: on pointer down (buttons, sliders,
+ * colours) or on the first change of a typed field. Focus alone records nothing (R2).
+ */
 function Panel({
   checkpoint,
   children,
@@ -853,11 +836,24 @@ function Panel({
   checkpoint: () => void;
   children: ReactNode;
 }) {
+  const armed = useRef(true);
+  const onFirstChange = () => {
+    if (!armed.current) return;
+    armed.current = false;
+    checkpoint();
+  };
   return (
     <aside
       className="panel"
-      onPointerDownCapture={checkpoint}
-      onFocusCapture={checkpoint}
+      onPointerDownCapture={(e) => {
+        armed.current = true;
+        if (!(e.target as HTMLElement).closest(TYPED)) checkpoint();
+      }}
+      onFocusCapture={() => {
+        armed.current = true;
+      }}
+      onInputCapture={onFirstChange}
+      onChangeCapture={onFirstChange}
     >
       {children}
     </aside>
