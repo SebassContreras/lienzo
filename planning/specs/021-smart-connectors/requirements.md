@@ -19,6 +19,13 @@ Creators building architecture diagrams, flowcharts, data pipelines, and system 
 - R5@1: The canvas editor provides visual connection handles when dragging a line endpoint near another element's perimeter.
 - R6@1: Connectors work seamlessly with existing stroke styles, arrows (start/end markers), dashes, animations, and traits.
 
+## Notes from 015
+
+Rotation exists today only as the keyframe channel `@rotate` (015/D5): the stage's selection
+box and hit test do not rotate with the element. If R2 needs rotation as a property, it becomes
+a `rotate` field in the box group, `@rotate` tracks move onto it (see 015's `changes.md`), and
+the selection box and hit test rotate with it.
+
 ## Dependencies
 
 001, 012.

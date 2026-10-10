@@ -13,7 +13,7 @@ previous states quickly without manual re-adjustments.
 ## Requirements
 
 - R1@1: Canvas actions (dragging, resizing, adding, deleting, duplicating, reordering elements) push undoable states onto an in-memory history stack.
-- R2@1: Inspector property edits push debounced or transaction-bound undo states (e.g. dragging a color or numeric slider pushes one undo step on mouse release).
+- R2@2: Inspector property edits push debounced or transaction-bound undo states (e.g. dragging a color or numeric slider pushes one undo step on mouse release); focusing or tabbing between fields without changing anything pushes none, so one undo always reverts one change (today a Tab after an edit records an extra, empty step).
 - R3@1: Keyboard shortcuts (`Ctrl+Z` / `Cmd+Z` for undo; `Ctrl+Shift+Z` / `Cmd+Shift+Z` or `Ctrl+Y` / `Cmd+Y` for redo) restore the previous/next scene snapshot.
 - R4@1: Visual Undo and Redo buttons exist in the editor header with active/disabled states indicating stack availability.
 - R5@1: Undo stack does not break or desync the auto-save mechanism (`localStorage`).
