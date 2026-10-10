@@ -3,8 +3,9 @@
 - [x] T001 [agent] [status:done] `template` field on particles: local ids, no nested particles; the default dot when empty
       covers: D1@2
       changes: src/components/particles/descriptor.ts (+36 -1)
-- [ ] T002 [agent] [status:todo] Sprite cache: draw the template once (with hue variants) and each point with `drawImage`
+- [x] T002 [agent] [status:done] Sprite cache: draw the template once (with hue variants) and each point with `drawImage`
       covers: D5@1
+      changes: src/components/particles/draw.ts (+23 -3), src/engine/particle-sprite.ts (+125 -0)
 - [ ] T003 [agent] [status:todo] `variation` field group: seeded size, rotation, spin, opacity and hue shift, for template and dot
       covers: D2@2, A6@1
 - [ ] T004 [agent] [status:todo] "Usar como partícula" and "Editar partícula" actions; hide the dot section when a template is set

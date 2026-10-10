@@ -7,6 +7,7 @@ import {
   withTransform,
 } from "../../engine/paint.ts";
 import { linkAlpha, particlePositions } from "../../engine/particle-field.ts";
+import { spriteOf, spriteRes } from "../../engine/particle-sprite.ts";
 import type { DrawContext } from "../descriptor.ts";
 import type { ParticlesEl } from "./descriptor.ts";
 
@@ -18,7 +19,7 @@ export function drawParticles(
   ctx: Ctx,
   el: ParticlesEl,
   st: AnimState,
-  { scene, t }: DrawContext,
+  { scene, t, drawElements }: DrawContext,
 ): void {
   const box = boxOf(el);
   const pos = particlePositions(el, t, scene.duration);
@@ -58,8 +59,27 @@ export function drawParticles(
       });
     }
 
-    // points
-    if (el.dot.size > 0 && el.dot.opacity > 0) {
+    // points: the template's sprite at each one, or the default dot
+    if (el.template) {
+      const sprite = spriteOf(
+        el.template,
+        0,
+        spriteRes(ctx, 1),
+        scene,
+        drawElements,
+      );
+      for (let i = 0; i < n; i++) {
+        const x = pos[i * 2] as number;
+        const y = pos[i * 2 + 1] as number;
+        ctx.drawImage(
+          sprite.image,
+          x - sprite.w / 2,
+          y - sprite.h / 2,
+          sprite.w,
+          sprite.h,
+        );
+      }
+    } else if (el.dot.size > 0 && el.dot.opacity > 0) {
       const dots = new Path2D();
       const r = el.dot.size / 2;
       for (let i = 0; i < n; i++) {
