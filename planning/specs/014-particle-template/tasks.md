@@ -10,7 +10,8 @@
       covers: D2@2, A6@1
       changes: src/components/particles/descriptor.ts (+50 -2), src/components/particles/draw.ts (+67 -22), src/engine/particle-field.ts (+66 -0), src/engine/particle-sprite.ts (+62 -18), src/test/legacy-schema.ts (+6 -2)
 - [x] T004 [agent] [status:done] "Usar como partícula" and "Editar partícula" actions; hide the dot section when a template is set
-      covers: D6@1, D7@1
+      covers: D8@1, D7@1
+      └─ reviewed 2026-10-10: built against D8 (no context menu exists); the work is unchanged
       changes: src/components/particles/descriptor.ts (+8 -2), src/editor/app.tsx (+60 -0), src/editor/field-editor.tsx (+40 -1), src/editor/inspector.tsx (+14 -1)
 - [x] T005 [agent] [status:done] Built-in presets: sparks, floating icons
       covers: D4@1, A19@1

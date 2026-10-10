@@ -7,7 +7,8 @@
 - ~~D3@1 (implements R3): The template is edited in an isolated editor mode: the same stage on a temporary scene holding only the template.~~ retired 2026-10-10 → D6
 - D4@1 (implements R6): Presets are recipes (A19) with a template.
 - D5@1 (implements R1, R2, R5): The template is drawn once through `drawElements` into an offscreen sprite at the largest size in the range, glow included, plus one sprite per hue-shift variant (at most 6); each point is a `drawImage` with translate, rotate, scale and `globalAlpha`. Sprites are cached by a hash of the template JSON and the variation's hue settings.
-- D6@1 (implements R3): An element's context menu and the particles inspector offer "Usar como partícula", which copies the selected element into `template` and removes it from the canvas; "Editar partícula" puts the template back on the canvas, centred on the field, selected.
+- ~~D6@1 (implements R3): An element's context menu and the particles inspector offer "Usar como partícula", which copies the selected element into `template` and removes it from the canvas; "Editar partícula" puts the template back on the canvas, centred on the field, selected.~~ retired 2026-10-10 → D8
+- D8@1 (implements R3): With a particles element and one other element selected, the multi-selection inspector offers "Usar como partícula", which copies the other element into `template` and removes it from the canvas as one undo step; the particles inspector offers "Editar partícula", which puts the template back on the canvas, centred on the field, selected, and "Usar puntos", which clears it.
 - D7@1 (implements R1): With a template set, the inspector hides the "Puntos" section and the dot glow.
 
 ## Deliverables
