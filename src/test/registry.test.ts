@@ -61,7 +61,10 @@ function sameVerdict(data: unknown) {
 describe("the generated scene schema", () => {
   const scenes = goldenScenes();
 
-  it.each(Object.keys(scenes))("accepts «%s» as the old schema did", (name) => {
+  // «later» holds kinds the old schema never knew
+  const old = Object.keys(scenes).filter((name) => name !== "later");
+
+  it.each(old)("accepts «%s» as the old schema did", (name) => {
     sameVerdict(scenes[name]);
   });
 
