@@ -7,6 +7,7 @@ import { newId } from "../model/id.ts";
 import { type ArrowEl, arrow } from "./arrow/descriptor.ts";
 import { type BadgeEl, badge } from "./badge/descriptor.ts";
 import { type BubbleEl, bubble } from "./bubble/descriptor.ts";
+import { type ChartEl, chart } from "./chart/descriptor.ts";
 import { type CodeEl, code } from "./code/descriptor.ts";
 import { type CounterEl, counter } from "./counter/descriptor.ts";
 import type { Descriptor } from "./descriptor.ts";
@@ -48,7 +49,8 @@ export type RegisteredElement =
   | StepsEl
   | ListEl
   | TableEl
-  | CodeEl;
+  | CodeEl
+  | ChartEl;
 
 export type RegisteredKind = RegisteredElement["kind"];
 
@@ -75,6 +77,7 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
   list,
   table,
   code,
+  chart,
 ];
 
 export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;
