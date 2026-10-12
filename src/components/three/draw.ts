@@ -12,12 +12,8 @@ import { boxOf } from "../../engine/geometry.ts";
 import { type Ctx, withTransform } from "../../engine/paint.ts";
 import type { DrawContext } from "../descriptor.ts";
 import type { ThreeEl } from "./descriptor.ts";
-import {
-  modelFor,
-  type Primitive,
-  primitive,
-  textGeometry,
-} from "./geometry.ts";
+import { type Primitive, primitive, textGeometry } from "./geometry.ts";
+import { modelFor } from "./model.ts";
 import { poseAt } from "./pose.ts";
 import { renderOffscreen } from "./renderer.ts";
 
