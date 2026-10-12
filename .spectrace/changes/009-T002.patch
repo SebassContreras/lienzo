@@ -1,0 +1,36 @@
+diff --git a/src/cli/help.ts b/src/cli/help.ts
+index 0f397f9..fc2465f 100644
+--- a/src/cli/help.ts
++++ b/src/cli/help.ts
+@@ -17,6 +17,7 @@ export function registryHelp(registry: Registry): string {
+     ),
+     "",
+     "Run `pnpm lienzo <tool> --help` for a tool's fields.",
++    "Run `pnpm lienzo mcp` to serve every tool to an MCP client over stdio.",
+   ].join("\n");
+ }
+ 
+diff --git a/src/cli/main.ts b/src/cli/main.ts
+index 79e6729..ec1c955 100644
+--- a/src/cli/main.ts
++++ b/src/cli/main.ts
+@@ -6,6 +6,7 @@
+ import { readFile } from "node:fs/promises";
+ import { join, resolve } from "node:path";
+ import { text } from "node:stream/consumers";
++import { serveStdio } from "../mcp/server.ts";
+ import { type Ctx, createCtx } from "../service/ctx.ts";
+ import type { Registry } from "../service/registry.ts";
+ import { registry } from "../service/tools/index.ts";
+@@ -35,6 +36,11 @@ export async function run(
+     io.stdout(registryHelp(tools));
+     return name === undefined ? 1 : 0;
+   }
++  if (name === "mcp") {
++    // 009/D2: serves until the client closes stdin; the protocol owns stdout from here.
++    await serveStdio(tools, ctx);
++    return 0;
++  }
+   const tool = tools.get(name);
+   if (!tool) {
+     io.stderr(

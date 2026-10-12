@@ -6,6 +6,7 @@
 import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { text } from "node:stream/consumers";
+import { serveStdio } from "../mcp/server.ts";
 import { type Ctx, createCtx } from "../service/ctx.ts";
 import type { Registry } from "../service/registry.ts";
 import { registry } from "../service/tools/index.ts";
@@ -34,6 +35,11 @@ export async function run(
   if (name === undefined || name === "--help" || name === "-h") {
     io.stdout(registryHelp(tools));
     return name === undefined ? 1 : 0;
+  }
+  if (name === "mcp") {
+    // 009/D2: serves until the client closes stdin; the protocol owns stdout from here.
+    await serveStdio(tools, ctx);
+    return 0;
   }
   const tool = tools.get(name);
   if (!tool) {

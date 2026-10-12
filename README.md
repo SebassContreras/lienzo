@@ -58,6 +58,21 @@ pnpm dev
 
 Open http://localhost:5173.
 
+## Use from Claude Code (MCP)
+
+`pnpm lienzo mcp` starts an MCP server over stdio that exposes every Lienzo tool (the same
+ones `pnpm lienzo --help` lists) with the same names, descriptions and input schemas. From
+the repo root:
+
+```sh
+claude mcp add lienzo -- pnpm lienzo mcp
+```
+
+Add `--scope project` to share it through `.mcp.json`. Check it with `claude mcp list` or
+`/mcp` inside Claude Code. Tools read and write the files of this repo (`scenes/`,
+`presets/`), so start Claude Code from here. A failed call comes back as an MCP error
+result with the same JSON `{ code, message, path }` the CLI prints.
+
 ## Shortcuts
 
 | Key | Action |

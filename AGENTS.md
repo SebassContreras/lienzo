@@ -48,8 +48,10 @@ What exists today:
   `--json -` from stdin), result JSON on stdout, errors JSON on stderr with exit 1. Code
   the descriptors import must load in plain Node: no Vite-only imports (`?url`, `?raw`,
   `import.meta.glob`); static files go in `public/`
+- MCP: `pnpm lienzo mcp` (`src/mcp/server.ts`, 009) serves every registry tool over stdio
+  with `@modelcontextprotocol/sdk`; generic, no per-tool code; stdout is the protocol only
 
-Planned (decided, not built yet — specs 007–011, 016, 017, 020–025):
+Planned (decided, not built yet — specs 010, 011, 016, 017, 020–025):
 
 - Descriptors also drive compact JSON and tools (A23, specs 011, 007);
   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)

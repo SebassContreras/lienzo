@@ -17,6 +17,7 @@ export function registryHelp(registry: Registry): string {
     ),
     "",
     "Run `pnpm lienzo <tool> --help` for a tool's fields.",
+    "Run `pnpm lienzo mcp` to serve every tool to an MCP client over stdio.",
   ].join("\n");
 }
 
