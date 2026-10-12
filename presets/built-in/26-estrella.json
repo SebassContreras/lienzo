@@ -1,0 +1,12 @@
+{
+  "name": "Estrella dorada",
+  "category": "Formas",
+  "kind": "star",
+  "traits": [],
+  "set": {
+    "fill": {
+      "color": "#facc15",
+      "gradient": false
+    }
+  }
+}

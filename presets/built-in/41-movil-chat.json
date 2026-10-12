@@ -1,0 +1,51 @@
+{
+  "name": "Móvil con chat",
+  "category": "Ventanas",
+  "kind": "group",
+  "traits": [],
+  "set": {
+    "frame": "phone",
+    "title": "",
+    "w": 360,
+    "h": 720,
+    "cw": 330,
+    "ch": 600,
+    "children": [
+      {
+        "id": "p1",
+        "kind": "bubble",
+        "name": "Pregunta",
+        "x": 10,
+        "y": 30,
+        "w": 300,
+        "h": 130,
+        "text": "¿Quedamos mañana?",
+        "author": "Ana"
+      },
+      {
+        "id": "p2",
+        "kind": "bubble",
+        "name": "Respuesta",
+        "x": 20,
+        "y": 190,
+        "w": 300,
+        "h": 130,
+        "side": "right",
+        "text": "¡Sí! A las 10",
+        "author": "Leo"
+      },
+      {
+        "id": "p3",
+        "kind": "bubble",
+        "name": "Escribiendo",
+        "x": 10,
+        "y": 350,
+        "w": 200,
+        "h": 90,
+        "text": "",
+        "author": "Ana",
+        "typing": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "Terminal",
+  "category": "Ventanas",
+  "kind": "group",
+  "traits": [],
+  "set": {
+    "frame": "terminal",
+    "title": "bash",
+    "w": 640,
+    "h": 320,
+    "cw": 640,
+    "ch": 270,
+    "children": [
+      {
+        "id": "t1",
+        "kind": "code",
+        "name": "Comandos",
+        "x": 0,
+        "y": 0,
+        "w": 640,
+        "h": 270,
+        "radius": 0,
+        "lineNumbers": false,
+        "language": "bash",
+        "code": "$ pnpm install\n$ pnpm dev\n  ready in 312 ms",
+        "tracks": {
+          "typed": [
+            {
+              "t": 0,
+              "value": 0,
+              "easing": "ease-out"
+            },
+            {
+              "t": 2.5,
+              "value": 1,
+              "easing": "auto"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

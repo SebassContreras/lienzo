@@ -1,0 +1,25 @@
+{
+  "name": "Anillo de progreso",
+  "category": "Datos",
+  "kind": "progress",
+  "traits": [],
+  "set": {
+    "style": "ring",
+    "w": 220,
+    "h": 220,
+    "tracks": {
+      "value": [
+        {
+          "t": 0,
+          "value": 0,
+          "easing": "ease-out"
+        },
+        {
+          "t": 1.8,
+          "value": 72,
+          "easing": "auto"
+        }
+      ]
+    }
+  }
+}

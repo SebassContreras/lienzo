@@ -40,10 +40,15 @@ function grid(elements: Element[]): Scene {
   return { ...defaultScene(), elements };
 }
 
+/** Window mockups (017) are groups, but came after the hashes were recorded. */
+const recorded = (r: (typeof BUILT_IN_RECIPES)[number]) =>
+  r.kind in RECORDED_ANIMS &&
+  !(r.set && "frame" in (r.set as Record<string, unknown>));
+
 /** Every built-in element preset of a kind the hashes were recorded with. */
 function presetsScene(): Scene {
   return grid(
-    BUILT_IN_RECIPES.filter((r) => r.kind in RECORDED_ANIMS).map((r) => {
+    BUILT_IN_RECIPES.filter(recorded).map((r) => {
       const res = resolveElement(r as PresetRecipe);
       if ("error" in res) throw new Error(res.error);
       return res.element;

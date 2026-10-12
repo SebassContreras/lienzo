@@ -1,0 +1,22 @@
+{
+  "name": "Gráfico de barras",
+  "category": "Datos",
+  "kind": "chart",
+  "traits": [],
+  "set": {
+    "tracks": {
+      "progress": [
+        {
+          "t": 0,
+          "value": 0,
+          "easing": "ease-out"
+        },
+        {
+          "t": 2,
+          "value": 1,
+          "easing": "auto"
+        }
+      ]
+    }
+  }
+}

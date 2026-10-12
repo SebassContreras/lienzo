@@ -1,0 +1,22 @@
+{
+  "name": "Barra de progreso",
+  "category": "Datos",
+  "kind": "progress",
+  "traits": [],
+  "set": {
+    "tracks": {
+      "value": [
+        {
+          "t": 0,
+          "value": 0,
+          "easing": "ease-out"
+        },
+        {
+          "t": 1.6,
+          "value": 80,
+          "easing": "auto"
+        }
+      ]
+    }
+  }
+}

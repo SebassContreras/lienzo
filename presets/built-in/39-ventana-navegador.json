@@ -1,0 +1,35 @@
+{
+  "name": "Ventana de navegador",
+  "category": "Ventanas",
+  "kind": "group",
+  "traits": [],
+  "set": {
+    "frame": "browser",
+    "w": 640,
+    "h": 420,
+    "cw": 640,
+    "ch": 370,
+    "children": [
+      {
+        "id": "w1",
+        "kind": "text",
+        "name": "Título",
+        "x": 40,
+        "y": 60,
+        "text": "Hola, mundo",
+        "size": 44
+      },
+      {
+        "id": "w2",
+        "kind": "text",
+        "name": "Texto",
+        "x": 40,
+        "y": 130,
+        "text": "Tu web dentro de un post",
+        "size": 22,
+        "weight": 500,
+        "color": "#94a3b8"
+      }
+    ]
+  }
+}

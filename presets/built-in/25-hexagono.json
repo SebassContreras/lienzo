@@ -1,0 +1,9 @@
+{
+  "name": "Hexágono",
+  "category": "Formas",
+  "kind": "polygon",
+  "traits": [],
+  "set": {
+    "sides": 6
+  }
+}
