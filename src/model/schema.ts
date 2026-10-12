@@ -58,7 +58,10 @@ export const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
     if ("error" in r) ctx.addIssue({ code: "custom", message: r.error });
   }) as z.ZodType<PresetRecipe>;
 
-export type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
+/** A failure's `path` is the first failing issue's ("elements.2.fill.color"; "" at the root). */
+export type Parsed<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string; path: string };
 
 /** "elements.2.fill.color: …" — each issue with the path that failed. */
 function describe(error: z.ZodError): string {
@@ -74,7 +77,11 @@ export function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
   const r = schema.safeParse(data);
   return r.success
     ? { ok: true, value: r.data }
-    : { ok: false, error: describe(r.error) };
+    : {
+        ok: false,
+        error: describe(r.error),
+        path: r.error.issues[0]?.path.map(String).join(".") ?? "",
+      };
 }
 
 export const parseScene = (data: unknown) => parseWith(SceneSchema, data);

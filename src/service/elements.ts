@@ -1,0 +1,46 @@
+/**
+ * Pure element edits shared by the element tools (007/D3, D5). Kinds and keyframe paths come
+ * from the descriptor registry, so a kind added later works with no tool change (R6).
+ */
+import { trackPaths } from "../components/descriptor.ts";
+import { descriptorOf, KINDS } from "../components/index.ts";
+import { valueKind } from "../engine/tracks.ts";
+import type { Element } from "../model/model.ts";
+import { deepMerge } from "../presets/resolve.ts";
+import { fail } from "./registry.ts";
+
+/** `el` with `patch` deep-merged in (objects key by key, the rest replaced); id and kind stay. */
+export function patched(el: Element, patch: Record<string, unknown>): Element {
+  const out = structuredClone(el) as unknown as Record<string, unknown>;
+  deepMerge(out, patch);
+  return { ...out, id: el.id, kind: el.kind } as unknown as Element;
+}
+
+/** Fails unless `kind` is a registered component kind. */
+export function checkKind(kind: string, path = "kind"): void {
+  if (!descriptorOf(kind))
+    fail(
+      "unknown_kind",
+      `Tipo de elemento desconocido «${kind}» (hay: ${KINDS.join(", ")})`,
+      path,
+    );
+}
+
+/** Fails unless `value` fits keyframe `path` of an element of `kind` (a color, or a number). */
+export function checkKeyframe(kind: string, path: string, value: unknown) {
+  const d = descriptorOf(kind);
+  const paths = d ? trackPaths(d) : [];
+  if (!paths.includes(path))
+    fail(
+      "unknown_path",
+      `«${path}» no se puede animar en «${kind}» (se puede: ${paths.join(", ")})`,
+      "path",
+    );
+  const color = valueKind(kind, path) === "color";
+  if (color ? typeof value !== "string" : typeof value !== "number")
+    fail(
+      "invalid_value",
+      color ? "Se esperaba un color" : "Se esperaba un número",
+      "value",
+    );
+}

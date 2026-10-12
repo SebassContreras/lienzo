@@ -30,7 +30,7 @@ export type RegisteredKind = RegisteredElement["kind"];
 
 type DescriptorOf<E> = E extends RegisteredElement ? Descriptor<E> : never;
 
-export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = [
+const LIST: DescriptorOf<RegisteredElement>[] = [
   rect,
   ellipse,
   icon,
@@ -41,13 +41,28 @@ export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = [
   particles,
 ];
 
+export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;
+
 registerElementKinds(COMPONENTS);
 
 const BY_KIND = new Map<string, DescriptorOf<RegisteredElement>>(
   COMPONENTS.map((d) => [d.kind, d]),
 );
 
-export const KINDS = COMPONENTS.map((d) => d.kind);
+export const KINDS: RegisteredKind[] = COMPONENTS.map((d) => d.kind);
+
+/**
+ * Adds a kind at run time, for tests that prove a new component works everywhere with no
+ * other change (007/R6): it joins `COMPONENTS`, `KINDS` and the element schema.
+ */
+export function registerComponent(d: Descriptor<{ kind: string }>): void {
+  if (BY_KIND.has(d.kind)) throw new Error(`kind ${d.kind} already registered`);
+  const descriptor = d as unknown as DescriptorOf<RegisteredElement>;
+  LIST.push(descriptor);
+  KINDS.push(descriptor.kind);
+  BY_KIND.set(d.kind, descriptor);
+  registerElementKinds(COMPONENTS);
+}
 
 /** The descriptor of `kind`, or undefined for a kind that does not exist. */
 export function descriptorOf<K extends RegisteredKind>(
