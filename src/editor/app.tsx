@@ -865,7 +865,6 @@ function Panel({
       onFocusCapture={() => {
         armed.current = true;
       }}
-      onInputCapture={onFirstChange}
       onChangeCapture={onFirstChange}
     >
       {children}
