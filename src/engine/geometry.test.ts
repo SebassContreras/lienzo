@@ -6,7 +6,7 @@ import {
   pointAtFraction,
   resolveLine,
   samplePath,
-} from "./geometry.ts";
+} from "./lines.ts";
 
 describe("line geometry", () => {
   it("bend offsets the control point perpendicular to the chord", () => {

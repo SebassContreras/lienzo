@@ -10,15 +10,10 @@ import {
   type LineEl,
   type Scene,
 } from "../model/model.ts";
-import {
-  clipToEllipse,
-  hitTest,
-  indexById,
-  placeChild,
-  resolveLine,
-} from "./geometry.ts";
+import { hitTest, indexById, placeChild } from "./geometry.ts";
 import { groupElements, ungroupElement } from "./groups.ts";
 import { ICON_NAMES, iconNode, iconShapes } from "./icon-shapes.ts";
+import { clipToEllipse, resolveLine } from "./lines.ts";
 
 const scene = (elements: Element[]): Scene => ({
   ...defaultScene(),

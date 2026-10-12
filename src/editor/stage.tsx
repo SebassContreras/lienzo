@@ -1,21 +1,23 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import {
-  anchorPoint,
-  attachedOutline,
   type Box,
   boxesTouch,
   boxOf,
   center,
-  FIXED_ANCHORS,
   hitTest,
   indexById,
-  nearestAnchor,
   type Pt,
+  translate,
+} from "../engine/geometry.ts";
+import {
+  anchorPoint,
+  attachedOutline,
+  FIXED_ANCHORS,
+  nearestAnchor,
   quadAt,
   resolveLine,
   samplePath,
-  translate,
-} from "../engine/geometry.ts";
+} from "../engine/lines.ts";
 import { drawScene } from "../engine/render.ts";
 import { applyTracks, commitAt } from "../engine/tracks.ts";
 import type { Element, LineEl, Scene } from "../model/model.ts";
