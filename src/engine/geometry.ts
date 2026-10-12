@@ -74,7 +74,7 @@ function lineBox(el: LineEl): Box {
   };
 }
 
-const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+export const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
 export function controlPoint(a: Pt, b: Pt, bend: number): Pt {
   const dx = b.x - a.x;
@@ -179,6 +179,30 @@ export function anchorPoint(
     x: c.x + d.x * (box.w / 2 + gap),
     y: c.y + d.y * (box.h / 2 + gap),
   };
+}
+
+/** The anchors with a fixed place on the outline, offered as handles while an end is dragged. */
+export const FIXED_ANCHORS = [
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "center",
+] as const satisfies readonly Anchor[];
+
+/** The fixed anchor of `outline` within `tol` of `p`, else `auto` (021/D4). */
+export function nearestAnchor(outline: Outline, p: Pt, tol: number): Anchor {
+  let best: Anchor = "auto";
+  let bestD = tol;
+  for (const anchor of FIXED_ANCHORS) {
+    const q = anchorPoint(outline, anchor, p);
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    if (d <= bestD) {
+      best = anchor;
+      bestD = d;
+    }
+  }
+  return best;
 }
 
 /** The axis direction closest to `d` (horizontal on a tie). */

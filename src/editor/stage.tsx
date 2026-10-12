@@ -1,10 +1,15 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import {
+  anchorPoint,
+  attachedOutline,
   type Box,
   boxesTouch,
   boxOf,
+  center,
+  FIXED_ANCHORS,
   hitTest,
   indexById,
+  nearestAnchor,
   type Pt,
   quadAt,
   resolveLine,
@@ -80,7 +85,7 @@ function handleAt(
     const r = resolveLine(el, indexById(scene));
     if (near(r.a)) return "a";
     if (near(r.b)) return "b";
-    if (near(quadAt(r, 0.5))) return "bend";
+    if (el.route === "straight" && near(quadAt(r, 0.5))) return "bend";
     return undefined;
   }
   const c = corners(el);
@@ -249,7 +254,18 @@ function applyDrag(
       | LineEl
       | undefined;
     const base = current ?? drag.orig;
-    return { ...base, [drag.which]: { x: p.x, y: p.y, attach: target?.id } };
+    const outline =
+      target && attachedOutline({ ...p, attach: target.id }, indexById(scene));
+    const anchor = outline ? nearestAnchor(outline, p, tol * 2) : "auto";
+    return {
+      ...base,
+      [drag.which]: {
+        x: p.x,
+        y: p.y,
+        attach: target?.id,
+        ...(anchor === "auto" ? {} : { anchor }),
+      },
+    };
   }
 
   // bend
@@ -308,10 +324,30 @@ function drawOverlay(
 
   if (attachId) {
     const el = byId.get(attachId);
-    if (el) {
+    const target = el && attachedOutline({ x: 0, y: 0, attach: el.id }, byId);
+    if (el && target) {
       ctx.lineWidth = 3 * px;
       outline(el, ATTACH, 6 * px);
       ctx.lineWidth = 1.5 * px;
+      // the anchors an end can snap to (021/D4); the one in use is filled
+      const sel =
+        selection.length === 1 ? byId.get(selection[0] as string) : undefined;
+      const used = new Set(
+        sel?.kind === "line"
+          ? [sel.a, sel.b]
+              .filter((e) => e.attach === el.id)
+              .map((e) => e.anchor)
+          : [],
+      );
+      for (const anchor of FIXED_ANCHORS) {
+        const q = anchorPoint(target, anchor, center(target.box));
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, 5 * px, 0, Math.PI * 2);
+        ctx.fillStyle = used.has(anchor) ? ATTACH : "#ffffff";
+        ctx.strokeStyle = ATTACH;
+        ctx.fill();
+        ctx.stroke();
+      }
     }
   }
 
@@ -354,12 +390,14 @@ function drawOverlay(
       const r = resolveLine(sel, byId);
       dot(r.a, sel.a.attach ? ATTACH : "#ffffff");
       dot(r.b, sel.b.attach ? ATTACH : "#ffffff");
-      const m = quadAt(r, 0.5);
-      ctx.save();
-      ctx.translate(m.x, m.y);
-      ctx.rotate(Math.PI / 4);
-      dot({ x: 0, y: 0 }, "#fde68a", true);
-      ctx.restore();
+      if (sel.route === "straight") {
+        const m = quadAt(r, 0.5);
+        ctx.save();
+        ctx.translate(m.x, m.y);
+        ctx.rotate(Math.PI / 4);
+        dot({ x: 0, y: 0 }, "#fde68a", true);
+        ctx.restore();
+      }
     } else {
       outline(sel, ACCENT, 0);
       for (const q of Object.values(corners(sel))) dot(q, "#ffffff", true);
