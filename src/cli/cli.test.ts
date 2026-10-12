@@ -21,6 +21,8 @@ beforeEach(async () => {
 });
 
 /** Runs a command line in-process and captures what it prints. */
+const files: Record<string, string> = { "demo.json": '{"name":"de-archivo"}' };
+
 async function cli(argv: string[], stdin = "") {
   let stdout = "";
   let stderr = "";
@@ -33,7 +35,11 @@ async function cli(argv: string[], stdin = "") {
       stderr: (t) => {
         stderr += t;
       },
-      stdin: async () => stdin,
+      read: async (source) => {
+        if (source === "-") return stdin;
+        if (source in files) return files[source] as string;
+        throw new Error("ENOENT");
+      },
     },
     ctx,
   );
@@ -70,6 +76,7 @@ describe("lienzo CLI", () => {
     await ok(["preset_list"]);
     await ok(["preset_validate", "--json", JSON.stringify({ recipe })]);
     await ok(["scene_create", "--json", "-"], '{"name":"demo"}');
+    await ok(["scene_create", "--json", "@demo.json"]);
     await ok(["scene_list"]);
     await ok(["scene_get", "--scene", "demo"]);
     await ok(["scene_validate", "--json", '{"scene":{}}']);
@@ -132,6 +139,8 @@ describe("lienzo CLI", () => {
       ["scene_get"],
       ["scene_get", "--bogus", "1"],
       ["scene_create", "--json", "{not json"],
+      ["scene_create", "--json", "@missing.json"],
+      ["scene_get", "stray"],
     ]) {
       const r = await cli(argv);
       expect(r.code).toBe(1);

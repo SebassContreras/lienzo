@@ -3,19 +3,21 @@
  * The result is JSON on stdout; an error is JSON `{ code, message, path }` on stderr with
  * exit code 1.
  */
-import { join } from "node:path";
+import { readFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { text } from "node:stream/consumers";
 import { type Ctx, createCtx } from "../service/ctx.ts";
 import type { Registry } from "../service/registry.ts";
 import { registry } from "../service/tools/index.ts";
-import { inputOf, UsageError } from "./args.ts";
+import { inputOf, type ReadSource, UsageError } from "./args.ts";
 import { registryHelp, toolHelp } from "./help.ts";
 
 /** What `run` writes to and reads from; tests pass their own. */
 export type Io = {
   stdout(text: string): void;
   stderr(text: string): void;
-  stdin(): Promise<string>;
+  /** `--json`'s source: a file path, or `-` for stdin. */
+  read: ReadSource;
 };
 
 const errorJson = (code: string, message: string) =>
@@ -35,12 +37,17 @@ export async function run(
   }
   const tool = tools.get(name);
   if (!tool) {
-    io.stderr(errorJson("unknown_tool", `Unknown tool «${name}»; see --help`));
+    io.stderr(
+      errorJson(
+        "unknown_tool",
+        `No existe la herramienta «${name}»; mira --help`,
+      ),
+    );
     return 1;
   }
   let input: Record<string, unknown>;
   try {
-    const parsed = await inputOf(tool, args, io.stdin);
+    const parsed = await inputOf(tool, args, io.read);
     if (parsed.help) {
       io.stdout(toolHelp(tool));
       return 0;
@@ -65,7 +72,11 @@ if (import.meta.main) {
   const io: Io = {
     stdout: (t) => process.stdout.write(`${t}\n`),
     stderr: (t) => process.stderr.write(`${t}\n`),
-    stdin: () => text(process.stdin),
+    // pnpm runs scripts from the repo root; INIT_CWD is where the user typed the command.
+    read: (source) =>
+      source === "-"
+        ? text(process.stdin)
+        : readFile(resolve(process.env.INIT_CWD ?? ".", source), "utf8"),
   };
   process.exitCode = await run(
     process.argv.slice(2),

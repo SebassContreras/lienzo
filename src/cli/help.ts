@@ -2,7 +2,7 @@
 import type { Registry, Tool } from "../service/registry.ts";
 import { type Field, fieldsOf } from "./args.ts";
 
-const JSON_ARG = "[--json '<object>' | --json -]";
+const JSON_ARG = "[--json '<object>' | --json @file | --json -]";
 
 /** Every tool with the first sentence of its description. */
 export function registryHelp(registry: Registry): string {
