@@ -1,30 +1,30 @@
 # 007 — service-layer — Tasks
 
-- [ ] T001 [agent] [status:todo] `defineTool`, the tool registry and `ctx` in `src/service/`
+- [x] T001 [agent] [status:done] `defineTool`, the tool registry and `ctx` in `src/service/`
       covers: D1@1, A20@2
-- [ ] T002 [agent] [status:todo] Node store for `presets/` and `scenes/` and a built-in preset loader
+- [x] T002 [agent] [status:done] Node store for `presets/` and `scenes/` and a built-in preset loader
       covers: D2@2
-- [ ] T003 [agent] [status:todo] Preset tools: list, get, validate
+- [x] T003 [agent] [status:done] Preset tools: list, get, validate
       covers: D2@2, D4@1
-- [ ] T004 [agent] [status:todo] Scene tools: list, get, create, validate
+- [x] T004 [agent] [status:done] Scene tools: list, get, create, validate
       covers: D2@2, D4@1
-- [ ] T005 [agent] [status:todo] Tool to add an element from a preset or a kind, optionally at a position
+- [x] T005 [agent] [status:done] Tool to add an element from a preset or a kind, optionally at a position
       covers: D3@1, D4@1
-- [ ] T006 [agent] [status:todo] Tools to update (deep patch), remove and move an element in the layer order
+- [x] T006 [agent] [status:done] Tools to update (deep patch), remove and move an element in the layer order
       covers: D3@1, D4@1
-- [ ] T007 [agent] [status:todo] Tool to set the scene background from a preset or values
+- [x] T007 [agent] [status:done] Tool to set the scene background from a preset or values
       covers: D3@1, D4@1
-- [ ] T008 [agent] [status:todo] Test: every tool against a temp dir; invalid writes return the failing path and write nothing; written scenes parse as editor scenes
+- [x] T008 [agent] [status:done] Test: every tool against a temp dir; invalid writes return the failing path and write nothing; written scenes parse as editor scenes
       covers: R1@1, R2@1, R3@1, R4@1, R5@1
       kind: test
-- [ ] T009 [agent] [status:todo] Element and keyframe tool inputs derived from the descriptor registry
+- [x] T009 [agent] [status:done] Element and keyframe tool inputs derived from the descriptor registry
       covers: D5@1, A23@1
-- [ ] T010 [agent] [status:todo] Test: a test-only descriptor is usable from every element tool with no tool change; keyframes added through the tools play in the scene
+- [x] T010 [agent] [status:done] Test: a test-only descriptor is usable from every element tool with no tool change; keyframes added through the tools play in the scene
       covers: R6@1
       kind: test
-- [ ] T011 [agent] [status:todo] Expand `animPreset` names through `expandAnimPresets` before validating and writing; test that an unknown name is reported
+- [x] T011 [agent] [status:done] Expand `animPreset` names through `expandAnimPresets` before validating and writing; test that an unknown name is reported
       covers: D6@1, R7@1
 
-- [ ] T012 [agent] [status:todo] Extract the file operations of `json-store.ts` into shared `fs` functions used by the Vite middleware
+- [x] T012 [agent] [status:done] Extract the file operations of `json-store.ts` into shared `fs` functions used by the Vite middleware
       covers: D2@2
       └─ do before T002
