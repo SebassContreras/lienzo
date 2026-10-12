@@ -149,6 +149,10 @@ const endpoint = z.object({
   x: z.number(),
   y: z.number(),
   attach: z.string().optional(),
+  // added by 021, optional
+  anchor: z
+    .enum(["auto", "top", "bottom", "left", "right", "center"])
+    .optional(),
 });
 
 const line = z.object({
@@ -159,6 +163,8 @@ const line = z.object({
   tracks: TracksSchema.optional(),
   a: endpoint,
   b: endpoint,
+  // added by 021, straight when missing
+  route: z.enum(["straight", "orthogonal", "curved"]).default("straight"),
   bend: z.number(),
   width: z.number(),
   color,
