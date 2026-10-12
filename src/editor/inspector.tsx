@@ -1,4 +1,12 @@
 import {
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignEndHorizontal,
+  AlignEndVertical,
+  AlignHorizontalSpaceAround,
+  AlignStartHorizontal,
+  AlignStartVertical,
+  AlignVerticalSpaceAround,
   ArrowDown,
   ArrowUp,
   BookmarkPlus,
@@ -9,6 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { type Element, type Scene, SIZE_PRESETS } from "../model/model.ts";
+import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";
 
@@ -113,18 +122,32 @@ export function ElementInspector({
   );
 }
 
+/** The alignment buttons, in the order shown (022). */
+const ALIGN: [AlignAction, string, typeof AlignStartVertical][] = [
+  ["left", "Alinear a la izquierda", AlignStartVertical],
+  ["centerX", "Centrar horizontalmente", AlignCenterVertical],
+  ["right", "Alinear a la derecha", AlignEndVertical],
+  ["top", "Alinear arriba", AlignStartHorizontal],
+  ["centerY", "Centrar verticalmente", AlignCenterHorizontal],
+  ["bottom", "Alinear abajo", AlignEndHorizontal],
+  ["distributeX", "Distribuir horizontalmente", AlignHorizontalSpaceAround],
+  ["distributeY", "Distribuir verticalmente", AlignVerticalSpaceAround],
+];
+
 /** Shown while several elements are selected. */
 export function MultiInspector({
   count,
   onDelete,
   onDuplicate,
   onGroup,
+  onAlign,
   onUseAsParticle,
 }: {
   count: number;
   onDelete: () => void;
   onDuplicate: () => void;
   onGroup: () => void;
+  onAlign: (action: AlignAction) => void;
   /** Set when the selection is a particles element and one other element. */
   onUseAsParticle?: () => void;
 }) {
@@ -143,6 +166,18 @@ export function MultiInspector({
             <Trash2 size={15} />
           </button>
         </div>
+      </div>
+      <div className="icon-row pad">
+        {ALIGN.map(([action, title, Icon]) => (
+          <button
+            key={action}
+            type="button"
+            title={title}
+            onClick={() => onAlign(action)}
+          >
+            <Icon size={15} />
+          </button>
+        ))}
       </div>
       <div className="hint pad">
         Arrastra cualquiera de ellos para moverlos juntos. Mayús + clic añade o

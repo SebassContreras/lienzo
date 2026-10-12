@@ -59,6 +59,7 @@ import {
   renameStored,
   saveUserPreset,
 } from "../presets/store.ts";
+import { type AlignAction, alignElements } from "./align.ts";
 import { AnimLibrary } from "./anim-library.tsx";
 import {
   type BackgroundItem,
@@ -339,6 +340,17 @@ export function App() {
           moving.has(e.id) ? translate(e, dx, dy, byId, moving) : e,
         ),
       });
+    },
+    [checkpoint, selection, setScene],
+  );
+
+  const alignSelected = useCallback(
+    (action: AlignAction) => {
+      const s = sceneRef.current;
+      const next = alignElements(s, selection, action);
+      if (next === s) return;
+      checkpoint();
+      setScene(next);
     },
     [checkpoint, selection, setScene],
   );
@@ -801,6 +813,7 @@ export function App() {
             onDelete={removeSelected}
             onDuplicate={duplicateSelected}
             onGroup={groupSelected}
+            onAlign={alignSelected}
             onUseAsParticle={particlePair && makeParticle}
           />
         ) : (
