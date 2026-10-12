@@ -120,15 +120,30 @@ export function textGeometry(
   });
 }
 
-/** The outlines of `text` as three.js shapes, y up. */
+/**
+ * The outlines of `text` as three.js shapes, y up. Glyphs are laid out one by one with
+ * kerning: opentype.js throws on a GSUB format Inter uses, so its shaping is skipped.
+ */
 export function glyphShapes(font: opentype.Font, text: string) {
   const path = new ShapePath();
-  for (const c of font.getPath(text, 0, 0, 1).commands) {
+  const scale = 1 / font.unitsPerEm;
+  const commands: opentype.PathCommand[] = [];
+  let x = 0;
+  let previous: opentype.Glyph | undefined;
+  for (const char of text) {
+    const glyph = font.charToGlyph(char);
+    if (previous) x += font.getKerningValue(previous, glyph) * scale;
+    commands.push(...glyph.getPath(x, 0, 1).commands);
+    x += (glyph.advanceWidth ?? 0) * scale;
+    previous = glyph;
+  }
+  for (const c of commands) {
     if (c.type === "M") path.moveTo(c.x, -c.y);
     else if (c.type === "L") path.lineTo(c.x, -c.y);
     else if (c.type === "Q") path.quadraticCurveTo(c.x1, -c.y1, c.x, -c.y);
     else if (c.type === "C")
       path.bezierCurveTo(c.x1, -c.y1, c.x2, -c.y2, c.x, -c.y);
+    else if (c.type === "Z") path.currentPath?.closePath();
   }
   return path.toShapes();
 }
