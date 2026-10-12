@@ -196,6 +196,9 @@ describe("descriptors", () => {
       "progress",
       "counter",
       "bubble",
+      "steps",
+      "list",
+      "table",
     ]);
     for (const d of descriptors) {
       expect(typeof d.draw).toBe("function");

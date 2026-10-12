@@ -15,11 +15,14 @@ import { type GroupEl, group } from "./group/descriptor.ts";
 import { type IconEl, icon } from "./icon/descriptor.ts";
 import { type ImageEl, image } from "./image/descriptor.ts";
 import { type LineEl, line } from "./line/descriptor.ts";
+import { type ListEl, list } from "./list/descriptor.ts";
 import { type ParticlesEl, particles } from "./particles/descriptor.ts";
 import { type PolygonEl, polygon } from "./polygon/descriptor.ts";
 import { type ProgressEl, progress } from "./progress/descriptor.ts";
 import { type RectEl, rect } from "./rect/descriptor.ts";
 import { type StarEl, star } from "./star/descriptor.ts";
+import { type StepsEl, steps } from "./steps/descriptor.ts";
+import { type TableEl, table } from "./table/descriptor.ts";
 import { type TextEl, text } from "./text/descriptor.ts";
 import { type ThreeEl, three } from "./three/descriptor.ts";
 
@@ -40,7 +43,10 @@ export type RegisteredElement =
   | BadgeEl
   | ProgressEl
   | CounterEl
-  | BubbleEl;
+  | BubbleEl
+  | StepsEl
+  | ListEl
+  | TableEl;
 
 export type RegisteredKind = RegisteredElement["kind"];
 
@@ -63,6 +69,9 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
   progress,
   counter,
   bubble,
+  steps,
+  list,
+  table,
 ];
 
 export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;
