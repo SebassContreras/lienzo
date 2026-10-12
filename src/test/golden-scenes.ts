@@ -40,14 +40,16 @@ function grid(elements: Element[]): Scene {
   return { ...defaultScene(), elements };
 }
 
-/** Every built-in element preset. */
+/** Every built-in element preset of a kind the hashes were recorded with. */
 function presetsScene(): Scene {
   return grid(
-    BUILT_IN_RECIPES.map((r) => {
-      const res = resolveElement(r as PresetRecipe);
-      if ("error" in res) throw new Error(res.error);
-      return res.element;
-    }),
+    BUILT_IN_RECIPES.filter((r) => KINDS.includes(r.kind as ElementKind)).map(
+      (r) => {
+        const res = resolveElement(r as PresetRecipe);
+        if ("error" in res) throw new Error(res.error);
+        return res.element;
+      },
+    ),
   );
 }
 
@@ -62,7 +64,7 @@ const BOX: readonly AnimKind[] = [
 ];
 
 /** What each kind offered when the hashes were recorded, by pre-slot names. */
-const RECORDED_ANIMS: Record<ElementKind, readonly AnimKind[]> = {
+const RECORDED_ANIMS: Partial<Record<ElementKind, readonly AnimKind[]>> = {
   rect: BOX,
   ellipse: BOX,
   icon: BOX,
@@ -77,7 +79,7 @@ const RECORDED_ANIMS: Record<ElementKind, readonly AnimKind[]> = {
 function kindsScene(): Scene {
   const els: Element[] = [];
   for (const kind of KINDS) {
-    for (const anim of RECORDED_ANIMS[kind]) {
+    for (const anim of RECORDED_ANIMS[kind] ?? []) {
       const el = defaultElement(kind);
       el.anim = migrateAnim({
         kind: anim,

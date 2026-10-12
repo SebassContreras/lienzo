@@ -100,12 +100,27 @@ export async function saveScene(name: string, scene: Scene): Promise<void> {
   await postJson(`/api/scenes?name=${encodeURIComponent(name)}`, scene);
 }
 
-/** Uploads an image into `assets/` (named by its content hash) and returns its URL path. */
-export async function uploadAsset(file: File): Promise<string> {
+const IMAGE_FILES = {
+  exts: ["png", "jpg", "jpeg", "svg", "webp"],
+  error: "Formato no admitido: usa PNG, JPG, SVG o WebP",
+};
+
+/** What a 3D element's model may be: a GLTF binary. */
+export const MODEL_FILES = {
+  exts: ["glb"],
+  error: "Formato no admitido: usa un modelo .glb",
+};
+
+/**
+ * Uploads a file into `assets/` (named by its content hash) and returns its URL path; an
+ * image unless `accepted` says otherwise.
+ */
+export async function uploadAsset(
+  file: File,
+  accepted = IMAGE_FILES,
+): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!["png", "jpg", "jpeg", "svg", "webp"].includes(ext)) {
-    throw new Error("Formato no admitido: usa PNG, JPG, SVG o WebP");
-  }
+  if (!accepted.exts.includes(ext)) throw new Error(accepted.error);
   const res = await fetch(`/api/assets?ext=${ext}`, {
     method: "POST",
     body: file,

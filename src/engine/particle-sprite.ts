@@ -4,8 +4,8 @@
  */
 import { descriptorOf } from "../components/index.ts";
 import type { Element, Scene } from "../model/model.ts";
+import { imageFor } from "./assets.ts";
 import { type Box, boxOf } from "./geometry.ts";
-import { imageFor } from "./images.ts";
 import { type Ctx, rgba, shadowOnly } from "./paint.ts";
 
 export type Sprite = {

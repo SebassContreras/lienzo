@@ -62,6 +62,8 @@ export type Descriptor<E extends { kind: string } = Element> = {
   icon: string;
   /** Offered among the basic components in the library. */
   basic: boolean;
+  /** URLs of the files drawing `el` needs (images, models), awaited before an export. */
+  assets?: (el: E) => string[];
   /** Draws `el` as `animate` left it, with `transform` (A24). */
   draw(ctx: Ctx, el: E, transform: AnimState, dc: DrawContext): void;
 };

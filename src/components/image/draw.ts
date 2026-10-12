@@ -1,6 +1,6 @@
 import type { AnimState } from "../../engine/anim.ts";
+import { imageFor } from "../../engine/assets.ts";
 import { boxOf } from "../../engine/geometry.ts";
-import { imageFor } from "../../engine/images.ts";
 import {
   type Ctx,
   rgba,

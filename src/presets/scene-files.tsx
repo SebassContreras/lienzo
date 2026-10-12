@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { loadSceneImages } from "../engine/images.ts";
+import { loadSceneAssets } from "../engine/assets.ts";
 import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
 import { parseScene } from "../model/schema.ts";
@@ -272,7 +272,7 @@ function SceneThumb({ scene }: { scene: Scene }) {
       drawScene(ctx, scene, Math.min(1.5, scene.duration));
       ctx.restore();
     };
-    Promise.all([loadSceneImages(scene), document.fonts.ready]).then(draw);
+    Promise.all([loadSceneAssets(scene), document.fonts.ready]).then(draw);
     return () => {
       live = false;
     };

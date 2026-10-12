@@ -6,3 +6,4 @@ export * from "./glow.ts";
 export * from "./label.ts";
 export * from "./shadow.ts";
 export * from "./stroke.ts";
+export * from "./three.ts";

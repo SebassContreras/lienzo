@@ -14,6 +14,7 @@ import { type LineEl, line } from "./line/descriptor.ts";
 import { type ParticlesEl, particles } from "./particles/descriptor.ts";
 import { type RectEl, rect } from "./rect/descriptor.ts";
 import { type TextEl, text } from "./text/descriptor.ts";
+import { type ThreeEl, three } from "./three/descriptor.ts";
 
 /** Every element kind's type, as a union. */
 export type RegisteredElement =
@@ -24,7 +25,8 @@ export type RegisteredElement =
   | GroupEl
   | TextEl
   | LineEl
-  | ParticlesEl;
+  | ParticlesEl
+  | ThreeEl;
 
 export type RegisteredKind = RegisteredElement["kind"];
 
@@ -39,6 +41,7 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
   text,
   line,
   particles,
+  three,
 ];
 
 export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;

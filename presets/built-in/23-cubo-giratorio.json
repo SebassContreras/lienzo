@@ -1,0 +1,12 @@
+{
+  "name": "Cubo giratorio",
+  "category": "3D",
+  "kind": "three",
+  "traits": [],
+  "set": {
+    "shape": "cube",
+    "object": { "rotX": 25, "rotY": 30, "scale": 1.4 },
+    "spin": 1,
+    "material": { "color": "#a78bfa", "metalness": 0.3, "roughness": 0.35 }
+  }
+}

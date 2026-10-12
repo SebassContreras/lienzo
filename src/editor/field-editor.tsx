@@ -3,6 +3,7 @@
  * widget of its own for each custom field or widget a descriptor names.
  */
 import {
+  Box,
   CircleDot,
   ImageUp,
   Link2Off,
@@ -13,8 +14,9 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { descriptorOf } from "../components/index.ts";
+import type { ThreeEl } from "../components/three/descriptor.ts";
 import { lateSlots } from "../engine/anim.ts";
-import { imageSize } from "../engine/images.ts";
+import { imageSize } from "../engine/assets.ts";
 import { applyTracks, writeAt } from "../engine/tracks.ts";
 import type {
   Element,
@@ -23,7 +25,7 @@ import type {
   ImageEl,
   ParticlesEl,
 } from "../model/model.ts";
-import { uploadAsset } from "../presets/store.ts";
+import { MODEL_FILES, uploadAsset } from "../presets/store.ts";
 import { AnimPicker } from "./anim-picker.tsx";
 import { Check, Color, Num, Section, Select, TextArea } from "./controls.tsx";
 import { IconPicker } from "./icon-picker.tsx";
@@ -128,6 +130,47 @@ function ImageUpload({ el, change, ctx }: WidgetProps) {
   );
 }
 
+/** Stores a picked `.glb` in `assets/` and points the 3D element at it. */
+function ModelUpload({ el, change }: WidgetProps) {
+  const model = (el as ThreeEl).model;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <>
+      <label className="file-pick">
+        <Box size={15} />
+        {busy ? "Subiendo…" : model ? "Cambiar modelo" : "Elegir modelo"}
+        <input
+          type="file"
+          accept=".glb"
+          disabled={busy}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            setBusy(true);
+            setError("");
+            uploadAsset(file, MODEL_FILES)
+              .then((src) =>
+                change((draft) => {
+                  (draft as ThreeEl).model = src;
+                }),
+              )
+              .catch((err: unknown) => setError(String(err)))
+              .finally(() => setBusy(false));
+          }}
+        />
+      </label>
+      {error && <div className="hint error">{error}</div>}
+      {model && (
+        <div className="hint">
+          Guardado en <code>{model.slice(1)}</code>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Connection({ item, value, label, change, ctx }: WidgetProps) {
   const end = value as Endpoint;
   const key = item.path[item.path.length - 1] as "a" | "b";
@@ -168,6 +211,7 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
     />
   ),
   image: (p) => <ImageUpload {...p} />,
+  model: (p) => <ModelUpload {...p} />,
   "anim-kind": (p) => <AnimKindPicker {...p} />,
   connection: (p) => <Connection {...p} />,
   "group-info": ({ el }) => (
