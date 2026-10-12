@@ -40,16 +40,19 @@ function grid(elements: Element[]): Scene {
   return { ...defaultScene(), elements };
 }
 
+/** Window mockups (017) are groups, but came after the hashes were recorded. */
+const recorded = (r: (typeof BUILT_IN_RECIPES)[number]) =>
+  r.kind in RECORDED_ANIMS &&
+  !(r.set && "frame" in (r.set as Record<string, unknown>));
+
 /** Every built-in element preset of a kind the hashes were recorded with. */
 function presetsScene(): Scene {
   return grid(
-    BUILT_IN_RECIPES.filter((r) => KINDS.includes(r.kind as ElementKind)).map(
-      (r) => {
-        const res = resolveElement(r as PresetRecipe);
-        if ("error" in res) throw new Error(res.error);
-        return res.element;
-      },
-    ),
+    BUILT_IN_RECIPES.filter(recorded).map((r) => {
+      const res = resolveElement(r as PresetRecipe);
+      if ("error" in res) throw new Error(res.error);
+      return res.element;
+    }),
   );
 }
 
@@ -63,7 +66,10 @@ const BOX: readonly AnimKind[] = [
   "slide-up",
 ];
 
-/** What each kind offered when the hashes were recorded, by pre-slot names. */
+/**
+ * What each kind offered when the hashes were recorded, by pre-slot names; kinds added
+ * later are not part of the golden scenes.
+ */
 const RECORDED_ANIMS: Partial<Record<ElementKind, readonly AnimKind[]>> = {
   rect: BOX,
   ellipse: BOX,

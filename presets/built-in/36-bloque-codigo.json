@@ -1,0 +1,22 @@
+{
+  "name": "Bloque de código",
+  "category": "Código",
+  "kind": "code",
+  "traits": [],
+  "set": {
+    "tracks": {
+      "typed": [
+        {
+          "t": 0,
+          "value": 0,
+          "easing": "ease-out"
+        },
+        {
+          "t": 3,
+          "value": 1,
+          "easing": "auto"
+        }
+      ]
+    }
+  }
+}

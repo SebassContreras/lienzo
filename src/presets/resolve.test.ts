@@ -119,7 +119,7 @@ describe("resolvePreset", () => {
   it("reports an unknown element kind", () => {
     const r = resolvePreset({
       name: "x",
-      kind: "star" as PresetRecipe["kind"],
+      kind: "no-such-kind" as PresetRecipe["kind"],
       traits: [],
     });
     expect("error" in r).toBe(true);

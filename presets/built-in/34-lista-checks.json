@@ -1,0 +1,22 @@
+{
+  "name": "Lista con checks",
+  "category": "Texto",
+  "kind": "list",
+  "traits": [],
+  "set": {
+    "tracks": {
+      "reveal": [
+        {
+          "t": 0,
+          "value": 0,
+          "easing": "ease-out"
+        },
+        {
+          "t": 2,
+          "value": 1,
+          "easing": "auto"
+        }
+      ]
+    }
+  }
+}

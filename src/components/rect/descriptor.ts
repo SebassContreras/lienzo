@@ -1,3 +1,4 @@
+import type { ArrowEl } from "../arrow/descriptor.ts";
 import { defineComponent, type ElementOf } from "../descriptor.ts";
 import type { EllipseEl } from "../ellipse/descriptor.ts";
 import {
@@ -13,6 +14,8 @@ import {
   shadow,
   softShadow,
 } from "../fields/index.ts";
+import type { PolygonEl } from "../polygon/descriptor.ts";
+import type { StarEl } from "../star/descriptor.ts";
 import { drawRect } from "./draw.ts";
 
 /**
@@ -74,7 +77,7 @@ export const SHAPE_SECTIONS = [
 ];
 
 /** Shapes that share the rectangle's fill, border, glows, shadow and label. */
-export type ShapeEl = RectEl | EllipseEl;
+export type ShapeEl = RectEl | EllipseEl | PolygonEl | StarEl | ArrowEl;
 
 const { x, y, w, h, ...style } = shapeFields(280, 180);
 

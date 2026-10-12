@@ -1,0 +1,22 @@
+{
+  "name": "Pasos animados",
+  "category": "Diagramas",
+  "kind": "steps",
+  "traits": [],
+  "set": {
+    "tracks": {
+      "active": [
+        {
+          "t": 0,
+          "value": 0,
+          "easing": "ease-out"
+        },
+        {
+          "t": 3,
+          "value": 4,
+          "easing": "auto"
+        }
+      ]
+    }
+  }
+}

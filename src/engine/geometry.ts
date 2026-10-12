@@ -1,3 +1,5 @@
+import { badgeLayout } from "../components/badge/layout.ts";
+import { bodyBox } from "../components/group/frame.ts";
 import type {
   Anchor,
   Element,
@@ -58,6 +60,10 @@ export function boxOf(el: Element): Box {
   if (el.kind === "line") return lineBox(el);
   if (el.kind === "text") {
     const { w, h } = textLayout(el);
+    return { x: el.x, y: el.y, w, h };
+  }
+  if (el.kind === "badge") {
+    const { w, h } = badgeLayout(el);
     return { x: el.x, y: el.y, w, h };
   }
   return { x: el.x, y: el.y, w: el.w, h: el.h };
@@ -392,12 +398,14 @@ export function inBox(b: Box, p: Pt, pad = 0): boolean {
 
 /**
  * A group's child as it appears on the canvas: its position and size mapped from the group's
- * content space onto the group's box (a text's size scales with the width).
+ * content space onto the group's body: its box, less a window frame (a text's size scales
+ * with the width).
  */
 export function placeChild(child: Element, group: GroupEl): Element {
-  const sx = group.w / (group.cw || 1);
-  const sy = group.h / (group.ch || 1);
-  const at = (p: Pt) => ({ x: group.x + p.x * sx, y: group.y + p.y * sy });
+  const body = bodyBox(group);
+  const sx = body.w / (group.cw || 1);
+  const sy = body.h / (group.ch || 1);
+  const at = (p: Pt) => ({ x: body.x + p.x * sx, y: body.y + p.y * sy });
   if (child.kind === "line") {
     return {
       ...child,
@@ -405,7 +413,7 @@ export function placeChild(child: Element, group: GroupEl): Element {
       b: { ...child.b, ...at(child.b) },
     };
   }
-  if (child.kind === "text")
+  if (child.kind === "text" || child.kind === "badge")
     return { ...child, ...at(child), size: child.size * sx };
   return { ...child, ...at(child), w: child.w * sx, h: child.h * sy };
 }

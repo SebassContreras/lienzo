@@ -216,6 +216,11 @@ const group = z.object({
   anim,
   // added by 018 with a default, so scenes without it still read
   stagger: z.number().min(0).default(0),
+  // added by 017 with defaults: no window frame
+  frame: z.enum(["none", "browser", "terminal", "phone"]).default("none"),
+  title: z.string().default("lienzo.app"),
+  frameColor: color.default("#1e293b"),
+  bodyColor: color.default("#0b1220"),
 });
 
 const LegacyElement: z.ZodType<unknown> = z.discriminatedUnion("kind", [

@@ -95,7 +95,7 @@ describe("the generated scene schema", () => {
     }
     sameVerdict({
       ...defaultScene(),
-      elements: [{ ...createElement("rect"), kind: "star" }],
+      elements: [{ ...createElement("rect"), kind: "no-such-kind" }],
     });
   });
 
@@ -189,6 +189,18 @@ describe("descriptors", () => {
       "line",
       "particles",
       "three",
+      "polygon",
+      "star",
+      "arrow",
+      "badge",
+      "progress",
+      "counter",
+      "bubble",
+      "steps",
+      "list",
+      "table",
+      "code",
+      "chart",
     ]);
     for (const d of descriptors) {
       expect(typeof d.draw).toBe("function");
