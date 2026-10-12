@@ -9,9 +9,9 @@ import {
   boxOf,
   indexById,
   placeChild,
-  resolveLine,
   translate,
 } from "./geometry.ts";
+import { resolveLine } from "./lines.ts";
 
 /** The ids of `el` and of everything inside it. */
 export function idsWithin(el: Element): string[] {

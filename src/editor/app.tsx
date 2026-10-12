@@ -17,19 +17,14 @@ import {
 } from "react";
 import { COMPONENTS, createElement } from "../components/index.ts";
 import { demoScene } from "../demo.ts";
-import {
-  centerOn,
-  indexById,
-  type Pt,
-  resolveLine,
-  translate,
-} from "../engine/geometry.ts";
+import { centerOn, indexById, type Pt, translate } from "../engine/geometry.ts";
 import {
   detachOutside,
   groupElements,
   idsWithin,
   ungroupElement,
 } from "../engine/groups.ts";
+import { resolveLine } from "../engine/lines.ts";
 import { ExportControls } from "../export/export-controls.tsx";
 import {
   cloneElement,

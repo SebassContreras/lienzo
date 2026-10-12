@@ -16,7 +16,8 @@ import {
   text,
 } from "../fields/index.ts";
 import { drawThree } from "./draw.ts";
-import { SHAPES, TEXT_FONT } from "./geometry.ts";
+import { TEXT_FONT } from "./font.ts";
+import { SHAPES } from "./geometry.ts";
 
 const O = { section: "Objeto" };
 

@@ -1,7 +1,8 @@
 import { Download } from "lucide-react";
 import { useState } from "react";
 import type { Scene } from "../model/model.ts";
-import { download, type ExportFormat, exportScene } from "./export.ts";
+import { download } from "./download.ts";
+import { type ExportFormat, exportScene } from "./export.ts";
 
 /** Format and size pickers plus the export button of the top bar. */
 export function ExportControls({

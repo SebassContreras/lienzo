@@ -1,12 +1,12 @@
 import { type AnimState, frac } from "../../engine/anim.ts";
+import type { Pt } from "../../engine/geometry.ts";
 import {
   type PathSamples,
-  type Pt,
   partialPath,
   pointAtFraction,
   resolveLine,
   samplePath,
-} from "../../engine/geometry.ts";
+} from "../../engine/lines.ts";
 import {
   type Ctx,
   dashFor,

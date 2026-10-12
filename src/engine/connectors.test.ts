@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "../components/index.ts";
 import type { Anchor, Element, LineEl, Route } from "../model/model.ts";
+import { indexById } from "./geometry.ts";
 import {
   anchorPoint,
   elbowPoints,
-  indexById,
   nearestAnchor,
   pointAtFraction,
   resolveLine,
   samplePath,
-} from "./geometry.ts";
+} from "./lines.ts";
 
 const card = (id: string, x: number, y: number, w = 200, h = 100) =>
   ({ ...createElement("rect"), id, x, y, w, h }) as Element;

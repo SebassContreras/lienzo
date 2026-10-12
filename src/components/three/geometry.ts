@@ -1,30 +1,24 @@
 /**
  * The shapes a 3D element shows: primitives and extruded text, each fitted into about
- * `SIZE` scene units around the origin, and GLTF models loaded through the asset cache.
+ * `SIZE` scene units around the origin and cached. Models live in `model.ts`.
  */
-
-import fontUrl from "@fontsource/inter/files/inter-latin-700-normal.woff?url";
-import opentype from "opentype.js";
 import {
-  Box3,
+  type Box3,
   BoxGeometry,
   type BufferGeometry,
   ConeGeometry,
   CylinderGeometry,
   ExtrudeGeometry,
-  Group,
-  type Object3D,
   PlaneGeometry,
   ShapePath,
   SphereGeometry,
   TorusGeometry,
   Vector3,
 } from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { assetFor, registerAssetLoader } from "../../engine/assets.ts";
+import { type OutlineCommand, textOutline } from "./font.ts";
 
 /** Largest side of a primitive, text or model, in scene units. */
-const SIZE = 2;
+export const SIZE = 2;
 
 export const SHAPES = [
   ["cube", "Cubo"],
@@ -49,33 +43,6 @@ const PRIMITIVES: Record<Primitive, () => BufferGeometry> = {
   cone: () => new ConeGeometry(0.9, 1.6, 48),
   plane: () => new PlaneGeometry(SIZE, SIZE),
 };
-
-/** The font 3D text is extruded from; drawing waits for it like for any asset. */
-export const TEXT_FONT = fontUrl;
-
-registerAssetLoader("woff", async (src) => {
-  const res = await fetch(src);
-  if (!res.ok) throw new Error(`${src}: ${res.status}`);
-  return opentype.parse(await res.arrayBuffer());
-});
-
-/** GLTF binaries become one object centred on the origin and fitted into `SIZE`. */
-registerAssetLoader("glb", async (src) => {
-  const gltf = await new GLTFLoader().loadAsync(src);
-  return fitted(gltf.scene);
-});
-
-function fitted(object: Object3D): Group {
-  const box = new Box3().setFromObject(object);
-  const size = box.getSize(new Vector3());
-  const centre = box.getCenter(new Vector3());
-  const scale = SIZE / Math.max(size.x, size.y, size.z, 1e-6);
-  object.position.sub(centre).multiplyScalar(scale);
-  object.scale.multiplyScalar(scale);
-  const group = new Group();
-  group.add(object);
-  return group;
-}
 
 /** Cached geometries by shape (and text), so each frame does not rebuild them. */
 const geometries = new Map<string, BufferGeometry>();
@@ -103,10 +70,10 @@ export function textGeometry(
   text: string,
   depth: number,
 ): BufferGeometry | undefined {
-  const font = assetFor<opentype.Font>(TEXT_FONT);
-  if (!font || !text.trim()) return undefined;
+  const outline = text.trim() ? textOutline(text) : undefined;
+  if (!outline) return undefined;
   return cached(`text:${depth}:${text}`, () => {
-    const g = new ExtrudeGeometry(glyphShapes(font, text), {
+    const g = new ExtrudeGeometry(shapesOf(outline), {
       depth,
       bevelEnabled: false,
       curveSegments: 8,
@@ -120,35 +87,16 @@ export function textGeometry(
   });
 }
 
-/**
- * The outlines of `text` as three.js shapes, y up. Glyphs are laid out one by one with
- * kerning: opentype.js throws on a GSUB format Inter uses, so its shaping is skipped.
- */
-export function glyphShapes(font: opentype.Font, text: string) {
+/** An outline as three.js shapes, y flipped up. */
+export function shapesOf(outline: readonly OutlineCommand[]) {
   const path = new ShapePath();
-  const scale = 1 / font.unitsPerEm;
-  const commands: opentype.PathCommand[] = [];
-  let x = 0;
-  let previous: opentype.Glyph | undefined;
-  for (const char of text) {
-    const glyph = font.charToGlyph(char);
-    if (previous) x += font.getKerningValue(previous, glyph) * scale;
-    commands.push(...glyph.getPath(x, 0, 1).commands);
-    x += (glyph.advanceWidth ?? 0) * scale;
-    previous = glyph;
-  }
-  for (const c of commands) {
+  for (const c of outline) {
     if (c.type === "M") path.moveTo(c.x, -c.y);
     else if (c.type === "L") path.lineTo(c.x, -c.y);
     else if (c.type === "Q") path.quadraticCurveTo(c.x1, -c.y1, c.x, -c.y);
     else if (c.type === "C")
       path.bezierCurveTo(c.x1, -c.y1, c.x2, -c.y2, c.x, -c.y);
-    else if (c.type === "Z") path.currentPath?.closePath();
+    else path.currentPath?.closePath();
   }
   return path.toShapes();
-}
-
-/** The loaded model at `src`, or undefined while it loads (or with no file chosen). */
-export function modelFor(src: string): Group | undefined {
-  return assetFor<Group>(src);
 }

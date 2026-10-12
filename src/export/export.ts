@@ -1,16 +1,9 @@
-import { applyPalette, GIFEncoder, quantize } from "gifenc";
-import {
-  BufferTarget,
-  CanvasSource,
-  canEncodeVideo,
-  Mp4OutputFormat,
-  Output,
-  QUALITY_HIGH,
-  WebMOutputFormat,
-} from "mediabunny";
 import { loadSceneAssets } from "../engine/assets.ts";
 import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
+import type { FrameEncoder } from "./frame-encoder.ts";
+import { createGifEncoder } from "./gif-encoder.ts";
+import { createVideoEncoder } from "./video-encoder.ts";
 
 export type ExportFormat = "png" | "gif" | "mp4";
 
@@ -47,6 +40,7 @@ function frameCanvas(scene: Scene, scale: number) {
 /** Lets the browser paint the progress bar between frames. */
 const yieldToUi = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+/** Renders a PNG of one frame, or encodes every frame of the scene as a GIF or a video. */
 export async function exportScene(
   scene: Scene,
   options: ExportOptions,
@@ -54,82 +48,33 @@ export async function exportScene(
 ): Promise<Blob> {
   await document.fonts.ready;
   await loadSceneAssets(scene);
-  if (options.format === "png") return exportPng(scene, options);
-  if (options.format === "gif") return exportGif(scene, options, onProgress);
-  return exportVideo(scene, options, onProgress);
+  const { canvas, ctx, render } = frameCanvas(scene, options.scale);
+  if (options.format === "png") {
+    render(options.time);
+    return canvas.convertToBlob({ type: "image/png" });
+  }
+  const encoder =
+    options.format === "gif"
+      ? createGifEncoder(ctx, options.fps)
+      : await createVideoEncoder(canvas, options.fps);
+  return encodeFrames(encoder, render, scene.duration, options.fps, onProgress);
 }
 
-async function exportPng(scene: Scene, options: ExportOptions): Promise<Blob> {
-  const { canvas, render } = frameCanvas(scene, options.scale);
-  render(options.time);
-  return canvas.convertToBlob({ type: "image/png" });
-}
-
-async function exportGif(
-  scene: Scene,
-  options: ExportOptions,
+/** Every frame of `duration` seconds at `fps`, rendered and handed to `encoder`. */
+async function encodeFrames(
+  encoder: FrameEncoder,
+  render: (t: number) => void,
+  duration: number,
+  fps: number,
   onProgress: Progress,
 ): Promise<Blob> {
-  const { canvas, ctx, render } = frameCanvas(scene, options.scale);
-  const total = Math.round(scene.duration * options.fps);
-  const gif = GIFEncoder();
+  const total = Math.round(duration * fps);
   for (let i = 0; i < total; i++) {
-    render(i / options.fps);
-    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const palette = quantize(data, 256);
-    gif.writeFrame(applyPalette(data, palette), canvas.width, canvas.height, {
-      palette,
-      delay: 1000 / options.fps,
-      repeat: 0,
-    });
+    const t = i / fps;
+    render(t);
+    await encoder.add(t);
     onProgress(i + 1, total);
     await yieldToUi();
   }
-  gif.finish();
-  return new Blob([gif.bytes() as BlobPart], { type: "image/gif" });
-}
-
-async function exportVideo(
-  scene: Scene,
-  options: ExportOptions,
-  onProgress: Progress,
-): Promise<Blob> {
-  const { canvas, render } = frameCanvas(scene, options.scale);
-  const size = { width: canvas.width, height: canvas.height };
-  const useMp4 = await canEncodeVideo("avc", {
-    ...size,
-    quality: QUALITY_HIGH,
-  });
-  const codec = useMp4 ? "avc" : "vp9";
-  const output = new Output({
-    format: useMp4
-      ? new Mp4OutputFormat({ fastStart: "in-memory" })
-      : new WebMOutputFormat(),
-    target: new BufferTarget(),
-  });
-  const source = new CanvasSource(canvas, { codec, quality: QUALITY_HIGH });
-  output.addVideoTrack(source, { frameRate: options.fps });
-  await output.start();
-
-  const total = Math.round(scene.duration * options.fps);
-  const frame = 1 / options.fps;
-  for (let i = 0; i < total; i++) {
-    render(i * frame);
-    await source.add(i * frame, frame);
-    onProgress(i + 1, total);
-    if (i % 5 === 0) await yieldToUi();
-  }
-  await output.finalize();
-  const buffer = (output.target as BufferTarget).buffer;
-  if (!buffer) throw new Error("the video encoder produced no output");
-  return new Blob([buffer], { type: useMp4 ? "video/mp4" : "video/webm" });
-}
-
-export function download(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return encoder.finish();
 }
