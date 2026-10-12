@@ -39,6 +39,7 @@ import {
   valueAt,
   writeField,
 } from "./layout.ts";
+import { PathShapes } from "./path-shapes.tsx";
 
 export type Change = (fn: (draft: Element) => void) => void;
 
@@ -228,6 +229,8 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
   ),
   image: (p) => <ImageUpload {...p} />,
   model: (p) => <ModelUpload {...p} />,
+  "path-shapes": ({ el, change }) =>
+    el.kind === "path" && <PathShapes el={el} change={change} />,
   "anim-kind": (p) => <AnimKindPicker {...p} />,
   connection: (p) => <Connection {...p} />,
   "group-info": ({ el }) => (

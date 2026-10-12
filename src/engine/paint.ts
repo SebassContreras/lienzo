@@ -19,6 +19,18 @@ export function hexRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+/** The color `k` (0–1) of the way from `a` to `b`, as `#rrggbb`. */
+export function mixColor(a: string, b: string, k: number): string {
+  const ca = hexRgb(a);
+  const cb = hexRgb(b);
+  const hex = ca.map((v, i) =>
+    Math.round(v + ((cb[i] as number) - v) * k)
+      .toString(16)
+      .padStart(2, "0"),
+  );
+  return `#${hex.join("")}`;
+}
+
 export function rgba(hex: string, alpha: number): string {
   const [r, g, b] = hexRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${clamp01(alpha)})`;
