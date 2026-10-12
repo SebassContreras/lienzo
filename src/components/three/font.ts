@@ -2,7 +2,6 @@
  * The font 3D text is extruded from, behind a small adapter over opentype.js (A18): the rest
  * of the 3D code sees only outline commands, so the font library stays swappable.
  */
-import fontUrl from "@fontsource/inter/files/inter-latin-700-normal.woff?url";
 import opentype from "opentype.js";
 import { assetFor, registerAssetLoader } from "../../engine/assets.ts";
 
@@ -21,8 +20,12 @@ export type OutlineCommand =
     }
   | { type: "Z" };
 
-/** The font file; drawing waits for it like for any asset. */
-export const TEXT_FONT = fontUrl;
+/**
+ * The font file (Inter 700, OFL, copied from `@fontsource/inter` into `public/`); drawing
+ * waits for it like for any asset. A plain path rather than a Vite `?url` import, so the
+ * descriptors also load in Node (the CLI, 008).
+ */
+export const TEXT_FONT = "/fonts/inter-latin-700-normal.woff";
 
 registerAssetLoader("woff", async (src) => {
   const res = await fetch(src);

@@ -43,6 +43,11 @@ What exists today:
   offsets on `relative` fields; applying always copies; `animPreset` on an element is
   provenance only, and a scene naming one is expanded on load; pure logic in
   `src/presets/anim-presets.ts` (A26, spec 019)
+- Tools: one registry in `src/service/` (007); `pnpm lienzo <tool>` (`src/cli/`, 008) runs
+  any of them under `tsx` — top-level scalar fields as flags, the rest in `--json` (or
+  `--json -` from stdin), result JSON on stdout, errors JSON on stderr with exit 1. Code
+  the descriptors import must load in plain Node: no Vite-only imports (`?url`, `?raw`,
+  `import.meta.glob`); static files go in `public/`
 
 Planned (decided, not built yet — specs 007–011, 016, 017, 020–025):
 
@@ -74,6 +79,8 @@ src/traits/      reusable style pieces, one file per trait
 src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
                  store.ts), categories and filter, JSON import/export helpers, scenes dialog,
                  animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
+src/service/     tool registry, ctx, Node store; tools/ = one file per tool (007)
+src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008)
 src/types/       type declarations for packages that ship none
 src/demo.ts      the "how MCP works" demo scene
 presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
