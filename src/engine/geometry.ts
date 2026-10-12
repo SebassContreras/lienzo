@@ -1,8 +1,10 @@
 import type {
+  Anchor,
   Element,
   Endpoint,
   GroupEl,
   LineEl,
+  Route,
   Scene,
   TextEl,
 } from "../model/model.ts";
@@ -72,7 +74,7 @@ function lineBox(el: LineEl): Box {
   };
 }
 
-const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
+export const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
 export function controlPoint(a: Pt, b: Pt, bend: number): Pt {
   const dx = b.x - a.x;
@@ -115,7 +117,18 @@ export function clipToEllipse(box: Box, toward: Pt, gap: number): Pt {
   return { x: c.x + ux * (r + gap), y: c.y + uy * (r + gap) };
 }
 
-export type ResolvedLine = { a: Pt; b: Pt; c: Pt };
+/**
+ * A line's ends after following attachments. `c` is the straight route's control point; `da`
+ * and `db` are the axis directions each end leaves along, which the other routes follow.
+ */
+export type ResolvedLine = {
+  a: Pt;
+  b: Pt;
+  c: Pt;
+  route: Route;
+  da: Pt;
+  db: Pt;
+};
 
 /** The outline a line end attaches to: a box, or the ellipse inside it. */
 export type Outline = { box: Box; round: boolean };
@@ -136,20 +149,161 @@ function clipTo(outline: Outline, toward: Pt, gap: number): Pt {
     : clipToBox(outline.box, toward, gap);
 }
 
-/** Endpoints after following attachments: attached ends sit on the target's edge. */
+type Side = Exclude<Anchor, "auto" | "center">;
+
+const SIDES: Record<Side, Pt> = {
+  top: { x: 0, y: -1 },
+  bottom: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+};
+
+const isSide = (anchor: Anchor): anchor is Side => anchor in SIDES;
+
+/**
+ * The point of `outline` at `anchor`, pushed out by `gap`. `auto` is where a ray from the
+ * centre towards `toward` leaves the outline; the other anchors ignore `toward`.
+ */
+export function anchorPoint(
+  outline: Outline,
+  anchor: Anchor,
+  toward: Pt,
+  gap = 0,
+): Pt {
+  if (anchor === "auto") return clipTo(outline, toward, gap);
+  const { box } = outline;
+  const c = center(box);
+  if (anchor === "center") return c;
+  const d = SIDES[anchor];
+  return {
+    x: c.x + d.x * (box.w / 2 + gap),
+    y: c.y + d.y * (box.h / 2 + gap),
+  };
+}
+
+/** The anchors with a fixed place on the outline, offered as handles while an end is dragged. */
+export const FIXED_ANCHORS = [
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "center",
+] as const satisfies readonly Anchor[];
+
+/** The fixed anchor of `outline` within `tol` of `p`, else `auto` (021/D4). */
+export function nearestAnchor(outline: Outline, p: Pt, tol: number): Anchor {
+  let best: Anchor = "auto";
+  let bestD = tol;
+  for (const anchor of FIXED_ANCHORS) {
+    const q = anchorPoint(outline, anchor, p);
+    const d = Math.hypot(p.x - q.x, p.y - q.y);
+    if (d <= bestD) {
+      best = anchor;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+/** The axis direction closest to `d` (horizontal on a tie). */
+function snapAxis(d: Pt): Pt {
+  if (Math.abs(d.x) >= Math.abs(d.y)) return { x: d.x < 0 ? -1 : 1, y: 0 };
+  return { x: 0, y: d.y < 0 ? -1 : 1 };
+}
+
+/** The axis an end at `p` leaves along: its anchor's side, else away from its target or towards `other`. */
+function exitDir(
+  p: Pt,
+  anchor: Anchor,
+  outline: Outline | undefined,
+  other: Pt,
+): Pt {
+  if (outline && isSide(anchor)) return SIDES[anchor];
+  const c = outline ? center(outline.box) : p;
+  const away = { x: p.x - c.x, y: p.y - c.y };
+  return snapAxis(
+    Math.hypot(away.x, away.y) > 1e-6
+      ? away
+      : { x: other.x - p.x, y: other.y - p.y },
+  );
+}
+
+/** Endpoints after following attachments: attached ends sit on the target's outline at their anchor. */
 export function resolveLine(
   line: LineEl,
   byId: Map<string, Element>,
 ): ResolvedLine {
   const outA = attachedOutline(line.a, byId);
   const outB = attachedOutline(line.b, byId);
-  const rawA = outA ? center(outA.box) : line.a;
-  const rawB = outB ? center(outB.box) : line.b;
-  const rawC = controlPoint(rawA, rawB, line.bend);
+  const anchorA = line.a.anchor ?? "auto";
+  const anchorB = line.b.anchor ?? "auto";
+  const { route } = line;
+  const bend = route === "straight" ? line.bend : 0;
   const gap = 8 + line.width;
-  const a = outA ? clipTo(outA, rawC, gap) : rawA;
-  const b = outB ? clipTo(outB, rawC, gap) : rawB;
-  return { a, b, c: controlPoint(a, b, line.bend) };
+  // a fixed anchor is where the end is; an auto one aims from the target's centre
+  const raw = (out: Outline | undefined, anchor: Anchor, free: Pt) => {
+    if (!out) return free;
+    const c = center(out.box);
+    return anchor === "auto" ? c : anchorPoint(out, anchor, c, gap);
+  };
+  const rawA = raw(outA, anchorA, line.a);
+  const rawB = raw(outB, anchorB, line.b);
+  const rawC = controlPoint(rawA, rawB, bend);
+  const a = outA ? anchorPoint(outA, anchorA, rawC, gap) : rawA;
+  const b = outB ? anchorPoint(outB, anchorB, rawC, gap) : rawB;
+  return {
+    a,
+    b,
+    c: controlPoint(a, b, bend),
+    route,
+    da: exitDir(a, anchorA, outA, b),
+    db: exitDir(b, anchorB, outB, a),
+  };
+}
+
+/** The corners of the elbow route: it leaves each end along that end's axis. */
+export function elbowPoints(r: ResolvedLine): Pt[] {
+  const { a, b } = r;
+  const flatA = r.da.y === 0;
+  const flatB = r.db.y === 0;
+  let pts: Pt[];
+  if (flatA && flatB) {
+    const mx = (a.x + b.x) / 2;
+    pts = [a, { x: mx, y: a.y }, { x: mx, y: b.y }, b];
+  } else if (!flatA && !flatB) {
+    const my = (a.y + b.y) / 2;
+    pts = [a, { x: a.x, y: my }, { x: b.x, y: my }, b];
+  } else {
+    pts = [a, flatA ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b];
+  }
+  // zero-length legs would give the arrows no direction
+  return pts.filter((p, i) => {
+    const prev = pts[i - 1];
+    return !prev || Math.hypot(p.x - prev.x, p.y - prev.y) > 1e-6;
+  });
+}
+
+/** Point `t` (0–1) of the curved route: a cubic leaving each end along its axis. */
+export function cubicAt(r: ResolvedLine, t: number): Pt {
+  const k = Math.max(30, Math.hypot(r.b.x - r.a.x, r.b.y - r.a.y) * 0.4);
+  const c1 = { x: r.a.x + r.da.x * k, y: r.a.y + r.da.y * k };
+  const c2 = { x: r.b.x + r.db.x * k, y: r.b.y + r.db.y * k };
+  const u = 1 - t;
+  const w0 = u * u * u;
+  const w1 = 3 * u * u * t;
+  const w2 = 3 * u * t * t;
+  const w3 = t * t * t;
+  return {
+    x: w0 * r.a.x + w1 * c1.x + w2 * c2.x + w3 * r.b.x,
+    y: w0 * r.a.y + w1 * c1.y + w2 * c2.y + w3 * r.b.y,
+  };
+}
+
+/** The points a route is drawn through, `n` steps for the smooth ones. */
+function routePoints(r: ResolvedLine, n: number): Pt[] {
+  if (r.route === "orthogonal") return elbowPoints(r);
+  const at = r.route === "curved" ? cubicAt : quadAt;
+  return Array.from({ length: n + 1 }, (_, i) => at(r, i / n));
 }
 
 export function quadAt(r: ResolvedLine, t: number): Pt {
@@ -163,18 +317,16 @@ export function quadAt(r: ResolvedLine, t: number): Pt {
 export type PathSamples = { pts: Pt[]; lens: number[]; total: number };
 
 export function samplePath(r: ResolvedLine, n = 80): PathSamples {
-  const pts: Pt[] = [];
+  const pts = routePoints(r, n);
   const lens: number[] = [];
   let total = 0;
-  for (let i = 0; i <= n; i++) {
-    const p = quadAt(r, i / n);
+  pts.forEach((p, i) => {
     if (i > 0) {
       const prev = pts[i - 1] as Pt;
       total += Math.hypot(p.x - prev.x, p.y - prev.y);
     }
-    pts.push(p);
     lens.push(total);
-  }
+  });
   return { pts, lens, total };
 }
 

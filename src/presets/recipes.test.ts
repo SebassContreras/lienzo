@@ -28,8 +28,12 @@ describe("built-in recipes", () => {
     expect(typeof id).toBe("string");
     // Recorded before spec 013: its flat `anim` now lives in the slot of its kind.
     const before = fixture[i] as (typeof fixture)[number] & { anim?: unknown };
+    const migrated = before.anim
+      ? { ...before, anim: migrateAnim(before.anim) }
+      : before;
+    // Lines recorded before spec 021 are straight.
     expect(element).toEqual(
-      before.anim ? { ...before, anim: migrateAnim(before.anim) } : before,
+      migrated.kind === "line" ? { ...migrated, route: "straight" } : migrated,
     );
   });
 

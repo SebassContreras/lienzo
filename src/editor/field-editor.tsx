@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { descriptorOf } from "../components/index.ts";
+import { ANCHORS } from "../components/line/descriptor.ts";
 import type { ThreeEl } from "../components/three/descriptor.ts";
 import { lateSlots } from "../engine/anim.ts";
 import { imageSize } from "../engine/assets.ts";
@@ -175,22 +176,37 @@ function Connection({ item, value, label, change, ctx }: WidgetProps) {
   const end = value as Endpoint;
   const key = item.path[item.path.length - 1] as "a" | "b";
   return end.attach ? (
-    <div className="attached">
-      <span>
-        {label}: conectado a <b>{ctx.nameOf(end.attach)}</b>
-      </span>
-      <button
-        type="button"
-        title="Desconectar"
-        onClick={() =>
+    <>
+      <div className="attached">
+        <span>
+          {label}: conectado a <b>{ctx.nameOf(end.attach)}</b>
+        </span>
+        <button
+          type="button"
+          title="Desconectar"
+          onClick={() =>
+            change((d) => {
+              if (d.kind === "line") {
+                d[key].attach = undefined;
+                d[key].anchor = undefined;
+              }
+            })
+          }
+        >
+          <Link2Off size={14} />
+        </button>
+      </div>
+      <Select
+        label="Ancla"
+        value={end.anchor ?? "auto"}
+        options={ANCHORS}
+        onChange={(v) =>
           change((d) => {
-            if (d.kind === "line") d[key].attach = undefined;
+            if (d.kind === "line") d[key].anchor = v === "auto" ? undefined : v;
           })
         }
-      >
-        <Link2Off size={14} />
-      </button>
-    </div>
+      />
+    </>
   ) : (
     <div className="hint">
       {label}: libre. Arrástralo sobre una tarjeta o texto para conectarlo.

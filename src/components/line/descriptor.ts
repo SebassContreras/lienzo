@@ -17,8 +17,37 @@ import {
 } from "../fields/index.ts";
 import { drawLine } from "./draw.ts";
 
-/** A line end: a free point, or attached to the element `attach`. */
-export type Endpoint = { x: number; y: number; attach?: string };
+/** Where on its target an attached end sits; `auto` is the outline point facing the other end. */
+export type Anchor = "auto" | "top" | "bottom" | "left" | "right" | "center";
+
+export const ANCHORS = [
+  ["auto", "Automático"],
+  ["top", "Arriba"],
+  ["bottom", "Abajo"],
+  ["left", "Izquierda"],
+  ["right", "Derecha"],
+  ["center", "Centro"],
+] as const satisfies readonly (readonly [Anchor, string])[];
+
+/** A line end: a free point, or attached to the element `attach` at `anchor` (default auto). */
+export type Endpoint = {
+  x: number;
+  y: number;
+  attach?: string;
+  anchor?: Anchor;
+};
+
+/** How the path runs between the two ends. */
+export type Route = "straight" | "orthogonal" | "curved";
+
+const ROUTES = [
+  ["straight", "Recta"],
+  ["orthogonal", "En escalón"],
+  ["curved", "Curva suave"],
+] as const satisfies readonly (readonly [Route, string])[];
+
+const enumOf = <T extends string>(options: readonly (readonly [T, string])[]) =>
+  z.enum(options.map(([v]) => v) as [T, ...T[]]);
 
 export type FlowKind = "none" | "ants" | "pulse" | "comet";
 
@@ -33,6 +62,7 @@ const endpointSchema: z.ZodType<Endpoint> = z.object({
   x: z.number(),
   y: z.number(),
   attach: z.string().optional(),
+  anchor: enumOf(ANCHORS).optional(),
 });
 
 /** Ends are dragged on the stage; the inspector shows what each is attached to. */
@@ -51,13 +81,26 @@ const LINE_ANIMS: AnimOffer = {
 const C = { section: "Conexión" };
 const S = { section: "Trazo" };
 const flowing = (p: Parent) => p.kind !== "none";
+const straight = (p: Parent) => p.route === "straight";
 
 /** A straight or curved connector between two points or elements. */
 const fields = {
   a: end(0, "Inicio"),
   b: end(260, "Fin"),
-  /** Perpendicular offset of the curve's control point, px. */
-  bend: num(0, { label: "Curva", min: -400, max: 400, ...C }),
+  /** Scenes saved before routes existed are straight. */
+  route: select(ROUTES, "straight", {
+    label: "Trazado",
+    schema: enumOf(ROUTES).default("straight") as z.ZodType<Route>,
+    ...C,
+  }),
+  /** Perpendicular offset of the straight route's control point, px. */
+  bend: num(0, {
+    label: "Curva",
+    min: -400,
+    max: 400,
+    visible: straight,
+    ...C,
+  }),
   width: { ...strokeWidth(3, 0.5, 30), ...S },
   color: color("#3b82f6", { label: "Color", ...S }),
   opacity: num(0.6, { label: "Opacidad", max: 1, step: 0.01, ...S }),

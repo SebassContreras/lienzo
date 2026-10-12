@@ -21,6 +21,9 @@ describe("line geometry", () => {
       a: { x: 0, y: 0 },
       b: { x: 200, y: 0 },
       c: { x: 100, y: 0 },
+      route: "straight",
+      da: { x: 1, y: 0 },
+      db: { x: -1, y: 0 },
     });
     expect(s.total).toBeCloseTo(200, 6);
     expect(pointAtFraction(s, 0.5).p.x).toBeCloseTo(100, 6);

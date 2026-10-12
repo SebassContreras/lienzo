@@ -20,9 +20,11 @@ export type { GroupEl } from "../components/group/descriptor.ts";
 export type { IconEl } from "../components/icon/descriptor.ts";
 export type { ImageEl } from "../components/image/descriptor.ts";
 export type {
+  Anchor,
   Endpoint,
   FlowKind,
   LineEl,
+  Route,
 } from "../components/line/descriptor.ts";
 export type { ParticlesEl } from "../components/particles/descriptor.ts";
 export type { RectEl, ShapeEl } from "../components/rect/descriptor.ts";
