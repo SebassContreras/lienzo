@@ -30,7 +30,12 @@ export function drawGroup(
     : st;
   const body = bodyBox(el);
   withTransform(ctx, boxOf(el), own, () => {
-    if (el.frame !== "none") drawFrame(ctx, el);
+    if (el.frame !== "none") {
+      // the frame's text settings must not reach the children
+      ctx.save();
+      drawFrame(ctx, el);
+      ctx.restore();
+    }
     const content = () => {
       ctx.translate(body.x, body.y);
       ctx.scale(body.w / (el.cw || 1), body.h / (el.ch || 1));
