@@ -43,8 +43,16 @@ function elementUnion(): z.ZodType<Element> {
   ]) as unknown as z.ZodType<Element>;
 }
 
-/** Any element, checked against its kind's descriptor fields. */
-export const ElementSchema: z.ZodType<Element> = z.lazy(() => {
-  union ??= elementUnion();
-  return union;
-});
+/**
+ * Any element, checked against its kind's descriptor fields. It delegates on every parse
+ * (zod 4's `z.lazy` keeps its first schema), so a kind registered later is accepted (007/R6).
+ */
+export const ElementSchema: z.ZodType<Element> = z
+  .unknown()
+  .transform((value, ctx) => {
+    union ??= elementUnion();
+    const r = union.safeParse(value);
+    if (r.success) return r.data;
+    for (const issue of r.error.issues) ctx.issues.push(issue as never);
+    return z.NEVER;
+  }) as unknown as z.ZodType<Element>;
