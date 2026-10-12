@@ -9,3 +9,6 @@
 - [ ] T004 [agent] [status:todo] Test: export the demo scene to PNG, GIF and MP4; the PNG equals the editor export at the same t
       covers: R1@1, R2@1, R3@1
       kind: test
+- [ ] T005 [agent] [status:todo] CLI and MCP server dispose the renderer on exit; test: `pnpm lienzo scene_export` exits by itself, also after a failed export
+      covers: D4@1
+      └─ do after T002

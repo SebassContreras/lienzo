@@ -4,9 +4,11 @@
       covers: D1@3, A20@2
       └─ reviewed 2026-10-12: still right; @file and Spanish errors added by T005
       changes: none
+      └─ built inside T003's change (`.spectrace/changes/008-T003.patch`), which was opened first
 - [x] T002 [agent] [status:done] Generated help for the tool list and for each tool
       covers: D2@1
       changes: none
+      └─ built inside T003's change (`.spectrace/changes/008-T003.patch`), which was opened first
 - [x] T003 [agent] [status:done] `lienzo` pnpm script running the CLI with `tsx`
       covers: D1@3, A22@1
       └─ reviewed 2026-10-12: still right
@@ -15,6 +17,7 @@
       covers: R1@1, R2@1, R3@1
       kind: test
       changes: none
+      └─ built inside T003's change (`.spectrace/changes/008-T003.patch`), which was opened first
 - [x] T005 [agent] [status:done] `--json @file`, Spanish CLI errors, and the font moved to `public/` so descriptors load in Node
       covers: D1@3, D3@1
       changes: src/cli/args.ts (+41 -8), src/cli/cli.test.ts (+10 -1), src/cli/help.ts (+1 -1), src/cli/main.ts (+17 -6)
