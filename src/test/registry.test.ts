@@ -124,6 +124,8 @@ const NOT_IN_INSPECTOR: Record<string, string[]> = {
   // resized on the stage, or with "Ajustar al lienzo"
   // and the template is set with "Usar como partícula"
   particles: ["w", "h", "template"],
+  // set from the shapes' bounds or the imported file
+  path: ["view"],
 };
 
 /** Every data field's path, objects opened into their fields. */
@@ -201,6 +203,7 @@ describe("descriptors", () => {
       "table",
       "code",
       "chart",
+      "path",
     ]);
     for (const d of descriptors) {
       expect(typeof d.draw).toBe("function");

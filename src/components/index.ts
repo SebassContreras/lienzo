@@ -19,6 +19,7 @@ import { type ImageEl, image } from "./image/descriptor.ts";
 import { type LineEl, line } from "./line/descriptor.ts";
 import { type ListEl, list } from "./list/descriptor.ts";
 import { type ParticlesEl, particles } from "./particles/descriptor.ts";
+import { type PathEl, path } from "./path/descriptor.ts";
 import { type PolygonEl, polygon } from "./polygon/descriptor.ts";
 import { type ProgressEl, progress } from "./progress/descriptor.ts";
 import { type RectEl, rect } from "./rect/descriptor.ts";
@@ -50,7 +51,8 @@ export type RegisteredElement =
   | ListEl
   | TableEl
   | CodeEl
-  | ChartEl;
+  | ChartEl
+  | PathEl;
 
 export type RegisteredKind = RegisteredElement["kind"];
 
@@ -78,6 +80,7 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
   table,
   code,
   chart,
+  path,
 ];
 
 export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;

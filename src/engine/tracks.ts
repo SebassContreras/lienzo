@@ -13,7 +13,7 @@ import {
   type Keyframe,
 } from "../model/track.ts";
 import { EASINGS, easingFn } from "./easing.ts";
-import { hexRgb } from "./paint.ts";
+import { mixColor } from "./paint.ts";
 
 /** Keyframes closer than this (seconds, under half a frame at 60 fps) are the same one. */
 export const SAME_T = 1 / 120;
@@ -36,17 +36,6 @@ export function valueKind(kind: string, path: string): ValueKind {
   const f = fieldAt(descriptorOf(kind)?.fields ?? {}, path);
   if (f?.type === "color") return "color";
   return f?.type === "number" && f.int ? "int" : "number";
-}
-
-function mixColor(a: string, b: string, k: number): string {
-  const ca = hexRgb(a);
-  const cb = hexRgb(b);
-  const hex = ca.map((v, i) =>
-    Math.round(v + ((cb[i] as number) - v) * k)
-      .toString(16)
-      .padStart(2, "0"),
-  );
-  return `#${hex.join("")}`;
 }
 
 /**
