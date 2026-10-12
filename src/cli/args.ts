@@ -62,17 +62,48 @@ function coerce(value: string, types: string[]): unknown {
   return value;
 }
 
-/** Arguments the CLI cannot read; the message is shown as is. */
+/** Arguments the CLI cannot read; the message (Spanish, A16) is shown as is. */
 export class UsageError extends Error {}
 
+/** `parseArgs`' English errors, said in Spanish (A16). */
+function parseError(error: Error & { code?: string }): UsageError {
+  const option = error.message.match(/'(-[^']*)'/)?.[1] ?? "";
+  switch (error.code) {
+    case "ERR_PARSE_ARGS_UNKNOWN_OPTION":
+      return new UsageError(`Opción desconocida «${option}»; mira --help`);
+    case "ERR_PARSE_ARGS_INVALID_OPTION_VALUE":
+      return new UsageError(`Valor no válido para la opción «${option}»`);
+    case "ERR_PARSE_ARGS_UNEXPECTED_POSITIONAL":
+      return new UsageError(
+        "Argumento sin opción; los campos se dan como --campo valor",
+      );
+    default:
+      return new UsageError(error.message);
+  }
+}
+
+/** Reads `--json`'s source: a file path, or `-` for stdin. */
+export type ReadSource = (source: string) => Promise<string>;
+
+/** `--json`'s text: inline, `@file` or `-` (stdin), so no shell has to quote JSON. */
+async function jsonText(value: string, read: ReadSource): Promise<string> {
+  if (value === "-") return read("-");
+  if (!value.startsWith("@")) return value;
+  try {
+    return await read(value.slice(1));
+  } catch {
+    throw new UsageError(`--json: no se puede leer «${value.slice(1)}»`);
+  }
+}
+
 /**
- * The input for `tool` from `args`: `--json` (a JSON object, or `-` for stdin) first, then
- * every flag over it. `help` is true when `--help` was given.
+ * The input for `tool` from `args`: `--json` first, then every flag over it. `help` is true
+ * when `--help` was given.
  */
 export async function inputOf(
   tool: Tool,
   args: string[],
-  stdin: () => Promise<string>,
+  read: ReadSource,
 ): Promise<{ input: Record<string, unknown>; help: boolean }> {
   const fields = fieldsOf(tool).filter((f) => f.flag);
   const options: Record<
@@ -91,21 +122,23 @@ export async function inputOf(
   try {
     ({ values } = parseArgs({ args, options, strict: true }));
   } catch (error) {
-    throw new UsageError((error as Error).message);
+    throw parseError(error as Error);
   }
   if (values.help) return { input: {}, help: true };
 
   let input: Record<string, unknown> = {};
   if (typeof values.json === "string") {
-    const text = values.json === "-" ? await stdin() : values.json;
+    const text = await jsonText(values.json, read);
     let parsed: unknown;
     try {
       parsed = JSON.parse(text);
     } catch (error) {
-      throw new UsageError(`--json: ${(error as Error).message}`);
+      throw new UsageError(
+        `--json: JSON no válido (${(error as Error).message})`,
+      );
     }
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
-      throw new UsageError("--json: expected a JSON object");
+      throw new UsageError("--json: se esperaba un objeto JSON");
     input = parsed as Record<string, unknown>;
   }
   for (const f of fields) {
