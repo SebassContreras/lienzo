@@ -14,6 +14,7 @@ import {
 import { drawScene } from "../engine/render.ts";
 import { applyTracks, commitAt } from "../engine/tracks.ts";
 import type { Element, LineEl, Scene } from "../model/model.ts";
+import { type Snap, snapBox, unionBox } from "./snap.ts";
 
 export type Clock = { t: number; playing: boolean };
 
@@ -55,6 +56,7 @@ function idsInBox(scene: Scene, box: Box): string[] {
 }
 
 const ACCENT = "#38bdf8";
+const GUIDE = "#f472b6";
 const ATTACH = "#4ade80";
 
 function corners(el: Element) {
@@ -110,6 +112,78 @@ function applyMove(drag: Extract<Drag, { mode: "move" }>, p: Pt): Element[] {
   const dy = p.y - drag.start.y;
   const moving = new Set(drag.origs.map((el) => el.id));
   return drag.origs.map((el) => translate(el, dx, dy, drag.byId, moving));
+}
+
+/**
+ * The move snapped to the other elements and the canvas (022): the union box of the moved
+ * elements (lines aside) is what snaps (D4).
+ */
+function snapMove(
+  drag: Extract<Drag, { mode: "move" }>,
+  p: Pt,
+  scene: Scene,
+  zoom: number,
+  enabled: boolean,
+): { moved: Element[]; snap: Snap | undefined } {
+  const moved = applyMove(drag, p);
+  const box = unionBox(
+    moved.filter((el) => el.kind !== "line").map((el) => boxOf(el)),
+  );
+  if (!box || !enabled) return { moved, snap: undefined };
+  const ids = new Set(moved.map((el) => el.id));
+  const others = scene.elements
+    .filter((el) => el.kind !== "line" && !ids.has(el.id))
+    .map((el) => boxOf(el));
+  const snap = snapBox(box, others, scene, zoom);
+  if (!snap.dx && !snap.dy) return { moved, snap };
+  return {
+    moved: applyMove(drag, { x: p.x + snap.dx, y: p.y + snap.dy }),
+    snap,
+  };
+}
+
+/** Guide lines and equal-gap marks; overlay only, so never exported (D2). */
+function drawSnap(
+  ctx: CanvasRenderingContext2D,
+  snap: Snap,
+  scene: Scene,
+  px: number,
+): void {
+  ctx.save();
+  ctx.strokeStyle = GUIDE;
+  ctx.lineWidth = px;
+  ctx.setLineDash([4 * px, 3 * px]);
+  ctx.beginPath();
+  for (const g of snap.guides) {
+    const max = g.axis === "x" ? scene.height : scene.width;
+    const from = Math.max(0, g.from);
+    const to = Math.min(max, g.to);
+    if (g.axis === "x") {
+      ctx.moveTo(g.at, from);
+      ctx.lineTo(g.at, to);
+    } else {
+      ctx.moveTo(from, g.at);
+      ctx.lineTo(to, g.at);
+    }
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  const tick = 4 * px;
+  for (const m of snap.gaps) {
+    const at = (a: number, b: number) =>
+      m.axis === "x" ? ctx.lineTo(a, b) : ctx.lineTo(b, a);
+    const go = (a: number, b: number) =>
+      m.axis === "x" ? ctx.moveTo(a, b) : ctx.moveTo(b, a);
+    go(m.from, m.at);
+    at(m.to, m.at);
+    go(m.from, m.at - tick);
+    at(m.from, m.at + tick);
+    go(m.to, m.at - tick);
+    at(m.to, m.at + tick);
+  }
+  ctx.stroke();
+  ctx.restore();
 }
 
 function applyDrag(
@@ -198,6 +272,7 @@ function drawOverlay(
   hoverId: string | undefined,
   attachId: string | undefined,
   band: Box | undefined,
+  snap: Snap | undefined,
   zoom: number,
 ): void {
   const px = 1 / zoom;
@@ -256,6 +331,8 @@ function drawOverlay(
     ctx.fillRect(band.x, band.y, band.w, band.h);
     ctx.strokeRect(band.x, band.y, band.w, band.h);
   }
+
+  if (snap) drawSnap(ctx, snap, scene, px);
 
   const sel =
     selection.length === 1 ? byId.get(selection[0] as string) : undefined;
@@ -323,6 +400,7 @@ export function Stage({
   const drag = useRef<Drag | null>(null);
   const hover = useRef<string | undefined>(undefined);
   const attachTarget = useRef<string | undefined>(undefined);
+  const snapRef = useRef<Snap | undefined>(undefined);
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
@@ -369,6 +447,7 @@ export function Stage({
           hover.current,
           attachTarget.current,
           d?.mode === "box" ? spanBox(d.start, d.end) : undefined,
+          snapRef.current,
           z,
         );
       }
@@ -484,7 +563,16 @@ export function Stage({
       return;
     }
     if (d.mode === "move") {
-      replace(...applyMove(d, p));
+      // Ctrl (Cmd on macOS) held: no snapping (R2)
+      const { moved, snap } = snapMove(
+        d,
+        p,
+        s,
+        zoom,
+        !(e.ctrlKey || e.metaKey),
+      );
+      snapRef.current = snap;
+      replace(...moved);
       return;
     }
     replace(
@@ -503,6 +591,7 @@ export function Stage({
   const onPointerUp = () => {
     drag.current = null;
     attachTarget.current = undefined;
+    snapRef.current = undefined;
   };
 
   return (
