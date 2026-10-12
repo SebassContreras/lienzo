@@ -1,3 +1,4 @@
+import { badgeLayout } from "../components/badge/layout.ts";
 import type {
   Anchor,
   Element,
@@ -58,6 +59,10 @@ export function boxOf(el: Element): Box {
   if (el.kind === "line") return lineBox(el);
   if (el.kind === "text") {
     const { w, h } = textLayout(el);
+    return { x: el.x, y: el.y, w, h };
+  }
+  if (el.kind === "badge") {
+    const { w, h } = badgeLayout(el);
     return { x: el.x, y: el.y, w, h };
   }
   return { x: el.x, y: el.y, w: el.w, h: el.h };
@@ -405,7 +410,7 @@ export function placeChild(child: Element, group: GroupEl): Element {
       b: { ...child.b, ...at(child.b) },
     };
   }
-  if (child.kind === "text")
+  if (child.kind === "text" || child.kind === "badge")
     return { ...child, ...at(child), size: child.size * sx };
   return { ...child, ...at(child), w: child.w * sx, h: child.h * sy };
 }

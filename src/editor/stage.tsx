@@ -203,7 +203,7 @@ function applyDrag(
     const dx = p.x - drag.start.x;
     const dy = p.y - drag.start.y;
     const h = drag.handle;
-    if (o.kind !== "text" && o.kind !== "line") {
+    if (o.kind !== "text" && o.kind !== "line" && o.kind !== "badge") {
       const MIN = 16;
       let { x, y, w, h: height } = o;
       if (h === "ne" || h === "se") w = Math.max(MIN, o.w + dx);

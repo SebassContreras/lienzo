@@ -39,7 +39,7 @@ describe("scene schema", () => {
   it("rejects an unknown element kind deep inside a group", () => {
     const group = {
       ...defaultGroup(),
-      children: [{ ...defaultRect(), kind: "star" }],
+      children: [{ ...defaultRect(), kind: "no-such-kind" }],
     };
     const r = parseScene({ ...defaultScene(), elements: [group] });
     expect(r.ok).toBe(false);
@@ -95,7 +95,11 @@ describe("preset schema", () => {
   });
 
   it("rejects an unknown kind", () => {
-    const r = parsePresetRecipe({ name: "A", kind: "star", traits: [] });
+    const r = parsePresetRecipe({
+      name: "A",
+      kind: "no-such-kind",
+      traits: [],
+    });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/^kind: /);
   });
@@ -115,7 +119,7 @@ describe("preset schema", () => {
       name: "G",
       kind: "group",
       traits: [],
-      set: { children: [{ kind: "star" }] },
+      set: { children: [{ kind: "no-such-kind" }] },
     });
     expect(child.ok).toBe(false);
   });

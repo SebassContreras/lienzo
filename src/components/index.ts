@@ -4,6 +4,10 @@
  */
 import { registerElementKinds } from "../model/element-schema.ts";
 import { newId } from "../model/id.ts";
+import { type ArrowEl, arrow } from "./arrow/descriptor.ts";
+import { type BadgeEl, badge } from "./badge/descriptor.ts";
+import { type BubbleEl, bubble } from "./bubble/descriptor.ts";
+import { type CounterEl, counter } from "./counter/descriptor.ts";
 import type { Descriptor } from "./descriptor.ts";
 import { type EllipseEl, ellipse } from "./ellipse/descriptor.ts";
 import { defaultsOf } from "./fields/index.ts";
@@ -12,7 +16,10 @@ import { type IconEl, icon } from "./icon/descriptor.ts";
 import { type ImageEl, image } from "./image/descriptor.ts";
 import { type LineEl, line } from "./line/descriptor.ts";
 import { type ParticlesEl, particles } from "./particles/descriptor.ts";
+import { type PolygonEl, polygon } from "./polygon/descriptor.ts";
+import { type ProgressEl, progress } from "./progress/descriptor.ts";
 import { type RectEl, rect } from "./rect/descriptor.ts";
+import { type StarEl, star } from "./star/descriptor.ts";
 import { type TextEl, text } from "./text/descriptor.ts";
 import { type ThreeEl, three } from "./three/descriptor.ts";
 
@@ -26,7 +33,14 @@ export type RegisteredElement =
   | TextEl
   | LineEl
   | ParticlesEl
-  | ThreeEl;
+  | ThreeEl
+  | PolygonEl
+  | StarEl
+  | ArrowEl
+  | BadgeEl
+  | ProgressEl
+  | CounterEl
+  | BubbleEl;
 
 export type RegisteredKind = RegisteredElement["kind"];
 
@@ -42,6 +56,13 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
   line,
   particles,
   three,
+  polygon,
+  star,
+  arrow,
+  badge,
+  progress,
+  counter,
+  bubble,
 ];
 
 export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;
