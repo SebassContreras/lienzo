@@ -61,7 +61,9 @@ describe("morphing (R4–R8)", () => {
     // the same square started elsewhere morphs without moving
     const a = shifted?.a as number[];
     const b = shifted?.b as number[];
-    a.forEach((v, i) => expect(b[i]).toBeCloseTo(v, 6));
+    a.forEach((v, i) => {
+      expect(b[i]).toBeCloseTo(v, 6);
+    });
   });
 
   it("gives the same points for the same value, and closes a loop", () => {
