@@ -1,0 +1,56 @@
+{
+  "name": "Forma que se transforma",
+  "category": "Trazados",
+  "kind": "path",
+  "traits": [],
+  "set": {
+    "w": 260,
+    "h": 260,
+    "shapes": [
+      {
+        "d": "M50 6 A44 44 0 1 1 50 94 A44 44 0 1 1 50 6 Z",
+        "fill": "#3b82f6"
+      },
+      {
+        "d": "M50 4 L61 37 L96 37 L68 58 L79 92 L50 72 L21 92 L32 58 L4 37 L39 37 Z",
+        "fill": "#f59e0b"
+      },
+      {
+        "d": "M12 12 H88 V88 H12 Z",
+        "fill": "#22c55e"
+      },
+      {
+        "d": "M50 6 A44 44 0 1 1 50 94 A44 44 0 1 1 50 6 Z",
+        "fill": "#3b82f6"
+      }
+    ],
+    "morphEasing": "ease-in-out",
+    "border": {
+      "width": 0
+    },
+    "tracks": {
+      "morph": [
+        {
+          "t": 0,
+          "value": 0,
+          "easing": "linear"
+        },
+        {
+          "t": 1.33,
+          "value": 1,
+          "easing": "linear"
+        },
+        {
+          "t": 2.66,
+          "value": 2,
+          "easing": "linear"
+        },
+        {
+          "t": 4,
+          "value": 3,
+          "easing": "auto"
+        }
+      ]
+    }
+  }
+}
