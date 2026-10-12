@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import {
   type MutableRefObject,
-  type ReactNode,
   useCallback,
   useEffect,
   useRef,
@@ -79,6 +78,7 @@ import {
   recipeItems,
   type StoredRef,
 } from "./library.tsx";
+import { Panel } from "./panel.tsx";
 import { type Clock, Stage } from "./stage.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
 
@@ -253,6 +253,15 @@ export function App() {
     [presetChange],
   );
 
+  /** `s` as the scene, recorded first as one undoable step: every scene action goes through here. */
+  const applyScene = useCallback(
+    (s: Scene) => {
+      checkpoint();
+      setScene(s);
+    },
+    [checkpoint, setScene],
+  );
+
   /**
    * Replaces the whole scene as one undoable step, first copying in the animation presets
    * its elements name (019/D10); what could not be copied is shown as a notice.
@@ -260,8 +269,7 @@ export function App() {
   const loadScene = useCallback(
     (s: Scene) => {
       const open = (next: Scene) => {
-        checkpoint();
-        setScene(next);
+        applyScene(next);
         setSelection([]);
       };
       if (!namesAnimPreset(s.elements)) {
@@ -283,65 +291,52 @@ export function App() {
           setStatus(`Error: ${error instanceof Error ? error.message : error}`);
         });
     },
-    [checkpoint, setScene],
-  );
-
-  /** A scene change made outside the canvas, as one undoable step. */
-  const applyScene = useCallback(
-    (s: Scene) => {
-      checkpoint();
-      setScene(s);
-    },
-    [checkpoint, setScene],
+    [applyScene],
   );
 
   const addElement = useCallback(
     (template: Element, at?: Pt) => {
-      checkpoint();
       const s = sceneRef.current;
       const el = centerOn(
         cloneElement(template),
         at?.x ?? s.width / 2,
         at?.y ?? s.height / 2,
       );
-      setScene({ ...s, elements: [...s.elements, el] });
+      applyScene({ ...s, elements: [...s.elements, el] });
       setSelection([el.id]);
     },
-    [checkpoint, setScene],
+    [applyScene],
   );
 
   const removeSelected = useCallback(() => {
     if (selection.length === 0) return;
-    checkpoint();
     const s = sceneRef.current;
-    setScene({ ...s, elements: removeElements(s, new Set(selection)) });
+    applyScene({ ...s, elements: removeElements(s, new Set(selection)) });
     setSelection([]);
-  }, [checkpoint, selection, setScene]);
+  }, [selection, applyScene]);
 
   const duplicateSelected = useCallback(() => {
     const s = sceneRef.current;
     if (selection.length === 0) return;
-    checkpoint();
     const copies = duplicateElements(s, selection);
-    setScene({ ...s, elements: [...s.elements, ...copies] });
+    applyScene({ ...s, elements: [...s.elements, ...copies] });
     setSelection(copies.map((el) => el.id));
-  }, [checkpoint, selection, setScene]);
+  }, [applyScene, selection]);
 
   const nudge = useCallback(
     (dx: number, dy: number) => {
       const s = sceneRef.current;
       if (selection.length === 0) return;
-      checkpoint();
       const moving = new Set(selection);
       const byId = indexById(s);
-      setScene({
+      applyScene({
         ...s,
         elements: s.elements.map((e) =>
           moving.has(e.id) ? translate(e, dx, dy, byId, moving) : e,
         ),
       });
     },
-    [checkpoint, selection, setScene],
+    [applyScene, selection],
   );
 
   const alignSelected = useCallback(
@@ -349,20 +344,18 @@ export function App() {
       const s = sceneRef.current;
       const next = alignElements(s, selection, action);
       if (next === s) return;
-      checkpoint();
-      setScene(next);
+      applyScene(next);
     },
-    [checkpoint, selection, setScene],
+    [applyScene, selection],
   );
 
   const groupSelected = useCallback(() => {
     const s = sceneRef.current;
     const { scene: grouped, group } = groupElements(s, selection);
     if (!group) return;
-    checkpoint();
-    setScene(grouped);
+    applyScene(grouped);
     setSelection([group.id]);
-  }, [checkpoint, selection, setScene]);
+  }, [selection, applyScene]);
 
   const ungroupSelected = useCallback(() => {
     const s = sceneRef.current;
@@ -370,11 +363,10 @@ export function App() {
       (el) => selection.length === 1 && el.id === selection[0],
     );
     if (target?.kind !== "group") return;
-    checkpoint();
     const { scene: flat, ids } = ungroupElement(s, target.id);
-    setScene(flat);
+    applyScene(flat);
     setSelection(ids);
-  }, [checkpoint, selection, setScene]);
+  }, [applyScene, selection]);
 
   /** With a particles element and one other selected: the other becomes its particle. */
   const particlePair = (() => {
@@ -389,7 +381,6 @@ export function App() {
     if (!particlePair) return;
     const { field, other } = particlePair;
     const s = sceneRef.current;
-    checkpoint();
     // a line keeps where it was drawn: its attachments point at elements it leaves behind
     const template =
       other.kind === "line"
@@ -402,27 +393,26 @@ export function App() {
             };
           })()
         : other;
-    setScene({
+    applyScene({
       ...s,
       elements: removeElements(s, new Set([other.id])).map((e) =>
         e.id === field.id ? { ...e, template: structuredClone(template) } : e,
       ),
     });
     setSelection([field.id]);
-  }, [checkpoint, particlePair, setScene]);
+  }, [particlePair, applyScene]);
 
   /** The selected field's particle back on the canvas, over the field, to be edited. */
   const editParticle = useCallback(() => {
     const s = sceneRef.current;
     const field = s.elements.find((e) => e.id === selection[0]);
     if (field?.kind !== "particles" || !field.template) return;
-    checkpoint();
     const el = centerOn(
       cloneElement(field.template),
       field.x + field.w / 2,
       field.y + field.h / 2,
     );
-    setScene({
+    applyScene({
       ...s,
       elements: [
         ...s.elements.map((e) =>
@@ -432,7 +422,7 @@ export function App() {
       ],
     });
     setSelection([el.id]);
-  }, [checkpoint, selection, setScene]);
+  }, [selection, applyScene]);
 
   const moveLayer = useCallback(
     (id: string, dir: 1 | -1) => {
@@ -443,9 +433,9 @@ export function App() {
       const elements = [...s.elements];
       const [moved] = elements.splice(i, 1);
       elements.splice(j, 0, moved as Element);
-      setScene({ ...s, elements });
+      applyScene({ ...s, elements });
     },
-    [setScene],
+    [applyScene],
   );
 
   const togglePlay = useCallback(() => {
@@ -726,10 +716,9 @@ export function App() {
               ),
             overwriteHint: "Sobrescribir con el fondo actual",
           }}
-          onApply={(background) => {
-            checkpoint();
-            setScene({ ...sceneRef.current, background });
-          }}
+          onApply={(background) =>
+            applyScene({ ...sceneRef.current, background })
+          }
         />
       </aside>
       <main className="center">
@@ -831,44 +820,6 @@ export function App() {
         )}
       </Panel>
     </div>
-  );
-}
-
-/** Inputs whose edits start on the first keystroke rather than on pointer down. */
-const TYPED =
-  "input:not([type=range]):not([type=color]):not([type=checkbox]), textarea, select";
-
-/**
- * Right-hand panel; records one undo step per gesture: on pointer down (buttons, sliders,
- * colours) or on the first change of a typed field. Focus alone records nothing (R2).
- */
-function Panel({
-  checkpoint,
-  children,
-}: {
-  checkpoint: () => void;
-  children: ReactNode;
-}) {
-  const armed = useRef(true);
-  const onFirstChange = () => {
-    if (!armed.current) return;
-    armed.current = false;
-    checkpoint();
-  };
-  return (
-    <aside
-      className="panel"
-      onPointerDownCapture={(e) => {
-        armed.current = true;
-        if (!(e.target as HTMLElement).closest(TYPED)) checkpoint();
-      }}
-      onFocusCapture={() => {
-        armed.current = true;
-      }}
-      onChangeCapture={onFirstChange}
-    >
-      {children}
-    </aside>
   );
 }
 
