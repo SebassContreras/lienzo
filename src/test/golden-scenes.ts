@@ -1,4 +1,5 @@
 import { migrateAnim } from "../components/fields/index.ts";
+import { KINDS as REGISTERED } from "../components/index.ts";
 import { demoScene } from "../demo.ts";
 import {
   type Anim,
@@ -40,7 +41,10 @@ function grid(elements: Element[]): Scene {
   return { ...defaultScene(), elements };
 }
 
-/** Window mockups (017) are groups, but came after the hashes were recorded. */
+/**
+ * Presets of the first recording: the kinds it knew, less window mockups (017), which are
+ * groups but came later. Everything else is in `laterScene`.
+ */
 const recorded = (r: (typeof BUILT_IN_RECIPES)[number]) =>
   r.kind in RECORDED_ANIMS &&
   !(r.set && "frame" in (r.set as Record<string, unknown>));
@@ -167,10 +171,28 @@ function kindsScene(): Scene {
   return scene;
 }
 
+/**
+ * What came after the first recording (016, 017, 024): every other built-in preset (window
+ * mockups included) and a default element of each newer kind. Its hashes were recorded on
+ * their own, so the first recording stays untouched.
+ */
+function laterScene(): Scene {
+  const presets = BUILT_IN_RECIPES.filter((r) => !recorded(r)).map((r) => {
+    const res = resolveElement(r as PresetRecipe);
+    if ("error" in res) throw new Error(res.error);
+    return res.element;
+  });
+  const kinds = REGISTERED.filter((k) => !(k in RECORDED_ANIMS)).map((k) =>
+    defaultElement(k),
+  );
+  return grid([...presets, ...kinds]);
+}
+
 export function goldenScenes(): Record<string, Scene> {
   return {
     demo: demoScene(),
     presets: presetsScene(),
     kinds: kindsScene(),
+    later: laterScene(),
   };
 }
