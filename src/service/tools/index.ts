@@ -15,8 +15,10 @@ import { presetGet } from "./preset-get.ts";
 import { presetList } from "./preset-list.ts";
 import { presetValidate } from "./preset-validate.ts";
 import { sceneCreate } from "./scene-create.ts";
+import { sceneExport } from "./scene-export.ts";
 import { sceneGet } from "./scene-get.ts";
 import { sceneList } from "./scene-list.ts";
+import { scenePreview } from "./scene-preview.ts";
 import { sceneValidate } from "./scene-validate.ts";
 
 export const TOOLS: readonly Tool[] = [
@@ -28,6 +30,8 @@ export const TOOLS: readonly Tool[] = [
   sceneGet,
   sceneCreate,
   sceneValidate,
+  scenePreview,
+  sceneExport,
   elementAdd,
   elementUpdate,
   elementRemove,

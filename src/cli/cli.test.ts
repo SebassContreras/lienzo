@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { beforeEach, describe, expect, it } from "vitest";
 import { type Ctx, createCtx } from "../service/ctx.ts";
+import { fakeRenderer } from "../service/fake-renderer.ts";
 import { registry } from "../service/tools/index.ts";
 import { fieldsOf } from "./args.ts";
 import { run } from "./main.ts";
@@ -17,7 +18,7 @@ beforeEach(async () => {
     recursive: true,
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
-  ctx = createCtx(root);
+  ctx = createCtx(root, fakeRenderer());
 });
 
 /** Runs a command line in-process and captures what it prints. */
@@ -126,6 +127,8 @@ describe("lienzo CLI", () => {
       "--t",
       "0",
     ]);
+    await ok(["scene_preview", "--scene", "demo", "--t", "1"]);
+    await ok(["scene_export", "--scene", "demo", "--format", "gif"]);
     await ok(["element_remove", "--scene", "demo", "--id", id]);
     expect([...called].sort()).toEqual(
       registry.tools.map((t) => t.name).sort(),

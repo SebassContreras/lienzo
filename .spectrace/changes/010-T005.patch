@@ -1,0 +1,203 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 0649b97..282e1e6 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -49,15 +49,23 @@ What exists today:
+   the descriptors import must load in plain Node: no Vite-only imports (`?url`, `?raw`,
+   `import.meta.glob`); static files go in `public/`
+ - MCP: `pnpm lienzo mcp` (`src/mcp/server.ts`, 009) serves every registry tool over stdio
+-  with `@modelcontextprotocol/sdk`; generic, no per-tool code; stdout is the protocol only
+-
+-Planned (decided, not built yet — specs 010, 011, 016, 017, 020–025):
++  with `@modelcontextprotocol/sdk`; generic, no per-tool code; stdout is the protocol only;
++  a result shaped like `ImageResult` (`src/service/image.ts`) goes out as image content
++- Headless export (010): `scene_export` / `scene_preview` render through `ctx.renderer`
++  (`src/service/renderer.ts`): an in-process Vite server + Playwright (`playwright-core`;
++  Chrome, else Edge, else Playwright's Chromium) on the `?render` route
++  (`src/export/render-page.ts`), which calls the editor's own `exportScene`. Started on the
++  first render, reused within a process, closed by `ctx.dispose()` — the CLI disposes after
++  every command, the MCP server when stdin ends. Tests pass `fakeRenderer()` unless they
++  need a real browser (`renderer.test.ts`, skipped when none is installed)
++
++Planned (decided, not built yet — specs 011, 016, 017, 020–025):
+ 
+ - Descriptors also drive compact JSON and tools (A23, specs 011, 007);
+   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
+ - CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
+   in tools (A20); tool names are `snake_case` noun_verb (`scene_export`); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
+-  over stdio, CLI via `tsx` (A22) — specs 007–010, built last
++  over stdio, CLI via `tsx` (A22) — specs 007–010, built
+ 
+ ## Layout
+ 
+@@ -81,7 +89,8 @@ src/traits/      reusable style pieces, one file per trait
+ src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
+                  store.ts), categories and filter, JSON import/export helpers, scenes dialog,
+                  animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
+-src/service/     tool registry, ctx, Node store; tools/ = one file per tool (007)
++src/service/     tool registry, ctx, Node store, headless renderer (010); tools/ = one file
++                 per tool (007)
+ src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008)
+ src/types/       type declarations for packages that ship none
+ src/demo.ts      the "how MCP works" demo scene
+diff --git a/src/cli/main.ts b/src/cli/main.ts
+index ec1c955..43579f8 100644
+--- a/src/cli/main.ts
++++ b/src/cli/main.ts
+@@ -84,12 +84,14 @@ if (import.meta.main) {
+         ? text(process.stdin)
+         : readFile(resolve(process.env.INIT_CWD ?? ".", source), "utf8"),
+   };
+-  process.exitCode = await run(
+-    process.argv.slice(2),
+-    io,
+-    createCtx(root),
+-  ).catch((error: unknown) => {
++  const ctx = createCtx(root);
++  try {
++    process.exitCode = await run(process.argv.slice(2), io, ctx);
++  } catch (error) {
+     io.stderr(errorJson("internal", String(error)));
+-    return 1;
+-  });
++    process.exitCode = 1;
++  } finally {
++    // 010/D4: a renderer left open would keep this process alive.
++    await ctx.dispose();
++  }
+ }
+diff --git a/src/mcp/server.ts b/src/mcp/server.ts
+index ba6ba77..c6692fd 100644
+--- a/src/mcp/server.ts
++++ b/src/mcp/server.ts
+@@ -69,10 +69,21 @@ export function createMcpServer(registry: Registry, ctx: Ctx): Server {
+ }
+ 
+ /**
+- * Serves `registry` over stdio until the client closes. stdout carries only the protocol,
+- * so console output is sent to stderr before the transport starts.
++ * Serves `registry` over stdio and resolves once the client is gone: stdin ends (how MCP
++ * clients shut a stdio server down) or SIGINT/SIGTERM arrives. The caller then disposes the
++ * ctx (010/D4); the SDK's transport does not watch stdin's end itself. stdout carries only
++ * the protocol, so console output is sent to stderr before the transport starts.
+  */
+ export async function serveStdio(registry: Registry, ctx: Ctx): Promise<void> {
+   console.log = console.info = console.debug = console.error;
+-  await createMcpServer(registry, ctx).connect(new StdioServerTransport());
++  const server = createMcpServer(registry, ctx);
++  const gone = new Promise<void>((resolve) => {
++    process.stdin.once("end", resolve);
++    process.stdin.once("close", resolve);
++    process.once("SIGINT", resolve);
++    process.once("SIGTERM", resolve);
++  });
++  await server.connect(new StdioServerTransport());
++  await gone;
++  await server.close();
+ }
+diff --git a/src/service/renderer.test.ts b/src/service/renderer.test.ts
+index 107ef36..fc0cc7c 100644
+--- a/src/service/renderer.test.ts
++++ b/src/service/renderer.test.ts
+@@ -3,9 +3,11 @@
+  * MP4, and the PNG checked byte for byte against the editor's own export at the same t (R3).
+  * Skipped where no Chrome, Edge or Playwright Chromium is installed.
+  */
+-import { cp, mkdir, mkdtemp, readFile } from "node:fs/promises";
++import { execFile, spawn } from "node:child_process";
++import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
++import { promisify } from "node:util";
+ import { chromium } from "playwright-core";
+ import { afterAll, beforeAll, describe, expect, it } from "vitest";
+ import type { Scene } from "../model/model.ts";
+@@ -123,3 +125,88 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
+     expect(tool.bytes.equals(Buffer.from(fromEditor))).toBe(true);
+   });
+ });
++
++/** `pnpm lienzo …` as its own process; rejects if it does not exit by itself in time. */
++const lienzo = (args: string[]) =>
++  promisify(execFile)(
++    process.execPath,
++    ["--import", "tsx", "src/cli/main.ts", ...args],
++    { cwd: APP_ROOT, timeout: 90_000 },
++  ).then(
++    () => 0,
++    (error: { code?: number; killed?: boolean }) => {
++      if (error.killed) throw new Error("the CLI did not exit by itself");
++      return error.code ?? 1;
++    },
++  );
++
++describe.skipIf(!browser)(
++  "the renderer does not outlive its process (010/D4)",
++  { timeout: 120_000 },
++  () => {
++    it("exits after an export, and after a failed one", async () => {
++      const dir = await mkdtemp(join(tmpdir(), "lienzo-exit-"));
++      const scene = [
++        "scene_export",
++        "--scene",
++        "ejemplo-keyframes",
++        "--format",
++        "png",
++      ];
++      expect(await lienzo([...scene, "--out", join(dir, "ok.png")])).toBe(0);
++      // `out` under a file: the render succeeds, then writing fails.
++      await writeFile(join(dir, "file"), "");
++      expect(
++        await lienzo([...scene, "--out", join(dir, "file", "x.png")]),
++      ).toBe(1);
++    });
++
++    it("the MCP server exits once the client closes stdin, after a preview", async () => {
++      const child = spawn(
++        process.execPath,
++        ["--import", "tsx", "src/cli/main.ts", "mcp"],
++        {
++          cwd: APP_ROOT,
++        },
++      );
++      const send = (msg: object) =>
++        child.stdin.write(`${JSON.stringify(msg)}
++`);
++      const answered = new Promise<void>((resolve) => {
++        let out = "";
++        child.stdout.on("data", (chunk: Buffer) => {
++          out += chunk.toString();
++          if (out.includes('"id":2')) resolve();
++        });
++      });
++      const exited = new Promise<number | null>((resolve) =>
++        child.on("exit", resolve),
++      );
++      send({
++        jsonrpc: "2.0",
++        id: 1,
++        method: "initialize",
++        params: {
++          protocolVersion: "2025-06-18",
++          capabilities: {},
++          clientInfo: { name: "t", version: "0" },
++        },
++      });
++      send({ jsonrpc: "2.0", method: "notifications/initialized" });
++      send({
++        jsonrpc: "2.0",
++        id: 2,
++        method: "tools/call",
++        params: {
++          name: "scene_preview",
++          arguments: { scene: "ejemplo-keyframes" },
++        },
++      });
++      await answered;
++      child.stdin.end();
++      const timer = setTimeout(() => child.kill(), 30_000);
++      expect(await exited).toBe(0);
++      clearTimeout(timer);
++    });
++  },
++);

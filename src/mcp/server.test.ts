@@ -6,6 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { run } from "../cli/main.ts";
 import { type Ctx, createCtx } from "../service/ctx.ts";
+import { fakeRenderer } from "../service/fake-renderer.ts";
 import { registry } from "../service/tools/index.ts";
 import { createMcpServer } from "./server.ts";
 
@@ -18,7 +19,7 @@ beforeEach(async () => {
     recursive: true,
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
-  ctx = createCtx(root);
+  ctx = createCtx(root, fakeRenderer());
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createMcpServer(registry, ctx).connect(serverSide);
   client = new Client({ name: "test", version: "0" });
@@ -98,5 +99,17 @@ describe("lienzo MCP server", () => {
           : (c.json as { message: string }).message,
       );
     }
+  });
+
+  it("returns scene_preview as image content (010/R2)", async () => {
+    await mcp("scene_create", { name: "demo" });
+    const r = await client.callTool({
+      name: "scene_preview",
+      arguments: { scene: "demo" },
+    });
+    expect(r.isError).toBeFalsy();
+    expect(r.content).toEqual([
+      { type: "image", mimeType: "image/png", data: expect.any(String) },
+    ]);
   });
 });
