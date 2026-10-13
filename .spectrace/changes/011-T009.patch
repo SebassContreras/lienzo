@@ -1,0 +1,114 @@
+diff --git a/src/service/compact/expand.test.ts b/src/service/compact/expand.test.ts
+index 3ac830d..737bb25 100644
+--- a/src/service/compact/expand.test.ts
++++ b/src/service/compact/expand.test.ts
+@@ -319,4 +319,51 @@ describe("expandScene pure expansion (011/T002)", () => {
+     expect(line.a.attach).toBe("heading");
+     expect(line.b.attach).toBe("card");
+   });
++
++  it("expands animPreset through expandAnimPresets (011/T009, R9)", async () => {
++    const fakeAnimLibrary = [
++      {
++        name: "salto-feliz",
++        category: "Saltos",
++        anim: {
++          in: {
++            kind: "pop" as const,
++            delay: 0,
++            duration: 0.5,
++            amount: 20,
++            from: "down" as const,
++            easing: "auto" as const,
++          },
++        },
++        tracks: {
++          "@scale": [
++            { t: 0, value: 0, easing: "auto" as const },
++            { t: 0.5, value: 1, easing: "auto" as const },
++          ],
++        },
++      },
++    ];
++
++    const compact: CompactScene = {
++      elements: [
++        {
++          id: "avatar",
++          kind: "rect",
++          animPreset: "salto-feliz",
++        },
++      ],
++    };
++
++    const scene = await expandScene(compact, {
++      animLibrary: fakeAnimLibrary,
++    });
++
++    const el = scene.elements[0] as Extract<
++      import("../../model/model.ts").Element,
++      { kind: "rect" }
++    >;
++    expect(el.animPreset).toEqual({ name: "salto-feliz", start: 0 });
++    expect(el.anim?.in?.kind).toBe("pop");
++    expect(el.tracks?.["@scale"]).toHaveLength(2);
++  });
+ });
+diff --git a/src/service/compact/expand.ts b/src/service/compact/expand.ts
+index 2a2106d..3158e22 100644
+--- a/src/service/compact/expand.ts
++++ b/src/service/compact/expand.ts
+@@ -2,6 +2,7 @@
+  * Pure scene expansion from compact representation (011/D2, D3, D4, D6, R1-R9).
+  */
+ 
++import type { AnimPreset } from "../../model/anim-preset.ts";
+ import type { CompactElement, CompactScene } from "../../model/compact.ts";
+ import {
+   type Background,
+@@ -14,6 +15,7 @@ import {
+   SIZE_PRESETS,
+ } from "../../model/model.ts";
+ import type { PresetRecipe } from "../../model/preset.ts";
++import { expandAnimPresets } from "../../presets/anim-presets.ts";
+ import {
+   deepMerge,
+   resolveBackground,
+@@ -29,6 +31,7 @@ export type PresetResolver = (
+ 
+ export type ExpandOptions = {
+   findPreset?: PresetResolver;
++  animLibrary?: readonly AnimPreset[];
+ };
+ 
+ /** Parses size specification (e.g. "1080x1080", "1920x1080", "story", or [w, h]) */
+@@ -277,5 +280,14 @@ export async function expandScene(
+   resolveLineConnections(elements);
+ 
+   scene.elements = elements;
++
++  if (options.animLibrary && options.animLibrary.length > 0) {
++    const { scene: expandedAnimScene } = expandAnimPresets(
++      scene,
++      options.animLibrary,
++    );
++    return expandedAnimScene;
++  }
++
+   return scene;
+ }
+diff --git a/src/service/tools/scene-build.ts b/src/service/tools/scene-build.ts
+index 5f21b96..f598fa3 100644
+--- a/src/service/tools/scene-build.ts
++++ b/src/service/tools/scene-build.ts
+@@ -33,6 +33,10 @@ export const sceneBuild = defineTool({
+             return undefined;
+           }
+         },
++        animLibrary: await (async () => {
++          const { animLibrary } = await import("../scenes.ts");
++          return animLibrary(ctx);
++        })(),
+       });
+       expanded = checkScene(full);
+     } catch (err: unknown) {

@@ -73,6 +73,59 @@ Add `--scope project` to share it through `.mcp.json`. Check it with `claude mcp
 `presets/`), so start Claude Code from here. A failed call comes back as an MCP error
 result with the same JSON `{ code, message, path }` the CLI prints.
 
+## Compact Scenes (Spec 011)
+
+Lienzo supports writing posts in a concise, human- and LLM-friendly format. The compact format
+allows declaring a complete post with minimal syntax: partial presets, layout anchors (`at`),
+automatic canvas fitting (`fit`), readable IDs, line connections (`from`/`to`), and shorthand
+animations and keyframe tracks (`[t, value, easing?]`).
+
+You can build and preview or save any compact post with the `scene_build` tool:
+
+```sh
+pnpm lienzo scene_build --json '{
+  "compact": {
+    "size": "Story",
+    "duration": 4,
+    "background": { "color": "#050b1a", "spotlight": 0.5 },
+    "elements": [
+      {
+        "id": "bg-particles",
+        "kind": "particles",
+        "fit": "canvas",
+        "count": 40
+      },
+      {
+        "id": "card",
+        "preset": "01-tarjeta-neon",
+        "at": "center",
+        "w": 600,
+        "h": 320,
+        "anim": "float"
+      },
+      {
+        "id": "heading",
+        "kind": "text",
+        "text": "Lienzo 0.1",
+        "at": { "anchor": "top", "offset": [0, 200] },
+        "size": 56,
+        "weight": "bold",
+        "anim": "pop-in"
+      },
+      {
+        "id": "conn",
+        "kind": "line",
+        "from": "heading",
+        "to": "card"
+      }
+    ]
+  },
+  "save": "anuncio-lienzo"
+}'
+```
+
+The schema is defined in `schemas/compact-scene.json`.
+
 ## Shortcuts
 
 | Key | Action |

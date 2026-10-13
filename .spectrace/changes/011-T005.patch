@@ -1,0 +1,57 @@
+diff --git a/src/service/compact/expand.test.ts b/src/service/compact/expand.test.ts
+index 715e094..07d2582 100644
+--- a/src/service/compact/expand.test.ts
++++ b/src/service/compact/expand.test.ts
+@@ -215,4 +215,52 @@ describe("expandScene pure expansion (011/T002)", () => {
+     expect(fullCanvas.w).toBe(1000);
+     expect(fullCanvas.h).toBe(800);
+   });
++
++  it("preserves readable ids and links from / to line connections (011/T005)", async () => {
++    const compact: CompactScene = {
++      elements: [
++        {
++          id: "card-a",
++          kind: "rect",
++          w: 100,
++          h: 100,
++        },
++        {
++          id: "card-b",
++          kind: "rect",
++          w: 100,
++          h: 100,
++        },
++        {
++          id: "conn-1",
++          kind: "line",
++          from: "card-a",
++          to: "card-b",
++        },
++      ],
++    };
++
++    const scene = await expandScene(compact);
++    expect(scene.elements[0]?.id).toBe("card-a");
++    expect(scene.elements[1]?.id).toBe("card-b");
++    expect(scene.elements[2]?.id).toBe("conn-1");
++
++    const line = scene.elements[2] as Extract<
++      import("../../model/model.ts").Element,
++      { kind: "line" }
++    >;
++    expect(line.a.attach).toBe("card-a");
++    expect(line.b.attach).toBe("card-b");
++  });
++
++  it("rejects duplicate ids in compact scene (011/T005)", async () => {
++    const compact: CompactScene = {
++      elements: [
++        { id: "duplicate-id", kind: "rect" },
++        { id: "duplicate-id", kind: "ellipse" },
++      ],
++    };
++
++    await expect(expandScene(compact)).rejects.toThrow("ID duplicado");
++  });
+ });

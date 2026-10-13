@@ -237,6 +237,35 @@ describe("animation presets (D6, R7)", () => {
       ]),
     );
   });
+
+  it("builds a scene from compact format with scene_build and saves it (011/T006)", async () => {
+    const res = await ok("scene_build", {
+      compact: {
+        size: "1080x1080",
+        duration: 2,
+        elements: [
+          {
+            id: "my-rect",
+            kind: "rect",
+            w: 120,
+            h: 80,
+            at: "center",
+          },
+        ],
+      },
+      save: "compact_built_demo",
+    });
+
+    expect(res.scene).toBeDefined();
+    expect(res.saved).toMatchObject({ scene: "compact_built_demo" });
+    const savedDisk = await onDisk("compact_built_demo");
+    const firstEl = savedDisk.elements[0] as Extract<
+      Scene["elements"][number],
+      { kind: "rect" }
+    >;
+    expect(firstEl.id).toBe("my-rect");
+    expect(firstEl.x).toBe((1080 - 120) / 2);
+  });
 });
 
 describe("scene_export (010/R1)", () => {

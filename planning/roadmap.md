@@ -15,7 +15,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 008 | cli | done        | 007 | —     | 17 |
 | 009 | mcp-server | done        | 007, 008 | —     | 18 |
 | 010 | headless-export | done        | 007, 008, 009 | —     | 19 |
-| 011 | compact-scenes | todo | 007, 012, 013, 014, 015, 018, 019 | build | 15 |
+| 011 | compact-scenes | done        | 007, 012, 013, 014, 015, 018, 019 | —     | 15 |
 | 012 | component-registry | done        | 001, 002, 005 | —     | 7 |
 | 013 | animation-playback | done        | 012 | —     | 8 |
 | 014 | particle-template | done        | 012, 013 | —     | 10 |

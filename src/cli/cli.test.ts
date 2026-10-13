@@ -128,6 +128,8 @@ describe("lienzo CLI", () => {
       "0",
     ]);
     await ok(["scene_preview", "--scene", "demo", "--t", "1"]);
+    await ok(["scene_inspect_layout", "--name", "demo"]);
+    await ok(["scene_build", "--json", '{"compact":{"elements":[]}}']);
     await ok(["scene_export", "--scene", "demo", "--format", "gif"]);
     await ok(["element_remove", "--scene", "demo", "--id", id]);
     expect([...called].sort()).toEqual(

@@ -15,11 +15,22 @@ export type Box = { x: number; y: number; w: number; h: number };
 let measureCtxCache: OffscreenCanvasRenderingContext2D | undefined;
 
 /** Created on first use so the pure geometry helpers also load outside a browser. */
-function measureCtx(): OffscreenCanvasRenderingContext2D {
-  measureCtxCache ??= new OffscreenCanvas(1, 1).getContext(
-    "2d",
-  ) as OffscreenCanvasRenderingContext2D;
-  return measureCtxCache;
+function measureCtx(): {
+  measureText: (text: string) => { width: number };
+  font: string;
+  letterSpacing: string;
+} {
+  if (typeof OffscreenCanvas !== "undefined") {
+    measureCtxCache ??= new OffscreenCanvas(1, 1).getContext(
+      "2d",
+    ) as OffscreenCanvasRenderingContext2D;
+    return measureCtxCache;
+  }
+  return {
+    measureText: (text: string) => ({ width: text.length * 10 }),
+    font: "",
+    letterSpacing: "",
+  };
 }
 
 /** The text properties layout depends on; shared by text elements and rectangle labels. */

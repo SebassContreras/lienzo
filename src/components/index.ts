@@ -2,6 +2,7 @@
  * The component registry. A kind exists once its descriptor is imported here, listed in
  * `COMPONENTS` and its element type added to `RegisteredElement`; order is the library's.
  */
+import { registerCompactElementKinds } from "../model/compact.ts";
 import { registerElementKinds } from "../model/element-schema.ts";
 import { newId } from "../model/id.ts";
 import { type ArrowEl, arrow } from "./arrow/descriptor.ts";
@@ -86,6 +87,7 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
 export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;
 
 registerElementKinds(COMPONENTS);
+registerCompactElementKinds(COMPONENTS);
 
 const BY_KIND = new Map<string, DescriptorOf<RegisteredElement>>(
   COMPONENTS.map((d) => [d.kind, d]),
@@ -104,6 +106,7 @@ export function registerComponent(d: Descriptor<{ kind: string }>): void {
   KINDS.push(descriptor.kind);
   BY_KIND.set(d.kind, descriptor);
   registerElementKinds(COMPONENTS);
+  registerCompactElementKinds(COMPONENTS);
 }
 
 /** The descriptor of `kind`, or undefined for a kind that does not exist. */

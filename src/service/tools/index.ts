@@ -14,6 +14,7 @@ import { keyframeSet } from "./keyframe-set.ts";
 import { presetGet } from "./preset-get.ts";
 import { presetList } from "./preset-list.ts";
 import { presetValidate } from "./preset-validate.ts";
+import { sceneBuild } from "./scene-build.ts";
 import { sceneCreate } from "./scene-create.ts";
 import { sceneExport } from "./scene-export.ts";
 import { sceneGet } from "./scene-get.ts";
@@ -30,6 +31,7 @@ export const TOOLS: readonly Tool[] = [
   sceneList,
   sceneGet,
   sceneCreate,
+  sceneBuild,
   sceneValidate,
   scenePreview,
   sceneExport,

@@ -1,0 +1,60 @@
+diff --git a/src/service/compact/expand.test.ts b/src/service/compact/expand.test.ts
+index 6171d61..715e094 100644
+--- a/src/service/compact/expand.test.ts
++++ b/src/service/compact/expand.test.ts
+@@ -164,4 +164,55 @@ describe("expandScene pure expansion (011/T002)", () => {
+     >;
+     expect(txt.anim?.in?.kind).toBe("pop-in");
+   });
++
++  it("handles placement: at anchors with offset and fit: canvas (011/T004)", async () => {
++    const compact: CompactScene = {
++      size: "1000x800",
++      elements: [
++        {
++          kind: "rect",
++          w: 200,
++          h: 100,
++          at: "center",
++        },
++        {
++          kind: "rect",
++          w: 200,
++          h: 100,
++          at: {
++            anchor: "top-left",
++            offset: [50, 60],
++          },
++        },
++        {
++          kind: "particles",
++          fit: "canvas",
++        },
++      ],
++    };
++
++    const scene = await expandScene(compact);
++    const centered = scene.elements[0] as Extract<
++      import("../../model/model.ts").Element,
++      { kind: "rect" }
++    >;
++    expect(centered.x).toBe((1000 - 200) / 2); // 400
++    expect(centered.y).toBe((800 - 100) / 2); // 350
++
++    const offsetEl = scene.elements[1] as Extract<
++      import("../../model/model.ts").Element,
++      { kind: "rect" }
++    >;
++    expect(offsetEl.x).toBe(50);
++    expect(offsetEl.y).toBe(60);
++
++    const fullCanvas = scene.elements[2] as Extract<
++      import("../../model/model.ts").Element,
++      { kind: "particles" }
++    >;
++    expect(fullCanvas.x).toBe(0);
++    expect(fullCanvas.y).toBe(0);
++    expect(fullCanvas.w).toBe(1000);
++    expect(fullCanvas.h).toBe(800);
++  });
+ });
