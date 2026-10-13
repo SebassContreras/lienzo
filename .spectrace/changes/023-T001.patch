@@ -1,0 +1,349 @@
+diff --git a/src/service/layout.test.ts b/src/service/layout.test.ts
+new file mode 100644
+index 0000000..5572b6e
+--- /dev/null
++++ b/src/service/layout.test.ts
+@@ -0,0 +1,127 @@
++import { describe, expect, it } from "vitest";
++import {
++  defaultLine,
++  defaultRect,
++  defaultScene,
++  defaultText,
++} from "../model/model.ts";
++import { installCanvasFakes } from "../test/recording-ctx.ts";
++import { inspectLayout } from "./layout.ts";
++
++installCanvasFakes();
++
++describe("pure inspectLayout (023/D1, R2)", () => {
++  it("detects text overlap when two text elements intersect", () => {
++    const scene = defaultScene();
++    const t1 = { ...defaultText(), id: "text-1", x: 100, y: 100, text: "Hola" };
++    const t2 = {
++      ...defaultText(),
++      id: "text-2",
++      x: 105,
++      y: 105,
++      text: "Mundo",
++    };
++    scene.elements = [t1, t2];
++
++    const diags = inspectLayout(scene, [0]);
++    const overlap = diags.find((d) => d.code === "text_overlap");
++    expect(overlap).toBeDefined();
++    expect(overlap?.elementId).toBe("text-1");
++  });
++
++  it("does not report text overlap when texts are apart", () => {
++    const scene = defaultScene();
++    const t1 = { ...defaultText(), id: "text-1", x: 50, y: 50, text: "Uno" };
++    const t2 = {
++      ...defaultText(),
++      id: "text-2",
++      x: 500,
++      y: 500,
++      text: "Dos",
++    };
++    scene.elements = [t1, t2];
++
++    const diags = inspectLayout(scene, [0]);
++    expect(diags.filter((d) => d.code === "text_overlap")).toHaveLength(0);
++  });
++
++  it("detects out of bounds when an element exceeds canvas dimensions", () => {
++    const scene = defaultScene();
++    scene.width = 800;
++    scene.height = 600;
++    const r1 = {
++      ...defaultRect(),
++      id: "rect-oob",
++      x: 750,
++      y: 100,
++      w: 100,
++      h: 50,
++    };
++    scene.elements = [r1];
++
++    const diags = inspectLayout(scene, [0]);
++    const oob = diags.find((d) => d.code === "out_of_bounds");
++    expect(oob).toBeDefined();
++    expect(oob?.elementId).toBe("rect-oob");
++  });
++
++  it("detects line attachments to missing ids", () => {
++    const scene = defaultScene();
++    const card = {
++      ...defaultRect(),
++      id: "card-1",
++      x: 100,
++      y: 100,
++      w: 100,
++      h: 100,
++    };
++    const line = defaultLine();
++    line.id = "line-1";
++    line.a = { x: 0, y: 0, attach: "card-1" };
++    line.b = { x: 300, y: 300, attach: "nonexistent-id" };
++    scene.elements = [card, line];
++
++    const diags = inspectLayout(scene, [0]);
++    const dangling = diags.find((d) => d.code === "dangling_attachment");
++    expect(dangling).toBeDefined();
++    expect(dangling?.elementId).toBe("line-1");
++    expect(dangling?.message).toContain("nonexistent-id");
++  });
++
++  it("checks layout at given times during animation", () => {
++    const scene = defaultScene();
++    scene.width = 1000;
++    scene.height = 1000;
++    scene.duration = 2;
++
++    // An element sliding in from the left (starts at x=20 - 400 = -380, ends at x=20)
++    const moving = {
++      ...defaultRect(),
++      id: "flyer",
++      x: 20,
++      y: 20,
++      w: 100,
++      h: 100,
++      anim: {
++        ...defaultRect().anim,
++        in: {
++          kind: "slide" as const,
++          delay: 0,
++          duration: 1,
++          amount: 400,
++          from: "left" as const,
++          easing: "linear" as const,
++        },
++      },
++    };
++    scene.elements = [moving];
++
++    const diagsT0 = inspectLayout(scene, [0]);
++    const diagsT2 = inspectLayout(scene, [2]);
++
++    // At t=0, slide from left has dx = -400, so x = 20 - 400 = -380 (out of bounds)
++    expect(diagsT0.some((d) => d.code === "out_of_bounds")).toBe(true);
++    // At t=2, animation is complete (dx = 0, x = 20, w = 100) and it's inside canvas
++    expect(diagsT2.some((d) => d.code === "out_of_bounds")).toBe(false);
++  });
++});
+diff --git a/src/service/layout.ts b/src/service/layout.ts
+new file mode 100644
+index 0000000..6dd1642
+--- /dev/null
++++ b/src/service/layout.ts
+@@ -0,0 +1,210 @@
++import { animate } from "../engine/animate.ts";
++import { type Box, boxesTouch, boxOf, placeChild } from "../engine/geometry.ts";
++import { resolveLine } from "../engine/lines.ts";
++import type { Element, GroupEl, LineEl, Scene } from "../model/model.ts";
++
++export type LayoutDiagnostic = {
++  code: "text_overlap" | "out_of_bounds" | "dangling_attachment";
++  elementId: string;
++  t: number;
++  message: string;
++};
++
++/** Flattened element with its effective placement on canvas coordinates */
++export type PlacedElement = {
++  el: Element;
++  box: Box;
++  parentGroup?: GroupEl;
++};
++
++/**
++ * Returns elements placed in canvas space at time `t`.
++ * Groups are expanded so their children are positioned relative to the canvas.
++ */
++export function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
++  // First, map of all elements animated at time t for line resolution
++  const animatedById = new Map<string, Element>();
++
++  function indexAnimated(elements: Element[], parentGroup?: GroupEl) {
++    for (const raw of elements) {
++      const now = animate(raw, t, scene);
++      const placed = parentGroup ? placeChild(now.el, parentGroup) : now.el;
++      animatedById.set(placed.id, placed);
++      if (placed.kind === "group") {
++        indexAnimated(placed.children, placed);
++      }
++    }
++  }
++  indexAnimated(scene.elements);
++
++  const result: PlacedElement[] = [];
++
++  function collect(elements: Element[], parentGroup?: GroupEl) {
++    for (const raw of elements) {
++      const now = animate(raw, t, scene);
++      const placed = parentGroup ? placeChild(now.el, parentGroup) : now.el;
++
++      let effectiveBox: Box;
++      if (placed.kind === "line") {
++        const resolved = resolveLine(placed, animatedById);
++        const minX = Math.min(resolved.a.x, resolved.b.x);
++        const minY = Math.min(resolved.a.y, resolved.b.y);
++        effectiveBox = {
++          x: minX + (now.transform.dx ?? 0),
++          y: minY + (now.transform.dy ?? 0),
++          w: Math.abs(resolved.a.x - resolved.b.x),
++          h: Math.abs(resolved.a.y - resolved.b.y),
++        };
++      } else {
++        const baseBox = boxOf(placed);
++        const scaleX = now.transform.scale * (now.transform.scaleX ?? 1);
++        const scaleY = now.transform.scale * (now.transform.scaleY ?? 1);
++        effectiveBox = {
++          x: baseBox.x + (now.transform.dx ?? 0),
++          y: baseBox.y + (now.transform.dy ?? 0),
++          w: baseBox.w * scaleX,
++          h: baseBox.h * scaleY,
++        };
++      }
++
++      result.push({
++        el: placed,
++        box: effectiveBox,
++        parentGroup,
++      });
++
++      if (raw.kind === "group") {
++        collect(raw.children, placed as GroupEl);
++      }
++    }
++  }
++
++  collect(scene.elements);
++  return result;
++}
++
++/**
++ * Checks a line element for attachments to nonexistent IDs at time `t`.
++ */
++function checkAttachments(
++  line: LineEl,
++  t: number,
++  allIds: Set<string>,
++): LayoutDiagnostic[] {
++  const diagnostics: LayoutDiagnostic[] = [];
++  if (line.a.attach && !allIds.has(line.a.attach)) {
++    diagnostics.push({
++      code: "dangling_attachment",
++      elementId: line.id,
++      t,
++      message: `El extremo inicial está conectado al id inexistente «${line.a.attach}»`,
++    });
++  }
++  if (line.b.attach && !allIds.has(line.b.attach)) {
++    diagnostics.push({
++      code: "dangling_attachment",
++      elementId: line.id,
++      t,
++      message: `El extremo final está conectado al id inexistente «${line.b.attach}»`,
++    });
++  }
++  return diagnostics;
++}
++
++/**
++ * Checks if a box exceeds the scene bounds at time `t`.
++ */
++function checkOutOfBounds(
++  id: string,
++  box: Box,
++  scene: Scene,
++  t: number,
++): LayoutDiagnostic | undefined {
++  const tol = 0.5; // pixel tolerance for floating point calculations
++  if (
++    box.x < -tol ||
++    box.y < -tol ||
++    box.x + box.w > scene.width + tol ||
++    box.y + box.h > scene.height + tol
++  ) {
++    return {
++      code: "out_of_bounds",
++      elementId: id,
++      t,
++      message: `El elemento excede los límites del lienzo (${scene.width}x${scene.height})`,
++    };
++  }
++  return undefined;
++}
++
++/**
++ * Default inspection times: loop start (0), middle, and end (scene.duration).
++ */
++export function defaultInspectionTimes(duration: number): number[] {
++  if (duration <= 0) return [0];
++  const half = duration / 2;
++  return Array.from(new Set([0, half, duration])).sort((a, b) => a - b);
++}
++
++/**
++ * Pure layout inspection (D1, R2). Analyzes element boxes at given times
++ * and returns diagnostics naming the element and time:
++ * - text overlaps
++ * - elements outside the canvas bounds
++ * - line ends attached to ids that do not exist
++ */
++export function inspectLayout(
++  scene: Scene,
++  times: number[] = defaultInspectionTimes(scene.duration),
++): LayoutDiagnostic[] {
++  const diagnostics: LayoutDiagnostic[] = [];
++
++  // Collect all known element IDs in the scene (including within groups)
++  const allIds = new Set<string>();
++  function registerIds(elements: Element[]) {
++    for (const el of elements) {
++      allIds.add(el.id);
++      if (el.kind === "group") registerIds(el.children);
++    }
++  }
++  registerIds(scene.elements);
++
++  for (const t of times) {
++    const placed = placedElementsAt(scene, t);
++
++    // 1. Check dangling attachments on lines
++    for (const item of placed) {
++      if (item.el.kind === "line") {
++        diagnostics.push(...checkAttachments(item.el, t, allIds));
++      }
++    }
++
++    // 2. Check out of canvas bounds for top-level placed elements
++    for (const item of placed) {
++      if (!item.parentGroup) {
++        const oob = checkOutOfBounds(item.el.id, item.box, scene, t);
++        if (oob) diagnostics.push(oob);
++      }
++    }
++
++    // 3. Check overlapping text
++    const textItems = placed.filter((item) => item.el.kind === "text");
++    for (let i = 0; i < textItems.length; i++) {
++      for (let j = i + 1; j < textItems.length; j++) {
++        const a = textItems[i];
++        const b = textItems[j];
++        if (!a || !b) continue;
++        if (boxesTouch(a.box, b.box)) {
++          diagnostics.push({
++            code: "text_overlap",
++            elementId: a.el.id,
++            t,
++            message: `El texto se solapa con el elemento de texto «${b.el.id}»`,
++          });
++        }
++      }
++    }
++  }
++
++  return diagnostics;
++}

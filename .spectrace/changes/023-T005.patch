@@ -1,0 +1,222 @@
+diff --git a/src/service/layout.ts b/src/service/layout.ts
+index 6dd1642..b8d2ad4 100644
+--- a/src/service/layout.ts
++++ b/src/service/layout.ts
+@@ -1,13 +1,37 @@
+ import { animate } from "../engine/animate.ts";
++import {
++  contrastRatio,
++  parseColor,
++  relativeLuminance,
++  suggestAccessibleColor,
++  toHex,
++} from "../engine/color.ts";
+ import { type Box, boxesTouch, boxOf, placeChild } from "../engine/geometry.ts";
+ import { resolveLine } from "../engine/lines.ts";
+-import type { Element, GroupEl, LineEl, Scene } from "../model/model.ts";
++import type {
++  Element,
++  GroupEl,
++  LineEl,
++  Scene,
++  TextEl,
++} from "../model/model.ts";
++import { resolveBackdropUnder } from "./contrast.ts";
+ 
+ export type LayoutDiagnostic = {
+-  code: "text_overlap" | "out_of_bounds" | "dangling_attachment";
++  code:
++    | "text_overlap"
++    | "out_of_bounds"
++    | "dangling_attachment"
++    | "low_contrast"
++    | "unverifiable_contrast";
+   elementId: string;
+   t: number;
+   message: string;
++  ratio?: number;
++  required?: number;
++  fg?: string;
++  bg?: string;
++  suggestion?: string;
+ };
+ 
+ /** Flattened element with its effective placement on canvas coordinates */
+@@ -15,6 +39,7 @@ export type PlacedElement = {
+   el: Element;
+   box: Box;
+   parentGroup?: GroupEl;
++  alpha: number;
+ };
+ 
+ /**
+@@ -39,10 +64,15 @@ export function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
+ 
+   const result: PlacedElement[] = [];
+ 
+-  function collect(elements: Element[], parentGroup?: GroupEl) {
++  function collect(
++    elements: Element[],
++    parentGroup?: GroupEl,
++    parentAlpha = 1,
++  ) {
+     for (const raw of elements) {
+       const now = animate(raw, t, scene);
+       const placed = parentGroup ? placeChild(now.el, parentGroup) : now.el;
++      const effectiveAlpha = parentAlpha * (now.transform.alpha ?? 1);
+ 
+       let effectiveBox: Box;
+       if (placed.kind === "line") {
+@@ -71,10 +101,11 @@ export function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
+         el: placed,
+         box: effectiveBox,
+         parentGroup,
++        alpha: effectiveAlpha,
+       });
+ 
+       if (raw.kind === "group") {
+-        collect(raw.children, placed as GroupEl);
++        collect(raw.children, placed as GroupEl, effectiveAlpha);
+       }
+     }
+   }
+@@ -137,6 +168,109 @@ function checkOutOfBounds(
+   return undefined;
+ }
+ 
++/**
++ * WCAG 2.2 required contrast threshold:
++ * 3.0:1 for large text (>= 24px, or >= 18.66px and bold >= 700), else 4.5:1.
++ */
++export function requiredContrastRatio(size: number, weight: number): number {
++  const isBold = weight >= 700;
++  const isLarge = size >= 24 || (size >= 18.66 && isBold);
++  return isLarge ? 3.0 : 4.5;
++}
++
++/**
++ * Checks contrast for a text item against what is drawn under it (R5, R6, R7, R8, R9, R11).
++ */
++function checkTextContrast(
++  item: PlacedElement,
++  itemIndex: number,
++  placed: PlacedElement[],
++  scene: Scene,
++  t: number,
++): LayoutDiagnostic | undefined {
++  const textEl = item.el as TextEl;
++
++  // Effective text opacity
++  const elOpacity = typeof textEl.opacity === "number" ? textEl.opacity : 1;
++  const effectiveAlpha = item.alpha * elOpacity;
++
++  // If text is fully invisible (e.g. during fade-in delay or exit), contrast is not checked
++  if (effectiveAlpha <= 0.01) return undefined;
++
++  const required = requiredContrastRatio(textEl.size, textEl.weight);
++
++  // Check text fill color
++  const fillRgba = parseColor(textEl.color);
++  fillRgba[3] *= effectiveAlpha;
++  const fillLum = relativeLuminance(fillRgba[0], fillRgba[1], fillRgba[2]);
++
++  // Optional text stroke (R9)
++  const rawText = textEl as unknown as {
++    stroke?: string;
++    strokeWidth?: number;
++    strokeColor?: string;
++  };
++  const strokeColor = rawText.strokeColor ?? rawText.stroke;
++  const hasStroke =
++    typeof strokeColor === "string" && (rawText.strokeWidth ?? 0) > 0;
++
++  const backdrop = resolveBackdropUnder(
++    item.box,
++    itemIndex,
++    placed,
++    scene,
++    fillLum,
++  );
++
++  if (backdrop.kind === "unverifiable") {
++    return {
++      code: "unverifiable_contrast",
++      elementId: textEl.id,
++      t,
++      message: `Contraste no verificable: ${backdrop.reason}`,
++    };
++  }
++
++  const bgRgb = backdrop.rgb;
++  const bgLum = relativeLuminance(bgRgb[0], bgRgb[1], bgRgb[2]);
++  const fillRatio = contrastRatio(fillLum, bgLum);
++
++  let bestRatio = fillRatio;
++  let bestFgHex = toHex(fillRgba[0], fillRgba[1], fillRgba[2]);
++
++  if (hasStroke && strokeColor) {
++    const strokeRgba = parseColor(strokeColor);
++    strokeRgba[3] *= effectiveAlpha;
++    const strokeLum = relativeLuminance(
++      strokeRgba[0],
++      strokeRgba[1],
++      strokeRgba[2],
++    );
++    const strokeRatio = contrastRatio(strokeLum, bgLum);
++    if (strokeRatio > bestRatio) {
++      bestRatio = strokeRatio;
++      bestFgHex = toHex(strokeRgba[0], strokeRgba[1], strokeRgba[2]);
++    }
++  }
++
++  if (bestRatio < required) {
++    const suggestion = suggestAccessibleColor(textEl.color, bgRgb, required);
++    return {
++      code: "low_contrast",
++      elementId: textEl.id,
++      t,
++      message: `Contraste insuficiente (${bestRatio.toFixed(2)}:1 < ${required}:1) sobre fondo ${backdrop.hex}`,
++      ratio: Number(bestRatio.toFixed(2)),
++      required,
++      fg: bestFgHex,
++      bg: backdrop.hex,
++      suggestion,
++    };
++  }
++
++  return undefined;
++}
++
+ /**
+  * Default inspection times: loop start (0), middle, and end (scene.duration).
+  */
+@@ -147,11 +281,11 @@ export function defaultInspectionTimes(duration: number): number[] {
+ }
+ 
+ /**
+- * Pure layout inspection (D1, R2). Analyzes element boxes at given times
+- * and returns diagnostics naming the element and time:
++ * Pure layout inspection (D1, R2, D5, D6). Analyzes element boxes and contrast at given times:
+  * - text overlaps
+  * - elements outside the canvas bounds
+  * - line ends attached to ids that do not exist
++ * - low contrast text and unverifiable backdrops
+  */
+ export function inspectLayout(
+   scene: Scene,
+@@ -204,6 +338,15 @@ export function inspectLayout(
+         }
+       }
+     }
++
++    // 4. Check contrast for each text item (D5, D6)
++    for (let i = 0; i < placed.length; i++) {
++      const item = placed[i];
++      if (item && item.el.kind === "text") {
++        const contrastDiag = checkTextContrast(item, i, placed, scene, t);
++        if (contrastDiag) diagnostics.push(contrastDiag);
++      }
++    }
+   }
+ 
+   return diagnostics;

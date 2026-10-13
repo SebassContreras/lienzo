@@ -1,0 +1,318 @@
+diff --git a/src/service/contrast.test.ts b/src/service/contrast.test.ts
+index 156706a..7941ea8 100644
+--- a/src/service/contrast.test.ts
++++ b/src/service/contrast.test.ts
+@@ -1,37 +1,94 @@
+ import { describe, expect, it } from "vitest";
+-import { relativeLuminance } from "../engine/color.ts";
+-import { defaultImage, defaultRect, defaultScene } from "../model/model.ts";
++import {
++  contrastRatio,
++  parseColor,
++  relativeLuminance,
++} from "../engine/color.ts";
++import {
++  defaultImage,
++  defaultRect,
++  defaultScene,
++  defaultText,
++} from "../model/model.ts";
++import { installCanvasFakes } from "../test/recording-ctx.ts";
+ import { resolveBackdropUnder } from "./contrast.ts";
+-import type { PlacedElement } from "./layout.ts";
++import {
++  inspectLayout,
++  type PlacedElement,
++  requiredContrastRatio,
++} from "./layout.ts";
+ 
+-describe("pure contrast backdrop resolution (023/D4, R5, R7, R8)", () => {
+-  it("resolves solid scene background when no elements are below", () => {
++installCanvasFakes();
++
++describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8, R9, R10, R11)", () => {
++  it("verifies WCAG ratios against known color pairs and thresholds (R6)", () => {
++    // Pure black on white: ~21:1
++    const whiteLum = relativeLuminance(255, 255, 255);
++    const blackLum = relativeLuminance(0, 0, 0);
++    expect(contrastRatio(whiteLum, blackLum)).toBeCloseTo(21, 1);
++
++    // Normal text threshold: 4.5:1
++    expect(requiredContrastRatio(16, 400)).toBe(4.5);
++    // Large text thresholds: 3.0:1 for size >= 24, or size >= 18.66 and bold (weight >= 700)
++    expect(requiredContrastRatio(24, 400)).toBe(3.0);
++    expect(requiredContrastRatio(19, 700)).toBe(3.0);
++    expect(requiredContrastRatio(19, 400)).toBe(4.5);
++  });
++
++  it("checks text on a card on a contrasting background (R5)", () => {
++    // White background, black card on top, dark text on card -> low contrast against card
+     const scene = defaultScene();
+     scene.background = {
+       ...scene.background,
+       color: "#ffffff",
+       gradient: false,
+     };
+-    const textBox = { x: 100, y: 100, w: 200, h: 50 };
+-    const fgLum = relativeLuminance(0, 0, 0); // black text
++    const card = {
++      ...defaultRect(),
++      id: "black-card",
++      x: 50,
++      y: 50,
++      w: 400,
++      h: 200,
++      fill: {
++        color: "#000000",
++        color2: "#000000",
++        gradient: false,
++        angle: 0,
++        opacity: 1,
++      },
++    };
++    const textEl = {
++      ...defaultText(),
++      id: "dark-text",
++      x: 100,
++      y: 100,
++      text: "Texto oscuro",
++      color: "#222222", // Low contrast against #000000 card
++      size: 16,
++      weight: 400,
++    };
++    scene.elements = [card, textEl];
+ 
+-    const res = resolveBackdropUnder(textBox, 0, [], scene, fgLum);
+-    expect(res.kind).toBe("color");
+-    if (res.kind === "color") {
+-      expect(res.hex).toBe("#ffffff");
+-    }
++    const diags = inspectLayout(scene, [0]);
++    const low = diags.find((d) => d.code === "low_contrast");
++    expect(low).toBeDefined();
++    expect(low?.bg).toBe("#000000");
++    expect(low?.required).toBe(4.5);
++    expect(low?.suggestion).toBeDefined();
+   });
+ 
+-  it("composites card fill over background", () => {
++  it("accounts for effective opacity when compositing layers (R7)", () => {
+     const scene = defaultScene();
+     scene.background = {
+       ...scene.background,
+       color: "#ffffff",
+       gradient: false,
+     };
++    // 50% opacity black card over white produces grey #808080 (128, 128, 128)
+     const card = {
+       ...defaultRect(),
+-      id: "card",
++      id: "semi-card",
+       x: 50,
+       y: 50,
+       w: 400,
+@@ -41,58 +98,176 @@ describe("pure contrast backdrop resolution (023/D4, R5, R7, R8)", () => {
+         color2: "#000000",
+         gradient: false,
+         angle: 0,
+-        opacity: 1,
++        opacity: 0.5,
+       },
+     };
+     const placedBelow: PlacedElement[] = [
+-      { el: card, box: { x: 50, y: 50, w: 400, h: 200 } },
++      { el: card, box: { x: 50, y: 50, w: 400, h: 200 }, alpha: 1 },
+     ];
+     const textBox = { x: 100, y: 100, w: 100, h: 30 };
+-    const fgLum = relativeLuminance(255, 255, 255); // white text
+-
+-    const res = resolveBackdropUnder(textBox, 1, placedBelow, scene, fgLum);
++    const res = resolveBackdropUnder(textBox, 1, placedBelow, scene, 0);
+     expect(res.kind).toBe("color");
+     if (res.kind === "color") {
+-      expect(res.hex).toBe("#000000");
++      expect(res.rgb[0]).toBeCloseTo(128, 0);
++      expect(res.rgb[1]).toBeCloseTo(128, 0);
++      expect(res.rgb[2]).toBeCloseTo(128, 0);
+     }
+   });
+ 
+-  it("returns unverifiable when an image is below the text", () => {
++  it("evaluates gradient worst point over the text box (R8)", () => {
++    const scene = defaultScene();
++    scene.background = {
++      ...scene.background,
++      color: "#000000",
++      color2: "#ffffff",
++      gradient: true,
++    };
++    const textEl = {
++      ...defaultText(),
++      id: "text-grad",
++      x: 100,
++      y: 100,
++      text: "Texto blanco",
++      color: "#ffffff", // Fails against the white stop of gradient
++      size: 16,
++      weight: 400,
++    };
++    scene.elements = [textEl];
++
++    const diags = inspectLayout(scene, [0]);
++    const low = diags.find((d) => d.code === "low_contrast");
++    expect(low).toBeDefined();
++    expect(low?.bg).toBe("#ffffff");
++  });
++
++  it("reports unverifiable contrast under an image (R8)", () => {
+     const scene = defaultScene();
+     const img = {
+       ...defaultImage(),
+-      id: "hero-img",
++      id: "bg-image",
+       x: 0,
+       y: 0,
+-      w: 500,
+-      h: 500,
++      w: 800,
++      h: 600,
+     };
+-    const placedBelow: PlacedElement[] = [
+-      { el: img, box: { x: 0, y: 0, w: 500, h: 500 } },
+-    ];
+-    const textBox = { x: 50, y: 50, w: 200, h: 50 };
++    const textEl = {
++      ...defaultText(),
++      id: "text-over-img",
++      x: 100,
++      y: 100,
++      text: "Sobre imagen",
++      color: "#ffffff",
++      size: 16,
++      weight: 400,
++    };
++    scene.elements = [img, textEl];
++
++    const diags = inspectLayout(scene, [0]);
++    const unv = diags.find((d) => d.code === "unverifiable_contrast");
++    expect(unv).toBeDefined();
++    expect(unv?.elementId).toBe("text-over-img");
++  });
++
++  it("uses the better of fill and stroke contrast when stroke is present (R9)", () => {
++    const scene = defaultScene();
++    scene.background = {
++      ...scene.background,
++      color: "#ffffff",
++      gradient: false,
++    };
++    // Text fill is white (1:1 contrast on white), but stroke is black (21:1 contrast)
++    const textEl = {
++      ...defaultText(),
++      id: "stroked-text",
++      x: 100,
++      y: 100,
++      text: "Texto con borde",
++      color: "#ffffff",
++      stroke: "#000000",
++      strokeWidth: 2,
++      size: 16,
++      weight: 400,
++    };
++    scene.elements = [textEl];
+ 
+-    const res = resolveBackdropUnder(textBox, 1, placedBelow, scene, 1);
+-    expect(res.kind).toBe("unverifiable");
++    const diags = inspectLayout(scene, [0]);
++    // Since stroke provides 21:1, it passes and is NOT flagged as low_contrast
++    expect(diags.filter((d) => d.code === "low_contrast")).toHaveLength(0);
+   });
+ 
+-  it("picks the worst stop of a gradient background", () => {
++  it("reports fade-in text only at times when it is unreadable (R10)", () => {
+     const scene = defaultScene();
+-    // Gradient from black (#000000) to white (#ffffff)
+     scene.background = {
+       ...scene.background,
+       color: "#000000",
+-      color2: "#ffffff",
+-      gradient: true,
++      gradient: false,
+     };
+-    const textBox = { x: 100, y: 100, w: 200, h: 50 };
+-    const whiteTextLum = relativeLuminance(255, 255, 255);
++    scene.duration = 2;
+ 
+-    // Against white text, the white stop (#ffffff) has lower contrast ratio (1:1) than black (21:1)
+-    const res = resolveBackdropUnder(textBox, 0, [], scene, whiteTextLum);
+-    expect(res.kind).toBe("color");
+-    if (res.kind === "color") {
+-      expect(res.hex).toBe("#ffffff");
+-    }
++    // Text fading in: at t=0, delay=1 so it is hidden (alpha=0).
++    // At t=2, it is fully visible with color #222222 on black background (fails).
++    const textEl = {
++      ...defaultText(),
++      id: "fading-text",
++      x: 100,
++      y: 100,
++      text: "Texto fade",
++      color: "#222222",
++      size: 16,
++      weight: 400,
++      anim: {
++        ...defaultText().anim,
++        in: {
++          kind: "fade" as const,
++          delay: 1,
++          duration: 0.5,
++          amount: 0,
++          from: "down" as const,
++          easing: "linear" as const,
++        },
++      },
++    };
++    scene.elements = [textEl];
++
++    const diagsT0 = inspectLayout(scene, [0]);
++    const diagsT2 = inspectLayout(scene, [2]);
++
++    // At t=0, text is invisible: no contrast diagnostic
++    expect(diagsT0.some((d) => d.code === "low_contrast")).toBe(false);
++    // At t=2, text is visible: flagged as low contrast
++    expect(diagsT2.some((d) => d.code === "low_contrast")).toBe(true);
++  });
++
++  it("suggested color meets the required threshold (R11)", () => {
++    const scene = defaultScene();
++    scene.background = {
++      ...scene.background,
++      color: "#ffffff",
++      gradient: false,
++    };
++    const textEl = {
++      ...defaultText(),
++      id: "grey-text",
++      x: 100,
++      y: 100,
++      text: "Gris",
++      color: "#cccccc",
++      size: 16,
++      weight: 400,
++    };
++    scene.elements = [textEl];
++
++    const diags = inspectLayout(scene, [0]);
++    const diag = diags.find((d) => d.code === "low_contrast");
++    expect(diag).toBeDefined();
++    expect(diag?.suggestion).toBeDefined();
++
++    const sugRgb = parseColor(diag?.suggestion as string);
++    const bgRgb = parseColor(diag?.bg as string);
++    const sugLum = relativeLuminance(sugRgb[0], sugRgb[1], sugRgb[2]);
++    const bgLum = relativeLuminance(bgRgb[0], bgRgb[1], bgRgb[2]);
++    expect(contrastRatio(sugLum, bgLum)).toBeGreaterThanOrEqual(
++      diag?.required as number,
++    );
+   });
+ });

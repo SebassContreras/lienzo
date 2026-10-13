@@ -27,6 +27,6 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 020 | history-undo | done | 001 | —      | 20 |
 | 021 | smart-connectors | done | 001, 012, 020 | —      | 21 |
 | 022 | canvas-alignment | done | 001, 012, 020 | —      | 22 |
-| 023 | mcp-visual-feedback | todo | 007 | build  | 23 |
+| 023 | mcp-visual-feedback | done        | 007 | —      | 23 |
 | 024 | free-path | done | 012, 013, 015 | —     | 24 |
 | 025 | effects | todo | 012, 013, 015, 017 | build | 25 |

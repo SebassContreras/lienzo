@@ -220,6 +220,23 @@ describe("animation presets (D6, R7)", () => {
       error: { code: "unknown_anim_preset", path: "elements.1.animPreset" },
     });
   });
+
+  it("inspects layout and detects out-of-bounds elements (023/D2, R3)", async () => {
+    await ok("scene_create", { name: "oob_demo" });
+    await ok("element_add", {
+      scene: "oob_demo",
+      kind: "rect",
+      set: { x: 5000, y: 5000, w: 200, h: 200 },
+    });
+    const result = await ok("scene_inspect_layout", { name: "oob_demo" });
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "out_of_bounds",
+        }),
+      ]),
+    );
+  });
 });
 
 describe("scene_export (010/R1)", () => {

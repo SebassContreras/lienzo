@@ -1,0 +1,37 @@
+diff --git a/src/service/layout.test.ts b/src/service/layout.test.ts
+index 5572b6e..f609783 100644
+--- a/src/service/layout.test.ts
++++ b/src/service/layout.test.ts
+@@ -7,10 +7,11 @@ import {
+ } from "../model/model.ts";
+ import { installCanvasFakes } from "../test/recording-ctx.ts";
+ import { inspectLayout } from "./layout.ts";
++import { registry } from "./tools/index.ts";
+ 
+ installCanvasFakes();
+ 
+-describe("pure inspectLayout (023/D1, R2)", () => {
++describe("pure inspectLayout (023/T006, R2, R3)", () => {
+   it("detects text overlap when two text elements intersect", () => {
+     const scene = defaultScene();
+     const t1 = { ...defaultText(), id: "text-1", x: 100, y: 100, text: "Hola" };
+@@ -88,7 +89,7 @@ describe("pure inspectLayout (023/D1, R2)", () => {
+     expect(dangling?.message).toContain("nonexistent-id");
+   });
+ 
+-  it("checks layout at given times during animation", () => {
++  it("flags an element entering from outside only at the times it is outside (R2)", () => {
+     const scene = defaultScene();
+     scene.width = 1000;
+     scene.height = 1000;
+@@ -124,4 +125,10 @@ describe("pure inspectLayout (023/D1, R2)", () => {
+     // At t=2, animation is complete (dx = 0, x = 20, w = 100) and it's inside canvas
+     expect(diagsT2.some((d) => d.code === "out_of_bounds")).toBe(false);
+   });
++
++  it("is registered as scene_inspect_layout in the tool registry (R3)", () => {
++    const tool = registry.get("scene_inspect_layout");
++    expect(tool).toBeDefined();
++    expect(tool?.name).toBe("scene_inspect_layout");
++  });
+ });
