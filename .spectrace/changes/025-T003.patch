@@ -1,0 +1,137 @@
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+index fd8a340..4af6c35 100644
+--- a/src/components/descriptor.ts
++++ b/src/components/descriptor.ts
+@@ -40,6 +40,8 @@ export type ElementOf<K extends string, F extends Fields> = {
+   tracks?: Tracks;
+   /** The animation preset last applied, as information only: nothing reads it to draw (019/D9). */
+   animPreset?: AnimPresetRef;
++  /** Effects: blur, blend and mask (025). */
++  effects?: import("./fields/effects.ts").EffectsDefaults;
+ } & ValueOf<F>;
+ 
+ /** Which animation preset an element's animation was copied from, and where it started. */
+diff --git a/src/engine/effects.test.ts b/src/engine/effects.test.ts
+index e3c3d56..4ccdf58 100644
+--- a/src/engine/effects.test.ts
++++ b/src/engine/effects.test.ts
+@@ -114,4 +114,90 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
+     const expectedFills = targetRect.shadow.enabled ? 2 : 1;
+     expect(fills.length).toBe(expectedFills);
+   });
++
++  it("applies blur, blend and mask to every registered component kind (025/T003, R1, R2, R3)", async () => {
++    // Dynamically check every kind in KINDS
++    const { KINDS, createElement } = await import("../components/index.ts");
++    for (const kind of KINDS) {
++      const ctx = new RecordingCtx();
++      const scene = defaultScene();
++      scene.background = { ...scene.background, dots: false };
++      const mask = { ...defaultRect(), id: `mask-${kind}`, x: 0, y: 0, w: 100, h: 100 };
++      const el = {
++        ...createElement(kind),
++        id: `el-${kind}`,
++        effects: { blur: 10, blend: "multiply" as const, mask: `mask-${kind}` },
++      };
++      scene.elements = [mask, el];
++      drawScene(ctx as unknown as Ctx, scene, 0);
++
++      // Verify that clip, filter blur and blend were applied
++      expect(ctx.log.some((l) => l.startsWith("clip(")), `${kind} has clip`).toBe(true);
++      expect(ctx.log.includes("filter=(blur(10px))"), `${kind} has blur`).toBe(true);
++      expect(ctx.log.includes("globalCompositeOperation=(multiply)"), `${kind} has blend`).toBe(true);
++    }
++  });
++
++  it("applies blur, blend and mask to a test-only descriptor registered at runtime (025/T003, R3)", async () => {
++    const { registerComponent, createElement } = await import("../components/index.ts");
++    const { defineComponent } = await import("../components/descriptor.ts");
++    const { BOX_ANIMS, anim, box } = await import("../components/fields/index.ts");
++
++    const testKind = `custom-widget-${Date.now()}`;
++    const testFields = {
++      ...box(150, 150),
++      anim: anim(BOX_ANIMS),
++    };
++
++    const desc = defineComponent({
++      kind: testKind,
++      label: "Custom Widget",
++      icon: "Square",
++      fields: testFields,
++      sections: [{ title: "Forma" }],
++      anims: { motions: ["none"], loops: ["none"] },
++      draw: (ctx) => {
++        ctx.fillRect(10, 10, 50, 50);
++      },
++    });
++
++    registerComponent(desc as never);
++
++    const ctx = new RecordingCtx();
++    const scene = defaultScene();
++    scene.background = { ...scene.background, dots: false };
++    const mask = { ...defaultRect(), id: "mask-custom", x: 0, y: 0, w: 100, h: 100 };
++    const el = {
++      ...createElement(testKind as never),
++      id: "el-custom",
++      effects: { blur: 12, blend: "screen" as const, mask: "mask-custom" },
++    };
++    scene.elements = [mask, el];
++    drawScene(ctx as unknown as Ctx, scene, 0);
++
++    expect(ctx.log.some((l) => l.startsWith("clip("))).toBe(true);
++    expect(ctx.log.includes("filter=(blur(12px))")).toBe(true);
++    expect(ctx.log.includes("globalCompositeOperation=(screen)")).toBe(true);
++  });
++
++  it("leaves a valid scene and draws without crashing when mask target is deleted (025/T003, R2)", async () => {
++    const { SceneSchema } = await import("../model/schema.ts");
++    const scene = defaultScene();
++    const el = {
++      ...defaultRect(),
++      id: "target-el",
++      effects: { blur: 5, blend: "normal" as const, mask: "deleted-mask-id" },
++    };
++    scene.elements = [el];
++
++    // 1. Scene with non-existent mask target still validates against SceneSchema
++    const parseRes = SceneSchema.safeParse(scene);
++    expect(parseRes.success).toBe(true);
++
++    // 2. Drawing it does not throw, and draws the element without clipping
++    const ctx = new RecordingCtx();
++    scene.background = { ...scene.background, dots: false };
++    expect(() => drawScene(ctx as unknown as Ctx, scene, 0)).not.toThrow();
++    expect(ctx.log.some((l) => l.startsWith("clip("))).toBe(false);
++  });
+ });
+diff --git a/src/model/element-schema.ts b/src/model/element-schema.ts
+index f30a772..9a5c879 100644
+--- a/src/model/element-schema.ts
++++ b/src/model/element-schema.ts
+@@ -4,6 +4,7 @@
+  * it the descriptors with `registerElementKinds`.
+  */
+ import { z } from "zod";
++import { effects } from "../components/fields/effects.ts";
+ import { type Fields, shapeOf } from "../components/fields/index.ts";
+ import type { Element } from "./model.ts";
+ import { TracksSchema } from "./track.ts";
+@@ -14,6 +15,8 @@ const AnimPresetRefSchema = z.preprocess(
+   z.object({ name: z.string().min(1), start: z.number().min(0) }),
+ );
+ 
++const EffectsSchema = effects().schema.optional();
++
+ let components: readonly { kind: string; fields: Fields }[] = [];
+ let union: z.ZodType<Element> | undefined;
+ 
+@@ -33,6 +36,7 @@ function elementUnion(): z.ZodType<Element> {
+       name: z.string(),
+       tracks: TracksSchema.optional(),
+       animPreset: AnimPresetRefSchema.optional(),
++      effects: EffectsSchema,
+       ...shapeOf(d.fields),
+     }),
+   );

@@ -4,6 +4,7 @@
  * it the descriptors with `registerElementKinds`.
  */
 import { z } from "zod";
+import { effects } from "../components/fields/effects.ts";
 import { type Fields, shapeOf } from "../components/fields/index.ts";
 import type { Element } from "./model.ts";
 import { TracksSchema } from "./track.ts";
@@ -13,6 +14,8 @@ const AnimPresetRefSchema = z.preprocess(
   (v) => (typeof v === "string" ? { name: v, start: 0 } : v),
   z.object({ name: z.string().min(1), start: z.number().min(0) }),
 );
+
+const EffectsSchema = effects().schema.optional();
 
 let components: readonly { kind: string; fields: Fields }[] = [];
 let union: z.ZodType<Element> | undefined;
@@ -33,6 +36,7 @@ function elementUnion(): z.ZodType<Element> {
       name: z.string(),
       tracks: TracksSchema.optional(),
       animPreset: AnimPresetRefSchema.optional(),
+      effects: EffectsSchema,
       ...shapeOf(d.fields),
     }),
   );

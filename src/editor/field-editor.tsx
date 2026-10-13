@@ -215,6 +215,33 @@ function Connection({ item, value, label, change, ctx }: WidgetProps) {
   );
 }
 
+function MaskWidget({ value, label, change, ctx }: WidgetProps) {
+  const maskId = (value as string) || "";
+  return maskId ? (
+    <div className="attached">
+      <span>
+        {label}: enmascarado por <b>{ctx.nameOf(maskId)}</b>
+      </span>
+      <button
+        type="button"
+        title="Quitar máscara"
+        onClick={() =>
+          change((d) => {
+            const fx = (d as unknown as { effects?: { mask?: string } }).effects;
+            if (fx) fx.mask = "";
+          })
+        }
+      >
+        <Link2Off size={14} />
+      </button>
+    </div>
+  ) : (
+    <div className="hint">
+      {label}: sin máscara.
+    </div>
+  );
+}
+
 /** Custom fields and widgets, by the name descriptors give them. */
 const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
   icon: ({ value, change }) => (
@@ -233,6 +260,7 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
     el.kind === "path" && <PathShapes el={el} change={change} />,
   "anim-kind": (p) => <AnimKindPicker {...p} />,
   connection: (p) => <Connection {...p} />,
+  mask: (p) => <MaskWidget {...p} />,
   "group-info": ({ el }) => (
     <div className="hint">
       {(el as GroupEl).children.length} elementos. Se mueven, cambian de tamaño

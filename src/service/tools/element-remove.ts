@@ -10,6 +10,21 @@ export const elementRemove = defineTool({
   run: ({ scene, id }, ctx) =>
     editScene(ctx, scene, (s) => {
       const i = elementIndex(s, id);
-      return { ...s, elements: s.elements.filter((_, j) => j !== i) };
+      const removedId = s.elements[i]?.id;
+      return {
+        ...s,
+        elements: s.elements
+          .filter((_, j) => j !== i)
+          .map((el) => {
+            const fx = (el as unknown as { effects?: { mask?: string } }).effects;
+            if (fx && fx.mask === removedId) {
+              return {
+                ...el,
+                effects: { ...fx, mask: "" },
+              } as typeof el;
+            }
+            return el;
+          }),
+      };
     }),
 });

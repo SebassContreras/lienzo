@@ -90,6 +90,7 @@ const STATE = [
   "textBaseline",
   "textAlign",
   "globalCompositeOperation",
+  "filter",
 ] as const;
 
 export class RecordingCtx extends Recorder {
@@ -103,6 +104,7 @@ export class RecordingCtx extends Recorder {
     shadowOffsetY: 0,
     font: "10px sans-serif",
     letterSpacing: "0px",
+    filter: "none",
   };
   private dash: number[] = [];
   private stack: { m: M; props: Record<string, unknown>; dash: number[] }[] =

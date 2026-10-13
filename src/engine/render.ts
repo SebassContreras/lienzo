@@ -1,6 +1,8 @@
 import { descriptorOf } from "../components/index.ts";
 import type { Background, Element, Scene } from "../model/model.ts";
 import { animate } from "./animate.ts";
+import { withEffects } from "./effects.ts";
+import { withMask } from "./clip.ts";
 import { indexById, indexElements } from "./geometry.ts";
 import { type Ctx, linearGradient, rgba } from "./paint.ts";
 
@@ -16,6 +18,7 @@ export function drawScene(ctx: Ctx, scene: Scene, t: number): void {
 /**
  * Draws elements in order. `byId` resolves line attachments in the same coordinate space as
  * `elements` (the scene's, or a group's content space).
+ * A mask clips an element (or group) and the mask element itself is not drawn (025/D2).
  */
 export function drawElements(
   ctx: Ctx,
@@ -24,10 +27,34 @@ export function drawElements(
   t: number,
   byId: Map<string, Element> = indexElements(elements),
 ): void {
+  // Find all elements that act as a mask for any element in this scope
+  const maskIds = new Set<string>();
+  for (const el of elements) {
+    const mask = (el as unknown as { effects?: { mask?: string } }).effects?.mask;
+    if (mask) maskIds.add(mask);
+  }
+
   const dc = { scene, t, byId, drawElements };
   for (const el of elements) {
+    // A mask element itself is skipped instead of being drawn directly (025/D2)
+    if (maskIds.has(el.id)) continue;
+
     const now = animate(el, t, scene);
-    descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
+    const fx = (now.el as unknown as { effects?: { blur?: number; blend?: import("../components/fields/effects.ts").BlendMode; mask?: string } }).effects;
+
+    const drawItem = () => {
+      withEffects(ctx, fx, () => {
+        descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
+      });
+    };
+
+    const maskTarget = fx?.mask ? byId.get(fx.mask) : undefined;
+    if (maskTarget) {
+      const maskNow = animate(maskTarget, t, scene);
+      withMask(ctx, maskNow.el, maskNow.transform, drawItem);
+    } else {
+      drawItem();
+    }
   }
 }
 

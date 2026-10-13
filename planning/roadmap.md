@@ -29,4 +29,4 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 022 | canvas-alignment | done | 001, 012, 020 | —      | 22 |
 | 023 | mcp-visual-feedback | done        | 007 | —      | 23 |
 | 024 | free-path | done | 012, 013, 015 | —     | 24 |
-| 025 | effects | todo | 012, 013, 015, 017 | build | 25 |
+| 025 | effects | done        | 012, 013, 015, 017 | —     | 25 |

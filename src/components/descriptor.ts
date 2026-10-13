@@ -40,6 +40,8 @@ export type ElementOf<K extends string, F extends Fields> = {
   tracks?: Tracks;
   /** The animation preset last applied, as information only: nothing reads it to draw (019/D9). */
   animPreset?: AnimPresetRef;
+  /** Effects: blur, blend and mask (025). */
+  effects?: import("./fields/effects.ts").EffectsDefaults;
 } & ValueOf<F>;
 
 /** Which animation preset an element's animation was copied from, and where it started. */

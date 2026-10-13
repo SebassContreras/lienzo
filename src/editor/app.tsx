@@ -89,15 +89,26 @@ function removeElements(scene: Scene, removed: Set<string>): Element[] {
   return scene.elements
     .filter((el) => !ids.has(el.id))
     .map((el) => {
-      if (el.kind !== "line") return el;
-      const hitsA = el.a.attach && ids.has(el.a.attach);
-      const hitsB = el.b.attach && ids.has(el.b.attach);
-      if (!hitsA && !hitsB) return el;
-      const r = resolveLine(el, byId);
+      let updated = el;
+      const mask = (el as unknown as { effects?: { mask?: string } }).effects?.mask;
+      if (mask && ids.has(mask)) {
+        updated = {
+          ...updated,
+          effects: {
+            ...(updated as unknown as { effects?: Record<string, unknown> }).effects,
+            mask: "",
+          },
+        } as Element;
+      }
+      if (updated.kind !== "line") return updated;
+      const hitsA = updated.a.attach && ids.has(updated.a.attach);
+      const hitsB = updated.b.attach && ids.has(updated.b.attach);
+      if (!hitsA && !hitsB) return updated;
+      const r = resolveLine(updated, byId);
       return {
-        ...el,
-        a: hitsA ? { x: r.a.x, y: r.a.y } : el.a,
-        b: hitsB ? { x: r.b.x, y: r.b.y } : el.b,
+        ...updated,
+        a: hitsA ? { x: r.a.x, y: r.a.y } : updated.a,
+        b: hitsB ? { x: r.b.x, y: r.b.y } : updated.b,
       };
     });
 }
