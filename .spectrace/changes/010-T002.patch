@@ -1,0 +1,199 @@
+diff --git a/package.json b/package.json
+index 872b6c8..6301aa6 100644
+--- a/package.json
++++ b/package.json
+@@ -31,6 +31,7 @@
+     "lucide-react": "^1.52.0",
+     "mediabunny": "^1.61.3",
+     "opentype.js": "^2.0.0",
++    "playwright-core": "^1.64.0",
+     "react": "^19.3.0",
+     "react-dom": "^19.3.0",
+     "svgpath": "^2.6.0",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 126730e..49893f5 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -44,6 +44,9 @@ importers:
+       opentype.js:
+         specifier: ^2.0.0
+         version: 2.0.0
++      playwright-core:
++        specifier: ^1.64.0
++        version: 1.64.0
+       react:
+         specifier: ^19.3.0
+         version: 19.3.0
+@@ -1253,6 +1256,11 @@ packages:
+     resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
+     engines: {node: '>=16.20.0'}
+ 
++  playwright-core@1.64.0:
++    resolution: {integrity: sha512-T9r+MZkTECl2+oUcZ26YgZzTrYidTsIhYYkJix+6iDOymOb1FB2RLLSOxRGnZGv5DStt+aduIVbt+E8WygXYpg==}
++    engines: {node: '>=20'}
++    hasBin: true
++
+   postcss@8.5.29:
+     resolution: {integrity: sha512-49cGhUbXj8Qenv0iTMxA1cFBzxXoctpC9Ujd77t1WcbJIr6nF/eI7g/8MgxrYldFRuAXvja7xQRwavoW7kgrxQ==}
+     engines: {node: ^10 || ^12 || >=14}
+@@ -2484,6 +2492,8 @@ snapshots:
+ 
+   pkce-challenge@5.0.1: {}
+ 
++  playwright-core@1.64.0: {}
++
+   postcss@8.5.29:
+     dependencies:
+       nanoid: 3.3.20
+diff --git a/src/service/ctx.ts b/src/service/ctx.ts
+index ec10dc5..04b863b 100644
+--- a/src/service/ctx.ts
++++ b/src/service/ctx.ts
+@@ -1,15 +1,30 @@
++import { join } from "node:path";
++import { createRenderer, type Renderer } from "./renderer.ts";
+ import { createStore, type Store } from "./store.ts";
+ 
++/** The repo, where the app the renderer serves lives (A21). */
++const APP_ROOT = join(import.meta.dirname, "..", "..");
++
+ /**
+- * What every tool runs against (007/D1): the repo root and the store over its files. Tests
+- * pass a temp dir as the root; the renderer joins in 010.
++ * What every tool runs against (007/D1): the repo root and the store over its files, and
++ * the renderer (010/D2). Tests pass a temp dir as the root; the app is always the repo's.
+  */
+ export type Ctx = {
+   root: string;
+   store: Store;
++  renderer: Renderer;
++  /** Releases what the ctx started (the renderer's browser and dev server, 010/D4). */
++  dispose(): Promise<void>;
+ };
+ 
+-export const createCtx = (root: string): Ctx => ({
+-  root,
+-  store: createStore(root),
+-});
++export function createCtx(
++  root: string,
++  renderer: Renderer = createRenderer(APP_ROOT),
++): Ctx {
++  return {
++    root,
++    store: createStore(root),
++    renderer,
++    dispose: () => renderer.dispose(),
++  };
++}
+diff --git a/src/service/renderer.ts b/src/service/renderer.ts
+new file mode 100644
+index 0000000..54fdc30
+--- /dev/null
++++ b/src/service/renderer.ts
+@@ -0,0 +1,105 @@
++/**
++ * Rendering outside the editor (A21, 010/D2): the app's render-only route (`?render`, D1)
++ * in headless Chromium through Playwright, served by an in-process Vite dev server. Both
++ * start on the first render and stay up for the next ones in the same process (the MCP
++ * server); `dispose()` closes them (D4). Vite and Playwright are imported only then, so
++ * tools that never render start as fast as before.
++ *
++ * The browser is the installed Chrome when present (H.264 for MP4), else Edge, else
++ * Playwright's own Chromium; without H.264 the editor's encoder writes WebM instead.
++ */
++import { join } from "node:path";
++import type { Browser, Page } from "playwright-core";
++import type { ViteDevServer } from "vite";
++import type { ExportOptions } from "../export/export.ts";
++import type { RenderedFile } from "../export/render-page.ts";
++import type { Scene } from "../model/model.ts";
++import { fail } from "./registry.ts";
++
++/** An encoded frame or animation and its MIME type (`video/webm` when MP4 fell back). */
++export type Rendered = { bytes: Buffer; type: string };
++
++export type Renderer = {
++  render(scene: Scene, options: ExportOptions): Promise<Rendered>;
++  /** Closes the browser and the dev server, if they started; safe to call twice. */
++  dispose(): Promise<void>;
++};
++
++/** Tried in order: installed Chrome, installed Edge, Playwright's downloaded Chromium. */
++const CHANNELS = ["chrome", "msedge", undefined] as const;
++
++type Session = { vite: ViteDevServer; browser: Browser; page: Page };
++
++async function launchBrowser(): Promise<Browser> {
++  const { chromium } = await import("playwright-core");
++  for (const channel of CHANNELS) {
++    try {
++      return await chromium.launch({ channel, headless: true });
++    } catch {
++      // not installed; try the next one
++    }
++  }
++  return fail(
++    "no_browser",
++    "No se encontró Chrome, Edge ni Chromium para renderizar; instala Chrome o ejecuta `pnpm exec playwright-core install chromium`",
++  );
++}
++
++async function startSession(appRoot: string): Promise<Session> {
++  const { createServer } = await import("vite");
++  const vite = await createServer({
++    root: appRoot,
++    configFile: join(appRoot, "vite.config.ts"),
++    // stdout belongs to the CLI's JSON and the MCP protocol.
++    logLevel: "silent",
++    clearScreen: false,
++    server: { port: 0, host: "127.0.0.1", hmr: false, watch: null },
++  });
++  try {
++    await vite.listen();
++    const url = vite.resolvedUrls?.local[0];
++    if (!url) throw new Error("the Vite server has no local URL");
++    const browser = await launchBrowser();
++    const page = await browser.newPage();
++    await page.goto(`${url}?render`);
++    await page.waitForFunction(() => window.lienzoExport !== undefined);
++    return { vite, browser, page };
++  } catch (error) {
++    await vite.close();
++    throw error;
++  }
++}
++
++/** A renderer over the app at `appRoot` (the repo, not the scenes' root). */
++export function createRenderer(appRoot: string): Renderer {
++  let session: Promise<Session> | undefined;
++  const open = () => {
++    session ??= startSession(appRoot).catch((error: unknown) => {
++      session = undefined; // a failed start is retried on the next render
++      throw error;
++    });
++    return session;
++  };
++  return {
++    async render(scene, options) {
++      const { page } = await open();
++      const file: RenderedFile = await page.evaluate(
++        ([s, o]) => {
++          if (!window.lienzoExport) throw new Error("render route not loaded");
++          return window.lienzoExport(s, o);
++        },
++        [scene, options] as const,
++      );
++      return { bytes: Buffer.from(file.base64, "base64"), type: file.type };
++    },
++    async dispose() {
++      const current = session;
++      session = undefined;
++      if (!current) return;
++      const s = await current.catch(() => undefined);
++      if (!s) return;
++      await s.browser.close().catch(() => {});
++      await s.vite.close();
++    },
++  };
++}

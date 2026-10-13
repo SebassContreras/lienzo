@@ -13,9 +13,6 @@ import "@fontsource/caveat/400.css";
 import "@fontsource/caveat/700.css";
 import "@fontsource/press-start-2p/400.css";
 import "./styles.css";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { App } from "./editor/app.tsx";
 import { FONTS } from "./model/model.ts";
 
 // Canvas text only uses a web font once it is loaded; ask for every family up front.
@@ -25,8 +22,11 @@ for (const family of FONTS) {
   }
 }
 
-createRoot(document.getElementById("root") as HTMLElement).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// `?render` is the render-only route for headless export (010/D1): no editor is mounted.
+if (new URLSearchParams(location.search).has("render")) {
+  const { mountRenderPage } = await import("./export/render-page.ts");
+  mountRenderPage();
+} else {
+  const { mountEditor } = await import("./editor/mount.tsx");
+  mountEditor();
+}

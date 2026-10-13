@@ -1,0 +1,346 @@
+diff --git a/.gitignore b/.gitignore
+index c8c8a08..31e29f8 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -15,3 +15,6 @@ coverage/
+ .DS_Store
+ Thumbs.db
+ .muxel/
++
++# scene_export output
++exports/
+diff --git a/src/cli/cli.test.ts b/src/cli/cli.test.ts
+index 2569709..d722926 100644
+--- a/src/cli/cli.test.ts
++++ b/src/cli/cli.test.ts
+@@ -5,6 +5,7 @@ import { join } from "node:path";
+ import { promisify } from "node:util";
+ import { beforeEach, describe, expect, it } from "vitest";
+ import { type Ctx, createCtx } from "../service/ctx.ts";
++import { fakeRenderer } from "../service/fake-renderer.ts";
+ import { registry } from "../service/tools/index.ts";
+ import { fieldsOf } from "./args.ts";
+ import { run } from "./main.ts";
+@@ -17,7 +18,7 @@ beforeEach(async () => {
+     recursive: true,
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+-  ctx = createCtx(root);
++  ctx = createCtx(root, fakeRenderer());
+ });
+ 
+ /** Runs a command line in-process and captures what it prints. */
+@@ -126,6 +127,8 @@ describe("lienzo CLI", () => {
+       "--t",
+       "0",
+     ]);
++    await ok(["scene_preview", "--scene", "demo", "--t", "1"]);
++    await ok(["scene_export", "--scene", "demo", "--format", "gif"]);
+     await ok(["element_remove", "--scene", "demo", "--id", id]);
+     expect([...called].sort()).toEqual(
+       registry.tools.map((t) => t.name).sort(),
+diff --git a/src/mcp/server.test.ts b/src/mcp/server.test.ts
+index 859d3fe..b2c8cc8 100644
+--- a/src/mcp/server.test.ts
++++ b/src/mcp/server.test.ts
+@@ -6,6 +6,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+ import { afterEach, beforeEach, describe, expect, it } from "vitest";
+ import { run } from "../cli/main.ts";
+ import { type Ctx, createCtx } from "../service/ctx.ts";
++import { fakeRenderer } from "../service/fake-renderer.ts";
+ import { registry } from "../service/tools/index.ts";
+ import { createMcpServer } from "./server.ts";
+ 
+@@ -18,7 +19,7 @@ beforeEach(async () => {
+     recursive: true,
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+-  ctx = createCtx(root);
++  ctx = createCtx(root, fakeRenderer());
+   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+   await createMcpServer(registry, ctx).connect(serverSide);
+   client = new Client({ name: "test", version: "0" });
+@@ -99,4 +100,16 @@ describe("lienzo MCP server", () => {
+       );
+     }
+   });
++
++  it("returns scene_preview as image content (010/R2)", async () => {
++    await mcp("scene_create", { name: "demo" });
++    const r = await client.callTool({
++      name: "scene_preview",
++      arguments: { scene: "demo" },
++    });
++    expect(r.isError).toBeFalsy();
++    expect(r.content).toEqual([
++      { type: "image", mimeType: "image/png", data: expect.any(String) },
++    ]);
++  });
+ });
+diff --git a/src/mcp/server.ts b/src/mcp/server.ts
+index 27e0e8a..ba6ba77 100644
+--- a/src/mcp/server.ts
++++ b/src/mcp/server.ts
+@@ -18,6 +18,7 @@ import {
+ } from "@modelcontextprotocol/sdk/types.js";
+ import { z } from "zod";
+ import type { Ctx } from "../service/ctx.ts";
++import { ImageResult } from "../service/image.ts";
+ import type { Registry, Tool } from "../service/registry.ts";
+ 
+ const VERSION = "0.1.0";
+@@ -32,6 +33,14 @@ export function mcpToolOf(tool: Tool): McpTool {
+   };
+ }
+ 
++/** A tool's value as MCP content: an `ImageResult` is an image (010/D3), anything else JSON text. */
++export function contentOf(value: unknown): CallToolResult["content"] {
++  const image = ImageResult.safeParse(value);
++  return image.success
++    ? [{ type: "image", ...image.data.image }]
++    : [{ type: "text", text: JSON.stringify(value) }];
++}
++
+ /** An MCP server over `registry`; connect it to any transport. */
+ export function createMcpServer(registry: Registry, ctx: Ctx): Server {
+   const server = new Server(
+@@ -49,7 +58,7 @@ export function createMcpServer(registry: Registry, ctx: Ctx): Server {
+         ctx,
+       );
+       return result.ok
+-        ? { content: [{ type: "text", text: JSON.stringify(result.value) }] }
++        ? { content: contentOf(result.value) }
+         : {
+             isError: true,
+             content: [{ type: "text", text: JSON.stringify(result.error) }],
+diff --git a/src/service/fake-renderer.ts b/src/service/fake-renderer.ts
+new file mode 100644
+index 0000000..c325a57
+--- /dev/null
++++ b/src/service/fake-renderer.ts
+@@ -0,0 +1,19 @@
++/** A renderer for tests that never starts a browser: it returns a 1×1 PNG, or `type`. */
++import type { Renderer } from "./renderer.ts";
++
++const PIXEL = Buffer.from(
++  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=",
++  "base64",
++);
++
++const TYPES = { png: "image/png", gif: "image/gif", mp4: "video/mp4" };
++
++export function fakeRenderer(type?: string): Renderer {
++  return {
++    render: async (_scene, options) => ({
++      bytes: PIXEL,
++      type: type ?? TYPES[options.format],
++    }),
++    dispose: async () => {},
++  };
++}
+diff --git a/src/service/image.ts b/src/service/image.ts
+new file mode 100644
+index 0000000..1e0ad72
+--- /dev/null
++++ b/src/service/image.ts
+@@ -0,0 +1,11 @@
++/**
++ * An image a tool returns (010/D3): the MCP server sends any result of this shape as image
++ * content so the client sees it; the CLI prints it as JSON like any other result.
++ */
++import { z } from "zod";
++
++export const ImageResult = z.object({
++  image: z.object({ mimeType: z.literal("image/png"), data: z.base64() }),
++});
++
++export type ImageResult = z.infer<typeof ImageResult>;
+diff --git a/src/service/service.test.ts b/src/service/service.test.ts
+index 0b73d67..5838c38 100644
+--- a/src/service/service.test.ts
++++ b/src/service/service.test.ts
+@@ -16,6 +16,7 @@ import { applyTracks } from "../engine/tracks.ts";
+ import type { Element, Scene } from "../model/model.ts";
+ import { parseScene } from "../model/schema.ts";
+ import { type Ctx, createCtx } from "./ctx.ts";
++import { fakeRenderer } from "./fake-renderer.ts";
+ import { registry } from "./tools/index.ts";
+ 
+ let ctx: Ctx;
+@@ -26,7 +27,7 @@ beforeEach(async () => {
+     recursive: true,
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+-  ctx = createCtx(root);
++  ctx = createCtx(root, fakeRenderer());
+ });
+ 
+ async function call(name: string, input: unknown) {
+@@ -220,3 +221,34 @@ describe("animation presets (D6, R7)", () => {
+     });
+   });
+ });
++
++describe("scene_export (010/R1)", () => {
++  it("writes exports/<scene>.<ext>, or `out` relative to the root", async () => {
++    await ok("scene_create", { name: "demo" });
++    const png = await ok("scene_export", { scene: "demo", format: "png" });
++    expect(png.file).toBe(join(ctx.root, "exports", "demo.png"));
++    expect(png.notices).toEqual([]);
++    const gif = await ok("scene_export", {
++      scene: "demo",
++      format: "gif",
++      out: "out/post.gif",
++    });
++    expect(gif.file).toBe(join(ctx.root, "out", "post.gif"));
++    await expect(readFile(gif.file as string)).resolves.toHaveLength(
++      gif.bytes as number,
++    );
++  });
++
++  it("falls back to WebM, and says so, when H.264 is unavailable", async () => {
++    ctx = createCtx(ctx.root, fakeRenderer("video/webm"));
++    await ok("scene_create", { name: "demo" });
++    const r = await ok("scene_export", {
++      scene: "demo",
++      format: "mp4",
++      out: "clip.mp4",
++    });
++    expect(r.file).toBe(join(ctx.root, "clip.webm"));
++    expect(r.type).toBe("video/webm");
++    expect(r.notices).toHaveLength(1);
++  });
++});
+diff --git a/src/service/tools/index.ts b/src/service/tools/index.ts
+index d079b1c..829f606 100644
+--- a/src/service/tools/index.ts
++++ b/src/service/tools/index.ts
+@@ -15,8 +15,10 @@ import { presetGet } from "./preset-get.ts";
+ import { presetList } from "./preset-list.ts";
+ import { presetValidate } from "./preset-validate.ts";
+ import { sceneCreate } from "./scene-create.ts";
++import { sceneExport } from "./scene-export.ts";
+ import { sceneGet } from "./scene-get.ts";
+ import { sceneList } from "./scene-list.ts";
++import { scenePreview } from "./scene-preview.ts";
+ import { sceneValidate } from "./scene-validate.ts";
+ 
+ export const TOOLS: readonly Tool[] = [
+@@ -28,6 +30,8 @@ export const TOOLS: readonly Tool[] = [
+   sceneGet,
+   sceneCreate,
+   sceneValidate,
++  scenePreview,
++  sceneExport,
+   elementAdd,
+   elementUpdate,
+   elementRemove,
+diff --git a/src/service/tools/scene-export.ts b/src/service/tools/scene-export.ts
+new file mode 100644
+index 0000000..39416a4
+--- /dev/null
++++ b/src/service/tools/scene-export.ts
+@@ -0,0 +1,67 @@
++import { mkdir, writeFile } from "node:fs/promises";
++import { dirname, resolve } from "node:path";
++import { z } from "zod";
++import { defineTool } from "../registry.ts";
++import { openScene } from "../scenes.ts";
++
++/** GIFs above this frame rate only grow; the editor caps them the same way. */
++const GIF_MAX_FPS = 25;
++
++const EXTENSIONS: Record<string, string> = {
++  "image/png": "png",
++  "image/gif": "gif",
++  "video/mp4": "mp4",
++  "video/webm": "webm",
++};
++
++export const sceneExport = defineTool({
++  name: "scene_export",
++  description:
++    "Export a saved scene as a PNG (one frame at time `t`, default 0), a GIF or an MP4 " +
++    "(the whole loop) and return the written file. MP4 falls back to WebM, with a notice, " +
++    "when the browser cannot encode H.264. `out` is the file path (default " +
++    "exports/<scene>.<ext>, relative to the repo); its extension follows the real format. " +
++    "`scale` sizes it relative to the scene (default 1). Starts a headless browser on first use.",
++  input: z.object({
++    scene: z.string().min(1),
++    format: z.enum(["png", "gif", "mp4"]),
++    t: z.number().min(0).optional(),
++    scale: z.number().min(0.1).max(2).optional(),
++    fps: z.number().int().min(1).max(60).optional(),
++    out: z.string().min(1).optional(),
++  }),
++  output: z.object({
++    file: z.string(),
++    type: z.string(),
++    bytes: z.number(),
++    notices: z.array(z.string()),
++  }),
++  async run({ scene: name, format, t = 0, scale = 1, fps, out }, ctx) {
++    const scene = await openScene(ctx, name);
++    const rendered = await ctx.renderer.render(scene, {
++      format,
++      scale,
++      fps:
++        fps ??
++        (format === "gif" ? Math.min(scene.fps, GIF_MAX_FPS) : scene.fps),
++      time: t,
++    });
++    const ext = EXTENSIONS[rendered.type] ?? format;
++    const notices =
++      format === "mp4" && ext !== "mp4"
++        ? ["H.264 no está disponible en este navegador; se exportó WebM"]
++        : [];
++    const target = resolve(ctx.root, out ?? `exports/${name}.${ext}`).replace(
++      /\.\w+$/,
++      `.${ext}`,
++    );
++    await mkdir(dirname(target), { recursive: true });
++    await writeFile(target, rendered.bytes);
++    return {
++      file: target,
++      type: rendered.type,
++      bytes: rendered.bytes.length,
++      notices,
++    };
++  },
++});
+diff --git a/src/service/tools/scene-preview.ts b/src/service/tools/scene-preview.ts
+new file mode 100644
+index 0000000..1b50a37
+--- /dev/null
++++ b/src/service/tools/scene-preview.ts
+@@ -0,0 +1,30 @@
++import { z } from "zod";
++import { ImageResult } from "../image.ts";
++import { defineTool } from "../registry.ts";
++import { openScene } from "../scenes.ts";
++
++export const scenePreview = defineTool({
++  name: "scene_preview",
++  description:
++    "Render a saved scene at time `t` (seconds, default 0) as a PNG image to look at what " +
++    "it shows. `scale` (default 0.5) sizes it relative to the scene. Starts a headless " +
++    "browser on first use.",
++  input: z.object({
++    scene: z.string().min(1),
++    t: z.number().min(0).optional(),
++    scale: z.number().min(0.1).max(2).optional(),
++  }),
++  output: ImageResult,
++  async run({ scene: name, t = 0, scale = 0.5 }, ctx) {
++    const scene = await openScene(ctx, name);
++    const { bytes } = await ctx.renderer.render(scene, {
++      format: "png",
++      scale,
++      fps: scene.fps,
++      time: t,
++    });
++    return {
++      image: { mimeType: "image/png" as const, data: bytes.toString("base64") },
++    };
++  },
++});

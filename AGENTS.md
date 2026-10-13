@@ -49,15 +49,23 @@ What exists today:
   the descriptors import must load in plain Node: no Vite-only imports (`?url`, `?raw`,
   `import.meta.glob`); static files go in `public/`
 - MCP: `pnpm lienzo mcp` (`src/mcp/server.ts`, 009) serves every registry tool over stdio
-  with `@modelcontextprotocol/sdk`; generic, no per-tool code; stdout is the protocol only
+  with `@modelcontextprotocol/sdk`; generic, no per-tool code; stdout is the protocol only;
+  a result shaped like `ImageResult` (`src/service/image.ts`) goes out as image content
+- Headless export (010): `scene_export` / `scene_preview` render through `ctx.renderer`
+  (`src/service/renderer.ts`): an in-process Vite server + Playwright (`playwright-core`;
+  Chrome, else Edge, else Playwright's Chromium) on the `?render` route
+  (`src/export/render-page.ts`), which calls the editor's own `exportScene`. Started on the
+  first render, reused within a process, closed by `ctx.dispose()` — the CLI disposes after
+  every command, the MCP server when stdin ends. Tests pass `fakeRenderer()` unless they
+  need a real browser (`renderer.test.ts`, skipped when none is installed)
 
-Planned (decided, not built yet — specs 010, 011, 016, 017, 020–025):
+Planned (decided, not built yet — specs 011, 016, 017, 020–025):
 
 - Descriptors also drive compact JSON and tools (A23, specs 011, 007);
   3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
 - CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
   in tools (A20); tool names are `snake_case` noun_verb (`scene_export`); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
-  over stdio, CLI via `tsx` (A22) — specs 007–010, built last
+  over stdio, CLI via `tsx` (A22) — specs 007–010, built
 
 ## Layout
 
@@ -81,7 +89,8 @@ src/traits/      reusable style pieces, one file per trait
 src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
                  store.ts), categories and filter, JSON import/export helpers, scenes dialog,
                  animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
-src/service/     tool registry, ctx, Node store; tools/ = one file per tool (007)
+src/service/     tool registry, ctx, Node store, headless renderer (010); tools/ = one file
+                 per tool (007)
 src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008)
 src/types/       type declarations for packages that ship none
 src/demo.ts      the "how MCP works" demo scene

@@ -16,6 +16,7 @@ import { applyTracks } from "../engine/tracks.ts";
 import type { Element, Scene } from "../model/model.ts";
 import { parseScene } from "../model/schema.ts";
 import { type Ctx, createCtx } from "./ctx.ts";
+import { fakeRenderer } from "./fake-renderer.ts";
 import { registry } from "./tools/index.ts";
 
 let ctx: Ctx;
@@ -26,7 +27,7 @@ beforeEach(async () => {
     recursive: true,
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
-  ctx = createCtx(root);
+  ctx = createCtx(root, fakeRenderer());
 });
 
 async function call(name: string, input: unknown) {
@@ -218,5 +219,36 @@ describe("animation presets (D6, R7)", () => {
       ok: false,
       error: { code: "unknown_anim_preset", path: "elements.1.animPreset" },
     });
+  });
+});
+
+describe("scene_export (010/R1)", () => {
+  it("writes exports/<scene>.<ext>, or `out` relative to the root", async () => {
+    await ok("scene_create", { name: "demo" });
+    const png = await ok("scene_export", { scene: "demo", format: "png" });
+    expect(png.file).toBe(join(ctx.root, "exports", "demo.png"));
+    expect(png.notices).toEqual([]);
+    const gif = await ok("scene_export", {
+      scene: "demo",
+      format: "gif",
+      out: "out/post.gif",
+    });
+    expect(gif.file).toBe(join(ctx.root, "out", "post.gif"));
+    await expect(readFile(gif.file as string)).resolves.toHaveLength(
+      gif.bytes as number,
+    );
+  });
+
+  it("falls back to WebM, and says so, when H.264 is unavailable", async () => {
+    ctx = createCtx(ctx.root, fakeRenderer("video/webm"));
+    await ok("scene_create", { name: "demo" });
+    const r = await ok("scene_export", {
+      scene: "demo",
+      format: "mp4",
+      out: "clip.mp4",
+    });
+    expect(r.file).toBe(join(ctx.root, "clip.webm"));
+    expect(r.type).toBe("video/webm");
+    expect(r.notices).toHaveLength(1);
   });
 });

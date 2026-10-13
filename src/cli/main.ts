@@ -84,12 +84,14 @@ if (import.meta.main) {
         ? text(process.stdin)
         : readFile(resolve(process.env.INIT_CWD ?? ".", source), "utf8"),
   };
-  process.exitCode = await run(
-    process.argv.slice(2),
-    io,
-    createCtx(root),
-  ).catch((error: unknown) => {
+  const ctx = createCtx(root);
+  try {
+    process.exitCode = await run(process.argv.slice(2), io, ctx);
+  } catch (error) {
     io.stderr(errorJson("internal", String(error)));
-    return 1;
-  });
+    process.exitCode = 1;
+  } finally {
+    // 010/D4: a renderer left open would keep this process alive.
+    await ctx.dispose();
+  }
 }

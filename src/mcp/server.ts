@@ -18,6 +18,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { Ctx } from "../service/ctx.ts";
+import { ImageResult } from "../service/image.ts";
 import type { Registry, Tool } from "../service/registry.ts";
 
 const VERSION = "0.1.0";
@@ -30,6 +31,14 @@ export function mcpToolOf(tool: Tool): McpTool {
     description: tool.description,
     inputSchema: schema as McpTool["inputSchema"],
   };
+}
+
+/** A tool's value as MCP content: an `ImageResult` is an image (010/D3), anything else JSON text. */
+export function contentOf(value: unknown): CallToolResult["content"] {
+  const image = ImageResult.safeParse(value);
+  return image.success
+    ? [{ type: "image", ...image.data.image }]
+    : [{ type: "text", text: JSON.stringify(value) }];
 }
 
 /** An MCP server over `registry`; connect it to any transport. */
@@ -49,7 +58,7 @@ export function createMcpServer(registry: Registry, ctx: Ctx): Server {
         ctx,
       );
       return result.ok
-        ? { content: [{ type: "text", text: JSON.stringify(result.value) }] }
+        ? { content: contentOf(result.value) }
         : {
             isError: true,
             content: [{ type: "text", text: JSON.stringify(result.error) }],
@@ -60,10 +69,21 @@ export function createMcpServer(registry: Registry, ctx: Ctx): Server {
 }
 
 /**
- * Serves `registry` over stdio until the client closes. stdout carries only the protocol,
- * so console output is sent to stderr before the transport starts.
+ * Serves `registry` over stdio and resolves once the client is gone: stdin ends (how MCP
+ * clients shut a stdio server down) or SIGINT/SIGTERM arrives. The caller then disposes the
+ * ctx (010/D4); the SDK's transport does not watch stdin's end itself. stdout carries only
+ * the protocol, so console output is sent to stderr before the transport starts.
  */
 export async function serveStdio(registry: Registry, ctx: Ctx): Promise<void> {
   console.log = console.info = console.debug = console.error;
-  await createMcpServer(registry, ctx).connect(new StdioServerTransport());
+  const server = createMcpServer(registry, ctx);
+  const gone = new Promise<void>((resolve) => {
+    process.stdin.once("end", resolve);
+    process.stdin.once("close", resolve);
+    process.once("SIGINT", resolve);
+    process.once("SIGTERM", resolve);
+  });
+  await server.connect(new StdioServerTransport());
+  await gone;
+  await server.close();
 }
