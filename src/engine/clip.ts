@@ -1,7 +1,11 @@
 import { arrowPoints } from "../components/arrow/draw.ts";
 import { badgeLayout } from "../components/badge/layout.ts";
 import { frameOf } from "../components/path/draw.ts";
-import { closedPath, cornerCount, radialPoints } from "../components/polygon/draw.ts";
+import {
+  closedPath,
+  cornerCount,
+  radialPoints,
+} from "../components/polygon/draw.ts";
 import type { Element } from "../model/model.ts";
 import type { AnimState } from "./anim.ts";
 import { type Box, boxOf } from "./geometry.ts";

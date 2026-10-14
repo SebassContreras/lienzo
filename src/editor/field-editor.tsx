@@ -227,7 +227,8 @@ function MaskWidget({ value, label, change, ctx }: WidgetProps) {
         title="Quitar máscara"
         onClick={() =>
           change((d) => {
-            const fx = (d as unknown as { effects?: { mask?: string } }).effects;
+            const fx = (d as unknown as { effects?: { mask?: string } })
+              .effects;
             if (fx) fx.mask = "";
           })
         }
@@ -236,9 +237,7 @@ function MaskWidget({ value, label, change, ctx }: WidgetProps) {
       </button>
     </div>
   ) : (
-    <div className="hint">
-      {label}: sin máscara.
-    </div>
+    <div className="hint">{label}: sin máscara.</div>
   );
 }
 

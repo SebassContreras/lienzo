@@ -90,12 +90,14 @@ function removeElements(scene: Scene, removed: Set<string>): Element[] {
     .filter((el) => !ids.has(el.id))
     .map((el) => {
       let updated = el;
-      const mask = (el as unknown as { effects?: { mask?: string } }).effects?.mask;
+      const mask = (el as unknown as { effects?: { mask?: string } }).effects
+        ?.mask;
       if (mask && ids.has(mask)) {
         updated = {
           ...updated,
           effects: {
-            ...(updated as unknown as { effects?: Record<string, unknown> }).effects,
+            ...(updated as unknown as { effects?: Record<string, unknown> })
+              .effects,
             mask: "",
           },
         } as Element;

@@ -93,6 +93,7 @@ const STATE = [
   "filter",
 ] as const;
 
+// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: dynamic canvas method declarations
 export class RecordingCtx extends Recorder {
   private m: M = [1, 0, 0, 1, 0, 0];
   private props: Record<string, unknown> = {
@@ -181,6 +182,60 @@ export class RecordingCtx extends Recorder {
   putImageData(_data: unknown, x: number, y: number) {
     this.rec("putImageData", [x, y]);
   }
+}
+
+export interface RecordingCtx {
+  beginPath(): void;
+  closePath(): void;
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  arc(
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    counterclockwise?: boolean,
+  ): void;
+  ellipse(
+    x: number,
+    y: number,
+    radiusX: number,
+    radiusY: number,
+    rotation: number,
+    startAngle: number,
+    endAngle: number,
+    counterclockwise?: boolean,
+  ): void;
+  rect(x: number, y: number, w: number, h: number): void;
+  roundRect(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    radii?: number | number[],
+  ): void;
+  bezierCurveTo(
+    cp1x: number,
+    cp1y: number,
+    cp2x: number,
+    cp2y: number,
+    x: number,
+    y: number,
+  ): void;
+  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
+  fill(fillRule?: CanvasFillRule): void;
+  fill(path: unknown, fillRule?: CanvasFillRule): void;
+  stroke(): void;
+  stroke(path: unknown): void;
+  clip(fillRule?: CanvasFillRule): void;
+  clip(path: unknown, fillRule?: CanvasFillRule): void;
+  fillRect(x: number, y: number, w: number, h: number): void;
+  strokeRect(x: number, y: number, w: number, h: number): void;
+  clearRect(x: number, y: number, w: number, h: number): void;
+  fillText(text: string, x: number, y: number, maxWidth?: number): void;
+  strokeText(text: string, x: number, y: number, maxWidth?: number): void;
+  drawImage(...args: unknown[]): void;
 }
 for (const m of [
   "beginPath",

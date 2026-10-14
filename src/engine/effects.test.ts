@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { defaultRect, defaultScene } from "../model/model.ts";
-import { drawScene } from "./render.ts";
+import { installCanvasFakes, RecordingCtx } from "../test/recording-ctx.ts";
 import { withEffects } from "./effects.ts";
-import { RecordingCtx, installCanvasFakes } from "../test/recording-ctx.ts";
 import type { Ctx } from "./paint.ts";
+import { drawScene } from "./render.ts";
 
 installCanvasFakes();
 
@@ -122,7 +122,14 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
       const ctx = new RecordingCtx();
       const scene = defaultScene();
       scene.background = { ...scene.background, dots: false };
-      const mask = { ...defaultRect(), id: `mask-${kind}`, x: 0, y: 0, w: 100, h: 100 };
+      const mask = {
+        ...defaultRect(),
+        id: `mask-${kind}`,
+        x: 0,
+        y: 0,
+        w: 100,
+        h: 100,
+      };
       const el = {
         ...createElement(kind),
         id: `el-${kind}`,
@@ -132,16 +139,28 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
       drawScene(ctx as unknown as Ctx, scene, 0);
 
       // Verify that clip, filter blur and blend were applied
-      expect(ctx.log.some((l) => l.startsWith("clip(")), `${kind} has clip`).toBe(true);
-      expect(ctx.log.includes("filter=(blur(10px))"), `${kind} has blur`).toBe(true);
-      expect(ctx.log.includes("globalCompositeOperation=(multiply)"), `${kind} has blend`).toBe(true);
+      expect(
+        ctx.log.some((l) => l.startsWith("clip(")),
+        `${kind} has clip`,
+      ).toBe(true);
+      expect(ctx.log.includes("filter=(blur(10px))"), `${kind} has blur`).toBe(
+        true,
+      );
+      expect(
+        ctx.log.includes("globalCompositeOperation=(multiply)"),
+        `${kind} has blend`,
+      ).toBe(true);
     }
   });
 
   it("applies blur, blend and mask to a test-only descriptor registered at runtime (025/T003, R3)", async () => {
-    const { registerComponent, createElement } = await import("../components/index.ts");
+    const { registerComponent, createElement } = await import(
+      "../components/index.ts"
+    );
     const { defineComponent } = await import("../components/descriptor.ts");
-    const { BOX_ANIMS, anim, box } = await import("../components/fields/index.ts");
+    const { BOX_ANIMS, anim, box } = await import(
+      "../components/fields/index.ts"
+    );
 
     const testKind = `custom-widget-${Date.now()}`;
     const testFields = {
@@ -166,13 +185,20 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
     const ctx = new RecordingCtx();
     const scene = defaultScene();
     scene.background = { ...scene.background, dots: false };
-    const mask = { ...defaultRect(), id: "mask-custom", x: 0, y: 0, w: 100, h: 100 };
+    const mask = {
+      ...defaultRect(),
+      id: "mask-custom",
+      x: 0,
+      y: 0,
+      w: 100,
+      h: 100,
+    };
     const el = {
-      ...createElement(testKind as never),
+      ...(createElement(testKind as never) as Record<string, unknown>),
       id: "el-custom",
       effects: { blur: 12, blend: "screen" as const, mask: "mask-custom" },
     };
-    scene.elements = [mask, el];
+    scene.elements = [mask, el as never];
     drawScene(ctx as unknown as Ctx, scene, 0);
 
     expect(ctx.log.some((l) => l.startsWith("clip("))).toBe(true);

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { custom, num, obj, type Parent, select } from "./field.ts";
+import { custom, num, obj, select } from "./field.ts";
 
 export type BlendMode =
   | "normal"

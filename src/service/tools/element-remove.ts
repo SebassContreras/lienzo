@@ -16,7 +16,8 @@ export const elementRemove = defineTool({
         elements: s.elements
           .filter((_, j) => j !== i)
           .map((el) => {
-            const fx = (el as unknown as { effects?: { mask?: string } }).effects;
+            const fx = (el as unknown as { effects?: { mask?: string } })
+              .effects;
             if (fx && fx.mask === removedId) {
               return {
                 ...el,

@@ -1,8 +1,8 @@
 import { descriptorOf } from "../components/index.ts";
 import type { Background, Element, Scene } from "../model/model.ts";
 import { animate } from "./animate.ts";
-import { withEffects } from "./effects.ts";
 import { withMask } from "./clip.ts";
+import { withEffects } from "./effects.ts";
 import { indexById, indexElements } from "./geometry.ts";
 import { type Ctx, linearGradient, rgba } from "./paint.ts";
 
@@ -30,7 +30,8 @@ export function drawElements(
   // Find all elements that act as a mask for any element in this scope
   const maskIds = new Set<string>();
   for (const el of elements) {
-    const mask = (el as unknown as { effects?: { mask?: string } }).effects?.mask;
+    const mask = (el as unknown as { effects?: { mask?: string } }).effects
+      ?.mask;
     if (mask) maskIds.add(mask);
   }
 
@@ -40,7 +41,15 @@ export function drawElements(
     if (maskIds.has(el.id)) continue;
 
     const now = animate(el, t, scene);
-    const fx = (now.el as unknown as { effects?: { blur?: number; blend?: import("../components/fields/effects.ts").BlendMode; mask?: string } }).effects;
+    const fx = (
+      now.el as unknown as {
+        effects?: {
+          blur?: number;
+          blend?: import("../components/fields/effects.ts").BlendMode;
+          mask?: string;
+        };
+      }
+    ).effects;
 
     const drawItem = () => {
       withEffects(ctx, fx, () => {
