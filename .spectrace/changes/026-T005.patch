@@ -1,0 +1,214 @@
+diff --git a/src/engine/assets.ts b/src/engine/assets.ts
+index 984567b..b325ecf 100644
+--- a/src/engine/assets.ts
++++ b/src/engine/assets.ts
+@@ -77,18 +77,48 @@ export async function imageSize(
+   return { width: loaded.width, height: loaded.height };
+ }
+ 
+-function sceneSources(elements: Element[], out: Set<string>): Set<string> {
+-  for (const el of elements) {
+-    for (const src of descriptorOf(el.kind)?.assets?.(el as never) ?? []) {
+-      if (src) out.add(src);
+-    }
+-    if (el.kind === "group") sceneSources(el.children, out);
++async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
++  if (typeof window === "undefined") return null;
++  const AudioContextClass =
++    window.AudioContext ||
++    (window as unknown as { webkitAudioContext: typeof AudioContext })
++      .webkitAudioContext;
++  if (!AudioContextClass) return null;
++  const ctx = new AudioContextClass();
++  try {
++    const res = await fetch(src);
++    if (!res.ok) return null;
++    const arrayBuffer = await res.arrayBuffer();
++    return await ctx.decodeAudioData(arrayBuffer);
++  } catch {
++    return null;
++  } finally {
++    ctx.close().catch(() => {});
+   }
++}
++
++for (const ext of ["mp3", "wav", "aac", "ogg"]) {
++  registerAssetLoader(ext, loadAudioBuffer);
++}
++
++function sceneSources(scene: Scene, out: Set<string>): Set<string> {
++  if (scene.audio?.assetId) {
++    out.add(scene.audio.assetId);
++  }
++  const collect = (elements: Element[]) => {
++    for (const el of elements) {
++      for (const src of descriptorOf(el.kind)?.assets?.(el as never) ?? []) {
++        if (src) out.add(src);
++      }
++      if (el.kind === "group") collect(el.children);
++    }
++  };
++  collect(scene.elements);
+   return out;
+ }
+ 
+ /** Waits until every asset the scene uses has loaded, so every exported frame shows them. */
+ export async function loadSceneAssets(scene: Scene): Promise<void> {
+-  const sources = sceneSources(scene.elements, new Set());
++  const sources = sceneSources(scene, new Set());
+   await Promise.all([...sources].map((src) => entry(src).ready));
+ }
+diff --git a/src/engine/audio/audio-export.ts b/src/engine/audio/audio-export.ts
+new file mode 100644
+index 0000000..ae507ef
+--- /dev/null
++++ b/src/engine/audio/audio-export.ts
+@@ -0,0 +1,55 @@
++import type { SceneAudio } from "../../model/model.ts";
++
++/**
++ * Trims and adjusts an AudioBuffer for video export matching scene duration and offsets.
++ * Pure audio processing function (SRP, high cohesion).
++ */
++export function prepareAudioBufferForExport(
++  sourceBuffer: AudioBuffer,
++  sceneDuration: number,
++  audio: SceneAudio,
++): { buffer: AudioBuffer; startOffset: number } | null {
++  const startOffset = Math.max(0, audio.startOffset ?? 0);
++  const trimOffset = Math.max(0, audio.trimOffset ?? 0);
++  const volume = Math.max(0, Math.min(1, audio.volume ?? 1));
++
++  if (startOffset >= sceneDuration) return null;
++
++  const availableAudio = Math.max(0, sourceBuffer.duration - trimOffset);
++  if (availableAudio <= 0) return null;
++
++  const durationToPlay = Math.min(sceneDuration - startOffset, availableAudio);
++  if (durationToPlay <= 0) return null;
++
++  const sampleRate = sourceBuffer.sampleRate;
++  const numChannels = sourceBuffer.numberOfChannels;
++  const startSample = Math.floor(trimOffset * sampleRate);
++  const totalSamples = Math.floor(durationToPlay * sampleRate);
++
++  if (totalSamples <= 0) return null;
++
++  // Create sliced and volume-adjusted buffer
++  const slicedBuffer = new AudioBuffer({
++    length: totalSamples,
++    numberOfChannels: numChannels,
++    sampleRate,
++  });
++
++  for (let channel = 0; channel < numChannels; channel++) {
++    const srcData = sourceBuffer.getChannelData(channel);
++    const destData = slicedBuffer.getChannelData(channel);
++    for (let i = 0; i < totalSamples; i++) {
++      const srcIndex = startSample + i;
++      if (srcIndex < srcData.length) {
++        destData[i] = srcData[srcIndex]! * volume;
++      } else {
++        destData[i] = 0;
++      }
++    }
++  }
++
++  return {
++    buffer: slicedBuffer,
++    startOffset,
++  };
++}
+diff --git a/src/export/export.ts b/src/export/export.ts
+index 9b3245a..dad56a1 100644
+--- a/src/export/export.ts
++++ b/src/export/export.ts
+@@ -1,4 +1,5 @@
+-import { loadSceneAssets } from "../engine/assets.ts";
++import { assetFor, loadSceneAssets } from "../engine/assets.ts";
++import { prepareAudioBufferForExport } from "../engine/audio/audio-export.ts";
+ import { drawScene } from "../engine/render.ts";
+ import type { Scene } from "../model/model.ts";
+ import type { FrameEncoder } from "./frame-encoder.ts";
+@@ -53,10 +54,24 @@ export async function exportScene(
+     render(options.time);
+     return canvas.convertToBlob({ type: "image/png" });
+   }
++  let videoOptions: { audioBuffer?: AudioBuffer | null; audioStartOffset?: number } = {};
++  if (options.format === "mp4" && scene.audio?.assetId) {
++    const rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
++    if (rawAudio) {
++      const prepared = prepareAudioBufferForExport(rawAudio, scene.duration, scene.audio);
++      if (prepared) {
++        videoOptions = {
++          audioBuffer: prepared.buffer,
++          audioStartOffset: prepared.startOffset,
++        };
++      }
++    }
++  }
++
+   const encoder =
+     options.format === "gif"
+       ? createGifEncoder(ctx, options.fps)
+-      : await createVideoEncoder(canvas, options.fps);
++      : await createVideoEncoder(canvas, options.fps, videoOptions);
+   return encodeFrames(encoder, render, scene.duration, options.fps, onProgress);
+ }
+ 
+diff --git a/src/export/video-encoder.ts b/src/export/video-encoder.ts
+index 1d7de3e..d90dc6c 100644
+--- a/src/export/video-encoder.ts
++++ b/src/export/video-encoder.ts
+@@ -1,4 +1,5 @@
+ import {
++  AudioBufferSource,
+   BufferTarget,
+   CanvasSource,
+   canEncodeVideo,
+@@ -9,10 +10,16 @@ import {
+ } from "mediabunny";
+ import type { FrameEncoder } from "./frame-encoder.ts";
+ 
++export type VideoEncoderOptions = {
++  audioBuffer?: AudioBuffer | null;
++  audioStartOffset?: number;
++};
++
+ /** A video of `canvas` (mediabunny): H.264 MP4 when the browser can encode it, else WebM. */
+ export async function createVideoEncoder(
+   canvas: OffscreenCanvas,
+   fps: number,
++  options: VideoEncoderOptions = {},
+ ): Promise<FrameEncoder> {
+   const size = { width: canvas.width, height: canvas.height };
+   const useMp4 = await canEncodeVideo("avc", {
+@@ -30,7 +37,28 @@ export async function createVideoEncoder(
+     quality: QUALITY_HIGH,
+   });
+   output.addVideoTrack(source, { frameRate: fps });
++
++  let audioSource: AudioBufferSource | null = null;
++  if (options.audioBuffer) {
++    const audioCodec = useMp4 ? "aac" : "opus";
++    audioSource = new AudioBufferSource(
++      {
++        codec: audioCodec,
++        quality: QUALITY_HIGH,
++      },
++      {
++        startTimestamp: options.audioStartOffset ?? 0,
++      },
++    );
++    output.addAudioTrack(audioSource);
++  }
++
+   await output.start();
++
++  if (audioSource && options.audioBuffer) {
++    await audioSource.add(options.audioBuffer);
++  }
++
+   return {
+     add: (t) => source.add(t, 1 / fps),
+     async finish() {

@@ -20,6 +20,7 @@ import {
 } from "../engine/lines.ts";
 import { drawScene } from "../engine/render.ts";
 import { applyTracks, commitAt } from "../engine/tracks.ts";
+import { WebAudioPlayer } from "../engine/audio/audio-player.ts";
 import type { Element, LineEl, Scene } from "../model/model.ts";
 import { type Snap, snapBox, unionBox } from "./snap.ts";
 
@@ -463,6 +464,17 @@ export function Stage({
     return () => ro.disconnect();
   }, []);
 
+  const audioPlayerRef = useRef<WebAudioPlayer | null>(null);
+  if (!audioPlayerRef.current) {
+    audioPlayerRef.current = new WebAudioPlayer();
+  }
+
+  useEffect(() => {
+    return () => {
+      audioPlayerRef.current?.dispose();
+    };
+  }, []);
+
   useEffect(() => {
     let frame = 0;
     let last = performance.now();
@@ -473,6 +485,12 @@ export function Stage({
       if (clock.current.playing) {
         clock.current.t = (clock.current.t + dt) % s.duration;
       }
+      audioPlayerRef.current?.sync(
+        clock.current.t,
+        clock.current.playing,
+        s.duration,
+        s.audio,
+      );
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
       if (canvas && ctx) {

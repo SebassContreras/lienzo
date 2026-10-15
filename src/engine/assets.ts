@@ -77,18 +77,48 @@ export async function imageSize(
   return { width: loaded.width, height: loaded.height };
 }
 
-function sceneSources(elements: Element[], out: Set<string>): Set<string> {
-  for (const el of elements) {
-    for (const src of descriptorOf(el.kind)?.assets?.(el as never) ?? []) {
-      if (src) out.add(src);
-    }
-    if (el.kind === "group") sceneSources(el.children, out);
+async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
+  if (typeof window === "undefined") return null;
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext })
+      .webkitAudioContext;
+  if (!AudioContextClass) return null;
+  const ctx = new AudioContextClass();
+  try {
+    const res = await fetch(src);
+    if (!res.ok) return null;
+    const arrayBuffer = await res.arrayBuffer();
+    return await ctx.decodeAudioData(arrayBuffer);
+  } catch {
+    return null;
+  } finally {
+    ctx.close().catch(() => {});
   }
+}
+
+for (const ext of ["mp3", "wav", "aac", "ogg"]) {
+  registerAssetLoader(ext, loadAudioBuffer);
+}
+
+function sceneSources(scene: Scene, out: Set<string>): Set<string> {
+  if (scene.audio?.assetId) {
+    out.add(scene.audio.assetId);
+  }
+  const collect = (elements: Element[]) => {
+    for (const el of elements) {
+      for (const src of descriptorOf(el.kind)?.assets?.(el as never) ?? []) {
+        if (src) out.add(src);
+      }
+      if (el.kind === "group") collect(el.children);
+    }
+  };
+  collect(scene.elements);
   return out;
 }
 
 /** Waits until every asset the scene uses has loaded, so every exported frame shows them. */
 export async function loadSceneAssets(scene: Scene): Promise<void> {
-  const sources = sceneSources(scene.elements, new Set());
+  const sources = sceneSources(scene, new Set());
   await Promise.all([...sources].map((src) => entry(src).ready));
 }

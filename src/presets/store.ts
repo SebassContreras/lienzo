@@ -111,6 +111,12 @@ export const MODEL_FILES = {
   error: "Formato no admitido: usa un modelo .glb",
 };
 
+/** Audio files for scene audio tracks (.mp3, .wav, .aac, .ogg). */
+export const AUDIO_FILES = {
+  exts: ["mp3", "wav", "aac", "ogg"],
+  error: "Formato no admitido: usa MP3, WAV, AAC u OGG",
+};
+
 /**
  * Uploads a file into `assets/` (named by its content hash) and returns its URL path; an
  * image unless `accepted` says otherwise.

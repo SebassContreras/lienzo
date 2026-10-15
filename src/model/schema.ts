@@ -25,6 +25,13 @@ export const BackgroundSchema = z.object({
   spotlightColor: color,
 });
 
+export const SceneAudioSchema = z.object({
+  assetId: z.string().min(1),
+  volume: z.number().min(0).max(1).optional(),
+  startOffset: z.number().min(0).optional(),
+  trimOffset: z.number().min(0).optional(),
+});
+
 export const SceneSchema: z.ZodType<Scene> = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
@@ -32,6 +39,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
   fps: z.number().positive(),
   background: BackgroundSchema,
   elements: z.array(ElementSchema),
+  audio: SceneAudioSchema.optional(),
 });
 
 const traitParam = z.union([z.string(), z.number(), z.boolean()]);

@@ -26,7 +26,7 @@ exactly what I wanted").
 ## Conventions
 
 - A13@1: pnpm is the package manager — why: user's standing preference.
-- A14@1: Biome for lint and format; Vitest for unit tests of the model and engine — why: one tool each; fits Vite.
+- A14@1: Biome for lint and format; Vitest for minimal unit tests of the model, engine and pure business logic (SRP/KISS: test contracts, domain transformations and math timing; avoid redundant/heavy E2E micro-tests; keep daily development fast) — why: one tool each; fits Vite and prevents test bloat.
 - A15@1: CI on GitHub Actions runs `pnpm lint`, `pnpm typecheck` and `pnpm test` on every push and pull request — why: free for public repositories.
 - A16@1: UI text is Spanish; code, comments, docs and commit messages are English — why: user preference.
 - A17@1: Conventional Commits, with a `Spec: NNN/TNNN` trailer when a commit belongs to a task — why: standard (https://www.conventionalcommits.org/en/v1.0.0/).

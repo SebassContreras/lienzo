@@ -32,7 +32,9 @@ import {
   defaultScene,
   type Element,
   type Scene,
+  type SceneAudio,
 } from "../model/model.ts";
+import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parsePresetRecipe } from "../model/schema.ts";
 import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
@@ -752,6 +754,9 @@ export function App() {
           playing={playing}
           togglePlay={togglePlay}
           onScrub={seek}
+          scene={scene}
+          onAudioChange={(audio) => applyScene({ ...sceneRef.current, audio })}
+          setStatus={setStatus}
         />
         {selected && (
           <TracksPanel
@@ -837,12 +842,18 @@ function Timeline({
   playing,
   togglePlay,
   onScrub,
+  scene,
+  onAudioChange,
+  setStatus,
 }: {
   clock: MutableRefObject<Clock>;
   duration: number;
   playing: boolean;
   togglePlay: () => void;
   onScrub: (t: number) => void;
+  scene: Scene;
+  onAudioChange: (audio: SceneAudio | undefined) => void;
+  setStatus?: (status: string) => void;
 }) {
   const range = useRef<HTMLInputElement>(null);
   const readout = useRef<HTMLSpanElement>(null);
@@ -879,6 +890,11 @@ function Timeline({
         onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
       />
       <span ref={readout} className="readout" />
+      <AudioTrackControl
+        scene={scene}
+        onChange={onAudioChange}
+        setStatus={setStatus}
+      />
     </div>
   );
 }

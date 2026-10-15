@@ -51,6 +51,13 @@ export type Background = {
   spotlightColor: string;
 };
 
+export type SceneAudio = {
+  assetId: string;
+  volume?: number;
+  startOffset?: number;
+  trimOffset?: number;
+};
+
 export type Scene = {
   width: number;
   height: number;
@@ -59,6 +66,7 @@ export type Scene = {
   fps: number;
   background: Background;
   elements: Element[];
+  audio?: SceneAudio;
 };
 
 export { FONTS } from "./fonts.ts";

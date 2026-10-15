@@ -58,11 +58,15 @@ const ASSET_TYPES: Record<string, string> = {
   svg: "image/svg+xml",
   webp: "image/webp",
   glb: "model/gltf-binary",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  aac: "audio/aac",
+  ogg: "audio/ogg",
 };
 const MAX_ASSET_BYTES = 20 * 1024 * 1024;
 
 /**
- * Stores images and 3D models used by scenes in `assets/` at the repo root:
+ * Stores images, 3D models and audio files used by scenes in `assets/` at the repo root:
  * POST /api/assets?ext=png  -> writes assets/<content hash>.png, returns { path }
  * GET  /assets/<file>       -> the stored file
  */
@@ -77,7 +81,7 @@ function assetStore(): Plugin {
       res.statusCode = 400;
       res.end(
         JSON.stringify({
-          error: "expected POST with ext=png|jpg|svg|webp|glb",
+          error: "expected POST with ext=png|jpg|svg|webp|glb|mp3|wav|aac|ogg",
         }),
       );
       return;

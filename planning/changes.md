@@ -43,3 +43,8 @@ Why: wording fix; the endpoint was added by 019 under A26, and A7's list of endp
 Why: MCP tool names allow only `[a-zA-Z0-9_-]` (MCP specification); dotted names such as `scene.export` are rejected by some clients.
 - MODIFIED A20@1 → A20@2
 - Tasks: 007/T001, 008/T001, 009/T001, 011/T006 (never started) re-pointed to A20@2; 010/R1, 010/R2, 010/D3, 011/R6, 011/D5 reworded to the new names
+
+## 2026-10-15 — testing policy: minimal tests for daily development (KISS / YAGNI)
+Why: clarify testing scope to prevent test bloat; prioritize pure engine logic, timing math and schema boundaries over redundant E2E/micro-tests so daily development remains fast. Meaning unchanged.
+- REWORDED A14@1
+

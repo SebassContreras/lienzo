@@ -1,4 +1,5 @@
 import {
+  AudioBufferSource,
   BufferTarget,
   CanvasSource,
   canEncodeVideo,
@@ -9,10 +10,16 @@ import {
 } from "mediabunny";
 import type { FrameEncoder } from "./frame-encoder.ts";
 
+export type VideoEncoderOptions = {
+  audioBuffer?: AudioBuffer | null;
+  audioStartOffset?: number;
+};
+
 /** A video of `canvas` (mediabunny): H.264 MP4 when the browser can encode it, else WebM. */
 export async function createVideoEncoder(
   canvas: OffscreenCanvas,
   fps: number,
+  options: VideoEncoderOptions = {},
 ): Promise<FrameEncoder> {
   const size = { width: canvas.width, height: canvas.height };
   const useMp4 = await canEncodeVideo("avc", {
@@ -30,7 +37,28 @@ export async function createVideoEncoder(
     quality: QUALITY_HIGH,
   });
   output.addVideoTrack(source, { frameRate: fps });
+
+  let audioSource: AudioBufferSource | null = null;
+  if (options.audioBuffer) {
+    const audioCodec = useMp4 ? "aac" : "opus";
+    audioSource = new AudioBufferSource(
+      {
+        codec: audioCodec,
+        quality: QUALITY_HIGH,
+      },
+      {
+        startTimestamp: options.audioStartOffset ?? 0,
+      },
+    );
+    output.addAudioTrack(audioSource);
+  }
+
   await output.start();
+
+  if (audioSource && options.audioBuffer) {
+    await audioSource.add(options.audioBuffer);
+  }
+
   return {
     add: (t) => source.add(t, 1 / fps),
     async finish() {

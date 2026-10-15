@@ -1,0 +1,52 @@
+diff --git a/src/model/model.ts b/src/model/model.ts
+index e5d4ba4..0952a4d 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -51,6 +51,13 @@ export type Background = {
+   spotlightColor: string;
+ };
+ 
++export type SceneAudio = {
++  assetId: string;
++  volume?: number;
++  startOffset?: number;
++  trimOffset?: number;
++};
++
+ export type Scene = {
+   width: number;
+   height: number;
+@@ -59,6 +66,7 @@ export type Scene = {
+   fps: number;
+   background: Background;
+   elements: Element[];
++  audio?: SceneAudio;
+ };
+ 
+ export { FONTS } from "./fonts.ts";
+diff --git a/src/model/schema.ts b/src/model/schema.ts
+index d2408f7..60b2092 100644
+--- a/src/model/schema.ts
++++ b/src/model/schema.ts
+@@ -25,6 +25,13 @@ export const BackgroundSchema = z.object({
+   spotlightColor: color,
+ });
+ 
++export const SceneAudioSchema = z.object({
++  assetId: z.string().min(1),
++  volume: z.number().min(0).max(1).optional(),
++  startOffset: z.number().min(0).optional(),
++  trimOffset: z.number().min(0).optional(),
++});
++
+ export const SceneSchema: z.ZodType<Scene> = z.object({
+   width: z.number().positive(),
+   height: z.number().positive(),
+@@ -32,6 +39,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
+   fps: z.number().positive(),
+   background: BackgroundSchema,
+   elements: z.array(ElementSchema),
++  audio: SceneAudioSchema.optional(),
+ });
+ 
+ const traitParam = z.union([z.string(), z.number(), z.boolean()]);

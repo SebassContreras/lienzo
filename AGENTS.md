@@ -115,6 +115,9 @@ assets/          images used by scenes, named by content hash
   `src/traits/` only when no existing one fits.
 - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports
   are deterministic.
+- Minimal testing (KISS / YAGNI): test pure domain logic, mathematical timing, transformations,
+  and contract boundaries. Do not write redundant micro-tests for every Zod field or heavy E2E tests
+  when pure unit tests suffice; keep daily execution under a few seconds.
 - Use pnpm, never npm or yarn.
 
 ## Working on tasks

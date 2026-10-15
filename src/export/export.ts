@@ -1,4 +1,5 @@
-import { loadSceneAssets } from "../engine/assets.ts";
+import { assetFor, loadSceneAssets } from "../engine/assets.ts";
+import { prepareAudioBufferForExport } from "../engine/audio/audio-export.ts";
 import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
 import type { FrameEncoder } from "./frame-encoder.ts";
@@ -53,10 +54,24 @@ export async function exportScene(
     render(options.time);
     return canvas.convertToBlob({ type: "image/png" });
   }
+  let videoOptions: { audioBuffer?: AudioBuffer | null; audioStartOffset?: number } = {};
+  if (options.format === "mp4" && scene.audio?.assetId) {
+    const rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
+    if (rawAudio) {
+      const prepared = prepareAudioBufferForExport(rawAudio, scene.duration, scene.audio);
+      if (prepared) {
+        videoOptions = {
+          audioBuffer: prepared.buffer,
+          audioStartOffset: prepared.startOffset,
+        };
+      }
+    }
+  }
+
   const encoder =
     options.format === "gif"
       ? createGifEncoder(ctx, options.fps)
-      : await createVideoEncoder(canvas, options.fps);
+      : await createVideoEncoder(canvas, options.fps, videoOptions);
   return encodeFrames(encoder, render, scene.duration, options.fps, onProgress);
 }
 
