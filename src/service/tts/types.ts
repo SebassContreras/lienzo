@@ -24,6 +24,7 @@ export interface SynthesizeSpeechRequest {
   speed?: number;
   format?: "mp3" | "wav" | "aac" | "opus";
   apiKey?: string;
+  baseUrl?: string;
 }
 
 export interface SynthesizeSpeechResult {

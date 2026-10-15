@@ -1,4 +1,4 @@
-import { resolveOpenRouterApiKey } from "./config.ts";
+import { resolveOpenRouterApiKey, resolveOpenRouterBaseUrl } from "./config.ts";
 import {
   POPULAR_TTS_MODELS,
   type SynthesizeSpeechRequest,
@@ -14,7 +14,7 @@ import {
 export class OpenRouterTtsAdapter implements TtsService {
   constructor(
     private readonly defaultApiKey?: string,
-    private readonly baseUrl: string = "https://openrouter.ai/api/v1/audio/speech",
+    private readonly baseUrl?: string,
     private readonly fetchFn: typeof fetch = globalThis.fetch.bind(globalThis),
   ) {}
 
@@ -25,7 +25,9 @@ export class OpenRouterTtsAdapter implements TtsService {
   async synthesizeSpeech(
     request: SynthesizeSpeechRequest,
   ): Promise<SynthesizeSpeechResult> {
-    const apiKey = resolveOpenRouterApiKey(request.apiKey || this.defaultApiKey);
+    const apiKey = resolveOpenRouterApiKey(
+      request.apiKey || this.defaultApiKey,
+    );
     if (!apiKey) {
       throw new Error(
         "Clave de API de OpenRouter no configurada. Configura OPENROUTER_API_KEY o proporciónala en la petición.",
@@ -35,6 +37,8 @@ export class OpenRouterTtsAdapter implements TtsService {
     if (!request.text || request.text.trim().length === 0) {
       throw new Error("El texto a sintetizar no puede estar vacío.");
     }
+
+    const endpoint = resolveOpenRouterBaseUrl(request.baseUrl || this.baseUrl);
 
     const model = request.model || "openai/tts-1";
     const voice = request.voice || "alloy";
@@ -49,7 +53,7 @@ export class OpenRouterTtsAdapter implements TtsService {
       speed,
     };
 
-    const response = await this.fetchFn(this.baseUrl, {
+    const response = await this.fetchFn(endpoint, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

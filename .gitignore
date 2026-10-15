@@ -7,6 +7,7 @@ coverage/
 
 # Local env
 .env*
+!.env.example
 
 # spectrace open task
 .spectrace/state.json

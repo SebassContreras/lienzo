@@ -2,6 +2,12 @@ import { z } from "zod";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, SceneResult } from "../scenes.ts";
 import { saveAudioAsset } from "../tts/asset-store.ts";
+import {
+  resolveDefaultTtsModel,
+  resolveDefaultTtsVoice,
+  resolveOpenRouterApiKey,
+  resolveOpenRouterBaseUrl,
+} from "../tts/config.ts";
 import { OpenRouterTtsAdapter } from "../tts/openrouter-adapter.ts";
 import { attachSpeechToScene } from "../tts/scene-audio.ts";
 import { alignScriptToCues } from "../tts/speech-alignment.ts";
@@ -28,8 +34,9 @@ export function createSceneGenerateSpeechTool(
     input: z.object({
       scene: z.string().min(1),
       script: z.string().min(1),
-      voice: z.string().default("alloy"),
-      model: z.string().default("openai/tts-1"),
+      voice: z.string().optional(),
+      model: z.string().optional(),
+      baseUrl: z.string().optional(),
       speed: z.number().min(0.25).max(4.0).default(1.0),
       apiKey: z.string().optional(),
       volume: z.number().min(0).max(1).default(1.0),
@@ -43,16 +50,25 @@ export function createSceneGenerateSpeechTool(
       cuesCount: z.number(),
     }),
     async run(input, ctx) {
-      // 1. Synthesize speech using the injected TTS service
-      let speechResult;
+      // 1. Resolve model, voice, apiKey, baseUrl with environment fallbacks (R1, R2, R6)
+      const model = resolveDefaultTtsModel(input.model);
+      const voice = resolveDefaultTtsVoice(input.voice);
+      const apiKey = resolveOpenRouterApiKey(input.apiKey);
+      const baseUrl = input.baseUrl
+        ? resolveOpenRouterBaseUrl(input.baseUrl)
+        : undefined;
+
+      // 2. Synthesize speech using the injected TTS service
+      let speechResult: import("../tts/types.ts").SynthesizeSpeechResult;
       try {
         speechResult = await ttsService.synthesizeSpeech({
           text: input.script,
-          voice: input.voice,
-          model: input.model,
+          voice,
+          model,
           speed: input.speed,
           format: "mp3",
-          apiKey: input.apiKey,
+          apiKey,
+          baseUrl,
         });
       } catch (err) {
         return fail(
@@ -62,7 +78,7 @@ export function createSceneGenerateSpeechTool(
         );
       }
 
-      // 2. Estimate or calculate duration
+      // 3. Estimate or calculate duration
       // An MP3 audio buffer average ~16-24 KB per second (128kbps = 16,000 bytes/sec)
       // When durationSeconds is not directly returned by the service, estimate duration from byte size or speech length
       const estimatedDuration =
@@ -73,7 +89,7 @@ export function createSceneGenerateSpeechTool(
               Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
             );
 
-      // 3. Save audio buffer into assets/
+      // 4. Save audio buffer into assets/
       let assetId: string;
       try {
         assetId = await saveAudioAsset(
@@ -89,7 +105,7 @@ export function createSceneGenerateSpeechTool(
         );
       }
 
-      // 4. Generate subtitle cues if requested
+      // 5. Generate subtitle cues if requested
       const cues = input.subtitles
         ? alignScriptToCues(input.script, {
             totalDuration: estimatedDuration,
@@ -97,7 +113,7 @@ export function createSceneGenerateSpeechTool(
           })
         : undefined;
 
-      // 5. Attach audio and subtitles to scene
+      // 6. Attach audio and subtitles to scene
       const editResult = await editScene(ctx, input.scene, (scene) =>
         attachSpeechToScene(scene, {
           assetId,

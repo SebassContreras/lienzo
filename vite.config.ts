@@ -143,5 +143,6 @@ function assetStore(): Plugin {
 }
 
 export default defineConfig({
+  envPrefix: ["VITE_", "OPENROUTER_"],
   plugins: [react(), jsonStore(), assetStore()],
 });

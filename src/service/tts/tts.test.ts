@@ -19,10 +19,21 @@ describe("OpenRouter configuration and key resolution (R1, D1)", () => {
   it("returns empty string when no key is found", () => {
     const original = process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
+    const meta = (import.meta as unknown as { env?: Record<string, string> })
+      ?.env;
+    const origMeta = meta?.OPENROUTER_API_KEY;
+    const origViteMeta = meta?.VITE_OPENROUTER_API_KEY;
+    if (meta) {
+      delete meta.OPENROUTER_API_KEY;
+      delete meta.VITE_OPENROUTER_API_KEY;
+    }
     try {
       expect(resolveOpenRouterApiKey("")).toBe("");
     } finally {
       if (original) process.env.OPENROUTER_API_KEY = original;
+      if (meta && origMeta !== undefined) meta.OPENROUTER_API_KEY = origMeta;
+      if (meta && origViteMeta !== undefined)
+        meta.VITE_OPENROUTER_API_KEY = origViteMeta;
     }
   });
 });
@@ -37,10 +48,27 @@ describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
   });
 
   it("throws error when API key is missing", async () => {
-    const adapter = new OpenRouterTtsAdapter("", "https://example.com");
-    await expect(
-      adapter.synthesizeSpeech({ text: "Hello", voice: "alloy", apiKey: "" }),
-    ).rejects.toThrow(/Clave de API/);
+    const origEnv = process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
+    const meta = (import.meta as unknown as { env?: Record<string, string> })
+      ?.env;
+    const origMeta = meta?.OPENROUTER_API_KEY;
+    const origViteMeta = meta?.VITE_OPENROUTER_API_KEY;
+    if (meta) {
+      delete meta.OPENROUTER_API_KEY;
+      delete meta.VITE_OPENROUTER_API_KEY;
+    }
+    try {
+      const adapter = new OpenRouterTtsAdapter("", "https://example.com");
+      await expect(
+        adapter.synthesizeSpeech({ text: "Hello", voice: "alloy", apiKey: "" }),
+      ).rejects.toThrow(/Clave de API/);
+    } finally {
+      if (origEnv) process.env.OPENROUTER_API_KEY = origEnv;
+      if (meta && origMeta !== undefined) meta.OPENROUTER_API_KEY = origMeta;
+      if (meta && origViteMeta !== undefined)
+        meta.VITE_OPENROUTER_API_KEY = origViteMeta;
+    }
   });
 
   it("synthesizes speech with mocked fetch", async () => {
