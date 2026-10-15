@@ -29,7 +29,9 @@ export function AudioTrackControl({
         });
         setStatus?.(`Audio cargado: ${file.name}`);
       } catch (err) {
-        setStatus?.(`Error al cargar audio: ${err instanceof Error ? err.message : String(err)}`);
+        setStatus?.(
+          `Error al cargar audio: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     },
     [audio, onChange, setStatus],
@@ -153,7 +155,9 @@ export function AudioTrackControl({
 
           <button
             type="button"
-            title={(audio.volume ?? 1) > 0 ? "Silenciar audio" : "Activar sonido"}
+            title={
+              (audio.volume ?? 1) > 0 ? "Silenciar audio" : "Activar sonido"
+            }
             onClick={toggleMute}
             style={{
               background: "transparent",
@@ -163,7 +167,11 @@ export function AudioTrackControl({
               padding: "2px",
             }}
           >
-            {(audio.volume ?? 1) > 0 ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            {(audio.volume ?? 1) > 0 ? (
+              <Volume2 size={14} />
+            ) : (
+              <VolumeX size={14} />
+            )}
           </button>
 
           <label
@@ -193,7 +201,14 @@ export function AudioTrackControl({
               step={0.1}
               value={audio.startOffset ?? 0}
               onChange={(e) => updateStartOffset(Number(e.target.value))}
-              style={{ width: "45px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.2)", color: "inherit", borderRadius: "2px", padding: "1px 2px" }}
+              style={{
+                width: "45px",
+                background: "rgba(0,0,0,0.3)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "inherit",
+                borderRadius: "2px",
+                padding: "1px 2px",
+              }}
             />
             s
           </label>

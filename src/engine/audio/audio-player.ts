@@ -6,7 +6,12 @@ import { computeAudioPlayback } from "./audio-timing.ts";
  * Follows Service Layer / Dependency Inversion (SRP, swappable for testing).
  */
 export interface IAudioPlayer {
-  sync(t: number, playing: boolean, sceneDuration: number, audio?: SceneAudio): void;
+  sync(
+    t: number,
+    playing: boolean,
+    sceneDuration: number,
+    audio?: SceneAudio,
+  ): void;
   pause(): void;
   dispose(): void;
 }

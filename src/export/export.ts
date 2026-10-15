@@ -54,11 +54,18 @@ export async function exportScene(
     render(options.time);
     return canvas.convertToBlob({ type: "image/png" });
   }
-  let videoOptions: { audioBuffer?: AudioBuffer | null; audioStartOffset?: number } = {};
+  let videoOptions: {
+    audioBuffer?: AudioBuffer | null;
+    audioStartOffset?: number;
+  } = {};
   if (options.format === "mp4" && scene.audio?.assetId) {
     const rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
     if (rawAudio) {
-      const prepared = prepareAudioBufferForExport(rawAudio, scene.duration, scene.audio);
+      const prepared = prepareAudioBufferForExport(
+        rawAudio,
+        scene.duration,
+        scene.audio,
+      );
       if (prepared) {
         videoOptions = {
           audioBuffer: prepared.buffer,

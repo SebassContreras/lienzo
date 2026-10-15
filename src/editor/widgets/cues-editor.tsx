@@ -1,0 +1,200 @@
+import { FileUp, Plus, Trash2 } from "lucide-react";
+import { type ChangeEvent, useState } from "react";
+import { parseSrt } from "../../engine/subtitles/parsers/srt.ts";
+import { parseVtt } from "../../engine/subtitles/parsers/vtt.ts";
+import type { SubtitleCue } from "../../engine/subtitles/types.ts";
+
+export interface CuesEditorProps {
+  cues: SubtitleCue[];
+  onChange: (cues: SubtitleCue[]) => void;
+}
+
+export function CuesEditor({ cues, onChange }: CuesEditorProps) {
+  const [error, setError] = useState<string>("");
+
+  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setError("");
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content !== "string") return;
+
+      try {
+        let parsed: SubtitleCue[] = [];
+        if (file.name.endsWith(".vtt") || content.includes("WEBVTT")) {
+          parsed = parseVtt(content);
+        } else {
+          parsed = parseSrt(content);
+        }
+
+        if (parsed.length === 0) {
+          setError("No se encontraron subtítulos válidos en el archivo.");
+          return;
+        }
+
+        onChange(parsed);
+      } catch (err: unknown) {
+        setError(`Error al leer archivo: ${String(err)}`);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const updateCue = (index: number, patch: Partial<SubtitleCue>) => {
+    const next = [...cues];
+    if (next[index]) {
+      next[index] = { ...next[index], ...patch };
+      onChange(next);
+    }
+  };
+
+  const removeCue = (index: number) => {
+    const next = cues.filter((_, i) => i !== index);
+    onChange(next);
+  };
+
+  const addCue = () => {
+    const lastCue = cues[cues.length - 1];
+    const start = lastCue ? lastCue.end : 0;
+    const end = start + 2;
+    const newCue: SubtitleCue = {
+      id: `cue-${Date.now()}`,
+      start,
+      end,
+      text: "Nuevo subtítulo",
+    };
+    onChange([...cues, newCue]);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <label
+          className="file-pick"
+          style={{
+            flex: 1,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+          }}
+        >
+          <FileUp size={14} />
+          Importar .srt / .vtt
+          <input
+            type="file"
+            accept=".srt,.vtt,text/vtt,application/x-subrip"
+            style={{ display: "none" }}
+            onChange={handleFileUpload}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={addCue}
+          title="Agregar subtítulo"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "4px 8px",
+          }}
+        >
+          <Plus size={14} /> Agregar
+        </button>
+      </div>
+
+      {error && <div className="hint error">{error}</div>}
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          maxHeight: 260,
+          overflowY: "auto",
+          paddingRight: 4,
+        }}
+      >
+        {cues.length === 0 ? (
+          <div className="hint">Sin subtítulos. Importa un archivo o agrega uno manual.</div>
+        ) : (
+          cues.map((cue, index) => (
+            <div
+              key={cue.id ?? index}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                padding: "6px 8px",
+                background: "rgba(255, 255, 255, 0.05)",
+                borderRadius: 4,
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 6,
+                  fontSize: 12,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span>Inicio:</span>
+                  <input
+                    type="number"
+                    step={0.1}
+                    min={0}
+                    value={cue.start}
+                    onChange={(e) => updateCue(index, { start: Number(e.target.value) })}
+                    style={{ width: 55, padding: "2px 4px", fontSize: 11 }}
+                  />
+                  <span>Fin:</span>
+                  <input
+                    type="number"
+                    step={0.1}
+                    min={0}
+                    value={cue.end}
+                    onChange={(e) => updateCue(index, { end: Number(e.target.value) })}
+                    style={{ width: 55, padding: "2px 4px", fontSize: 11 }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeCue(index)}
+                  title="Eliminar subtítulo"
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "rgba(255, 255, 255, 0.6)",
+                    padding: 2,
+                  }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+              <input
+                type="text"
+                value={cue.text}
+                onChange={(e) => updateCue(index, { text: e.target.value })}
+                style={{ width: "100%", padding: "3px 6px", fontSize: 12 }}
+              />
+              {cue.words && cue.words.length > 0 && (
+                <div className="hint" style={{ fontSize: 10, opacity: 0.7 }}>
+                  {cue.words.length} palabras con timing karaoke
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

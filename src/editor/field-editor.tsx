@@ -242,7 +242,20 @@ function MaskWidget({ value, label, change, ctx }: WidgetProps) {
 }
 
 /** Custom fields and widgets, by the name descriptors give them. */
+import { CuesEditor } from "./widgets/cues-editor.tsx";
+import type { SubtitleCue } from "../engine/subtitles/types.ts";
+
 const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+  "cues-editor": ({ value, change }) => (
+    <CuesEditor
+      cues={(value as SubtitleCue[]) ?? []}
+      onChange={(cues) =>
+        change((d) => {
+          (d as unknown as { cues: SubtitleCue[] }).cues = cues;
+        })
+      }
+    />
+  ),
   icon: ({ value, change }) => (
     <IconPicker
       value={value as string}

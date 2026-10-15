@@ -48,7 +48,10 @@ export function computeAudioPlayback(
   }
 
   // Maximum time audio can play in the scene loop: min(sceneDuration - startOffset, availableAudio)
-  const maxPlayableDuration = Math.min(sceneDuration - startOffset, availableAudio);
+  const maxPlayableDuration = Math.min(
+    sceneDuration - startOffset,
+    availableAudio,
+  );
   if (maxPlayableDuration <= 0) {
     return { active: false };
   }

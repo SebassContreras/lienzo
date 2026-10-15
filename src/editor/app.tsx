@@ -34,7 +34,6 @@ import {
   type Scene,
   type SceneAudio,
 } from "../model/model.ts";
-import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parsePresetRecipe } from "../model/schema.ts";
 import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
@@ -77,6 +76,7 @@ import {
 } from "./library.tsx";
 import { Panel } from "./panel.tsx";
 import { type Clock, Stage } from "./stage.tsx";
+import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
 
 /**

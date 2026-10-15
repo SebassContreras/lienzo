@@ -31,5 +31,5 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 024 | free-path | done | 012, 013, 015 | —     | 24 |
 | 025 | effects | done        | 012, 013, 015, 017 | —     | 25 |
 | 026 | audio-track | done        | 001, 007, 010 | —      | 26 |
-| 027 | subtitles | todo | 012, 013, 015 | build  | 27 |
+| 027 | subtitles | done        | 012, 013, 015 | —      | 27 |
 | 028 | voice-tts | todo | 026, 027 | build  | 28 |

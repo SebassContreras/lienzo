@@ -1,4 +1,5 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
+import { WebAudioPlayer } from "../engine/audio/audio-player.ts";
 import {
   type Box,
   boxesTouch,
@@ -20,7 +21,6 @@ import {
 } from "../engine/lines.ts";
 import { drawScene } from "../engine/render.ts";
 import { applyTracks, commitAt } from "../engine/tracks.ts";
-import { WebAudioPlayer } from "../engine/audio/audio-player.ts";
 import type { Element, LineEl, Scene } from "../model/model.ts";
 import { type Snap, snapBox, unionBox } from "./snap.ts";
 

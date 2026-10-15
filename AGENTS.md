@@ -117,7 +117,11 @@ assets/          images used by scenes, named by content hash
   are deterministic.
 - Minimal testing (KISS / YAGNI): test pure domain logic, mathematical timing, transformations,
   and contract boundaries. Do not write redundant micro-tests for every Zod field or heavy E2E tests
-  when pure unit tests suffice; keep daily execution under a few seconds.
+  when pure unit tests suffice; keep daily execution under a few seconds. Do not run micro-tests
+  repeatedly on intermediate tasks when a dedicated test task exists at the end of the spec.
+- Fast execution & verification: use `pnpm verify` (fast single-pass TypeScript check) to confirm
+  correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
+  only check/format the specific files or folders touched to preserve token budget and speed.
 - Use pnpm, never npm or yarn.
 
 ## Working on tasks
