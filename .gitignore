@@ -18,3 +18,10 @@ Thumbs.db
 
 # scene_export output
 exports/
+
+# User assets and scenes
+assets/*
+!assets/.gitkeep
+scenes/*
+!scenes/.gitkeep
+!scenes/ejemplo-keyframes.json
