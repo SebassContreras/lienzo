@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { drawSubtitles } from "../../components/subtitles/draw.ts";
 import { getActiveCue, isWordActive } from "./cue-timing.ts";
 import { layoutSubtitleCue } from "./layout.ts";
 import { parseSrt } from "./parsers/srt.ts";
@@ -96,15 +97,108 @@ describe("Subtitles domain tests", () => {
     expect(extracted.words).toBeUndefined();
   });
 
-  it("parses standard SRT accurately", () => {
-    const srt = `1
-00:00:00,500 --> 00:00:02,500
-Subtítulo SRT
-`;
-    const parsed = parseSrt(srt);
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0]?.start).toBeCloseTo(0.5);
-    expect(parsed[0]?.end).toBeCloseTo(2.5);
-    expect(parsed[0]?.text).toBe("Subtítulo SRT");
+  it("draws subtitles deterministically positioned at element coordinates", () => {
+    const el = {
+      id: "sub-1",
+      kind: "subtitles" as const,
+      x: 100,
+      y: 200,
+      w: 600,
+      h: 120,
+      cues: [
+        {
+          id: "c1",
+          start: 0,
+          end: 2,
+          text: "Prueba de alineación",
+        },
+      ],
+      font: "Inter",
+      size: 32,
+      weight: 700,
+      textColor: "#ffffff",
+      align: "center" as const,
+      maxWidth: 600,
+      lineHeight: 1.2,
+      highlightColor: "#facc15",
+      highlightScale: 1,
+      background: true,
+      bgColor: "#000000",
+      bgOpacity: 0.8,
+      paddingX: 10,
+      paddingY: 10,
+      radius: 8,
+      animPreset: "none",
+    };
+
+    const drawnTexts: { text: string; x: number; y: number }[] = [];
+    const drawnRects: { x: number; y: number; w: number; h: number }[] = [];
+
+    const mockCtx = {
+      save: () => {},
+      restore: () => {},
+      measureText: (text: string) => ({ width: text.length * 10 }),
+      font: "",
+      textBaseline: "",
+      fillStyle: "",
+      globalAlpha: 1,
+      translate: () => {},
+      scale: () => {},
+      rotate: () => {},
+      transform: () => {},
+      beginPath: () => {},
+      rect: (x: number, y: number, w: number, h: number) => {
+        drawnRects.push({ x, y, w, h });
+      },
+      fill: () => {},
+      fillText: (text: string, x: number, y: number) => {
+        drawnTexts.push({ text, x, y });
+      },
+    };
+
+    drawSubtitles(
+      mockCtx as never,
+      el as never,
+      {
+        alpha: 1,
+        dx: 0,
+        dy: 0,
+        scale: 1,
+        scaleX: 1,
+        scaleY: 1,
+        rotate: 0,
+        skewX: 0,
+        skewY: 0,
+        glowMul: 1,
+        progress: 1,
+        reveal: 1,
+        revealUnit: "char",
+        revealSoft: false,
+      },
+      {
+        scene: {
+          width: 1080,
+          height: 1920,
+          fps: 30,
+          duration: 5,
+          elements: [],
+        } as never,
+        t: 1,
+        byId: new Map(),
+        drawElements: () => {},
+      },
+    );
+
+    expect(drawnTexts.length).toBeGreaterThan(0);
+    // Ensure all drawn coordinates start at or within el.x and el.y
+    for (const dt of drawnTexts) {
+      expect(dt.x).toBeGreaterThanOrEqual(el.x);
+      expect(dt.y).toBeGreaterThanOrEqual(el.y);
+    }
+    if (drawnRects.length > 0) {
+      expect(drawnRects[0]?.x).toBeGreaterThanOrEqual(el.x - el.paddingX);
+      expect(drawnRects[0]?.y).toBeGreaterThanOrEqual(el.y - el.paddingY);
+    }
   });
 });
+

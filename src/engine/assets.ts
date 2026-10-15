@@ -77,14 +77,25 @@ export async function imageSize(
   return { width: loaded.width, height: loaded.height };
 }
 
-async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
+let decodeAudioContext: AudioContext | null = null;
+
+export function getSharedDecodeAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
-  const AudioContextClass =
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext: typeof AudioContext })
-      .webkitAudioContext;
-  if (!AudioContextClass) return null;
-  const ctx = new AudioContextClass();
+  if (!decodeAudioContext) {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    if (AudioContextClass) {
+      decodeAudioContext = new AudioContextClass();
+    }
+  }
+  return decodeAudioContext;
+}
+
+export async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
+  const ctx = getSharedDecodeAudioContext();
+  if (!ctx) return null;
   try {
     const res = await fetch(src);
     if (!res.ok) return null;
@@ -92,8 +103,6 @@ async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
     return await ctx.decodeAudioData(arrayBuffer);
   } catch {
     return null;
-  } finally {
-    ctx.close().catch(() => {});
   }
 }
 

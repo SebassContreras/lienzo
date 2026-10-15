@@ -2,6 +2,7 @@ import {
   AudioBufferSource,
   BufferTarget,
   CanvasSource,
+  canEncodeAudio,
   canEncodeVideo,
   Mp4OutputFormat,
   Output,
@@ -40,7 +41,18 @@ export async function createVideoEncoder(
 
   let audioSource: AudioBufferSource | null = null;
   if (options.audioBuffer) {
-    const audioCodec = useMp4 ? "aac" : "opus";
+    const preferredCodec = useMp4 ? "aac" : "opus";
+    const canUsePreferred = await canEncodeAudio(preferredCodec, {
+      numberOfChannels: options.audioBuffer.numberOfChannels,
+      sampleRate: options.audioBuffer.sampleRate,
+    });
+    // Fallback: If preferred codec is unavailable in MP4, use uncompressed PCM (pcm-s16)
+    const audioCodec = canUsePreferred
+      ? preferredCodec
+      : useMp4
+        ? "pcm-s16"
+        : "opus";
+
     audioSource = new AudioBufferSource(
       {
         codec: audioCodec,

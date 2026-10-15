@@ -47,9 +47,9 @@ export function drawSubtitles(
     const contentWidth = layout.totalWidth;
     const contentHeight = layout.totalHeight;
 
-    // Center content within el.w and el.h bounding box
-    const startX = (el.w - contentWidth) / 2;
-    const startY = (el.h - contentHeight) / 2;
+    // Center content within el.w and el.h bounding box, positioned at (el.x, el.y)
+    const startX = el.x + (el.w - contentWidth) / 2;
+    const startY = el.y + (el.h - contentHeight) / 2;
 
     // Draw background box/badge if enabled
     if (el.background && el.bgOpacity > 0) {

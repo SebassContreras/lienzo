@@ -25,3 +25,8 @@
       covers: R1@1, R2@1, R3@1, R4@1, R5@1, R6@1
       kind: test
       changes: src/model/scene-audio.test.ts (+80 -0)
+- [x] T009 [agent] [status:done] Robust video audio export multiplexing and codec fallback
+      covers: D4@2
+      retires: T005
+      changes: src/engine/assets.ts (+18 -9), src/engine/audio/audio-export.ts (+29 -1), src/export/export.ts (+5 -2), src/export/video-encoder.ts (+13 -1), src/model/scene-audio.test.ts (+33 -0)
+

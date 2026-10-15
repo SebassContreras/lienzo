@@ -1,4 +1,4 @@
-import { assetFor, loadSceneAssets } from "../engine/assets.ts";
+import { assetFor, loadAudioBuffer, loadSceneAssets } from "../engine/assets.ts";
 import { prepareAudioBufferForExport } from "../engine/audio/audio-export.ts";
 import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
@@ -59,7 +59,10 @@ export async function exportScene(
     audioStartOffset?: number;
   } = {};
   if (options.format === "mp4" && scene.audio?.assetId) {
-    const rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
+    let rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
+    if (!rawAudio) {
+      rawAudio = (await loadAudioBuffer(scene.audio.assetId)) ?? undefined;
+    }
     if (rawAudio) {
       const prepared = prepareAudioBufferForExport(
         rawAudio,

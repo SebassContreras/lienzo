@@ -29,7 +29,35 @@ export function prepareAudioBufferForExport(
   if (totalSamples <= 0) return null;
 
   // Create sliced and volume-adjusted buffer
-  const slicedBuffer = new AudioBuffer({
+  const AudioBufferClass =
+    typeof AudioBuffer !== "undefined"
+      ? AudioBuffer
+      : (class MockAudioBuffer {
+          length: number;
+          numberOfChannels: number;
+          sampleRate: number;
+          duration: number;
+          private channels: Float32Array[];
+          constructor(opts: {
+            length: number;
+            numberOfChannels: number;
+            sampleRate: number;
+          }) {
+            this.length = opts.length;
+            this.numberOfChannels = opts.numberOfChannels;
+            this.sampleRate = opts.sampleRate;
+            this.duration = opts.length / opts.sampleRate;
+            this.channels = Array.from(
+              { length: opts.numberOfChannels },
+              () => new Float32Array(opts.length),
+            );
+          }
+          getChannelData(c: number): Float32Array {
+            return this.channels[c] ?? new Float32Array(0);
+          }
+        } as unknown as typeof AudioBuffer);
+
+  const slicedBuffer = new AudioBufferClass({
     length: totalSamples,
     numberOfChannels: numChannels,
     sampleRate,

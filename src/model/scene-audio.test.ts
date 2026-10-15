@@ -77,4 +77,37 @@ describe("scene audio schema validation", () => {
       expect(res.path).toBe("audio.assetId");
     }
   });
+
+  it("prepares AudioBuffer for video export matching duration and startOffset (R4)", async () => {
+    const { prepareAudioBufferForExport } = await import(
+      "../engine/audio/audio-export.ts"
+    );
+
+    // Mock AudioBuffer
+    const sampleRate = 44100;
+    const length = sampleRate * 4; // 4 seconds
+    const channelData = new Float32Array(length).fill(0.5);
+    const mockBuffer = {
+      sampleRate,
+      numberOfChannels: 1,
+      duration: 4,
+      length,
+      getChannelData: () => channelData,
+    } as unknown as AudioBuffer;
+
+    const prepared = prepareAudioBufferForExport(mockBuffer, 5, {
+      assetId: "/assets/test.mp3",
+      volume: 0.8,
+      startOffset: 1,
+      trimOffset: 0.5,
+    });
+
+    expect(prepared).not.toBeNull();
+    if (prepared) {
+      expect(prepared.startOffset).toBe(1);
+      expect(prepared.buffer.sampleRate).toBe(44100);
+      expect(prepared.buffer.duration).toBeCloseTo(3.5, 1);
+    }
+  });
 });
+

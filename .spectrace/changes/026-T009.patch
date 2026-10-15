@@ -1,0 +1,183 @@
+diff --git a/src/engine/assets.ts b/src/engine/assets.ts
+index b325ecf..bd42f09 100644
+--- a/src/engine/assets.ts
++++ b/src/engine/assets.ts
+@@ -77,14 +77,25 @@ export async function imageSize(
+   return { width: loaded.width, height: loaded.height };
+ }
+ 
+-async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
++let decodeAudioContext: AudioContext | null = null;
++
++export function getSharedDecodeAudioContext(): AudioContext | null {
+   if (typeof window === "undefined") return null;
+-  const AudioContextClass =
+-    window.AudioContext ||
+-    (window as unknown as { webkitAudioContext: typeof AudioContext })
+-      .webkitAudioContext;
+-  if (!AudioContextClass) return null;
+-  const ctx = new AudioContextClass();
++  if (!decodeAudioContext) {
++    const AudioContextClass =
++      window.AudioContext ||
++      (window as unknown as { webkitAudioContext: typeof AudioContext })
++        .webkitAudioContext;
++    if (AudioContextClass) {
++      decodeAudioContext = new AudioContextClass();
++    }
++  }
++  return decodeAudioContext;
++}
++
++export async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
++  const ctx = getSharedDecodeAudioContext();
++  if (!ctx) return null;
+   try {
+     const res = await fetch(src);
+     if (!res.ok) return null;
+@@ -92,8 +103,6 @@ async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
+     return await ctx.decodeAudioData(arrayBuffer);
+   } catch {
+     return null;
+-  } finally {
+-    ctx.close().catch(() => {});
+   }
+ }
+ 
+diff --git a/src/engine/audio/audio-export.ts b/src/engine/audio/audio-export.ts
+index ae507ef..262a8b4 100644
+--- a/src/engine/audio/audio-export.ts
++++ b/src/engine/audio/audio-export.ts
+@@ -29,7 +29,35 @@ export function prepareAudioBufferForExport(
+   if (totalSamples <= 0) return null;
+ 
+   // Create sliced and volume-adjusted buffer
+-  const slicedBuffer = new AudioBuffer({
++  const AudioBufferClass =
++    typeof AudioBuffer !== "undefined"
++      ? AudioBuffer
++      : (class MockAudioBuffer {
++          length: number;
++          numberOfChannels: number;
++          sampleRate: number;
++          duration: number;
++          private channels: Float32Array[];
++          constructor(opts: {
++            length: number;
++            numberOfChannels: number;
++            sampleRate: number;
++          }) {
++            this.length = opts.length;
++            this.numberOfChannels = opts.numberOfChannels;
++            this.sampleRate = opts.sampleRate;
++            this.duration = opts.length / opts.sampleRate;
++            this.channels = Array.from(
++              { length: opts.numberOfChannels },
++              () => new Float32Array(opts.length),
++            );
++          }
++          getChannelData(c: number): Float32Array {
++            return this.channels[c] ?? new Float32Array(0);
++          }
++        } as unknown as typeof AudioBuffer);
++
++  const slicedBuffer = new AudioBufferClass({
+     length: totalSamples,
+     numberOfChannels: numChannels,
+     sampleRate,
+diff --git a/src/export/export.ts b/src/export/export.ts
+index 53cdb54..9dd73bb 100644
+--- a/src/export/export.ts
++++ b/src/export/export.ts
+@@ -1,4 +1,4 @@
+-import { assetFor, loadSceneAssets } from "../engine/assets.ts";
++import { assetFor, loadAudioBuffer, loadSceneAssets } from "../engine/assets.ts";
+ import { prepareAudioBufferForExport } from "../engine/audio/audio-export.ts";
+ import { drawScene } from "../engine/render.ts";
+ import type { Scene } from "../model/model.ts";
+@@ -59,7 +59,10 @@ export async function exportScene(
+     audioStartOffset?: number;
+   } = {};
+   if (options.format === "mp4" && scene.audio?.assetId) {
+-    const rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
++    let rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
++    if (!rawAudio) {
++      rawAudio = (await loadAudioBuffer(scene.audio.assetId)) ?? undefined;
++    }
+     if (rawAudio) {
+       const prepared = prepareAudioBufferForExport(
+         rawAudio,
+diff --git a/src/export/video-encoder.ts b/src/export/video-encoder.ts
+index d90dc6c..235ab17 100644
+--- a/src/export/video-encoder.ts
++++ b/src/export/video-encoder.ts
+@@ -2,6 +2,7 @@ import {
+   AudioBufferSource,
+   BufferTarget,
+   CanvasSource,
++  canEncodeAudio,
+   canEncodeVideo,
+   Mp4OutputFormat,
+   Output,
+@@ -40,7 +41,18 @@ export async function createVideoEncoder(
+ 
+   let audioSource: AudioBufferSource | null = null;
+   if (options.audioBuffer) {
+-    const audioCodec = useMp4 ? "aac" : "opus";
++    const preferredCodec = useMp4 ? "aac" : "opus";
++    const canUsePreferred = await canEncodeAudio(preferredCodec, {
++      numberOfChannels: options.audioBuffer.numberOfChannels,
++      sampleRate: options.audioBuffer.sampleRate,
++    });
++    // Fallback: If preferred codec is unavailable in MP4, use uncompressed PCM (pcm-s16)
++    const audioCodec = canUsePreferred
++      ? preferredCodec
++      : useMp4
++        ? "pcm-s16"
++        : "opus";
++
+     audioSource = new AudioBufferSource(
+       {
+         codec: audioCodec,
+diff --git a/src/model/scene-audio.test.ts b/src/model/scene-audio.test.ts
+index badb9c2..31c3581 100644
+--- a/src/model/scene-audio.test.ts
++++ b/src/model/scene-audio.test.ts
+@@ -77,4 +77,37 @@ describe("scene audio schema validation", () => {
+       expect(res.path).toBe("audio.assetId");
+     }
+   });
++
++  it("prepares AudioBuffer for video export matching duration and startOffset (R4)", async () => {
++    const { prepareAudioBufferForExport } = await import(
++      "../engine/audio/audio-export.ts"
++    );
++
++    // Mock AudioBuffer
++    const sampleRate = 44100;
++    const length = sampleRate * 4; // 4 seconds
++    const channelData = new Float32Array(length).fill(0.5);
++    const mockBuffer = {
++      sampleRate,
++      numberOfChannels: 1,
++      duration: 4,
++      length,
++      getChannelData: () => channelData,
++    } as unknown as AudioBuffer;
++
++    const prepared = prepareAudioBufferForExport(mockBuffer, 5, {
++      assetId: "/assets/test.mp3",
++      volume: 0.8,
++      startOffset: 1,
++      trimOffset: 0.5,
++    });
++
++    expect(prepared).not.toBeNull();
++    if (prepared) {
++      expect(prepared.startOffset).toBe(1);
++      expect(prepared.buffer.sampleRate).toBe(44100);
++      expect(prepared.buffer.duration).toBeCloseTo(3.5, 1);
++    }
++  });
+ });
++
