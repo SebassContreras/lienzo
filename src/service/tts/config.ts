@@ -11,11 +11,17 @@
  */
 
 export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/audio/speech";
+export const DEFAULT_LOCAL_TTS_URL = "http://localhost:8880/v1/audio/speech";
 export const STORAGE_KEY_OPENROUTER_API_KEY = "lienzo_openrouter_api_key";
 export const DEFAULT_TTS_MODEL = "openai/tts-1";
 export const DEFAULT_TTS_VOICE = "alloy";
+export const DEFAULT_LOCAL_TTS_MODEL = "kokoro";
+export const DEFAULT_LOCAL_TTS_VOICE = "af_heart";
+
+export type TtsProviderType = "openrouter" | "local" | "kokoro" | "custom";
 
 export interface TtsSettings {
+  provider?: TtsProviderType;
   apiKey?: string;
   baseUrl?: string;
   defaultModel?: string;
@@ -114,6 +120,50 @@ export function resolveOpenRouterApiKey(explicitKey?: string): string {
   }
 
   return "";
+}
+
+/**
+ * Resolves the active TTS provider.
+ * Falls back to TTS_PROVIDER or KOKORO_PROVIDER env vars, then "openrouter".
+ */
+export function resolveTtsProvider(
+  explicitProvider?: string,
+): TtsProviderType {
+  if (explicitProvider && explicitProvider.trim().length > 0) {
+    const norm = explicitProvider.trim().toLowerCase();
+    if (norm === "local" || norm === "kokoro" || norm === "custom") {
+      return norm as TtsProviderType;
+    }
+    return "openrouter";
+  }
+
+  const envProvider = getEnvVariable("TTS_PROVIDER") || getEnvVariable("KOKORO_PROVIDER");
+  if (envProvider) {
+    const norm = envProvider.trim().toLowerCase();
+    if (norm === "local" || norm === "kokoro" || norm === "custom") {
+      return norm as TtsProviderType;
+    }
+  }
+
+  return "openrouter";
+}
+
+/**
+ * Resolves the local/Kokoro speech API base URL.
+ * Falls back to TTS_LOCAL_URL, KOKORO_TTS_URL, then DEFAULT_LOCAL_TTS_URL.
+ */
+export function resolveLocalTtsBaseUrl(explicitBaseUrl?: string): string {
+  if (explicitBaseUrl && explicitBaseUrl.trim().length > 0) {
+    return explicitBaseUrl.trim();
+  }
+
+  const envUrl =
+    getEnvVariable("TTS_LOCAL_URL") ||
+    getEnvVariable("KOKORO_TTS_URL") ||
+    getEnvVariable("LOCAL_TTS_URL");
+  if (envUrl) return envUrl;
+
+  return DEFAULT_LOCAL_TTS_URL;
 }
 
 /**

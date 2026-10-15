@@ -15,6 +15,7 @@ import {
 export const STORAGE_KEY_TTS_PREFERENCES = "lienzo_tts_ui_preferences";
 
 export interface TtsUiPreferences {
+  provider?: "openrouter" | "local" | "kokoro" | "custom";
   apiKey?: string;
   model: string;
   voice: string;
@@ -26,6 +27,7 @@ export interface TtsUiPreferences {
 }
 
 export const DEFAULT_TTS_PREFERENCES: TtsUiPreferences = {
+  provider: "openrouter",
   model: DEFAULT_TTS_MODEL,
   voice: DEFAULT_TTS_VOICE,
   speed: 1.0,
@@ -69,6 +71,7 @@ export function loadTtsPreferences(): TtsUiPreferences {
   }
 
   return {
+    provider: prefs.provider || DEFAULT_TTS_PREFERENCES.provider,
     apiKey: apiKey || "",
     model: prefs.model || DEFAULT_TTS_PREFERENCES.model,
     voice: prefs.voice || DEFAULT_TTS_PREFERENCES.voice,

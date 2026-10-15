@@ -36,4 +36,5 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 029 | cli-mcp-distribution | done        | 008, 009 | —            | 29 |
 | 030 | dynamic-tts-config | done        | 028 | —      | 30 |
 | 031 | project-workspaces | done        | 003, 007, 008, 009 | —      | 31 |
+| 032 | pluggable-tts-providers | done        | 028, 030 | —      | 32 |
 
