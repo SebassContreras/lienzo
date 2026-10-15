@@ -2,6 +2,7 @@ import type { AnimState } from "../../engine/anim.ts";
 import { type Ctx, withTransform } from "../../engine/paint.ts";
 import { getActiveCue, isWordActive } from "../../engine/subtitles/cue-timing.ts";
 import { layoutSubtitleCue } from "../../engine/subtitles/layout.ts";
+import { paginateCueForTime } from "../../engine/subtitles/word-window.ts";
 import type { DrawContext } from "../descriptor.ts";
 import type { SubtitlesEl } from "./descriptor.ts";
 
@@ -27,7 +28,31 @@ export function drawSubtitles(
   const measure = (text: string) => ctx.measureText(text).width;
   const lineHeightPx = el.size * el.lineHeight;
 
-  const layout = layoutSubtitleCue(activeCue, el.maxWidth, lineHeightPx, measure, el.align);
+  // Compute maximum lines that fit inside bounding box height, minus padding
+  const availableHeight = el.background
+    ? el.h - el.paddingY * 2
+    : el.h;
+  const maxFitLines = Math.max(1, Math.floor(availableHeight / lineHeightPx));
+
+  // Constrain width to container el.w (or el.maxWidth if smaller)
+  const maxAvailableWidth = Math.min(
+    el.w - (el.background ? el.paddingX * 2 : 0),
+    el.maxWidth,
+  );
+
+  // Paginate words into active window that fits inside bounding box (D2@3)
+  const windowedCue = paginateCueForTime(activeCue, dc.t, {
+    maxLines: maxFitLines,
+    wordsPerWindow: el.wordsPerWindow ?? 4,
+  });
+
+  const layout = layoutSubtitleCue(
+    windowedCue,
+    Math.max(100, maxAvailableWidth),
+    lineHeightPx,
+    measure,
+    el.align,
+  );
   if (layout.lines.length === 0) {
     ctx.restore();
     return;

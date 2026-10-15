@@ -60,6 +60,7 @@ const fields = {
   align: { ...align("center"), ...T },
   maxWidth: num(800, { label: "Ancho máx.", min: 200, max: 2000, ...T }),
   lineHeight: num(1.2, { label: "Interlineado", min: 0.8, max: 2.5, step: 0.05, ...T }),
+  wordsPerWindow: num(4, { label: "Palabras/ventana", min: 1, max: 12, ...C }),
 
   highlightColor: color("#facc15", { label: "Color activo", ...K }),
   highlightScale: num(1.05, { label: "Escala activa", min: 1, max: 1.5, step: 0.01, ...K }),

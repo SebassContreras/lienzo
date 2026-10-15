@@ -5,6 +5,7 @@ import { layoutSubtitleCue } from "./layout.ts";
 import { parseSrt } from "./parsers/srt.ts";
 import { extractVttWords, parseVtt } from "./parsers/vtt.ts";
 import type { SubtitleCue } from "./types.ts";
+import { paginateCueForTime } from "./word-window.ts";
 
 describe("Subtitles domain tests", () => {
   const sampleCues: SubtitleCue[] = [
@@ -199,6 +200,45 @@ describe("Subtitles domain tests", () => {
       expect(drawnRects[0]?.x).toBeGreaterThanOrEqual(el.x - el.paddingX);
       expect(drawnRects[0]?.y).toBeGreaterThanOrEqual(el.y - el.paddingY);
     }
+  });
+
+  it("paginates long cues into active word window to prevent overflow (R3@2, D2@3)", () => {
+    const longCue: SubtitleCue = {
+      id: "cue-long",
+      start: 0,
+      end: 10,
+      text: "Uno dos tres cuatro cinco seis siete ocho nueve diez",
+      words: [
+        { word: "Uno", start: 0, end: 1 },
+        { word: "dos", start: 1, end: 2 },
+        { word: "tres", start: 2, end: 3 },
+        { word: "cuatro", start: 3, end: 4 },
+        { word: "cinco", start: 4, end: 5 },
+        { word: "seis", start: 5, end: 6 },
+        { word: "siete", start: 6, end: 7 },
+        { word: "ocho", start: 7, end: 8 },
+        { word: "nueve", start: 8, end: 9 },
+        { word: "diez", start: 9, end: 10 },
+      ],
+    };
+
+    // At t=0.5 (first page, words 0..3)
+    const page1 = paginateCueForTime(longCue, 0.5, { wordsPerWindow: 4 });
+    expect(page1.words).toHaveLength(4);
+    expect(page1.words?.[0]?.word).toBe("Uno");
+    expect(page1.words?.[3]?.word).toBe("cuatro");
+
+    // At t=5.5 (second page, words 4..7)
+    const page2 = paginateCueForTime(longCue, 5.5, { wordsPerWindow: 4 });
+    expect(page2.words).toHaveLength(4);
+    expect(page2.words?.[0]?.word).toBe("cinco");
+    expect(page2.words?.[3]?.word).toBe("ocho");
+
+    // At t=8.5 (third page, words 8..9)
+    const page3 = paginateCueForTime(longCue, 8.5, { wordsPerWindow: 4 });
+    expect(page3.words).toHaveLength(2);
+    expect(page3.words?.[0]?.word).toBe("nueve");
+    expect(page3.words?.[1]?.word).toBe("diez");
   });
 });
 
