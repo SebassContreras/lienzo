@@ -1,0 +1,111 @@
+diff --git a/src/cli/distribution.test.ts b/src/cli/distribution.test.ts
+new file mode 100644
+index 0000000..35026a7
+--- /dev/null
++++ b/src/cli/distribution.test.ts
+@@ -0,0 +1,105 @@
++import { execFileSync } from "node:child_process";
++import { existsSync } from "node:fs";
++import { resolve } from "node:path";
++import { beforeAll, describe, expect, it } from "vitest";
++
++describe("standalone CLI and MCP distribution bundle (029)", () => {
++  const cliPath = resolve(process.cwd(), "dist/cli.js");
++
++  beforeAll(() => {
++    // Ensure dist/cli.js exists; build if missing
++    if (!existsSync(cliPath)) {
++      execFileSync("node", ["--import", "tsx", "src/cli/build.ts"], {
++        cwd: process.cwd(),
++        stdio: "inherit",
++      });
++    }
++  });
++
++  it("prints help on --help with exit code 0", () => {
++    const out = execFileSync("node", [cliPath, "--help"], {
++      encoding: "utf8",
++    });
++    expect(out).toContain("Usage: pnpm lienzo <tool>");
++    expect(out).toContain("preset_list");
++    expect(out).toContain("pnpm lienzo mcp");
++  });
++
++  it("lists components via component_list", () => {
++    const out = execFileSync("node", [cliPath, "component_list"], {
++      encoding: "utf8",
++    });
++    const parsed = JSON.parse(out);
++    expect(Array.isArray(parsed)).toBe(true);
++    expect(parsed.some((c: { kind: string }) => c.kind === "rect")).toBe(true);
++    expect(parsed.some((c: { kind: string }) => c.kind === "text")).toBe(true);
++  });
++
++  it("lists built-in presets via preset_list", () => {
++    const out = execFileSync("node", [cliPath, "preset_list"], {
++      encoding: "utf8",
++    });
++    const parsed = JSON.parse(out);
++    expect(Array.isArray(parsed)).toBe(true);
++    expect(parsed.length).toBeGreaterThan(0);
++    expect(
++      parsed.some(
++        (p: { name: string; source: string }) => p.source === "built-in",
++      ),
++    ).toBe(true);
++  });
++
++  it("validates preset recipes via --json input", () => {
++    const jsonInput = JSON.stringify({
++      recipe: {
++        name: "test-recipe",
++        kind: "rect",
++        traits: [],
++      },
++    });
++    const out = execFileSync(
++      "node",
++      [cliPath, "preset_validate", "--json", "-"],
++      {
++        input: jsonInput,
++        encoding: "utf8",
++      },
++    );
++    const parsed = JSON.parse(out);
++    expect(parsed).toEqual({ valid: true });
++  });
++
++  it("responds to MCP initialize handshake over stdio", () => {
++    const initRequest = JSON.stringify({
++      jsonrpc: "2.0",
++      id: 1,
++      method: "initialize",
++      params: {
++        protocolVersion: "2025-11-25",
++        capabilities: {},
++        clientInfo: { name: "test-client", version: "1.0.0" },
++      },
++    });
++
++    const out = execFileSync("node", [cliPath, "mcp"], {
++      input: `${initRequest}\n`,
++      encoding: "utf8",
++    });
++
++    const lines = out.trim().split("\n");
++    const jsonLines = lines
++      .map((l) => {
++        try {
++          return JSON.parse(l);
++        } catch {
++          return null;
++        }
++      })
++      .filter(Boolean);
++
++    const initResponse = jsonLines.find((msg) => msg.id === 1);
++    expect(initResponse).toBeDefined();
++    expect(initResponse.result.serverInfo.name).toBe("lienzo");
++    expect(initResponse.result.capabilities.tools).toBeDefined();
++  });
++});

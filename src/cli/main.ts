@@ -10,6 +10,7 @@ import { serveStdio } from "../mcp/server.ts";
 import { type Ctx, createCtx } from "../service/ctx.ts";
 import type { Registry } from "../service/registry.ts";
 import { registry } from "../service/tools/index.ts";
+import { findAppRoot } from "../service/root.ts";
 import { inputOf, type ReadSource, UsageError } from "./args.ts";
 import { registryHelp, toolHelp } from "./help.ts";
 
@@ -74,7 +75,7 @@ export async function run(
 }
 
 if (import.meta.main) {
-  const root = join(import.meta.dirname, "..", "..");
+  const root = findAppRoot(import.meta.dirname);
   const io: Io = {
     stdout: (t) => process.stdout.write(`${t}\n`),
     stderr: (t) => process.stderr.write(`${t}\n`),

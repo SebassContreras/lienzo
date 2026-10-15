@@ -1,0 +1,5043 @@
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..6c1cc69
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,36 @@
++# ==============================================================================
++# Lienzo - Configuración de Variables de Entorno (TTS / OpenRouter)
++# ==============================================================================
++# Copia este archivo a `.env` y sustituye los placeholders por tus valores reales.
++# El archivo `.env` está ignorado en Git (.gitignore) por seguridad.
++
++# ------------------------------------------------------------------------------
++# 1. Clave de API de OpenRouter (ÚNICA para Node/CLI y Editor Web)
++# ------------------------------------------------------------------------------
++# Obtenla en https://openrouter.ai/keys
++# Gracias a la configuración de Lienzo, esta clave funciona tanto en el CLI/MCP
++# como automáticamente en el Editor Web (Vite).
++OPENROUTER_API_KEY="sk-or-v1-tu-clave-aqui"
++
++# ------------------------------------------------------------------------------
++# 2. Endpoint / Proxy de Audio Speech (Opcional)
++# ------------------------------------------------------------------------------
++# URL base para síntesis de voz (por defecto: https://openrouter.ai/api/v1/audio/speech)
++# Útil si utilizas un proxy inverso, gateway corporativo o endpoint compatible con OpenAI.
++OPENROUTER_API_BASE_URL="https://openrouter.ai/api/v1/audio/speech"
++
++# ------------------------------------------------------------------------------
++# 3. Modelo y Voz por Defecto (Opcional)
++# ------------------------------------------------------------------------------
++# Modelo por defecto para CLI/MCP y Editor:
++# Opciones populares:
++#   - openai/tts-1 (por defecto)
++#   - openai/tts-1-hd
++#   - elevenlabs/eleven_multilingual_v2
++#   - o cualquier modelo compatible en OpenRouter
++OPENROUTER_TTS_MODEL="openai/tts-1"
++
++# Voz por defecto:
++#   - Para OpenAI: alloy, echo, fable, onyx, nova, shimmer
++#   - Para ElevenLabs: rachel, drew, clyde, paul, domi, dave, fin, sarah, etc.
++OPENROUTER_TTS_VOICE="alloy"
+diff --git a/.gitignore b/.gitignore
+index 31e29f8..6500ccc 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -7,6 +7,7 @@ coverage/
+ 
+ # Local env
+ .env*
++!.env.example
+ 
+ # spectrace open task
+ .spectrace/state.json
+@@ -18,3 +19,10 @@ Thumbs.db
+ 
+ # scene_export output
+ exports/
++
++# User assets and scenes
++assets/*
++!assets/.gitkeep
++scenes/*
++!scenes/.gitkeep
++!scenes/ejemplo-keyframes.json
+diff --git a/AGENTS.md b/AGENTS.md
+index 282e1e6..ec93a20 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -115,6 +115,13 @@ assets/          images used by scenes, named by content hash
+   `src/traits/` only when no existing one fits.
+ - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports
+   are deterministic.
++- Minimal testing (KISS / YAGNI): test pure domain logic, mathematical timing, transformations,
++  and contract boundaries. Do not write redundant micro-tests for every Zod field or heavy E2E tests
++  when pure unit tests suffice; keep daily execution under a few seconds. Do not run micro-tests
++  repeatedly on intermediate tasks when a dedicated test task exists at the end of the spec.
++- Fast execution & verification: use `pnpm verify` (fast single-pass TypeScript check) to confirm
++  correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
++  only check/format the specific files or folders touched to preserve token budget and speed.
+ - Use pnpm, never npm or yarn.
+ 
+ ## Working on tasks
+diff --git a/package.json b/package.json
+index 6301aa6..ebf0f4a 100644
+--- a/package.json
++++ b/package.json
+@@ -12,12 +12,17 @@
+   "scripts": {
+     "dev": "vite",
+     "build": "vite build",
++    "build:cli": "tsx src/cli/build.ts",
+     "typecheck": "tsc --noEmit -p tsconfig.json",
+     "lint": "biome check .",
+     "format": "biome check --write .",
+     "test": "vitest run",
++    "verify": "tsc --noEmit -p tsconfig.json",
+     "lienzo": "tsx src/cli/main.ts"
+   },
++  "bin": {
++    "lienzo": "dist/cli.js"
++  },
+   "dependencies": {
+     "@fontsource/caveat": "^5.2.0",
+     "@fontsource/inter": "^5.2.0",
+@@ -47,6 +52,7 @@
+     "@types/react-dom": "^19.3.0",
+     "@types/three": "^0.186.0",
+     "@vitejs/plugin-react": "^6.1.2",
++    "esbuild": "^0.28.2",
+     "jsdom": "25.0.1",
+     "tsx": "^4.23.15",
+     "typescript": "^7.0.2",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 49893f5..972d268 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -87,6 +87,9 @@ importers:
+       '@vitejs/plugin-react':
+         specifier: ^6.1.2
+         version: 6.1.2(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.2)(tsx@4.23.15))
++      esbuild:
++        specifier: ^0.28.2
++        version: 0.28.2
+       jsdom:
+         specifier: 25.0.1
+         version: 25.0.1
+diff --git a/presets/built-in/44-subtitulos-virales.json b/presets/built-in/44-subtitulos-virales.json
+new file mode 100644
+index 0000000..2eb7a5c
+--- /dev/null
++++ b/presets/built-in/44-subtitulos-virales.json
+@@ -0,0 +1,25 @@
++{
++  "name": "Subtítulos Virales",
++  "category": "Texto",
++  "kind": "subtitles",
++  "traits": [],
++  "set": {
++    "w": 900,
++    "h": 180,
++    "font": "Poppins",
++    "size": 52,
++    "weight": 900,
++    "textColor": "#ffffff",
++    "highlightColor": "#facc15",
++    "highlightScale": 1.1,
++    "align": "center",
++    "maxWidth": 850,
++    "lineHeight": 1.25,
++    "background": true,
++    "bgColor": "#000000",
++    "bgOpacity": 0.75,
++    "paddingX": 24,
++    "paddingY": 14,
++    "radius": 18
++  }
++}
+diff --git a/src/cli/build.ts b/src/cli/build.ts
+new file mode 100644
+index 0000000..a951f67
+--- /dev/null
++++ b/src/cli/build.ts
+@@ -0,0 +1,19 @@
++/**
++ * Dedicated build script for standalone CLI and MCP distribution (029/D1).
++ * Packages `src/cli/main.ts` into `dist/cli.js` with shebang for Node >=24 ESM.
++ */
++import { build } from "esbuild";
++
++await build({
++  entryPoints: ["src/cli/main.ts"],
++  bundle: true,
++  outfile: "dist/cli.js",
++  format: "esm",
++  platform: "node",
++  target: "node24",
++  banner: {
++    js: "#!/usr/bin/env node",
++  },
++  packages: "external",
++  sourcemap: false,
++});
+diff --git a/src/components/fields/effects.ts b/src/components/fields/effects.ts
+index 39dfe83..e604d16 100644
+--- a/src/components/fields/effects.ts
++++ b/src/components/fields/effects.ts
+@@ -1,5 +1,5 @@
+ import { z } from "zod";
+-import { custom, num, obj, type Parent, select } from "./field.ts";
++import { custom, num, obj, select } from "./field.ts";
+ 
+ export type BlendMode =
+   | "normal"
+diff --git a/src/components/fields/index.ts b/src/components/fields/index.ts
+index eae2469..568bc05 100644
+--- a/src/components/fields/index.ts
++++ b/src/components/fields/index.ts
+@@ -1,5 +1,6 @@
+ export * from "./anim.ts";
+ export * from "./box.ts";
++export * from "./effects.ts";
+ export * from "./field.ts";
+ export * from "./fill.ts";
+ export * from "./glow.ts";
+@@ -7,4 +8,3 @@ export * from "./label.ts";
+ export * from "./shadow.ts";
+ export * from "./stroke.ts";
+ export * from "./three.ts";
+-export * from "./effects.ts";
+diff --git a/src/components/index.ts b/src/components/index.ts
+index cf506d3..353978a 100644
+--- a/src/components/index.ts
++++ b/src/components/index.ts
+@@ -27,6 +27,7 @@ import { type RectEl, rect } from "./rect/descriptor.ts";
+ import { type StarEl, star } from "./star/descriptor.ts";
+ import { type StepsEl, steps } from "./steps/descriptor.ts";
+ import { type TableEl, table } from "./table/descriptor.ts";
++import { type SubtitlesEl, subtitles } from "./subtitles/descriptor.ts";
+ import { type TextEl, text } from "./text/descriptor.ts";
+ import { type ThreeEl, three } from "./three/descriptor.ts";
+ 
+@@ -53,7 +54,8 @@ export type RegisteredElement =
+   | TableEl
+   | CodeEl
+   | ChartEl
+-  | PathEl;
++  | PathEl
++  | SubtitlesEl;
+ 
+ export type RegisteredKind = RegisteredElement["kind"];
+ 
+@@ -82,6 +84,7 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
+   code,
+   chart,
+   path,
++  subtitles,
+ ];
+ 
+ export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;
+diff --git a/src/components/subtitles/descriptor.ts b/src/components/subtitles/descriptor.ts
+new file mode 100644
+index 0000000..54dea7c
+--- /dev/null
++++ b/src/components/subtitles/descriptor.ts
+@@ -0,0 +1,94 @@
++import type { SubtitleCue } from "../../engine/subtitles/types.ts";
++import { defineComponent, type ElementOf } from "../descriptor.ts";
++import {
++  align,
++  anim,
++  BOX_ANIMS,
++  box,
++  check,
++  color,
++  custom,
++  font,
++  num,
++  weight,
++} from "../fields/index.ts";
++import { drawSubtitles } from "./draw.ts";
++import { subtitleCuesSchema } from "./schema.ts";
++
++const C = { section: "Subtítulos" };
++const T = { section: "Tipografía" };
++const K = { section: "Karaoke" };
++const B = { section: "Fondo" };
++
++const DEFAULT_CUES: SubtitleCue[] = [
++  {
++    id: "cue-1",
++    start: 0,
++    end: 2.5,
++    text: "Subtítulos sincronizados con Lienzo",
++    words: [
++      { word: "Subtítulos", start: 0, end: 0.8 },
++      { word: "sincronizados", start: 0.8, end: 1.6 },
++      { word: "con", start: 1.6, end: 1.9 },
++      { word: "Lienzo", start: 1.9, end: 2.5 },
++    ],
++  },
++  {
++    id: "cue-2",
++    start: 2.5,
++    end: 5,
++    text: "¡Crea contenido viral fácilmente!",
++    words: [
++      { word: "¡Crea", start: 2.5, end: 3.1 },
++      { word: "contenido", start: 3.1, end: 3.8 },
++      { word: "viral", start: 3.8, end: 4.3 },
++      { word: "fácilmente!", start: 4.3, end: 5 },
++    ],
++  },
++];
++
++const fields = {
++  ...box(800, 160, { section: "Subtítulos", min: 100, max: 2000 }),
++  cues: custom("cues-editor", DEFAULT_CUES, subtitleCuesSchema, {
++    label: "Cues",
++    ...C,
++  }),
++  font: { ...font("Inter"), ...T },
++  size: num(48, { label: "Tamaño", min: 14, max: 200, ...T }),
++  weight: { ...weight(800), ...T },
++  textColor: color("#ffffff", { label: "Texto", ...T }),
++  align: { ...align("center"), ...T },
++  maxWidth: num(800, { label: "Ancho máx.", min: 200, max: 2000, ...T }),
++  lineHeight: num(1.2, { label: "Interlineado", min: 0.8, max: 2.5, step: 0.05, ...T }),
++  wordsPerWindow: num(4, { label: "Palabras/ventana", min: 1, max: 12, ...C }),
++
++  highlightColor: color("#facc15", { label: "Color activo", ...K }),
++  highlightScale: num(1.05, { label: "Escala activa", min: 1, max: 1.5, step: 0.01, ...K }),
++
++  background: check(true, { label: "Caja de fondo", ...B }),
++  bgColor: color("#000000", { label: "Color fondo", ...B }),
++  bgOpacity: num(0.7, { label: "Opacidad fondo", min: 0, max: 1, step: 0.05, ...B }),
++  paddingX: num(20, { label: "Margen H", min: 0, max: 100, ...B }),
++  paddingY: num(12, { label: "Margen V", min: 0, max: 100, ...B }),
++  radius: num(12, { label: "Esquinas", min: 0, max: 60, ...B }),
++
++  anim: anim(BOX_ANIMS),
++};
++
++export type SubtitlesEl = ElementOf<"subtitles", typeof fields>;
++
++export const subtitles = defineComponent<SubtitlesEl>({
++  kind: "subtitles",
++  label: "Subtítulos",
++  icon: "Captions",
++  fields,
++  sections: [
++    { title: "Subtítulos" },
++    { title: "Tipografía" },
++    { title: "Karaoke" },
++    { title: "Fondo" },
++    { title: "Animación" },
++  ],
++  anims: BOX_ANIMS,
++  draw: drawSubtitles,
++});
+diff --git a/src/components/subtitles/draw.ts b/src/components/subtitles/draw.ts
+new file mode 100644
+index 0000000..2b0c87a
+--- /dev/null
++++ b/src/components/subtitles/draw.ts
+@@ -0,0 +1,127 @@
++import type { AnimState } from "../../engine/anim.ts";
++import { type Ctx, withTransform } from "../../engine/paint.ts";
++import { getActiveCue, isWordActive } from "../../engine/subtitles/cue-timing.ts";
++import { layoutSubtitleCue } from "../../engine/subtitles/layout.ts";
++import { paginateCueForTime } from "../../engine/subtitles/word-window.ts";
++import type { DrawContext } from "../descriptor.ts";
++import type { SubtitlesEl } from "./descriptor.ts";
++
++/**
++ * Deterministically draws subtitles at scene time `t`.
++ * Renders the active cue, wrapping lines within `maxWidth`, with optional background pill
++ * and word-by-word karaoke highlight color & scale.
++ */
++export function drawSubtitles(
++  ctx: Ctx,
++  el: SubtitlesEl,
++  st: AnimState,
++  dc: DrawContext,
++): void {
++  const activeCue = getActiveCue(el.cues, dc.t);
++  if (!activeCue) {
++    return;
++  }
++
++  // Setup font measurement
++  ctx.save();
++  ctx.font = `${el.weight} ${el.size}px ${el.font}`;
++  const measure = (text: string) => ctx.measureText(text).width;
++  const lineHeightPx = el.size * el.lineHeight;
++
++  // Compute maximum lines that fit inside bounding box height, minus padding
++  const availableHeight = el.background
++    ? el.h - el.paddingY * 2
++    : el.h;
++  const maxFitLines = Math.max(1, Math.floor(availableHeight / lineHeightPx));
++
++  // Constrain width to container el.w (or el.maxWidth if smaller)
++  const maxAvailableWidth = Math.min(
++    el.w - (el.background ? el.paddingX * 2 : 0),
++    el.maxWidth,
++  );
++
++  // Paginate words into active window that fits inside bounding box (D2@3)
++  const windowedCue = paginateCueForTime(activeCue, dc.t, {
++    maxLines: maxFitLines,
++    wordsPerWindow: el.wordsPerWindow ?? 4,
++  });
++
++  const layout = layoutSubtitleCue(
++    windowedCue,
++    Math.max(100, maxAvailableWidth),
++    lineHeightPx,
++    measure,
++    el.align,
++  );
++  if (layout.lines.length === 0) {
++    ctx.restore();
++    return;
++  }
++
++  const box = {
++    x: el.x,
++    y: el.y,
++    w: el.w,
++    h: el.h,
++  };
++
++  withTransform(ctx, box, st, () => {
++    ctx.font = `${el.weight} ${el.size}px ${el.font}`;
++    ctx.textBaseline = "top";
++
++    const contentWidth = layout.totalWidth;
++    const contentHeight = layout.totalHeight;
++
++    // Center content within el.w and el.h bounding box, positioned at (el.x, el.y)
++    const startX = el.x + (el.w - contentWidth) / 2;
++    const startY = el.y + (el.h - contentHeight) / 2;
++
++    // Draw background box/badge if enabled
++    if (el.background && el.bgOpacity > 0) {
++      ctx.save();
++      ctx.globalAlpha *= el.bgOpacity;
++      ctx.fillStyle = el.bgColor;
++      const bgX = startX - el.paddingX;
++      const bgY = startY - el.paddingY;
++      const bgW = contentWidth + el.paddingX * 2;
++      const bgH = contentHeight + el.paddingY * 2;
++      ctx.beginPath();
++      if (ctx.roundRect) {
++        ctx.roundRect(bgX, bgY, bgW, bgH, el.radius);
++      } else {
++        ctx.rect(bgX, bgY, bgW, bgH);
++      }
++      ctx.fill();
++      ctx.restore();
++    }
++
++    // Render words with karaoke highlights
++    for (const line of layout.lines) {
++      for (const word of line.words) {
++        const isActive = word.timing ? isWordActive(word.timing, dc.t) : false;
++        const wordX = startX + word.x;
++        const wordY = startY + word.y;
++
++        ctx.save();
++        if (isActive) {
++          ctx.fillStyle = el.highlightColor;
++          if (el.highlightScale !== 1) {
++            // Scale active word slightly from its center
++            const centerX = wordX + word.width / 2;
++            const centerY = wordY + word.height / 2;
++            ctx.translate(centerX, centerY);
++            ctx.scale(el.highlightScale, el.highlightScale);
++            ctx.translate(-centerX, -centerY);
++          }
++        } else {
++          ctx.fillStyle = el.textColor;
++        }
++
++        ctx.fillText(word.word, wordX, wordY);
++        ctx.restore();
++      }
++    }
++  });
++
++  ctx.restore();
++}
+diff --git a/src/components/subtitles/schema.ts b/src/components/subtitles/schema.ts
+new file mode 100644
+index 0000000..24a9a74
+--- /dev/null
++++ b/src/components/subtitles/schema.ts
+@@ -0,0 +1,18 @@
++import { z } from "zod";
++import type { SubtitleCue } from "../../engine/subtitles/types.ts";
++
++export const subtitleWordSchema = z.object({
++  word: z.string(),
++  start: z.number(),
++  end: z.number(),
++});
++
++export const subtitleCueSchema = z.object({
++  id: z.string().optional(),
++  start: z.number(),
++  end: z.number(),
++  text: z.string(),
++  words: z.array(subtitleWordSchema).optional(),
++});
++
++export const subtitleCuesSchema: z.ZodType<SubtitleCue[]> = z.array(subtitleCueSchema);
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 04b31e6..98e4cbc 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -32,6 +32,7 @@ import {
+   defaultScene,
+   type Element,
+   type Scene,
++  type SceneAudio,
+ } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { parsePresetRecipe } from "../model/schema.ts";
+@@ -75,7 +76,9 @@ import {
+ } from "./library.tsx";
+ import { Panel } from "./panel.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
++import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
+ import { TracksPanel } from "./timeline/tracks-panel.tsx";
++import { TtsDialog } from "./dialogs/tts-dialog.tsx";
+ 
+ /**
+  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
+@@ -90,12 +93,14 @@ function removeElements(scene: Scene, removed: Set<string>): Element[] {
+     .filter((el) => !ids.has(el.id))
+     .map((el) => {
+       let updated = el;
+-      const mask = (el as unknown as { effects?: { mask?: string } }).effects?.mask;
++      const mask = (el as unknown as { effects?: { mask?: string } }).effects
++        ?.mask;
+       if (mask && ids.has(mask)) {
+         updated = {
+           ...updated,
+           effects: {
+-            ...(updated as unknown as { effects?: Record<string, unknown> }).effects,
++            ...(updated as unknown as { effects?: Record<string, unknown> })
++              .effects,
+             mask: "",
+           },
+         } as Element;
+@@ -626,6 +631,11 @@ export function App() {
+             onOpen={loadScene}
+             setStatus={setStatus}
+           />
++          <TtsDialog
++            scene={scene}
++            onUpdateScene={applyScene}
++            setStatus={setStatus}
++          />
+         </div>
+         <div className="status">{status}</div>
+         <ExportControls
+@@ -750,6 +760,9 @@ export function App() {
+           playing={playing}
+           togglePlay={togglePlay}
+           onScrub={seek}
++          scene={scene}
++          onAudioChange={(audio) => applyScene({ ...sceneRef.current, audio })}
++          setStatus={setStatus}
+         />
+         {selected && (
+           <TracksPanel
+@@ -835,12 +848,18 @@ function Timeline({
+   playing,
+   togglePlay,
+   onScrub,
++  scene,
++  onAudioChange,
++  setStatus,
+ }: {
+   clock: MutableRefObject<Clock>;
+   duration: number;
+   playing: boolean;
+   togglePlay: () => void;
+   onScrub: (t: number) => void;
++  scene: Scene;
++  onAudioChange: (audio: SceneAudio | undefined) => void;
++  setStatus?: (status: string) => void;
+ }) {
+   const range = useRef<HTMLInputElement>(null);
+   const readout = useRef<HTMLSpanElement>(null);
+@@ -877,6 +896,11 @@ function Timeline({
+         onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
+       />
+       <span ref={readout} className="readout" />
++      <AudioTrackControl
++        scene={scene}
++        onChange={onAudioChange}
++        setStatus={setStatus}
++      />
+     </div>
+   );
+ }
+diff --git a/src/editor/dialogs/tts-dialog.tsx b/src/editor/dialogs/tts-dialog.tsx
+new file mode 100644
+index 0000000..a2319a0
+--- /dev/null
++++ b/src/editor/dialogs/tts-dialog.tsx
+@@ -0,0 +1,540 @@
++import { Edit3, List, Mic, Sparkles, X } from "lucide-react";
++import { useEffect, useRef, useState } from "react";
++import type { Scene } from "../../model/model.ts";
++import { uploadAsset } from "../../presets/store.ts";
++import { resolveOpenRouterApiKey } from "../../service/tts/config.ts";
++import { OpenRouterTtsAdapter } from "../../service/tts/openrouter-adapter.ts";
++import {
++  loadTtsPreferences,
++  saveTtsPreferences,
++} from "../../service/tts/preferences.ts";
++import { attachSpeechToScene } from "../../service/tts/scene-audio.ts";
++import { alignScriptToCues } from "../../service/tts/speech-alignment.ts";
++import {
++  POPULAR_TTS_MODELS,
++  type TtsModel,
++  type TtsService,
++} from "../../service/tts/types.ts";
++
++export interface TtsDialogProps {
++  scene: Scene;
++  onUpdateScene: (updatedScene: Scene) => void;
++  setStatus: (msg: string) => void;
++  ttsService?: TtsService;
++}
++
++export function TtsDialog({
++  scene,
++  onUpdateScene,
++  setStatus,
++  ttsService = new OpenRouterTtsAdapter(),
++}: TtsDialogProps) {
++  const dialog = useRef<HTMLDialogElement>(null);
++  const [apiKey, setApiKey] = useState("");
++  const [script, setScript] = useState("");
++  const [models, setModels] = useState<TtsModel[]>(POPULAR_TTS_MODELS);
++
++  // Dynamic model and voice selection (D4, R3, R4)
++  const [isCustomModel, setIsCustomModel] = useState(false);
++  const [isCustomVoice, setIsCustomVoice] = useState(false);
++  const [selectedModel, setSelectedModel] = useState("openai/tts-1");
++  const [selectedVoice, setSelectedVoice] = useState("alloy");
++  const [speed, setSpeed] = useState(1.0);
++  const [generateSubtitles, setGenerateSubtitles] = useState(true);
++  const [adjustDuration, setAdjustDuration] = useState(true);
++
++  const [isGenerating, setIsGenerating] = useState(false);
++  const [errorMsg, setErrorMsg] = useState("");
++
++  // Load preferences from localStorage on mount (D3, R5)
++  useEffect(() => {
++    const prefs = loadTtsPreferences();
++    setApiKey(resolveOpenRouterApiKey(prefs.apiKey));
++    setSelectedModel(prefs.model);
++    setSelectedVoice(prefs.voice);
++    setSpeed(prefs.speed);
++    setGenerateSubtitles(prefs.generateSubtitles);
++    setAdjustDuration(prefs.adjustDuration);
++    setIsCustomModel(Boolean(prefs.isCustomModel));
++    setIsCustomVoice(Boolean(prefs.isCustomVoice));
++
++    ttsService
++      .listModels()
++      .then((m) => {
++        if (m.length > 0) setModels(m);
++      })
++      .catch(() => {});
++  }, [ttsService]);
++
++  const currentModel = models.find((m) => m.id === selectedModel);
++
++  const handleOpen = () => {
++    setErrorMsg("");
++    const prefs = loadTtsPreferences();
++    setApiKey(resolveOpenRouterApiKey(prefs.apiKey));
++    dialog.current?.showModal();
++  };
++
++  const handleClose = () => {
++    dialog.current?.close();
++  };
++
++  const updatePreferences = (
++    updates: Parameters<typeof saveTtsPreferences>[0],
++  ) => {
++    saveTtsPreferences(updates);
++  };
++
++  const handleApiKeyChange = (key: string) => {
++    setApiKey(key);
++    updatePreferences({ apiKey: key });
++  };
++
++  const handleModelChange = (model: string, custom = false) => {
++    setSelectedModel(model);
++    setIsCustomModel(custom);
++    updatePreferences({ model, isCustomModel: custom });
++
++    // If switching to a preset model, pick its default voice if current voice doesn't exist in it
++    if (!custom) {
++      const target = models.find((m) => m.id === model);
++      if (target && target.voices.length > 0) {
++        if (!target.voices.some((v) => v.id === selectedVoice)) {
++          setSelectedVoice(target.voices[0].id);
++          setIsCustomVoice(false);
++          updatePreferences({
++            voice: target.voices[0].id,
++            isCustomVoice: false,
++          });
++        }
++      }
++    }
++  };
++
++  const handleVoiceChange = (voice: string, custom = false) => {
++    setSelectedVoice(voice);
++    setIsCustomVoice(custom);
++    updatePreferences({ voice, isCustomVoice: custom });
++  };
++
++  const handleSpeedChange = (val: number) => {
++    setSpeed(val);
++    updatePreferences({ speed: val });
++  };
++
++  const handleSubtitlesChange = (checked: boolean) => {
++    setGenerateSubtitles(checked);
++    updatePreferences({ generateSubtitles: checked });
++  };
++
++  const handleAdjustDurationChange = (checked: boolean) => {
++    setAdjustDuration(checked);
++    updatePreferences({ adjustDuration: checked });
++  };
++
++  const handleGenerate = async () => {
++    if (!script.trim()) {
++      setErrorMsg("Escribe un guión para generar el audio.");
++      return;
++    }
++    const resolvedKey = resolveOpenRouterApiKey(apiKey);
++    if (!resolvedKey) {
++      setErrorMsg("Se requiere una API Key de OpenRouter.");
++      return;
++    }
++
++    if (!selectedModel.trim()) {
++      setErrorMsg("Especifica un modelo de voz.");
++      return;
++    }
++
++    if (!selectedVoice.trim()) {
++      setErrorMsg("Especifica una voz.");
++      return;
++    }
++
++    setIsGenerating(true);
++    setErrorMsg("");
++
++    try {
++      const result = await ttsService.synthesizeSpeech({
++        text: script.trim(),
++        model: selectedModel.trim(),
++        voice: selectedVoice.trim(),
++        speed,
++        apiKey: resolvedKey,
++        format: "mp3",
++      });
++
++      // Calculate audio duration
++      let durationSeconds = result.durationSeconds;
++      if (!durationSeconds || durationSeconds <= 0) {
++        // Estimate: 128kbps MP3 ≈ 16KB/s
++        durationSeconds = Math.max(
++          1,
++          Math.round((result.audioBuffer.length / 16000) * 10) / 10,
++        );
++      }
++
++      // Convert Uint8Array to File and upload to assets/
++      const audioBlob = new Blob([result.audioBuffer as unknown as BlobPart], {
++        type: result.mimeType || "audio/mpeg",
++      });
++      const audioFile = new File([audioBlob], `speech-${Date.now()}.mp3`, {
++        type: "audio/mpeg",
++      });
++
++      const assetPath = await uploadAsset(audioFile, {
++        exts: ["mp3"],
++        error: "Formato de audio no compatible",
++      });
++
++      // Generate subtitle cues if enabled
++      const cues = generateSubtitles
++        ? alignScriptToCues(script.trim(), {
++            totalDuration: durationSeconds,
++            startOffset: 0,
++          })
++        : undefined;
++
++      // Update scene with audio track and subtitles
++      const updatedScene = attachSpeechToScene(scene, {
++        assetId: assetPath,
++        audioDuration: durationSeconds,
++        adjustSceneDuration: adjustDuration,
++        cues,
++      });
++
++      onUpdateScene(updatedScene);
++      setStatus("Voz generada y vinculada a la escena");
++      handleClose();
++    } catch (err) {
++      setErrorMsg(err instanceof Error ? err.message : String(err));
++    } finally {
++      setIsGenerating(false);
++    }
++  };
++
++  return (
++    <>
++      <button
++        type="button"
++        title="Generar locución con IA (OpenRouter TTS)"
++        onClick={handleOpen}
++      >
++        <Mic size={16} /> Voz IA
++      </button>
++
++      <dialog ref={dialog} className="scenes-dialog tts-dialog">
++        <div className="title">
++          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
++            <Mic size={20} />
++            <span>Generar voz y locución (TTS)</span>
++          </div>
++          <button type="button" title="Cerrar" onClick={handleClose}>
++            <X size={16} />
++          </button>
++        </div>
++
++        <div
++          style={{
++            display: "flex",
++            flexDirection: "column",
++            gap: 12,
++            padding: "8px 0",
++          }}
++        >
++          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++            <span style={{ fontSize: 13, color: "var(--fg-muted)" }}>
++              OpenRouter API Key:
++            </span>
++            <input
++              type="password"
++              placeholder="sk-or-v1-... (o desde .env)"
++              value={apiKey}
++              onChange={(e) => handleApiKeyChange(e.target.value)}
++              style={{
++                padding: "6px 10px",
++                borderRadius: 6,
++                border: "1px solid var(--border)",
++                background: "var(--bg-card)",
++                color: "var(--fg)",
++              }}
++            />
++          </label>
++
++          <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++            <span style={{ fontSize: 13, color: "var(--fg-muted)" }}>
++              Guión / Texto a narrar:
++            </span>
++            <textarea
++              rows={4}
++              placeholder="Escribe aquí el texto que dirá la voz en off..."
++              value={script}
++              onChange={(e) => setScript(e.target.value)}
++              style={{
++                padding: "8px 10px",
++                borderRadius: 6,
++                border: "1px solid var(--border)",
++                background: "var(--bg-card)",
++                color: "var(--fg)",
++                resize: "vertical",
++              }}
++            />
++          </label>
++
++          <div
++            style={{
++              display: "grid",
++              gridTemplateColumns: "1fr 1fr",
++              gap: 8,
++            }}
++          >
++            {/* Dynamic Model selection (Presets vs Custom) */}
++            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++              <div
++                style={{
++                  display: "flex",
++                  justifyContent: "space-between",
++                  alignItems: "center",
++                }}
++              >
++                <span style={{ fontSize: 13, color: "var(--fg-muted)" }}>
++                  Modelo:
++                </span>
++                <button
++                  type="button"
++                  onClick={() => setIsCustomModel(!isCustomModel)}
++                  title={
++                    isCustomModel
++                      ? "Elegir de la lista predefinida"
++                      : "Escribir modelo personalizado"
++                  }
++                  style={{
++                    background: "none",
++                    border: "none",
++                    padding: 0,
++                    cursor: "pointer",
++                    fontSize: 11,
++                    color: "var(--primary, #3b82f6)",
++                    display: "flex",
++                    alignItems: "center",
++                    gap: 3,
++                  }}
++                >
++                  {isCustomModel ? (
++                    <>
++                      <List size={12} /> Predefinido
++                    </>
++                  ) : (
++                    <>
++                      <Edit3 size={12} /> Personalizado
++                    </>
++                  )}
++                </button>
++              </div>
++
++              {isCustomModel ? (
++                <input
++                  type="text"
++                  placeholder="ej: openai/tts-1, mistralai/..."
++                  value={selectedModel}
++                  onChange={(e) => handleModelChange(e.target.value, true)}
++                  style={{
++                    padding: "6px 8px",
++                    borderRadius: 6,
++                    border: "1px solid var(--border)",
++                    background: "var(--bg-card)",
++                    color: "var(--fg)",
++                  }}
++                />
++              ) : (
++                <select
++                  value={selectedModel}
++                  onChange={(e) => handleModelChange(e.target.value, false)}
++                  style={{
++                    padding: "6px 8px",
++                    borderRadius: 6,
++                    border: "1px solid var(--border)",
++                    background: "var(--bg-card)",
++                    color: "var(--fg)",
++                  }}
++                >
++                  {models.map((m) => (
++                    <option key={m.id} value={m.id}>
++                      {m.name}
++                    </option>
++                  ))}
++                </select>
++              )}
++            </div>
++
++            {/* Dynamic Voice selection (Presets vs Custom) */}
++            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++              <div
++                style={{
++                  display: "flex",
++                  justifyContent: "space-between",
++                  alignItems: "center",
++                }}
++              >
++                <span style={{ fontSize: 13, color: "var(--fg-muted)" }}>
++                  Voz:
++                </span>
++                <button
++                  type="button"
++                  onClick={() => setIsCustomVoice(!isCustomVoice)}
++                  title={
++                    isCustomVoice
++                      ? "Elegir de la lista predefinida"
++                      : "Escribir voz personalizada"
++                  }
++                  style={{
++                    background: "none",
++                    border: "none",
++                    padding: 0,
++                    cursor: "pointer",
++                    fontSize: 11,
++                    color: "var(--primary, #3b82f6)",
++                    display: "flex",
++                    alignItems: "center",
++                    gap: 3,
++                  }}
++                >
++                  {isCustomVoice ? (
++                    <>
++                      <List size={12} /> Predefinida
++                    </>
++                  ) : (
++                    <>
++                      <Edit3 size={12} /> Personalizada
++                    </>
++                  )}
++                </button>
++              </div>
++
++              {isCustomVoice || !currentModel ? (
++                <input
++                  type="text"
++                  placeholder="ej: alloy, rachel, nombre-voz"
++                  value={selectedVoice}
++                  onChange={(e) => handleVoiceChange(e.target.value, true)}
++                  style={{
++                    padding: "6px 8px",
++                    borderRadius: 6,
++                    border: "1px solid var(--border)",
++                    background: "var(--bg-card)",
++                    color: "var(--fg)",
++                  }}
++                />
++              ) : (
++                <select
++                  value={selectedVoice}
++                  onChange={(e) => handleVoiceChange(e.target.value, false)}
++                  style={{
++                    padding: "6px 8px",
++                    borderRadius: 6,
++                    border: "1px solid var(--border)",
++                    background: "var(--bg-card)",
++                    color: "var(--fg)",
++                  }}
++                >
++                  {currentModel?.voices.map((v) => (
++                    <option key={v.id} value={v.id}>
++                      {v.name} {v.gender ? `(${v.gender})` : ""}
++                    </option>
++                  ))}
++                </select>
++              )}
++            </div>
++          </div>
++
++          {/* Speed slider */}
++          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++            <div
++              style={{
++                display: "flex",
++                justifyContent: "space-between",
++                fontSize: 13,
++                color: "var(--fg-muted)",
++              }}
++            >
++              <span>Velocidad:</span>
++              <span>{speed.toFixed(2)}x</span>
++            </div>
++            <input
++              type="range"
++              min="0.5"
++              max="2.0"
++              step="0.05"
++              value={speed}
++              onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
++              style={{ width: "100%", accentColor: "var(--primary, #3b82f6)" }}
++            />
++          </div>
++
++          <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
++            <label
++              style={{
++                display: "flex",
++                alignItems: "center",
++                gap: 6,
++                fontSize: 13,
++              }}
++            >
++              <input
++                type="checkbox"
++                checked={generateSubtitles}
++                onChange={(e) => handleSubtitlesChange(e.target.checked)}
++              />
++              Crear subtítulos automáticos
++            </label>
++            <label
++              style={{
++                display: "flex",
++                alignItems: "center",
++                gap: 6,
++                fontSize: 13,
++              }}
++            >
++              <input
++                type="checkbox"
++                checked={adjustDuration}
++                onChange={(e) => handleAdjustDurationChange(e.target.checked)}
++              />
++              Ajustar duración de escena
++            </label>
++          </div>
++
++          {errorMsg && (
++            <div
++              style={{
++                color: "var(--danger, #ef4444)",
++                fontSize: 13,
++                marginTop: 4,
++              }}
++            >
++              {errorMsg}
++            </div>
++          )}
++        </div>
++
++        <div className="actions" style={{ marginTop: 12 }}>
++          <button type="button" onClick={handleClose} disabled={isGenerating}>
++            Cancelar
++          </button>
++          <button
++            type="button"
++            className="primary"
++            onClick={handleGenerate}
++            disabled={isGenerating}
++            style={{ display: "flex", alignItems: "center", gap: 6 }}
++          >
++            <Sparkles size={16} />
++            {isGenerating ? "Generando voz..." : "Generar y Aplicar"}
++          </button>
++        </div>
++      </dialog>
++    </>
++  );
++}
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+index 6f68d5d..bc32726 100644
+--- a/src/editor/field-editor.tsx
++++ b/src/editor/field-editor.tsx
+@@ -227,7 +227,8 @@ function MaskWidget({ value, label, change, ctx }: WidgetProps) {
+         title="Quitar máscara"
+         onClick={() =>
+           change((d) => {
+-            const fx = (d as unknown as { effects?: { mask?: string } }).effects;
++            const fx = (d as unknown as { effects?: { mask?: string } })
++              .effects;
+             if (fx) fx.mask = "";
+           })
+         }
+@@ -236,14 +237,25 @@ function MaskWidget({ value, label, change, ctx }: WidgetProps) {
+       </button>
+     </div>
+   ) : (
+-    <div className="hint">
+-      {label}: sin máscara.
+-    </div>
++    <div className="hint">{label}: sin máscara.</div>
+   );
+ }
+ 
+ /** Custom fields and widgets, by the name descriptors give them. */
++import { CuesEditor } from "./widgets/cues-editor.tsx";
++import type { SubtitleCue } from "../engine/subtitles/types.ts";
++
+ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
++  "cues-editor": ({ value, change }) => (
++    <CuesEditor
++      cues={(value as SubtitleCue[]) ?? []}
++      onChange={(cues) =>
++        change((d) => {
++          (d as unknown as { cues: SubtitleCue[] }).cues = cues;
++        })
++      }
++    />
++  ),
+   icon: ({ value, change }) => (
+     <IconPicker
+       value={value as string}
+diff --git a/src/editor/stage.tsx b/src/editor/stage.tsx
+index e918c5d..d1a2442 100644
+--- a/src/editor/stage.tsx
++++ b/src/editor/stage.tsx
+@@ -1,4 +1,5 @@
+ import { type MutableRefObject, useEffect, useRef, useState } from "react";
++import { WebAudioPlayer } from "../engine/audio/audio-player.ts";
+ import {
+   type Box,
+   boxesTouch,
+@@ -463,6 +464,17 @@ export function Stage({
+     return () => ro.disconnect();
+   }, []);
+ 
++  const audioPlayerRef = useRef<WebAudioPlayer | null>(null);
++  if (!audioPlayerRef.current) {
++    audioPlayerRef.current = new WebAudioPlayer();
++  }
++
++  useEffect(() => {
++    return () => {
++      audioPlayerRef.current?.dispose();
++    };
++  }, []);
++
+   useEffect(() => {
+     let frame = 0;
+     let last = performance.now();
+@@ -473,6 +485,12 @@ export function Stage({
+       if (clock.current.playing) {
+         clock.current.t = (clock.current.t + dt) % s.duration;
+       }
++      audioPlayerRef.current?.sync(
++        clock.current.t,
++        clock.current.playing,
++        s.duration,
++        s.audio,
++      );
+       const canvas = canvasRef.current;
+       const ctx = canvas?.getContext("2d");
+       if (canvas && ctx) {
+diff --git a/src/editor/timeline/audio-track-control.tsx b/src/editor/timeline/audio-track-control.tsx
+new file mode 100644
+index 0000000..79eb853
+--- /dev/null
++++ b/src/editor/timeline/audio-track-control.tsx
+@@ -0,0 +1,234 @@
++import { Music, Trash2, Volume2, VolumeX } from "lucide-react";
++import { useCallback, useRef } from "react";
++import type { Scene, SceneAudio } from "../../model/model.ts";
++import { AUDIO_FILES, uploadAsset } from "../../presets/store.ts";
++
++export type AudioTrackControlProps = {
++  scene: Scene;
++  onChange: (audio: SceneAudio | undefined) => void;
++  setStatus?: (status: string) => void;
++};
++
++export function AudioTrackControl({
++  scene,
++  onChange,
++  setStatus,
++}: AudioTrackControlProps) {
++  const fileInputRef = useRef<HTMLInputElement>(null);
++  const audio = scene.audio;
++
++  const handleUpload = useCallback(
++    async (file: File) => {
++      try {
++        const path = await uploadAsset(file, AUDIO_FILES);
++        onChange({
++          assetId: path,
++          volume: audio?.volume ?? 1,
++          startOffset: audio?.startOffset ?? 0,
++          trimOffset: audio?.trimOffset ?? 0,
++        });
++        setStatus?.(`Audio cargado: ${file.name}`);
++      } catch (err) {
++        setStatus?.(
++          `Error al cargar audio: ${err instanceof Error ? err.message : String(err)}`,
++        );
++      }
++    },
++    [audio, onChange, setStatus],
++  );
++
++  const toggleMute = useCallback(() => {
++    if (!audio) return;
++    const currentVol = audio.volume ?? 1;
++    onChange({
++      ...audio,
++      volume: currentVol > 0 ? 0 : 1,
++    });
++  }, [audio, onChange]);
++
++  const updateVolume = useCallback(
++    (vol: number) => {
++      if (!audio) return;
++      onChange({
++        ...audio,
++        volume: vol,
++      });
++    },
++    [audio, onChange],
++  );
++
++  const updateStartOffset = useCallback(
++    (offset: number) => {
++      if (!audio) return;
++      onChange({
++        ...audio,
++        startOffset: Math.max(0, offset),
++      });
++    },
++    [audio, onChange],
++  );
++
++  const removeAudio = useCallback(() => {
++    onChange(undefined);
++    setStatus?.("Pista de audio eliminada");
++  }, [onChange, setStatus]);
++
++  const fileName = audio?.assetId ? audio.assetId.split("/").pop() : "";
++
++  return (
++    <div
++      className="audio-track-control"
++      style={{
++        display: "flex",
++        alignItems: "center",
++        gap: "8px",
++        fontSize: "12px",
++        padding: "4px 8px",
++        background: "rgba(0,0,0,0.25)",
++        borderRadius: "4px",
++      }}
++    >
++      <input
++        ref={fileInputRef}
++        type="file"
++        accept=".mp3,.wav,.aac,.ogg,audio/*"
++        hidden
++        onChange={(e) => {
++          const file = e.target.files?.[0];
++          e.target.value = "";
++          if (file) handleUpload(file);
++        }}
++      />
++
++      {!audio ? (
++        <button
++          type="button"
++          className="audio-add-btn"
++          title="Añadir pista de audio a la escena"
++          onClick={() => fileInputRef.current?.click()}
++          style={{
++            display: "inline-flex",
++            alignItems: "center",
++            gap: "4px",
++            background: "transparent",
++            border: "1px dashed rgba(255,255,255,0.3)",
++            color: "inherit",
++            cursor: "pointer",
++            padding: "2px 8px",
++            borderRadius: "4px",
++          }}
++        >
++          <Music size={14} /> + Audio
++        </button>
++      ) : (
++        <>
++          <span
++            title={fileName}
++            style={{
++              maxWidth: "110px",
++              overflow: "hidden",
++              textOverflow: "ellipsis",
++              whiteSpace: "nowrap",
++              display: "inline-flex",
++              alignItems: "center",
++              gap: "4px",
++            }}
++          >
++            <Music size={14} />
++            {fileName}
++          </span>
++
++          <button
++            type="button"
++            title="Reemplazar audio"
++            onClick={() => fileInputRef.current?.click()}
++            style={{
++              background: "transparent",
++              border: "none",
++              color: "inherit",
++              cursor: "pointer",
++              padding: "2px",
++            }}
++          >
++            Cambiar
++          </button>
++
++          <button
++            type="button"
++            title={
++              (audio.volume ?? 1) > 0 ? "Silenciar audio" : "Activar sonido"
++            }
++            onClick={toggleMute}
++            style={{
++              background: "transparent",
++              border: "none",
++              color: "inherit",
++              cursor: "pointer",
++              padding: "2px",
++            }}
++          >
++            {(audio.volume ?? 1) > 0 ? (
++              <Volume2 size={14} />
++            ) : (
++              <VolumeX size={14} />
++            )}
++          </button>
++
++          <label
++            style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}
++            title="Volumen"
++          >
++            <input
++              type="range"
++              min={0}
++              max={1}
++              step={0.05}
++              value={audio.volume ?? 1}
++              onChange={(e) => updateVolume(Number(e.target.value))}
++              style={{ width: "50px" }}
++            />
++          </label>
++
++          <label
++            style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
++            title="Inicio en escena (segundos)"
++          >
++            Inicio:
++            <input
++              type="number"
++              min={0}
++              max={scene.duration}
++              step={0.1}
++              value={audio.startOffset ?? 0}
++              onChange={(e) => updateStartOffset(Number(e.target.value))}
++              style={{
++                width: "45px",
++                background: "rgba(0,0,0,0.3)",
++                border: "1px solid rgba(255,255,255,0.2)",
++                color: "inherit",
++                borderRadius: "2px",
++                padding: "1px 2px",
++              }}
++            />
++            s
++          </label>
++
++          <button
++            type="button"
++            title="Eliminar pista de audio"
++            onClick={removeAudio}
++            style={{
++              background: "transparent",
++              border: "none",
++              color: "inherit",
++              cursor: "pointer",
++              padding: "2px",
++            }}
++          >
++            <Trash2 size={14} />
++          </button>
++        </>
++      )}
++    </div>
++  );
++}
+diff --git a/src/editor/widgets/cues-editor.tsx b/src/editor/widgets/cues-editor.tsx
+new file mode 100644
+index 0000000..6e5d745
+--- /dev/null
++++ b/src/editor/widgets/cues-editor.tsx
+@@ -0,0 +1,200 @@
++import { FileUp, Plus, Trash2 } from "lucide-react";
++import { type ChangeEvent, useState } from "react";
++import { parseSrt } from "../../engine/subtitles/parsers/srt.ts";
++import { parseVtt } from "../../engine/subtitles/parsers/vtt.ts";
++import type { SubtitleCue } from "../../engine/subtitles/types.ts";
++
++export interface CuesEditorProps {
++  cues: SubtitleCue[];
++  onChange: (cues: SubtitleCue[]) => void;
++}
++
++export function CuesEditor({ cues, onChange }: CuesEditorProps) {
++  const [error, setError] = useState<string>("");
++
++  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
++    const file = e.target.files?.[0];
++    e.target.value = "";
++    if (!file) return;
++
++    setError("");
++    const reader = new FileReader();
++    reader.onload = (event) => {
++      const content = event.target?.result;
++      if (typeof content !== "string") return;
++
++      try {
++        let parsed: SubtitleCue[] = [];
++        if (file.name.endsWith(".vtt") || content.includes("WEBVTT")) {
++          parsed = parseVtt(content);
++        } else {
++          parsed = parseSrt(content);
++        }
++
++        if (parsed.length === 0) {
++          setError("No se encontraron subtítulos válidos en el archivo.");
++          return;
++        }
++
++        onChange(parsed);
++      } catch (err: unknown) {
++        setError(`Error al leer archivo: ${String(err)}`);
++      }
++    };
++    reader.readAsText(file);
++  };
++
++  const updateCue = (index: number, patch: Partial<SubtitleCue>) => {
++    const next = [...cues];
++    if (next[index]) {
++      next[index] = { ...next[index], ...patch };
++      onChange(next);
++    }
++  };
++
++  const removeCue = (index: number) => {
++    const next = cues.filter((_, i) => i !== index);
++    onChange(next);
++  };
++
++  const addCue = () => {
++    const lastCue = cues[cues.length - 1];
++    const start = lastCue ? lastCue.end : 0;
++    const end = start + 2;
++    const newCue: SubtitleCue = {
++      id: `cue-${Date.now()}`,
++      start,
++      end,
++      text: "Nuevo subtítulo",
++    };
++    onChange([...cues, newCue]);
++  };
++
++  return (
++    <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
++      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
++        <label
++          className="file-pick"
++          style={{
++            flex: 1,
++            cursor: "pointer",
++            display: "inline-flex",
++            alignItems: "center",
++            justifyContent: "center",
++            gap: 6,
++          }}
++        >
++          <FileUp size={14} />
++          Importar .srt / .vtt
++          <input
++            type="file"
++            accept=".srt,.vtt,text/vtt,application/x-subrip"
++            style={{ display: "none" }}
++            onChange={handleFileUpload}
++          />
++        </label>
++        <button
++          type="button"
++          onClick={addCue}
++          title="Agregar subtítulo"
++          style={{
++            display: "inline-flex",
++            alignItems: "center",
++            gap: 4,
++            padding: "4px 8px",
++          }}
++        >
++          <Plus size={14} /> Agregar
++        </button>
++      </div>
++
++      {error && <div className="hint error">{error}</div>}
++
++      <div
++        style={{
++          display: "flex",
++          flexDirection: "column",
++          gap: 6,
++          maxHeight: 260,
++          overflowY: "auto",
++          paddingRight: 4,
++        }}
++      >
++        {cues.length === 0 ? (
++          <div className="hint">Sin subtítulos. Importa un archivo o agrega uno manual.</div>
++        ) : (
++          cues.map((cue, index) => (
++            <div
++              key={cue.id ?? index}
++              style={{
++                display: "flex",
++                flexDirection: "column",
++                gap: 4,
++                padding: "6px 8px",
++                background: "rgba(255, 255, 255, 0.05)",
++                borderRadius: 4,
++                border: "1px solid rgba(255, 255, 255, 0.1)",
++              }}
++            >
++              <div
++                style={{
++                  display: "flex",
++                  alignItems: "center",
++                  justifyContent: "space-between",
++                  gap: 6,
++                  fontSize: 12,
++                }}
++              >
++                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
++                  <span>Inicio:</span>
++                  <input
++                    type="number"
++                    step={0.1}
++                    min={0}
++                    value={cue.start}
++                    onChange={(e) => updateCue(index, { start: Number(e.target.value) })}
++                    style={{ width: 55, padding: "2px 4px", fontSize: 11 }}
++                  />
++                  <span>Fin:</span>
++                  <input
++                    type="number"
++                    step={0.1}
++                    min={0}
++                    value={cue.end}
++                    onChange={(e) => updateCue(index, { end: Number(e.target.value) })}
++                    style={{ width: 55, padding: "2px 4px", fontSize: 11 }}
++                  />
++                </div>
++                <button
++                  type="button"
++                  onClick={() => removeCue(index)}
++                  title="Eliminar subtítulo"
++                  style={{
++                    background: "transparent",
++                    border: "none",
++                    cursor: "pointer",
++                    color: "rgba(255, 255, 255, 0.6)",
++                    padding: 2,
++                  }}
++                >
++                  <Trash2 size={13} />
++                </button>
++              </div>
++              <input
++                type="text"
++                value={cue.text}
++                onChange={(e) => updateCue(index, { text: e.target.value })}
++                style={{ width: "100%", padding: "3px 6px", fontSize: 12 }}
++              />
++              {cue.words && cue.words.length > 0 && (
++                <div className="hint" style={{ fontSize: 10, opacity: 0.7 }}>
++                  {cue.words.length} palabras con timing karaoke
++                </div>
++              )}
++            </div>
++          ))
++        )}
++      </div>
++    </div>
++  );
++}
+diff --git a/src/engine/assets.ts b/src/engine/assets.ts
+index 984567b..bd42f09 100644
+--- a/src/engine/assets.ts
++++ b/src/engine/assets.ts
+@@ -77,18 +77,57 @@ export async function imageSize(
+   return { width: loaded.width, height: loaded.height };
+ }
+ 
+-function sceneSources(elements: Element[], out: Set<string>): Set<string> {
+-  for (const el of elements) {
+-    for (const src of descriptorOf(el.kind)?.assets?.(el as never) ?? []) {
+-      if (src) out.add(src);
++let decodeAudioContext: AudioContext | null = null;
++
++export function getSharedDecodeAudioContext(): AudioContext | null {
++  if (typeof window === "undefined") return null;
++  if (!decodeAudioContext) {
++    const AudioContextClass =
++      window.AudioContext ||
++      (window as unknown as { webkitAudioContext: typeof AudioContext })
++        .webkitAudioContext;
++    if (AudioContextClass) {
++      decodeAudioContext = new AudioContextClass();
+     }
+-    if (el.kind === "group") sceneSources(el.children, out);
+   }
++  return decodeAudioContext;
++}
++
++export async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
++  const ctx = getSharedDecodeAudioContext();
++  if (!ctx) return null;
++  try {
++    const res = await fetch(src);
++    if (!res.ok) return null;
++    const arrayBuffer = await res.arrayBuffer();
++    return await ctx.decodeAudioData(arrayBuffer);
++  } catch {
++    return null;
++  }
++}
++
++for (const ext of ["mp3", "wav", "aac", "ogg"]) {
++  registerAssetLoader(ext, loadAudioBuffer);
++}
++
++function sceneSources(scene: Scene, out: Set<string>): Set<string> {
++  if (scene.audio?.assetId) {
++    out.add(scene.audio.assetId);
++  }
++  const collect = (elements: Element[]) => {
++    for (const el of elements) {
++      for (const src of descriptorOf(el.kind)?.assets?.(el as never) ?? []) {
++        if (src) out.add(src);
++      }
++      if (el.kind === "group") collect(el.children);
++    }
++  };
++  collect(scene.elements);
+   return out;
+ }
+ 
+ /** Waits until every asset the scene uses has loaded, so every exported frame shows them. */
+ export async function loadSceneAssets(scene: Scene): Promise<void> {
+-  const sources = sceneSources(scene.elements, new Set());
++  const sources = sceneSources(scene, new Set());
+   await Promise.all([...sources].map((src) => entry(src).ready));
+ }
+diff --git a/src/engine/audio/audio-export.ts b/src/engine/audio/audio-export.ts
+new file mode 100644
+index 0000000..262a8b4
+--- /dev/null
++++ b/src/engine/audio/audio-export.ts
+@@ -0,0 +1,83 @@
++import type { SceneAudio } from "../../model/model.ts";
++
++/**
++ * Trims and adjusts an AudioBuffer for video export matching scene duration and offsets.
++ * Pure audio processing function (SRP, high cohesion).
++ */
++export function prepareAudioBufferForExport(
++  sourceBuffer: AudioBuffer,
++  sceneDuration: number,
++  audio: SceneAudio,
++): { buffer: AudioBuffer; startOffset: number } | null {
++  const startOffset = Math.max(0, audio.startOffset ?? 0);
++  const trimOffset = Math.max(0, audio.trimOffset ?? 0);
++  const volume = Math.max(0, Math.min(1, audio.volume ?? 1));
++
++  if (startOffset >= sceneDuration) return null;
++
++  const availableAudio = Math.max(0, sourceBuffer.duration - trimOffset);
++  if (availableAudio <= 0) return null;
++
++  const durationToPlay = Math.min(sceneDuration - startOffset, availableAudio);
++  if (durationToPlay <= 0) return null;
++
++  const sampleRate = sourceBuffer.sampleRate;
++  const numChannels = sourceBuffer.numberOfChannels;
++  const startSample = Math.floor(trimOffset * sampleRate);
++  const totalSamples = Math.floor(durationToPlay * sampleRate);
++
++  if (totalSamples <= 0) return null;
++
++  // Create sliced and volume-adjusted buffer
++  const AudioBufferClass =
++    typeof AudioBuffer !== "undefined"
++      ? AudioBuffer
++      : (class MockAudioBuffer {
++          length: number;
++          numberOfChannels: number;
++          sampleRate: number;
++          duration: number;
++          private channels: Float32Array[];
++          constructor(opts: {
++            length: number;
++            numberOfChannels: number;
++            sampleRate: number;
++          }) {
++            this.length = opts.length;
++            this.numberOfChannels = opts.numberOfChannels;
++            this.sampleRate = opts.sampleRate;
++            this.duration = opts.length / opts.sampleRate;
++            this.channels = Array.from(
++              { length: opts.numberOfChannels },
++              () => new Float32Array(opts.length),
++            );
++          }
++          getChannelData(c: number): Float32Array {
++            return this.channels[c] ?? new Float32Array(0);
++          }
++        } as unknown as typeof AudioBuffer);
++
++  const slicedBuffer = new AudioBufferClass({
++    length: totalSamples,
++    numberOfChannels: numChannels,
++    sampleRate,
++  });
++
++  for (let channel = 0; channel < numChannels; channel++) {
++    const srcData = sourceBuffer.getChannelData(channel);
++    const destData = slicedBuffer.getChannelData(channel);
++    for (let i = 0; i < totalSamples; i++) {
++      const srcIndex = startSample + i;
++      if (srcIndex < srcData.length) {
++        destData[i] = srcData[srcIndex]! * volume;
++      } else {
++        destData[i] = 0;
++      }
++    }
++  }
++
++  return {
++    buffer: slicedBuffer,
++    startOffset,
++  };
++}
+diff --git a/src/engine/audio/audio-player.ts b/src/engine/audio/audio-player.ts
+new file mode 100644
+index 0000000..cda36c5
+--- /dev/null
++++ b/src/engine/audio/audio-player.ts
+@@ -0,0 +1,171 @@
++import type { SceneAudio } from "../../model/model.ts";
++import { computeAudioPlayback } from "./audio-timing.ts";
++
++/**
++ * Interface for audio playback.
++ * Follows Service Layer / Dependency Inversion (SRP, swappable for testing).
++ */
++export interface IAudioPlayer {
++  sync(
++    t: number,
++    playing: boolean,
++    sceneDuration: number,
++    audio?: SceneAudio,
++  ): void;
++  pause(): void;
++  dispose(): void;
++}
++
++/**
++ * Web Audio API implementation of AudioPlayer.
++ * Reuses an AudioContext and handles decoding, caching, and synchronized playback.
++ */
++export class WebAudioPlayer implements IAudioPlayer {
++  private ctx: AudioContext | null = null;
++  private bufferCache = new Map<string, AudioBuffer>();
++  private activeSource: AudioBufferSourceNode | null = null;
++  private gainNode: GainNode | null = null;
++  private currentAssetId: string | null = null;
++  private isPlaying = false;
++  private lastT = -1;
++
++  private getAudioContext(): AudioContext | null {
++    if (typeof window === "undefined") return null;
++    if (!this.ctx) {
++      const AudioContextClass =
++        window.AudioContext ||
++        (window as unknown as { webkitAudioContext: typeof AudioContext })
++          .webkitAudioContext;
++      if (AudioContextClass) {
++        this.ctx = new AudioContextClass();
++      }
++    }
++    if (this.ctx && this.ctx.state === "suspended") {
++      this.ctx.resume().catch(() => {});
++    }
++    return this.ctx;
++  }
++
++  private async loadBuffer(assetId: string): Promise<AudioBuffer | null> {
++    const cached = this.bufferCache.get(assetId);
++    if (cached) return cached;
++
++    const ctx = this.getAudioContext();
++    if (!ctx) return null;
++
++    try {
++      const res = await fetch(assetId);
++      if (!res.ok) return null;
++      const arrayBuffer = await res.arrayBuffer();
++      const decoded = await ctx.decodeAudioData(arrayBuffer);
++      this.bufferCache.set(assetId, decoded);
++      return decoded;
++    } catch {
++      return null;
++    }
++  }
++
++  sync(
++    t: number,
++    playing: boolean,
++    sceneDuration: number,
++    audio?: SceneAudio,
++  ): void {
++    if (!audio || !audio.assetId) {
++      this.pause();
++      this.currentAssetId = null;
++      return;
++    }
++
++    const ctx = this.getAudioContext();
++    if (!ctx) return;
++
++    // Preload buffer if not loaded
++    if (!this.bufferCache.has(audio.assetId)) {
++      this.loadBuffer(audio.assetId).then((buf) => {
++        if (buf && this.isPlaying) {
++          // Trigger re-sync once loaded
++          this.sync(this.lastT, this.isPlaying, sceneDuration, audio);
++        }
++      });
++    }
++
++    const buffer = this.bufferCache.get(audio.assetId);
++    if (!buffer) {
++      this.lastT = t;
++      this.isPlaying = playing;
++      return;
++    }
++
++    // Set volume via GainNode
++    const volume = Math.max(0, Math.min(1, audio.volume ?? 1));
++    if (!this.gainNode) {
++      this.gainNode = ctx.createGain();
++      this.gainNode.connect(ctx.destination);
++    }
++    this.gainNode.gain.setValueAtTime(volume, ctx.currentTime);
++
++    if (!playing) {
++      this.pause();
++      this.lastT = t;
++      this.isPlaying = false;
++      return;
++    }
++
++    // Check if loop wrapped around or seek occurred
++    const loopJumped = this.isPlaying && t < this.lastT - 0.1;
++    const playStateChanged = !this.isPlaying;
++    this.lastT = t;
++    this.isPlaying = true;
++
++    if (playStateChanged || loopJumped || !this.activeSource) {
++      this.stopSource();
++      const timing = computeAudioPlayback({
++        t,
++        sceneDuration,
++        audio,
++        audioDuration: buffer.duration,
++      });
++
++      if (!timing.active) return;
++
++      const source = ctx.createBufferSource();
++      source.buffer = buffer;
++      source.connect(this.gainNode);
++
++      const startTime = ctx.currentTime + timing.delay;
++      source.start(startTime, timing.sourceOffset, timing.duration);
++      this.activeSource = source;
++    }
++  }
++
++  private stopSource(): void {
++    if (this.activeSource) {
++      try {
++        this.activeSource.stop();
++        this.activeSource.disconnect();
++      } catch {
++        // already stopped
++      }
++      this.activeSource = null;
++    }
++  }
++
++  pause(): void {
++    this.stopSource();
++    this.isPlaying = false;
++  }
++
++  dispose(): void {
++    this.stopSource();
++    if (this.gainNode) {
++      this.gainNode.disconnect();
++      this.gainNode = null;
++    }
++    if (this.ctx) {
++      this.ctx.close().catch(() => {});
++      this.ctx = null;
++    }
++    this.bufferCache.clear();
++  }
++}
+diff --git a/src/engine/audio/audio-timing.test.ts b/src/engine/audio/audio-timing.test.ts
+new file mode 100644
+index 0000000..61b6b0e
+--- /dev/null
++++ b/src/engine/audio/audio-timing.test.ts
+@@ -0,0 +1,64 @@
++import { describe, expect, it } from "vitest";
++import { computeAudioPlayback } from "./audio-timing.ts";
++
++describe("computeAudioPlayback", () => {
++  it("returns inactive if startOffset is beyond scene duration", () => {
++    const res = computeAudioPlayback({
++      t: 1,
++      sceneDuration: 5,
++      audioDuration: 10,
++      audio: { assetId: "a", startOffset: 6 },
++    });
++    expect(res).toEqual({ active: false });
++  });
++
++  it("returns inactive if trimOffset exceeds audioDuration", () => {
++    const res = computeAudioPlayback({
++      t: 1,
++      sceneDuration: 5,
++      audioDuration: 4,
++      audio: { assetId: "a", trimOffset: 5 },
++    });
++    expect(res).toEqual({ active: false });
++  });
++
++  it("schedules delayed start when t is before startOffset", () => {
++    const res = computeAudioPlayback({
++      t: 1,
++      sceneDuration: 6,
++      audioDuration: 10,
++      audio: { assetId: "a", startOffset: 2.5, trimOffset: 1 },
++    });
++    expect(res).toEqual({
++      active: true,
++      sourceOffset: 1,
++      delay: 1.5,
++      duration: 3.5, // min(6 - 2.5 = 3.5, 10 - 1 = 9)
++    });
++  });
++
++  it("computes correct sourceOffset and duration when t is in middle of audio", () => {
++    const res = computeAudioPlayback({
++      t: 3,
++      sceneDuration: 6,
++      audioDuration: 10,
++      audio: { assetId: "a", startOffset: 2, trimOffset: 1 },
++    });
++    expect(res).toEqual({
++      active: true,
++      sourceOffset: 2, // trimOffset (1) + (t - startOffset) (1)
++      delay: 0,
++      duration: 3, // maxPlayable (4) - 1
++    });
++  });
++
++  it("returns inactive when t is past audio end in scene", () => {
++    const res = computeAudioPlayback({
++      t: 4.5,
++      sceneDuration: 6,
++      audioDuration: 2, // 2s of audio starting at 1s ends at 3s
++      audio: { assetId: "a", startOffset: 1, trimOffset: 0 },
++    });
++    expect(res).toEqual({ active: false });
++  });
++});
+diff --git a/src/engine/audio/audio-timing.ts b/src/engine/audio/audio-timing.ts
+new file mode 100644
+index 0000000..a9101be
+--- /dev/null
++++ b/src/engine/audio/audio-timing.ts
+@@ -0,0 +1,84 @@
++import type { SceneAudio } from "../../model/model.ts";
++
++export type AudioPlaybackState =
++  | {
++      active: false;
++    }
++  | {
++      active: true;
++      /** Offset in seconds into the source audio file to start playing from. */
++      sourceOffset: number;
++      /** Delay in seconds before playing if scene playhead hasn't reached audio startOffset yet. */
++      delay: number;
++      /** Duration in seconds to play before cutting off (or end of scene loop). */
++      duration: number;
++    };
++
++export type AudioTimingOptions = {
++  /** Scene playhead time t in seconds (0 <= t < sceneDuration). */
++  t: number;
++  /** Total scene loop duration in seconds. */
++  sceneDuration: number;
++  /** Scene audio configuration. */
++  audio: SceneAudio;
++  /** Total duration in seconds of the source audio asset. */
++  audioDuration: number;
++};
++
++/**
++ * Calculates what audio slice to play when the scene is at time `t`.
++ * High-cohesion pure function: no Web Audio dependencies, fully deterministic.
++ */
++export function computeAudioPlayback(
++  options: AudioTimingOptions,
++): AudioPlaybackState {
++  const { t, sceneDuration, audio, audioDuration } = options;
++  const startOffset = Math.max(0, audio.startOffset ?? 0);
++  const trimOffset = Math.max(0, audio.trimOffset ?? 0);
++
++  // If startOffset is beyond the scene loop duration, it never plays
++  if (startOffset >= sceneDuration) {
++    return { active: false };
++  }
++
++  // Audio available duration from trimOffset
++  const availableAudio = Math.max(0, audioDuration - trimOffset);
++  if (availableAudio <= 0) {
++    return { active: false };
++  }
++
++  // Maximum time audio can play in the scene loop: min(sceneDuration - startOffset, availableAudio)
++  const maxPlayableDuration = Math.min(
++    sceneDuration - startOffset,
++    availableAudio,
++  );
++  if (maxPlayableDuration <= 0) {
++    return { active: false };
++  }
++
++  const audioEndInScene = startOffset + maxPlayableDuration;
++
++  if (t < startOffset) {
++    // Playhead is before the audio starts: will start after delay (startOffset - t)
++    return {
++      active: true,
++      sourceOffset: trimOffset,
++      delay: startOffset - t,
++      duration: maxPlayableDuration,
++    };
++  }
++
++  if (t >= audioEndInScene) {
++    // Playhead is past when audio has finished in this loop cycle
++    return { active: false };
++  }
++
++  // Playhead is inside the active audio range
++  const elapsedSinceStart = t - startOffset;
++  return {
++    active: true,
++    sourceOffset: trimOffset + elapsedSinceStart,
++    delay: 0,
++    duration: maxPlayableDuration - elapsedSinceStart,
++  };
++}
+diff --git a/src/engine/clip.ts b/src/engine/clip.ts
+index c342861..d850e5c 100644
+--- a/src/engine/clip.ts
++++ b/src/engine/clip.ts
+@@ -1,7 +1,11 @@
+ import { arrowPoints } from "../components/arrow/draw.ts";
+ import { badgeLayout } from "../components/badge/layout.ts";
+ import { frameOf } from "../components/path/draw.ts";
+-import { closedPath, cornerCount, radialPoints } from "../components/polygon/draw.ts";
++import {
++  closedPath,
++  cornerCount,
++  radialPoints,
++} from "../components/polygon/draw.ts";
+ import type { Element } from "../model/model.ts";
+ import type { AnimState } from "./anim.ts";
+ import { type Box, boxOf } from "./geometry.ts";
+diff --git a/src/engine/effects.test.ts b/src/engine/effects.test.ts
+index 4ccdf58..c6712a1 100644
+--- a/src/engine/effects.test.ts
++++ b/src/engine/effects.test.ts
+@@ -1,9 +1,9 @@
+ import { describe, expect, it } from "vitest";
+ import { defaultRect, defaultScene } from "../model/model.ts";
+-import { drawScene } from "./render.ts";
++import { installCanvasFakes, RecordingCtx } from "../test/recording-ctx.ts";
+ import { withEffects } from "./effects.ts";
+-import { RecordingCtx, installCanvasFakes } from "../test/recording-ctx.ts";
+ import type { Ctx } from "./paint.ts";
++import { drawScene } from "./render.ts";
+ 
+ installCanvasFakes();
+ 
+@@ -122,7 +122,14 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
+       const ctx = new RecordingCtx();
+       const scene = defaultScene();
+       scene.background = { ...scene.background, dots: false };
+-      const mask = { ...defaultRect(), id: `mask-${kind}`, x: 0, y: 0, w: 100, h: 100 };
++      const mask = {
++        ...defaultRect(),
++        id: `mask-${kind}`,
++        x: 0,
++        y: 0,
++        w: 100,
++        h: 100,
++      };
+       const el = {
+         ...createElement(kind),
+         id: `el-${kind}`,
+@@ -132,16 +139,28 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
+       drawScene(ctx as unknown as Ctx, scene, 0);
+ 
+       // Verify that clip, filter blur and blend were applied
+-      expect(ctx.log.some((l) => l.startsWith("clip(")), `${kind} has clip`).toBe(true);
+-      expect(ctx.log.includes("filter=(blur(10px))"), `${kind} has blur`).toBe(true);
+-      expect(ctx.log.includes("globalCompositeOperation=(multiply)"), `${kind} has blend`).toBe(true);
++      expect(
++        ctx.log.some((l) => l.startsWith("clip(")),
++        `${kind} has clip`,
++      ).toBe(true);
++      expect(ctx.log.includes("filter=(blur(10px))"), `${kind} has blur`).toBe(
++        true,
++      );
++      expect(
++        ctx.log.includes("globalCompositeOperation=(multiply)"),
++        `${kind} has blend`,
++      ).toBe(true);
+     }
+   });
+ 
+   it("applies blur, blend and mask to a test-only descriptor registered at runtime (025/T003, R3)", async () => {
+-    const { registerComponent, createElement } = await import("../components/index.ts");
++    const { registerComponent, createElement } = await import(
++      "../components/index.ts"
++    );
+     const { defineComponent } = await import("../components/descriptor.ts");
+-    const { BOX_ANIMS, anim, box } = await import("../components/fields/index.ts");
++    const { BOX_ANIMS, anim, box } = await import(
++      "../components/fields/index.ts"
++    );
+ 
+     const testKind = `custom-widget-${Date.now()}`;
+     const testFields = {
+@@ -166,13 +185,20 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
+     const ctx = new RecordingCtx();
+     const scene = defaultScene();
+     scene.background = { ...scene.background, dots: false };
+-    const mask = { ...defaultRect(), id: "mask-custom", x: 0, y: 0, w: 100, h: 100 };
++    const mask = {
++      ...defaultRect(),
++      id: "mask-custom",
++      x: 0,
++      y: 0,
++      w: 100,
++      h: 100,
++    };
+     const el = {
+-      ...createElement(testKind as never),
++      ...(createElement(testKind as never) as Record<string, unknown>),
+       id: "el-custom",
+       effects: { blur: 12, blend: "screen" as const, mask: "mask-custom" },
+     };
+-    scene.elements = [mask, el];
++    scene.elements = [mask, el as never];
+     drawScene(ctx as unknown as Ctx, scene, 0);
+ 
+     expect(ctx.log.some((l) => l.startsWith("clip("))).toBe(true);
+diff --git a/src/engine/effects.ts b/src/engine/effects.ts
+index 4796202..60d2e4d 100644
+--- a/src/engine/effects.ts
++++ b/src/engine/effects.ts
+@@ -10,7 +10,9 @@ export type ElementEffects = {
+  * Maps our BlendMode to Canvas 2D GlobalCompositeOperation.
+  * "normal" maps to "source-over".
+  */
+-export function compositeOperationOf(mode: BlendMode | undefined): GlobalCompositeOperation {
++export function compositeOperationOf(
++  mode: BlendMode | undefined,
++): GlobalCompositeOperation {
+   if (!mode || mode === "normal") return "source-over";
+   return mode as GlobalCompositeOperation;
+ }
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 5162960..76a7fc3 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -1,8 +1,8 @@
+ import { descriptorOf } from "../components/index.ts";
+ import type { Background, Element, Scene } from "../model/model.ts";
+ import { animate } from "./animate.ts";
+-import { withEffects } from "./effects.ts";
+ import { withMask } from "./clip.ts";
++import { withEffects } from "./effects.ts";
+ import { indexById, indexElements } from "./geometry.ts";
+ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+ 
+@@ -30,7 +30,8 @@ export function drawElements(
+   // Find all elements that act as a mask for any element in this scope
+   const maskIds = new Set<string>();
+   for (const el of elements) {
+-    const mask = (el as unknown as { effects?: { mask?: string } }).effects?.mask;
++    const mask = (el as unknown as { effects?: { mask?: string } }).effects
++      ?.mask;
+     if (mask) maskIds.add(mask);
+   }
+ 
+@@ -40,7 +41,15 @@ export function drawElements(
+     if (maskIds.has(el.id)) continue;
+ 
+     const now = animate(el, t, scene);
+-    const fx = (now.el as unknown as { effects?: { blur?: number; blend?: import("../components/fields/effects.ts").BlendMode; mask?: string } }).effects;
++    const fx = (
++      now.el as unknown as {
++        effects?: {
++          blur?: number;
++          blend?: import("../components/fields/effects.ts").BlendMode;
++          mask?: string;
++        };
++      }
++    ).effects;
+ 
+     const drawItem = () => {
+       withEffects(ctx, fx, () => {
+diff --git a/src/engine/subtitles/cue-timing.ts b/src/engine/subtitles/cue-timing.ts
+new file mode 100644
+index 0000000..2c3dd35
+--- /dev/null
++++ b/src/engine/subtitles/cue-timing.ts
+@@ -0,0 +1,29 @@
++import type { SubtitleCue, SubtitleWord } from "./types.ts";
++
++/**
++ * Finds the currently active subtitle cue at time `t` (in seconds).
++ * Returns undefined if no cue is active at time `t`.
++ */
++export function getActiveCue(cues: SubtitleCue[], t: number): SubtitleCue | undefined {
++  if (!cues || cues.length === 0) return undefined;
++  for (const cue of cues) {
++    if (t >= cue.start && t <= cue.end) {
++      return cue;
++    }
++  }
++  return undefined;
++}
++
++/**
++ * Determines whether a word in a cue is currently active at time `t`.
++ */
++export function isWordActive(word: SubtitleWord, t: number): boolean {
++  return t >= word.start && t <= word.end;
++}
++
++/**
++ * Determines if a word has already finished playing prior to time `t`.
++ */
++export function isWordCompleted(word: SubtitleWord, t: number): boolean {
++  return t > word.end;
++}
+diff --git a/src/engine/subtitles/index.ts b/src/engine/subtitles/index.ts
+new file mode 100644
+index 0000000..a47bcc7
+--- /dev/null
++++ b/src/engine/subtitles/index.ts
+@@ -0,0 +1,7 @@
++export * from "./cue-timing.ts";
++export * from "./layout.ts";
++export * from "./parsers/srt.ts";
++export * from "./parsers/vtt.ts";
++export * from "./types.ts";
++export * from "./word-window.ts";
++
+diff --git a/src/engine/subtitles/layout.ts b/src/engine/subtitles/layout.ts
+new file mode 100644
+index 0000000..53512cb
+--- /dev/null
++++ b/src/engine/subtitles/layout.ts
+@@ -0,0 +1,131 @@
++import type { SubtitleCue, SubtitleWord } from "./types.ts";
++
++export interface PositionedWord {
++  word: string;
++  x: number;
++  y: number;
++  width: number;
++  height: number;
++  timing?: SubtitleWord;
++}
++
++export interface SubtitleLine {
++  words: PositionedWord[];
++  text: string;
++  width: number;
++  y: number;
++}
++
++export interface SubtitleLayout {
++  lines: SubtitleLine[];
++  totalWidth: number;
++  totalHeight: number;
++}
++
++export interface MeasureTextFn {
++  (text: string): number;
++}
++
++/**
++ * Computes wrapped lines and word positions for a subtitle cue within maxWidth.
++ * Pure layout function: accepts a measureText callback so it runs identically
++ * in Canvas 2D preview, export, or headless tests.
++ */
++export function layoutSubtitleCue(
++  cue: SubtitleCue,
++  maxWidth: number,
++  lineHeight: number,
++  measureText: MeasureTextFn,
++  align: "left" | "center" | "right" = "center",
++): SubtitleLayout {
++  const wordsToLayout: { text: string; timing?: SubtitleWord }[] = [];
++
++  if (cue.words && cue.words.length > 0) {
++    for (const w of cue.words) {
++      wordsToLayout.push({ text: w.word, timing: w });
++    }
++  } else {
++    const rawTokens = cue.text.split(/\s+/).filter((s) => s.length > 0);
++    for (const token of rawTokens) {
++      wordsToLayout.push({ text: token });
++    }
++  }
++
++  if (wordsToLayout.length === 0) {
++    return { lines: [], totalWidth: 0, totalHeight: 0 };
++  }
++
++  const spaceWidth = measureText(" ");
++  const lines: SubtitleLine[] = [];
++  let currentLineWords: PositionedWord[] = [];
++  let currentLineWidth = 0;
++
++  for (const item of wordsToLayout) {
++    const wordWidth = measureText(item.text);
++    const addedWidth = currentLineWords.length > 0 ? spaceWidth + wordWidth : wordWidth;
++
++    if (currentLineWords.length > 0 && currentLineWidth + addedWidth > maxWidth) {
++      // Flush current line
++      lines.push({
++        words: currentLineWords,
++        text: currentLineWords.map((w) => w.word).join(" "),
++        width: currentLineWidth,
++        y: lines.length * lineHeight,
++      });
++      currentLineWords = [];
++      currentLineWidth = 0;
++    }
++
++    const wordX = currentLineWords.length > 0 ? currentLineWidth + spaceWidth : 0;
++    currentLineWords.push({
++      word: item.text,
++      x: wordX,
++      y: lines.length * lineHeight,
++      width: wordWidth,
++      height: lineHeight,
++      timing: item.timing,
++    });
++    currentLineWidth = wordX + wordWidth;
++  }
++
++  if (currentLineWords.length > 0) {
++    lines.push({
++      words: currentLineWords,
++      text: currentLineWords.map((w) => w.word).join(" "),
++      width: currentLineWidth,
++      y: lines.length * lineHeight,
++    });
++  }
++
++  // Calculate bounding box and apply horizontal alignment offset
++  let maxComputedWidth = 0;
++  for (const line of lines) {
++    if (line.width > maxComputedWidth) {
++      maxComputedWidth = line.width;
++    }
++  }
++
++  const totalWidth = Math.min(maxWidth, Math.max(maxComputedWidth, 0));
++  const totalHeight = lines.length * lineHeight;
++
++  for (const line of lines) {
++    let lineOffsetX = 0;
++    if (align === "center") {
++      lineOffsetX = (totalWidth - line.width) / 2;
++    } else if (align === "right") {
++      lineOffsetX = totalWidth - line.width;
++    }
++
++    if (lineOffsetX !== 0) {
++      for (const w of line.words) {
++        w.x += lineOffsetX;
++      }
++    }
++  }
++
++  return {
++    lines,
++    totalWidth,
++    totalHeight,
++  };
++}
+diff --git a/src/engine/subtitles/parsers/srt.test.ts b/src/engine/subtitles/parsers/srt.test.ts
+new file mode 100644
+index 0000000..6dcd4ca
+--- /dev/null
++++ b/src/engine/subtitles/parsers/srt.test.ts
+@@ -0,0 +1,61 @@
++import { describe, expect, it } from "vitest";
++import { parseSrt, parseSrtTimestamp, srtParser } from "./srt.ts";
++
++describe("parseSrtTimestamp", () => {
++  it("parses HH:MM:SS,mmm with comma", () => {
++    expect(parseSrtTimestamp("00:01:23,456")).toBeCloseTo(83.456);
++  });
++
++  it("parses HH:MM:SS.mmm with dot", () => {
++    expect(parseSrtTimestamp("01:00:00.500")).toBeCloseTo(3600.5);
++  });
++
++  it("parses MM:SS.mmm", () => {
++    expect(parseSrtTimestamp("02:15.200")).toBeCloseTo(135.2);
++  });
++});
++
++describe("parseSrt", () => {
++  it("parses standard multi-cue SRT string", () => {
++    const srt = `1
++00:00:01,000 --> 00:00:04,000
++Hola mundo!
++
++2
++00:00:04,500 --> 00:00:07,000
++Bienvenidos a Lienzo.
++Segunda línea.`;
++
++    const cues = parseSrt(srt);
++    expect(cues).toHaveLength(2);
++    expect(cues[0]).toEqual({
++      id: "1",
++      start: 1,
++      end: 4,
++      text: "Hola mundo!",
++    });
++    expect(cues[1]).toEqual({
++      id: "2",
++      start: 4.5,
++      end: 7,
++      text: "Bienvenidos a Lienzo. Segunda línea.",
++    });
++  });
++
++  it("handles UTF-8 BOM and Windows CRLF line breaks", () => {
++    const srt =
++      "\uFEFF1\r\n00:00:00,100 --> 00:00:02,000\r\nCon BOM y CRLF\r\n";
++    const cues = parseSrt(srt);
++    expect(cues).toHaveLength(1);
++    expect(cues[0].text).toBe("Con BOM y CRLF");
++    expect(cues[0].start).toBeCloseTo(0.1);
++    expect(cues[0].end).toBeCloseTo(2.0);
++  });
++
++  it("works through SubtitleParser interface", () => {
++    const srt = "00:00:00,000 --> 00:00:01,000\nPrueba sin número";
++    const cues = srtParser.parse(srt);
++    expect(cues).toHaveLength(1);
++    expect(cues[0].text).toBe("Prueba sin número");
++  });
++});
+diff --git a/src/engine/subtitles/parsers/srt.ts b/src/engine/subtitles/parsers/srt.ts
+new file mode 100644
+index 0000000..70cd8a1
+--- /dev/null
++++ b/src/engine/subtitles/parsers/srt.ts
+@@ -0,0 +1,77 @@
++import type { SubtitleCue, SubtitleParser } from "../types.ts";
++
++/**
++ * Parses an SRT timestamp format: HH:MM:SS,mmm or HH:MM:SS.mmm into fractional seconds.
++ */
++export function parseSrtTimestamp(timestamp: string): number {
++  const clean = timestamp.trim().replace(",", ".");
++  const parts = clean.split(":");
++  if (parts.length === 3) {
++    const hours = Number.parseFloat(parts[0]) || 0;
++    const minutes = Number.parseFloat(parts[1]) || 0;
++    const seconds = Number.parseFloat(parts[2]) || 0;
++    return hours * 3600 + minutes * 60 + seconds;
++  }
++  if (parts.length === 2) {
++    const minutes = Number.parseFloat(parts[0]) || 0;
++    const seconds = Number.parseFloat(parts[1]) || 0;
++    return minutes * 60 + seconds;
++  }
++  return Number.parseFloat(clean) || 0;
++}
++
++/**
++ * Pure SRT (SubRip) subtitle format parser.
++ * Handles standard line breaks, BOM markers, multi-line cue texts, and comma/dot milliseconds.
++ */
++export function parseSrt(content: string): SubtitleCue[] {
++  // Strip UTF-8 BOM if present
++  const normalized = content
++    .replace(/^\uFEFF/, "")
++    .replace(/\r\n/g, "\n")
++    .replace(/\r/g, "\n");
++  const blocks = normalized.split(/\n\s*\n/);
++  const cues: SubtitleCue[] = [];
++
++  for (const block of blocks) {
++    const lines = block
++      .split("\n")
++      .map((l) => l.trim())
++      .filter((l) => l.length > 0);
++    if (lines.length === 0) continue;
++
++    // Check if first line is numeric index or timestamp
++    let timeLineIndex = 0;
++    if (/^\d+$/.test(lines[0]) && lines.length > 1) {
++      timeLineIndex = 1;
++    }
++
++    const timeLine = lines[timeLineIndex];
++    if (!timeLine?.includes("-->")) {
++      continue;
++    }
++
++    const [startRaw, endRaw] = timeLine.split("-->").map((s) => s.trim());
++    const start = parseSrtTimestamp(startRaw);
++    const end = parseSrtTimestamp(endRaw);
++
++    const textLines = lines.slice(timeLineIndex + 1);
++    const text = textLines.join(" ");
++
++    if (text.length > 0 && !Number.isNaN(start) && !Number.isNaN(end)) {
++      cues.push({
++        id:
++          lines[0] && timeLineIndex === 1 ? lines[0] : `cue-${cues.length + 1}`,
++        start,
++        end,
++        text,
++      });
++    }
++  }
++
++  return cues;
++}
++
++export const srtParser: SubtitleParser = {
++  parse: parseSrt,
++};
+diff --git a/src/engine/subtitles/parsers/vtt.ts b/src/engine/subtitles/parsers/vtt.ts
+new file mode 100644
+index 0000000..43bb4c6
+--- /dev/null
++++ b/src/engine/subtitles/parsers/vtt.ts
+@@ -0,0 +1,131 @@
++import type { SubtitleCue, SubtitleParser, SubtitleWord } from "../types.ts";
++
++/**
++ * Parses a WebVTT timestamp format: MM:SS.mmm or HH:MM:SS.mmm into fractional seconds.
++ */
++export function parseVttTimestamp(timestamp: string): number {
++  const clean = timestamp.trim();
++  const parts = clean.split(":");
++  if (parts.length === 3) {
++    const hours = Number.parseFloat(parts[0]) || 0;
++    const minutes = Number.parseFloat(parts[1]) || 0;
++    const seconds = Number.parseFloat(parts[2]) || 0;
++    return hours * 3600 + minutes * 60 + seconds;
++  }
++  if (parts.length === 2) {
++    const minutes = Number.parseFloat(parts[0]) || 0;
++    const seconds = Number.parseFloat(parts[1]) || 0;
++    return minutes * 60 + seconds;
++  }
++  return Number.parseFloat(clean) || 0;
++}
++
++/**
++ * Parses word-level timestamps in WebVTT cues (e.g. `<00:01.200>word` or `word<00:01.200>`).
++ * Returns an array of SubtitleWords if karaoke tags are found.
++ */
++export function extractVttWords(
++  text: string,
++  cueStart: number,
++  cueEnd: number,
++): { cleanText: string; words?: SubtitleWord[] } {
++  // Check for inline timestamps like <00:01.500> or <00:00:01.500>
++  const tagRegex = /<(\d{2}:)?\d{2}:\d{2}\.\d{3}>/g;
++  if (!tagRegex.test(text)) {
++    return { cleanText: text };
++  }
++
++  // Parse token stream of words and timestamps
++  const tokens = text.split(/(<(?:\d{2}:)?\d{2}:\d{2}\.\d{3}>)/g).filter((t) => t.length > 0);
++  const words: SubtitleWord[] = [];
++  let currentStart = cueStart;
++
++  for (const token of tokens) {
++    const match = token.match(/^<((?:\d{2}:)?\d{2}:\d{2}\.\d{3})>$/);
++    if (match?.[1]) {
++      currentStart = parseVttTimestamp(match[1]);
++    } else {
++      const trimmed = token.trim();
++      if (trimmed.length > 0) {
++        words.push({
++          word: trimmed,
++          start: currentStart,
++          end: cueEnd, // Will be adjusted by subsequent word's start or final cueEnd
++        });
++      }
++    }
++  }
++
++  // Refine word end boundaries based on the next word's start
++  for (let i = 0; i < words.length - 1; i++) {
++    const nextStart = words[i + 1]?.start;
++    if (nextStart !== undefined && nextStart > words[i]!.start) {
++      words[i]!.end = nextStart;
++    }
++  }
++
++  const cleanText = text.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
++  return {
++    cleanText,
++    words: words.length > 0 ? words : undefined,
++  };
++}
++
++/**
++ * Pure WebVTT subtitle format parser with karaoke / word-level timing support.
++ */
++export function parseVtt(content: string): SubtitleCue[] {
++  const normalized = content.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
++  const blocks = normalized.split(/\n\s*\n/);
++  const cues: SubtitleCue[] = [];
++
++  for (const block of blocks) {
++    const lines = block
++      .split("\n")
++      .map((l) => l.trim())
++      .filter((l) => l.length > 0);
++    if (lines.length === 0) continue;
++
++    // Skip WEBVTT header and NOTE / STYLE blocks
++    if (lines[0]?.startsWith("WEBVTT") || lines[0]?.startsWith("NOTE") || lines[0]?.startsWith("STYLE")) {
++      continue;
++    }
++
++    let timeLineIndex = 0;
++    if (!lines[0]?.includes("-->") && lines.length > 1) {
++      timeLineIndex = 1;
++    }
++
++    const timeLine = lines[timeLineIndex];
++    if (!timeLine?.includes("-->")) {
++      continue;
++    }
++
++    const [startRaw, rest] = timeLine.split("-->").map((s) => s.trim());
++    // Strip cue settings (e.g. line:0% position:50% align:center)
++    const endRaw = rest?.split(/\s+/)[0] ?? "";
++    const start = parseVttTimestamp(startRaw ?? "");
++    const end = parseVttTimestamp(endRaw);
++
++    const rawTextLines = lines.slice(timeLineIndex + 1);
++    const rawText = rawTextLines.join(" ");
++
++    const { cleanText, words } = extractVttWords(rawText, start, end);
++
++    if (cleanText.length > 0 && !Number.isNaN(start) && !Number.isNaN(end)) {
++      cues.push({
++        id: lines[0] && timeLineIndex === 1 ? lines[0] : `cue-${cues.length + 1}`,
++        start,
++        end,
++        text: cleanText,
++        words,
++      });
++    }
++  }
++
++  return cues;
++}
++
++export const vttParser: SubtitleParser = {
++  parse: parseVtt,
++};
+diff --git a/src/engine/subtitles/subtitles.test.ts b/src/engine/subtitles/subtitles.test.ts
+new file mode 100644
+index 0000000..7595646
+--- /dev/null
++++ b/src/engine/subtitles/subtitles.test.ts
+@@ -0,0 +1,244 @@
++import { describe, expect, it } from "vitest";
++import { drawSubtitles } from "../../components/subtitles/draw.ts";
++import { getActiveCue, isWordActive } from "./cue-timing.ts";
++import { layoutSubtitleCue } from "./layout.ts";
++import { parseSrt } from "./parsers/srt.ts";
++import { extractVttWords, parseVtt } from "./parsers/vtt.ts";
++import type { SubtitleCue } from "./types.ts";
++import { paginateCueForTime } from "./word-window.ts";
++
++describe("Subtitles domain tests", () => {
++  const sampleCues: SubtitleCue[] = [
++    {
++      id: "cue-1",
++      start: 0,
++      end: 2,
++      text: "Hola mundo",
++      words: [
++        { word: "Hola", start: 0, end: 1 },
++        { word: "mundo", start: 1, end: 2 },
++      ],
++    },
++    {
++      id: "cue-2",
++      start: 2,
++      end: 4,
++      text: "Segunda frase",
++    },
++  ];
++
++  it("resolves active cue and active word deterministically at time t", () => {
++    // Before first cue
++    expect(getActiveCue(sampleCues, -1)).toBeUndefined();
++
++    // In first cue, first word
++    const cue1 = getActiveCue(sampleCues, 0.5);
++    expect(cue1?.id).toBe("cue-1");
++    expect(isWordActive(cue1!.words![0]!, 0.5)).toBe(true);
++    expect(isWordActive(cue1!.words![1]!, 0.5)).toBe(false);
++
++    // In first cue, second word
++    expect(isWordActive(cue1!.words![0]!, 1.5)).toBe(false);
++    expect(isWordActive(cue1!.words![1]!, 1.5)).toBe(true);
++
++    // In second cue
++    const cue2 = getActiveCue(sampleCues, 3);
++    expect(cue2?.id).toBe("cue-2");
++
++    // After all cues
++    expect(getActiveCue(sampleCues, 5)).toBeUndefined();
++  });
++
++  it("computes word wrapping layout deterministically", () => {
++    const cue: SubtitleCue = {
++      start: 0,
++      end: 2,
++      text: "Uno Dos Tres Cuatro",
++      words: [
++        { word: "Uno", start: 0, end: 0.5 },
++        { word: "Dos", start: 0.5, end: 1 },
++        { word: "Tres", start: 1, end: 1.5 },
++        { word: "Cuatro", start: 1.5, end: 2 },
++      ],
++    };
++
++    // Mock measureText: length of string * 10
++    const measure = (s: string) => s.length * 10;
++    const spaceWidth = 10;
++    // Each word is ~3-6 chars (30-60px) + space (10px).
++    // maxWidth 90px forces wrapping across multiple lines
++    const layout = layoutSubtitleCue(cue, 90, 30, measure, "center");
++
++    expect(layout.lines.length).toBeGreaterThan(1);
++    expect(layout.totalHeight).toBe(layout.lines.length * 30);
++    expect(layout.lines[0]?.words[0]?.word).toBe("Uno");
++  });
++
++  it("parses WebVTT with word karaoke timing tags", () => {
++    const vtt = `WEBVTT
++
++00:00:01.000 --> 00:00:03.000
++<00:01.000>Hola <00:01.500>mundo <00:02.000>viral
++`;
++    const parsed = parseVtt(vtt);
++    expect(parsed).toHaveLength(1);
++    expect(parsed[0]?.text).toBe("Hola mundo viral");
++    expect(parsed[0]?.words).toHaveLength(3);
++    expect(parsed[0]?.words?.[0]?.word).toBe("Hola");
++    expect(parsed[0]?.words?.[0]?.start).toBeCloseTo(1.0);
++    expect(parsed[0]?.words?.[1]?.word).toBe("mundo");
++    expect(parsed[0]?.words?.[1]?.start).toBeCloseTo(1.5);
++    expect(parsed[0]?.words?.[2]?.word).toBe("viral");
++    expect(parsed[0]?.words?.[2]?.start).toBeCloseTo(2.0);
++  });
++
++  it("extracts clean text and words when karaoke tags are absent", () => {
++    const extracted = extractVttWords("Texto simple sin tags", 0, 5);
++    expect(extracted.cleanText).toBe("Texto simple sin tags");
++    expect(extracted.words).toBeUndefined();
++  });
++
++  it("draws subtitles deterministically positioned at element coordinates", () => {
++    const el = {
++      id: "sub-1",
++      kind: "subtitles" as const,
++      x: 100,
++      y: 200,
++      w: 600,
++      h: 120,
++      cues: [
++        {
++          id: "c1",
++          start: 0,
++          end: 2,
++          text: "Prueba de alineación",
++        },
++      ],
++      font: "Inter",
++      size: 32,
++      weight: 700,
++      textColor: "#ffffff",
++      align: "center" as const,
++      maxWidth: 600,
++      lineHeight: 1.2,
++      highlightColor: "#facc15",
++      highlightScale: 1,
++      background: true,
++      bgColor: "#000000",
++      bgOpacity: 0.8,
++      paddingX: 10,
++      paddingY: 10,
++      radius: 8,
++      animPreset: "none",
++    };
++
++    const drawnTexts: { text: string; x: number; y: number }[] = [];
++    const drawnRects: { x: number; y: number; w: number; h: number }[] = [];
++
++    const mockCtx = {
++      save: () => {},
++      restore: () => {},
++      measureText: (text: string) => ({ width: text.length * 10 }),
++      font: "",
++      textBaseline: "",
++      fillStyle: "",
++      globalAlpha: 1,
++      translate: () => {},
++      scale: () => {},
++      rotate: () => {},
++      transform: () => {},
++      beginPath: () => {},
++      rect: (x: number, y: number, w: number, h: number) => {
++        drawnRects.push({ x, y, w, h });
++      },
++      fill: () => {},
++      fillText: (text: string, x: number, y: number) => {
++        drawnTexts.push({ text, x, y });
++      },
++    };
++
++    drawSubtitles(
++      mockCtx as never,
++      el as never,
++      {
++        alpha: 1,
++        dx: 0,
++        dy: 0,
++        scale: 1,
++        scaleX: 1,
++        scaleY: 1,
++        rotate: 0,
++        skewX: 0,
++        skewY: 0,
++        glowMul: 1,
++        progress: 1,
++        reveal: 1,
++        revealUnit: "char",
++        revealSoft: false,
++      },
++      {
++        scene: {
++          width: 1080,
++          height: 1920,
++          fps: 30,
++          duration: 5,
++          elements: [],
++        } as never,
++        t: 1,
++        byId: new Map(),
++        drawElements: () => {},
++      },
++    );
++
++    expect(drawnTexts.length).toBeGreaterThan(0);
++    // Ensure all drawn coordinates start at or within el.x and el.y
++    for (const dt of drawnTexts) {
++      expect(dt.x).toBeGreaterThanOrEqual(el.x);
++      expect(dt.y).toBeGreaterThanOrEqual(el.y);
++    }
++    if (drawnRects.length > 0) {
++      expect(drawnRects[0]?.x).toBeGreaterThanOrEqual(el.x - el.paddingX);
++      expect(drawnRects[0]?.y).toBeGreaterThanOrEqual(el.y - el.paddingY);
++    }
++  });
++
++  it("paginates long cues into active word window to prevent overflow (R3@2, D2@3)", () => {
++    const longCue: SubtitleCue = {
++      id: "cue-long",
++      start: 0,
++      end: 10,
++      text: "Uno dos tres cuatro cinco seis siete ocho nueve diez",
++      words: [
++        { word: "Uno", start: 0, end: 1 },
++        { word: "dos", start: 1, end: 2 },
++        { word: "tres", start: 2, end: 3 },
++        { word: "cuatro", start: 3, end: 4 },
++        { word: "cinco", start: 4, end: 5 },
++        { word: "seis", start: 5, end: 6 },
++        { word: "siete", start: 6, end: 7 },
++        { word: "ocho", start: 7, end: 8 },
++        { word: "nueve", start: 8, end: 9 },
++        { word: "diez", start: 9, end: 10 },
++      ],
++    };
++
++    // At t=0.5 (first page, words 0..3)
++    const page1 = paginateCueForTime(longCue, 0.5, { wordsPerWindow: 4 });
++    expect(page1.words).toHaveLength(4);
++    expect(page1.words?.[0]?.word).toBe("Uno");
++    expect(page1.words?.[3]?.word).toBe("cuatro");
++
++    // At t=5.5 (second page, words 4..7)
++    const page2 = paginateCueForTime(longCue, 5.5, { wordsPerWindow: 4 });
++    expect(page2.words).toHaveLength(4);
++    expect(page2.words?.[0]?.word).toBe("cinco");
++    expect(page2.words?.[3]?.word).toBe("ocho");
++
++    // At t=8.5 (third page, words 8..9)
++    const page3 = paginateCueForTime(longCue, 8.5, { wordsPerWindow: 4 });
++    expect(page3.words).toHaveLength(2);
++    expect(page3.words?.[0]?.word).toBe("nueve");
++    expect(page3.words?.[1]?.word).toBe("diez");
++  });
++});
++
+diff --git a/src/engine/subtitles/types.ts b/src/engine/subtitles/types.ts
+new file mode 100644
+index 0000000..edaf5ea
+--- /dev/null
++++ b/src/engine/subtitles/types.ts
+@@ -0,0 +1,34 @@
++/**
++ * Subtitle domain types and models.
++ * Pure types representing timed captions and word-level karaoke timestamps.
++ */
++
++export interface SubtitleWord {
++  /** The word text. */
++  word: string;
++  /** Start time in seconds relative to scene timeline. */
++  start: number;
++  /** End time in seconds relative to scene timeline. */
++  end: number;
++}
++
++export interface SubtitleCue {
++  /** Unique identifier for the cue (e.g. index or generated id). */
++  id?: string;
++  /** Start time in seconds relative to scene timeline. */
++  start: number;
++  /** End time in seconds relative to scene timeline. */
++  end: number;
++  /** Full cue text. */
++  text: string;
++  /** Optional word-level breakdown for karaoke timing. */
++  words?: SubtitleWord[];
++}
++
++/**
++ * Standard interface for subtitle parsers.
++ */
++export interface SubtitleParser {
++  /** Parse raw subtitle content into an array of SubtitleCues. */
++  parse(content: string): SubtitleCue[];
++}
+diff --git a/src/engine/subtitles/word-window.ts b/src/engine/subtitles/word-window.ts
+new file mode 100644
+index 0000000..4835931
+--- /dev/null
++++ b/src/engine/subtitles/word-window.ts
+@@ -0,0 +1,87 @@
++import type { SubtitleCue, SubtitleWord } from "./types.ts";
++
++export interface WordWindowOptions {
++  /** Maximum number of lines allowed (e.g. calculated from container height: Math.max(1, Math.floor(h / lineHeight))). */
++  maxLines?: number;
++  /** Maximum number of words to display in one active window (e.g. 3 to 6 words). */
++  wordsPerWindow?: number;
++}
++
++/**
++ * Paginates cue words into a window of words that fit within the active timing and container size.
++ * Pure function adhering to Principle 1 (SRP) and Principle 5 (Pure function).
++ *
++ * For word-timed cues, it identifies the active word at time `t`, chunks words into
++ * small pages (respecting wordsPerWindow or line budgets), and returns a virtual SubtitleCue
++ * containing only the active page with its original timings preserved.
++ */
++export function paginateCueForTime(
++  cue: SubtitleCue,
++  t: number,
++  options: WordWindowOptions = {},
++): SubtitleCue {
++  const words = cue.words;
++  if (!words || words.length === 0) {
++    // Untimed word cues: split text into chunks based on wordsPerWindow
++    const rawWords = cue.text.split(/\s+/).filter((s) => s.length > 0);
++    const chunkSize = Math.max(1, options.wordsPerWindow ?? 4);
++    if (rawWords.length <= chunkSize) {
++      return cue;
++    }
++
++    // Proportionally paginate across the cue duration
++    const cueDuration = Math.max(0.1, cue.end - cue.start);
++    const progress = Math.max(0, Math.min(1, (t - cue.start) / cueDuration));
++    const totalChunks = Math.ceil(rawWords.length / chunkSize);
++    const chunkIndex = Math.min(
++      totalChunks - 1,
++      Math.floor(progress * totalChunks),
++    );
++    const selectedWords = rawWords.slice(
++      chunkIndex * chunkSize,
++      (chunkIndex + 1) * chunkSize,
++    );
++
++    return {
++      ...cue,
++      text: selectedWords.join(" "),
++      words: undefined,
++    };
++  }
++
++  const chunkSize = Math.max(1, options.wordsPerWindow ?? 4);
++  if (words.length <= chunkSize) {
++    return cue;
++  }
++
++  // Find index of currently active word at time `t`
++  let activeIndex = -1;
++  for (let i = 0; i < words.length; i++) {
++    const w = words[i] as SubtitleWord;
++    if (t >= w.start && t <= w.end) {
++      activeIndex = i;
++      break;
++    }
++    if (t < w.start && activeIndex === -1) {
++      activeIndex = Math.max(0, i - 1);
++      break;
++    }
++  }
++
++  if (activeIndex === -1) {
++    // If playhead is after all words or before, clamp
++    activeIndex = t > (words[words.length - 1]?.end ?? 0) ? words.length - 1 : 0;
++  }
++
++  // Group into pages of chunkSize
++  const pageIndex = Math.floor(activeIndex / chunkSize);
++  const startIdx = pageIndex * chunkSize;
++  const endIdx = Math.min(words.length, startIdx + chunkSize);
++  const pagedWords = words.slice(startIdx, endIdx);
++
++  return {
++    ...cue,
++    text: pagedWords.map((w) => w.word).join(" "),
++    words: pagedWords,
++  };
++}
+diff --git a/src/export/export.ts b/src/export/export.ts
+index 9b3245a..9dd73bb 100644
+--- a/src/export/export.ts
++++ b/src/export/export.ts
+@@ -1,4 +1,5 @@
+-import { loadSceneAssets } from "../engine/assets.ts";
++import { assetFor, loadAudioBuffer, loadSceneAssets } from "../engine/assets.ts";
++import { prepareAudioBufferForExport } from "../engine/audio/audio-export.ts";
+ import { drawScene } from "../engine/render.ts";
+ import type { Scene } from "../model/model.ts";
+ import type { FrameEncoder } from "./frame-encoder.ts";
+@@ -53,10 +54,34 @@ export async function exportScene(
+     render(options.time);
+     return canvas.convertToBlob({ type: "image/png" });
+   }
++  let videoOptions: {
++    audioBuffer?: AudioBuffer | null;
++    audioStartOffset?: number;
++  } = {};
++  if (options.format === "mp4" && scene.audio?.assetId) {
++    let rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
++    if (!rawAudio) {
++      rawAudio = (await loadAudioBuffer(scene.audio.assetId)) ?? undefined;
++    }
++    if (rawAudio) {
++      const prepared = prepareAudioBufferForExport(
++        rawAudio,
++        scene.duration,
++        scene.audio,
++      );
++      if (prepared) {
++        videoOptions = {
++          audioBuffer: prepared.buffer,
++          audioStartOffset: prepared.startOffset,
++        };
++      }
++    }
++  }
++
+   const encoder =
+     options.format === "gif"
+       ? createGifEncoder(ctx, options.fps)
+-      : await createVideoEncoder(canvas, options.fps);
++      : await createVideoEncoder(canvas, options.fps, videoOptions);
+   return encodeFrames(encoder, render, scene.duration, options.fps, onProgress);
+ }
+ 
+diff --git a/src/export/video-encoder.ts b/src/export/video-encoder.ts
+index 1d7de3e..235ab17 100644
+--- a/src/export/video-encoder.ts
++++ b/src/export/video-encoder.ts
+@@ -1,6 +1,8 @@
+ import {
++  AudioBufferSource,
+   BufferTarget,
+   CanvasSource,
++  canEncodeAudio,
+   canEncodeVideo,
+   Mp4OutputFormat,
+   Output,
+@@ -9,10 +11,16 @@ import {
+ } from "mediabunny";
+ import type { FrameEncoder } from "./frame-encoder.ts";
+ 
++export type VideoEncoderOptions = {
++  audioBuffer?: AudioBuffer | null;
++  audioStartOffset?: number;
++};
++
+ /** A video of `canvas` (mediabunny): H.264 MP4 when the browser can encode it, else WebM. */
+ export async function createVideoEncoder(
+   canvas: OffscreenCanvas,
+   fps: number,
++  options: VideoEncoderOptions = {},
+ ): Promise<FrameEncoder> {
+   const size = { width: canvas.width, height: canvas.height };
+   const useMp4 = await canEncodeVideo("avc", {
+@@ -30,7 +38,39 @@ export async function createVideoEncoder(
+     quality: QUALITY_HIGH,
+   });
+   output.addVideoTrack(source, { frameRate: fps });
++
++  let audioSource: AudioBufferSource | null = null;
++  if (options.audioBuffer) {
++    const preferredCodec = useMp4 ? "aac" : "opus";
++    const canUsePreferred = await canEncodeAudio(preferredCodec, {
++      numberOfChannels: options.audioBuffer.numberOfChannels,
++      sampleRate: options.audioBuffer.sampleRate,
++    });
++    // Fallback: If preferred codec is unavailable in MP4, use uncompressed PCM (pcm-s16)
++    const audioCodec = canUsePreferred
++      ? preferredCodec
++      : useMp4
++        ? "pcm-s16"
++        : "opus";
++
++    audioSource = new AudioBufferSource(
++      {
++        codec: audioCodec,
++        quality: QUALITY_HIGH,
++      },
++      {
++        startTimestamp: options.audioStartOffset ?? 0,
++      },
++    );
++    output.addAudioTrack(audioSource);
++  }
++
+   await output.start();
++
++  if (audioSource && options.audioBuffer) {
++    await audioSource.add(options.audioBuffer);
++  }
++
+   return {
+     add: (t) => source.add(t, 1 / fps),
+     async finish() {
+diff --git a/src/model/model.ts b/src/model/model.ts
+index e5d4ba4..0952a4d 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -51,6 +51,13 @@ export type Background = {
+   spotlightColor: string;
+ };
+ 
++export type SceneAudio = {
++  assetId: string;
++  volume?: number;
++  startOffset?: number;
++  trimOffset?: number;
++};
++
+ export type Scene = {
+   width: number;
+   height: number;
+@@ -59,6 +66,7 @@ export type Scene = {
+   fps: number;
+   background: Background;
+   elements: Element[];
++  audio?: SceneAudio;
+ };
+ 
+ export { FONTS } from "./fonts.ts";
+diff --git a/src/model/scene-audio.test.ts b/src/model/scene-audio.test.ts
+new file mode 100644
+index 0000000..31c3581
+--- /dev/null
++++ b/src/model/scene-audio.test.ts
+@@ -0,0 +1,113 @@
++import { describe, expect, it } from "vitest";
++import { defaultScene } from "./model.ts";
++import { parseScene } from "./schema.ts";
++
++describe("scene audio schema validation", () => {
++  it("validates a scene with a valid audio track (R1)", () => {
++    const scene = {
++      ...defaultScene(),
++      audio: {
++        assetId: "/assets/test.mp3",
++        volume: 0.8,
++        startOffset: 1.5,
++        trimOffset: 0.5,
++      },
++    };
++    const res = parseScene(scene);
++    expect(res.ok).toBe(true);
++    if (res.ok) {
++      expect(res.value.audio?.assetId).toBe("/assets/test.mp3");
++      expect(res.value.audio?.volume).toBe(0.8);
++      expect(res.value.audio?.startOffset).toBe(1.5);
++      expect(res.value.audio?.trimOffset).toBe(0.5);
++    }
++  });
++
++  it("allows audio with only assetId (defaults volume, startOffset, trimOffset)", () => {
++    const scene = {
++      ...defaultScene(),
++      audio: {
++        assetId: "/assets/minimal.wav",
++      },
++    };
++    const res = parseScene(scene);
++    expect(res.ok).toBe(true);
++  });
++
++  it("rejects invalid volume out of 0..1 range", () => {
++    const scene = {
++      ...defaultScene(),
++      audio: {
++        assetId: "/assets/test.mp3",
++        volume: 1.5,
++      },
++    };
++    const res = parseScene(scene);
++    expect(res.ok).toBe(false);
++    if (!res.ok) {
++      expect(res.path).toBe("audio.volume");
++    }
++  });
++
++  it("rejects negative startOffset", () => {
++    const scene = {
++      ...defaultScene(),
++      audio: {
++        assetId: "/assets/test.mp3",
++        startOffset: -1,
++      },
++    };
++    const res = parseScene(scene);
++    expect(res.ok).toBe(false);
++    if (!res.ok) {
++      expect(res.path).toBe("audio.startOffset");
++    }
++  });
++
++  it("rejects empty assetId", () => {
++    const scene = {
++      ...defaultScene(),
++      audio: {
++        assetId: "",
++      },
++    };
++    const res = parseScene(scene);
++    expect(res.ok).toBe(false);
++    if (!res.ok) {
++      expect(res.path).toBe("audio.assetId");
++    }
++  });
++
++  it("prepares AudioBuffer for video export matching duration and startOffset (R4)", async () => {
++    const { prepareAudioBufferForExport } = await import(
++      "../engine/audio/audio-export.ts"
++    );
++
++    // Mock AudioBuffer
++    const sampleRate = 44100;
++    const length = sampleRate * 4; // 4 seconds
++    const channelData = new Float32Array(length).fill(0.5);
++    const mockBuffer = {
++      sampleRate,
++      numberOfChannels: 1,
++      duration: 4,
++      length,
++      getChannelData: () => channelData,
++    } as unknown as AudioBuffer;
++
++    const prepared = prepareAudioBufferForExport(mockBuffer, 5, {
++      assetId: "/assets/test.mp3",
++      volume: 0.8,
++      startOffset: 1,
++      trimOffset: 0.5,
++    });
++
++    expect(prepared).not.toBeNull();
++    if (prepared) {
++      expect(prepared.startOffset).toBe(1);
++      expect(prepared.buffer.sampleRate).toBe(44100);
++      expect(prepared.buffer.duration).toBeCloseTo(3.5, 1);
++    }
++  });
++});
++
+diff --git a/src/model/schema.ts b/src/model/schema.ts
+index d2408f7..60b2092 100644
+--- a/src/model/schema.ts
++++ b/src/model/schema.ts
+@@ -25,6 +25,13 @@ export const BackgroundSchema = z.object({
+   spotlightColor: color,
+ });
+ 
++export const SceneAudioSchema = z.object({
++  assetId: z.string().min(1),
++  volume: z.number().min(0).max(1).optional(),
++  startOffset: z.number().min(0).optional(),
++  trimOffset: z.number().min(0).optional(),
++});
++
+ export const SceneSchema: z.ZodType<Scene> = z.object({
+   width: z.number().positive(),
+   height: z.number().positive(),
+@@ -32,6 +39,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
+   fps: z.number().positive(),
+   background: BackgroundSchema,
+   elements: z.array(ElementSchema),
++  audio: SceneAudioSchema.optional(),
+ });
+ 
+ const traitParam = z.union([z.string(), z.number(), z.boolean()]);
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index deab5c4..80c021c 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -111,6 +111,12 @@ export const MODEL_FILES = {
+   error: "Formato no admitido: usa un modelo .glb",
+ };
+ 
++/** Audio files for scene audio tracks (.mp3, .wav, .aac, .ogg). */
++export const AUDIO_FILES = {
++  exts: ["mp3", "wav", "aac", "ogg"],
++  error: "Formato no admitido: usa MP3, WAV, AAC u OGG",
++};
++
+ /**
+  * Uploads a file into `assets/` (named by its content hash) and returns its URL path; an
+  * image unless `accepted` says otherwise.
+diff --git a/src/service/tools/element-remove.ts b/src/service/tools/element-remove.ts
+index dc7d07c..e946694 100644
+--- a/src/service/tools/element-remove.ts
++++ b/src/service/tools/element-remove.ts
+@@ -16,7 +16,8 @@ export const elementRemove = defineTool({
+         elements: s.elements
+           .filter((_, j) => j !== i)
+           .map((el) => {
+-            const fx = (el as unknown as { effects?: { mask?: string } }).effects;
++            const fx = (el as unknown as { effects?: { mask?: string } })
++              .effects;
+             if (fx && fx.mask === removedId) {
+               return {
+                 ...el,
+diff --git a/src/service/tools/index.ts b/src/service/tools/index.ts
+index 3b5203a..592352d 100644
+--- a/src/service/tools/index.ts
++++ b/src/service/tools/index.ts
+@@ -21,6 +21,7 @@ import { sceneGet } from "./scene-get.ts";
+ import { sceneInspectLayout } from "./scene-inspect-layout.ts";
+ import { sceneList } from "./scene-list.ts";
+ import { scenePreview } from "./scene-preview.ts";
++import { sceneGenerateSpeech } from "./scene-generate-speech.ts";
+ import { sceneValidate } from "./scene-validate.ts";
+ 
+ export const TOOLS: readonly Tool[] = [
+@@ -43,6 +44,7 @@ export const TOOLS: readonly Tool[] = [
+   backgroundSet,
+   keyframeSet,
+   keyframeRemove,
++  sceneGenerateSpeech,
+ ];
+ 
+ export const registry = createRegistry(TOOLS);
+diff --git a/src/service/tools/scene-generate-speech.ts b/src/service/tools/scene-generate-speech.ts
+new file mode 100644
+index 0000000..0d413c4
+--- /dev/null
++++ b/src/service/tools/scene-generate-speech.ts
+@@ -0,0 +1,138 @@
++import { z } from "zod";
++import { defineTool, fail } from "../registry.ts";
++import { editScene, SceneResult } from "../scenes.ts";
++import { saveAudioAsset } from "../tts/asset-store.ts";
++import {
++  resolveDefaultTtsModel,
++  resolveDefaultTtsVoice,
++  resolveOpenRouterApiKey,
++  resolveOpenRouterBaseUrl,
++} from "../tts/config.ts";
++import { OpenRouterTtsAdapter } from "../tts/openrouter-adapter.ts";
++import { attachSpeechToScene } from "../tts/scene-audio.ts";
++import { alignScriptToCues } from "../tts/speech-alignment.ts";
++import type { TtsService } from "../tts/types.ts";
++
++export interface SceneGenerateSpeechOptions {
++  ttsService?: TtsService;
++}
++
++/**
++ * Creates the `scene_generate_speech` tool with an optional injected TtsService (D5, R6).
++ * Follows Principle 3 (Dependency Inversion / anti-corruption) and Principle 2 (Composition).
++ */
++export function createSceneGenerateSpeechTool(
++  options: SceneGenerateSpeechOptions = {},
++) {
++  const ttsService = options.ttsService ?? new OpenRouterTtsAdapter();
++
++  return defineTool({
++    name: "scene_generate_speech",
++    description:
++      "Generate synthetic voiceover narration from a text script using OpenRouter TTS " +
++      "and attach the resulting audio and synchronized subtitle cues to a scene.",
++    input: z.object({
++      scene: z.string().min(1),
++      script: z.string().min(1),
++      voice: z.string().optional(),
++      model: z.string().optional(),
++      baseUrl: z.string().optional(),
++      speed: z.number().min(0.25).max(4.0).default(1.0),
++      apiKey: z.string().optional(),
++      volume: z.number().min(0).max(1).default(1.0),
++      startOffset: z.number().min(0).default(0),
++      adjustSceneDuration: z.boolean().default(true),
++      subtitles: z.boolean().default(true),
++    }),
++    output: SceneResult.extend({
++      assetId: z.string(),
++      audioDuration: z.number(),
++      cuesCount: z.number(),
++    }),
++    async run(input, ctx) {
++      // 1. Resolve model, voice, apiKey, baseUrl with environment fallbacks (R1, R2, R6)
++      const model = resolveDefaultTtsModel(input.model);
++      const voice = resolveDefaultTtsVoice(input.voice);
++      const apiKey = resolveOpenRouterApiKey(input.apiKey);
++      const baseUrl = input.baseUrl
++        ? resolveOpenRouterBaseUrl(input.baseUrl)
++        : undefined;
++
++      // 2. Synthesize speech using the injected TTS service
++      let speechResult: import("../tts/types.ts").SynthesizeSpeechResult;
++      try {
++        speechResult = await ttsService.synthesizeSpeech({
++          text: input.script,
++          voice,
++          model,
++          speed: input.speed,
++          format: "mp3",
++          apiKey,
++          baseUrl,
++        });
++      } catch (err) {
++        return fail(
++          "tts_generation_failed",
++          err instanceof Error ? err.message : String(err),
++          "script",
++        );
++      }
++
++      // 3. Estimate or calculate duration
++      // An MP3 audio buffer average ~16-24 KB per second (128kbps = 16,000 bytes/sec)
++      // When durationSeconds is not directly returned by the service, estimate duration from byte size or speech length
++      const estimatedDuration =
++        speechResult.durationSeconds && speechResult.durationSeconds > 0
++          ? speechResult.durationSeconds
++          : Math.max(
++              1,
++              Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
++            );
++
++      // 4. Save audio buffer into assets/
++      let assetId: string;
++      try {
++        assetId = await saveAudioAsset(
++          ctx.root,
++          speechResult.audioBuffer,
++          speechResult.format,
++        );
++      } catch (err) {
++        return fail(
++          "asset_save_failed",
++          `No se pudo guardar el archivo de audio: ${err instanceof Error ? err.message : String(err)}`,
++          "scene",
++        );
++      }
++
++      // 5. Generate subtitle cues if requested
++      const cues = input.subtitles
++        ? alignScriptToCues(input.script, {
++            totalDuration: estimatedDuration,
++            startOffset: input.startOffset,
++          })
++        : undefined;
++
++      // 6. Attach audio and subtitles to scene
++      const editResult = await editScene(ctx, input.scene, (scene) =>
++        attachSpeechToScene(scene, {
++          assetId,
++          audioDuration: estimatedDuration,
++          volume: input.volume,
++          startOffset: input.startOffset,
++          adjustSceneDuration: input.adjustSceneDuration,
++          cues,
++        }),
++      );
++
++      return {
++        ...editResult,
++        assetId,
++        audioDuration: estimatedDuration,
++        cuesCount: cues ? cues.length : 0,
++      };
++    },
++  });
++}
++
++export const sceneGenerateSpeech = createSceneGenerateSpeechTool();
+diff --git a/src/service/tts/asset-store.ts b/src/service/tts/asset-store.ts
+new file mode 100644
+index 0000000..70a48a5
+--- /dev/null
++++ b/src/service/tts/asset-store.ts
+@@ -0,0 +1,27 @@
++import { createHash } from "node:crypto";
++import { mkdir, writeFile } from "node:fs/promises";
++import { join } from "node:path";
++
++/**
++ * Saves binary asset data to `assets/<hash>.<ext>` at the repository root.
++ * Returns the asset path `/assets/<hash>.<ext>`.
++ */
++export async function saveAudioAsset(
++  root: string,
++  audioBuffer: Uint8Array,
++  format: string,
++): Promise<string> {
++  const dir = join(root, "assets");
++  await mkdir(dir, { recursive: true });
++
++  const ext = format.toLowerCase().trim() || "mp3";
++  const hash = createHash("sha256")
++    .update(audioBuffer)
++    .digest("hex")
++    .slice(0, 16);
++  const fileName = `${hash}.${ext}`;
++  const filePath = join(dir, fileName);
++
++  await writeFile(filePath, audioBuffer);
++  return `/assets/${fileName}`;
++}
+diff --git a/src/service/tts/config.ts b/src/service/tts/config.ts
+new file mode 100644
+index 0000000..9c21257
+--- /dev/null
++++ b/src/service/tts/config.ts
+@@ -0,0 +1,196 @@
++/**
++ * OpenRouter configuration loader, environment resolution, and runtime defaults (D1, R1, R2).
++ * Follows Principle 1 (SRP) and Principle 3 (Anti-Corruption / Dependency Inversion).
++ *
++ * Resolves configuration following precedence:
++ * 1. Explicit override passed in options (e.g. CLI flag, tool argument, dialog input)
++ * 2. Process environment variables (`process.env.OPENROUTER_*`) loaded via native `process.loadEnvFile`
++ * 3. Client-side Vite environment variables (`import.meta.env.VITE_OPENROUTER_*`)
++ * 4. Browser localStorage (for API key in editor)
++ * 5. Hardcoded default fallbacks
++ */
++
++export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/audio/speech";
++export const STORAGE_KEY_OPENROUTER_API_KEY = "lienzo_openrouter_api_key";
++export const DEFAULT_TTS_MODEL = "openai/tts-1";
++export const DEFAULT_TTS_VOICE = "alloy";
++
++export interface TtsSettings {
++  apiKey?: string;
++  baseUrl?: string;
++  defaultModel?: string;
++  defaultVoice?: string;
++}
++
++export interface TtsRuntimeConfig {
++  apiKey: string;
++  baseUrl: string;
++  defaultModel: string;
++  defaultVoice: string;
++}
++
++/**
++ * Safely loads environment variables from a .env file using native Node.js
++ * `process.loadEnvFile()` if supported (Node 20.12+, Node 24).
++ * Silently ignores ENOENT if the file does not exist.
++ */
++export function loadEnvSafely(envPath?: string): void {
++  if (
++    typeof process !== "undefined" &&
++    typeof (process as unknown as { loadEnvFile?: (path?: string) => void })
++      .loadEnvFile === "function"
++  ) {
++    try {
++      const loader = (
++        process as unknown as { loadEnvFile: (path?: string) => void }
++      ).loadEnvFile;
++      if (envPath) {
++        loader(envPath);
++      } else {
++        loader();
++      }
++    } catch {
++      // Ignore missing .env or unreadable file errors
++    }
++  }
++}
++
++// Automatically load default .env if running in Node
++loadEnvSafely();
++
++/**
++ * Reads an environment variable checking process.env (Node) then import.meta.env (Vite).
++ */
++export function getEnvVariable(name: string): string | undefined {
++  // 1. Check Node process.env
++  if (typeof process !== "undefined" && process.env?.[name]) {
++    const val = process.env[name]?.trim();
++    if (val && val.length > 0) return val;
++  }
++
++  // 2. Check Vite / browser import.meta.env (with or without VITE_ prefix)
++  try {
++    const metaEnv = (import.meta as unknown as { env?: Record<string, string> })
++      ?.env;
++    if (metaEnv) {
++      const direct = metaEnv[name]?.trim();
++      if (direct && direct.length > 0) return direct;
++
++      const viteName = `VITE_${name}`;
++      const viteVal = metaEnv[viteName]?.trim();
++      if (viteVal && viteVal.length > 0) return viteVal;
++    }
++  } catch {
++    // In environments where import.meta is not accessible
++  }
++
++  return undefined;
++}
++
++/**
++ * Resolves the OpenRouter API key from explicit value, process.env / Vite env, or localStorage.
++ */
++export function resolveOpenRouterApiKey(explicitKey?: string): string {
++  if (explicitKey && explicitKey.trim().length > 0) {
++    return explicitKey.trim();
++  }
++
++  // Environment check (OPENROUTER_API_KEY or VITE_OPENROUTER_API_KEY)
++  const envKey = getEnvVariable("OPENROUTER_API_KEY");
++  if (envKey) return envKey;
++
++  // Browser localStorage check
++  if (typeof window !== "undefined" && window.localStorage) {
++    try {
++      const stored = window.localStorage.getItem(
++        STORAGE_KEY_OPENROUTER_API_KEY,
++      );
++      if (stored && stored.trim().length > 0) {
++        return stored.trim();
++      }
++    } catch {
++      // LocalStorage access may fail in restricted/private modes
++    }
++  }
++
++  return "";
++}
++
++/**
++ * Resolves the OpenRouter speech API base URL.
++ * Falls back to OPENROUTER_API_BASE_URL env var, then default OPENROUTER_API_URL.
++ */
++export function resolveOpenRouterBaseUrl(explicitBaseUrl?: string): string {
++  if (explicitBaseUrl && explicitBaseUrl.trim().length > 0) {
++    return explicitBaseUrl.trim();
++  }
++
++  const envUrl = getEnvVariable("OPENROUTER_API_BASE_URL");
++  if (envUrl) return envUrl;
++
++  return OPENROUTER_API_URL;
++}
++
++/**
++ * Resolves the default TTS model name.
++ * Falls back to OPENROUTER_TTS_MODEL env var, then "openai/tts-1".
++ */
++export function resolveDefaultTtsModel(explicitModel?: string): string {
++  if (explicitModel && explicitModel.trim().length > 0) {
++    return explicitModel.trim();
++  }
++
++  const envModel = getEnvVariable("OPENROUTER_TTS_MODEL");
++  if (envModel) return envModel;
++
++  return DEFAULT_TTS_MODEL;
++}
++
++/**
++ * Resolves the default TTS voice name.
++ * Falls back to OPENROUTER_TTS_VOICE env var, then "alloy".
++ */
++export function resolveDefaultTtsVoice(explicitVoice?: string): string {
++  if (explicitVoice && explicitVoice.trim().length > 0) {
++    return explicitVoice.trim();
++  }
++
++  const envVoice = getEnvVariable("OPENROUTER_TTS_VOICE");
++  if (envVoice) return envVoice;
++
++  return DEFAULT_TTS_VOICE;
++}
++
++/**
++ * Aggregates complete runtime configuration for TTS services.
++ */
++export function resolveTtsRuntimeConfig(
++  overrides?: Partial<TtsSettings>,
++): TtsRuntimeConfig {
++  return {
++    apiKey: resolveOpenRouterApiKey(overrides?.apiKey),
++    baseUrl: resolveOpenRouterBaseUrl(overrides?.baseUrl),
++    defaultModel: resolveDefaultTtsModel(overrides?.defaultModel),
++    defaultVoice: resolveDefaultTtsVoice(overrides?.defaultVoice),
++  };
++}
++
++/**
++ * Saves OpenRouter API key to localStorage (for editor client settings).
++ */
++export function persistOpenRouterApiKey(apiKey: string): void {
++  if (typeof window !== "undefined" && window.localStorage) {
++    try {
++      if (apiKey.trim().length > 0) {
++        window.localStorage.setItem(
++          STORAGE_KEY_OPENROUTER_API_KEY,
++          apiKey.trim(),
++        );
++      } else {
++        window.localStorage.removeItem(STORAGE_KEY_OPENROUTER_API_KEY);
++      }
++    } catch {
++      // Ignore storage errors in browser sandbox
++    }
++  }
++}
+diff --git a/src/service/tts/openrouter-adapter.ts b/src/service/tts/openrouter-adapter.ts
+new file mode 100644
+index 0000000..ff325bc
+--- /dev/null
++++ b/src/service/tts/openrouter-adapter.ts
+@@ -0,0 +1,98 @@
++import { resolveOpenRouterApiKey, resolveOpenRouterBaseUrl } from "./config.ts";
++import {
++  POPULAR_TTS_MODELS,
++  type SynthesizeSpeechRequest,
++  type SynthesizeSpeechResult,
++  type TtsModel,
++  type TtsService,
++} from "./types.ts";
++
++/**
++ * OpenRouter implementation of TtsService (D2, R2, R3).
++ * Follows Principle 3 (Service Layer + Anti-Corruption / Dependency Inversion).
++ */
++export class OpenRouterTtsAdapter implements TtsService {
++  constructor(
++    private readonly defaultApiKey?: string,
++    private readonly baseUrl?: string,
++    private readonly fetchFn: typeof fetch = globalThis.fetch.bind(globalThis),
++  ) {}
++
++  async listModels(): Promise<TtsModel[]> {
++    return POPULAR_TTS_MODELS;
++  }
++
++  async synthesizeSpeech(
++    request: SynthesizeSpeechRequest,
++  ): Promise<SynthesizeSpeechResult> {
++    const apiKey = resolveOpenRouterApiKey(
++      request.apiKey || this.defaultApiKey,
++    );
++    if (!apiKey) {
++      throw new Error(
++        "Clave de API de OpenRouter no configurada. Configura OPENROUTER_API_KEY o proporciónala en la petición.",
++      );
++    }
++
++    if (!request.text || request.text.trim().length === 0) {
++      throw new Error("El texto a sintetizar no puede estar vacío.");
++    }
++
++    const endpoint = resolveOpenRouterBaseUrl(request.baseUrl || this.baseUrl);
++
++    const model = request.model || "openai/tts-1";
++    const voice = request.voice || "alloy";
++    const responseFormat = request.format || "mp3";
++    const speed = request.speed ?? 1.0;
++
++    const payload = {
++      model,
++      input: request.text,
++      voice,
++      response_format: responseFormat,
++      speed,
++    };
++
++    const response = await this.fetchFn(endpoint, {
++      method: "POST",
++      headers: {
++        Authorization: `Bearer ${apiKey}`,
++        "Content-Type": "application/json",
++        "HTTP-Referer": "https://lienzo.editor",
++        "X-Title": "Lienzo Video Editor",
++      },
++      body: JSON.stringify(payload),
++    });
++
++    if (!response.ok) {
++      let errorMsg = `Error de OpenRouter TTS (${response.status} ${response.statusText})`;
++      try {
++        const errorJson = (await response.json()) as {
++          error?: { message?: string };
++        };
++        if (errorJson?.error?.message) {
++          errorMsg = `${errorMsg}: ${errorJson.error.message}`;
++        }
++      } catch {
++        // Fallback to text status
++      }
++      throw new Error(errorMsg);
++    }
++
++    const arrayBuffer = await response.arrayBuffer();
++    const audioBuffer = new Uint8Array(arrayBuffer);
++
++    const mimeMap: Record<string, string> = {
++      mp3: "audio/mpeg",
++      wav: "audio/wav",
++      aac: "audio/aac",
++      opus: "audio/opus",
++    };
++
++    return {
++      audioBuffer,
++      mimeType: mimeMap[responseFormat] || "audio/mpeg",
++      format: responseFormat,
++    };
++  }
++}
+diff --git a/src/service/tts/preferences.ts b/src/service/tts/preferences.ts
+new file mode 100644
+index 0000000..d3f9ec2
+--- /dev/null
++++ b/src/service/tts/preferences.ts
+@@ -0,0 +1,125 @@
++/**
++ * Browser UI preferences persistence for Text-to-Speech (D3, R5).
++ * Follows Principle 1 (SRP) and Principle 4 (KISS/YAGNI).
++ *
++ * Saves and restores user selections in `localStorage` so creators don't need
++ * to reconfigure models, voices, speed, or options between runs.
++ */
++
++import {
++  DEFAULT_TTS_MODEL,
++  DEFAULT_TTS_VOICE,
++  STORAGE_KEY_OPENROUTER_API_KEY,
++} from "./config.ts";
++
++export const STORAGE_KEY_TTS_PREFERENCES = "lienzo_tts_ui_preferences";
++
++export interface TtsUiPreferences {
++  apiKey?: string;
++  model: string;
++  voice: string;
++  speed: number;
++  generateSubtitles: boolean;
++  adjustDuration: boolean;
++  isCustomModel?: boolean;
++  isCustomVoice?: boolean;
++}
++
++export const DEFAULT_TTS_PREFERENCES: TtsUiPreferences = {
++  model: DEFAULT_TTS_MODEL,
++  voice: DEFAULT_TTS_VOICE,
++  speed: 1.0,
++  generateSubtitles: true,
++  adjustDuration: true,
++  isCustomModel: false,
++  isCustomVoice: false,
++};
++
++/**
++ * Loads saved TTS preferences from localStorage with fallback to defaults.
++ */
++export function loadTtsPreferences(): TtsUiPreferences {
++  if (typeof window === "undefined" || !window.localStorage) {
++    return { ...DEFAULT_TTS_PREFERENCES };
++  }
++
++  let prefs: Partial<TtsUiPreferences> = {};
++  try {
++    const raw = window.localStorage.getItem(STORAGE_KEY_TTS_PREFERENCES);
++    if (raw) {
++      prefs = JSON.parse(raw);
++    }
++  } catch {
++    // Fall back to defaults on parse error or security restriction
++  }
++
++  // Backwards compatibility check for existing API key key
++  let apiKey = prefs.apiKey;
++  if (!apiKey) {
++    try {
++      const storedKey = window.localStorage.getItem(
++        STORAGE_KEY_OPENROUTER_API_KEY,
++      );
++      if (storedKey && storedKey.trim().length > 0) {
++        apiKey = storedKey.trim();
++      }
++    } catch {
++      // Ignore
++    }
++  }
++
++  return {
++    apiKey: apiKey || "",
++    model: prefs.model || DEFAULT_TTS_PREFERENCES.model,
++    voice: prefs.voice || DEFAULT_TTS_PREFERENCES.voice,
++    speed:
++      typeof prefs.speed === "number"
++        ? prefs.speed
++        : DEFAULT_TTS_PREFERENCES.speed,
++    generateSubtitles:
++      typeof prefs.generateSubtitles === "boolean"
++        ? prefs.generateSubtitles
++        : DEFAULT_TTS_PREFERENCES.generateSubtitles,
++    adjustDuration:
++      typeof prefs.adjustDuration === "boolean"
++        ? prefs.adjustDuration
++        : DEFAULT_TTS_PREFERENCES.adjustDuration,
++    isCustomModel: Boolean(prefs.isCustomModel),
++    isCustomVoice: Boolean(prefs.isCustomVoice),
++  };
++}
++
++/**
++ * Saves current TTS preferences to localStorage.
++ */
++export function saveTtsPreferences(prefs: Partial<TtsUiPreferences>): void {
++  if (typeof window === "undefined" || !window.localStorage) {
++    return;
++  }
++
++  try {
++    const current = loadTtsPreferences();
++    const updated: TtsUiPreferences = {
++      ...current,
++      ...prefs,
++    };
++    window.localStorage.setItem(
++      STORAGE_KEY_TTS_PREFERENCES,
++      JSON.stringify(updated),
++    );
++
++    // Keep legacy single API key in sync if provided
++    if (typeof prefs.apiKey === "string") {
++      if (prefs.apiKey.trim().length > 0) {
++        window.localStorage.setItem(
++          STORAGE_KEY_OPENROUTER_API_KEY,
++          prefs.apiKey.trim(),
++        );
++      } else {
++        window.localStorage.removeItem(STORAGE_KEY_OPENROUTER_API_KEY);
++      }
++    }
++  } catch {
++    // Ignore localStorage quota or private-mode errors
++  }
++}
+diff --git a/src/service/tts/scene-audio.ts b/src/service/tts/scene-audio.ts
+new file mode 100644
+index 0000000..ddf82c2
+--- /dev/null
++++ b/src/service/tts/scene-audio.ts
+@@ -0,0 +1,81 @@
++import { createElement } from "../../components/index.ts";
++import type { SubtitlesEl } from "../../components/subtitles/descriptor.ts";
++import type { SubtitleCue } from "../../engine/subtitles/types.ts";
++import type { Scene } from "../../model/model.ts";
++
++export interface AttachSpeechOptions {
++  /** The asset ID or URL where the generated audio is stored. */
++  assetId: string;
++  /** The measured or estimated duration of the audio in seconds. */
++  audioDuration: number;
++  /** Volume 0..1 (default: 1.0). */
++  volume?: number;
++  /** Start offset in seconds relative to scene timeline (default: 0). */
++  startOffset?: number;
++  /** Whether to adjust scene.duration to match speech length (default: true). */
++  adjustSceneDuration?: boolean;
++  /** Optional generated subtitle cues to attach to a subtitles element. */
++  cues?: SubtitleCue[];
++}
++
++/**
++ * Pure function that attaches speech audio to a scene (D3, R4, R5).
++ * Updates `scene.audio`, optionally adjusts `scene.duration`, and creates/updates
++ * a `subtitles` component if cues are supplied.
++ * Implements Principle 1 (SRP) and Principle 5 (Pure function).
++ */
++export function attachSpeechToScene(
++  scene: Scene,
++  options: AttachSpeechOptions,
++): Scene {
++  const {
++    assetId,
++    audioDuration,
++    volume = 1.0,
++    startOffset = 0,
++    adjustSceneDuration = true,
++    cues,
++  } = options;
++
++  let newDuration = scene.duration;
++  if (adjustSceneDuration && audioDuration > 0) {
++    const requiredDuration = Math.round((startOffset + audioDuration + 0.2) * 10) / 10;
++    newDuration = Math.max(scene.duration, requiredDuration);
++  }
++
++  const updatedAudio = {
++    assetId,
++    volume,
++    startOffset,
++  };
++
++  let updatedElements = [...scene.elements];
++
++  // If cues are provided, update existing subtitles element or create a new one
++  if (cues && cues.length > 0) {
++    const existingIndex = updatedElements.findIndex((el) => el.kind === "subtitles");
++
++    if (existingIndex >= 0) {
++      const existing = updatedElements[existingIndex] as SubtitlesEl;
++      const updatedSubtitles: SubtitlesEl = {
++        ...existing,
++        cues,
++      };
++      updatedElements[existingIndex] = updatedSubtitles;
++    } else {
++      const newSubtitles = createElement("subtitles");
++      newSubtitles.cues = cues;
++      // Position subtitle near the bottom-center of the scene
++      newSubtitles.x = Math.round((scene.width - newSubtitles.w) / 2);
++      newSubtitles.y = Math.round(scene.height - newSubtitles.h - 40);
++      updatedElements.push(newSubtitles);
++    }
++  }
++
++  return {
++    ...scene,
++    duration: newDuration,
++    audio: updatedAudio,
++    elements: updatedElements,
++  };
++}
+diff --git a/src/service/tts/speech-alignment.ts b/src/service/tts/speech-alignment.ts
+new file mode 100644
+index 0000000..62b93fe
+--- /dev/null
++++ b/src/service/tts/speech-alignment.ts
+@@ -0,0 +1,126 @@
++import type { SubtitleCue, SubtitleWord } from "../../engine/subtitles/types.ts";
++
++/**
++ * Splits text into sentence/phrase chunks appropriate for subtitle cues.
++ */
++export function splitIntoSentences(text: string): string[] {
++  const trimmed = text.trim();
++  if (!trimmed) return [];
++
++  // Match sentence terminators (. ! ? ; \n) while keeping words together
++  const rawChunks = trimmed
++    .split(/(?<=[.!?;\n])\s+/)
++    .map((s) => s.trim())
++    .filter((s) => s.length > 0);
++
++  const sentences: string[] = [];
++  for (const chunk of rawChunks) {
++    // If a chunk is exceptionally long (> 12 words), subdivide it by commas or length
++    const words = chunk.split(/\s+/).filter(Boolean);
++    if (words.length > 12) {
++      let current: string[] = [];
++      for (const w of words) {
++        current.push(w);
++        if (
++          (w.endsWith(",") || current.length >= 8) &&
++          current.length >= 4
++        ) {
++          sentences.push(current.join(" "));
++          current = [];
++        }
++      }
++      if (current.length > 0) {
++        sentences.push(current.join(" "));
++      }
++    } else {
++      sentences.push(chunk);
++    }
++  }
++
++  return sentences;
++}
++
++/**
++ * Options for pure script-to-cue alignment.
++ */
++export interface AlignScriptOptions {
++  /** Total audio duration in seconds. */
++  totalDuration: number;
++  /** Initial delay before speech starts in seconds (default: 0). */
++  startOffset?: number;
++  /** Silence/padding between cues in seconds (default: 0.1). */
++  gap?: number;
++}
++
++/**
++ * Converts a text script and total audio duration into synchronized SubtitleCue[] (D4, R5).
++ * Uses character-weight proportional timing and word breakdown for karaoke rendering.
++ * Pure function adhering to Principle 1 (SRP) and Principle 5 (Pure function).
++ */
++export function alignScriptToCues(
++  script: string,
++  options: AlignScriptOptions,
++): SubtitleCue[] {
++  const { totalDuration, startOffset = 0, gap = 0.08 } = options;
++  const sentences = splitIntoSentences(script);
++
++  if (sentences.length === 0 || totalDuration <= 0) {
++    return [];
++  }
++
++  // Weight each sentence by character length
++  const charCounts = sentences.map((s) => Math.max(1, s.length));
++  const totalChars = charCounts.reduce((acc, c) => acc + c, 0);
++
++  // Available speech duration accounting for start offset and gaps
++  const totalGapsDuration = Math.max(0, (sentences.length - 1) * gap);
++  const netDuration = Math.max(
++    0.1 * sentences.length,
++    totalDuration - startOffset - totalGapsDuration,
++  );
++
++  let currentTime = startOffset;
++  const cues: SubtitleCue[] = [];
++
++  for (let i = 0; i < sentences.length; i++) {
++    const text = sentences[i];
++    const cueDuration = (charCounts[i] / totalChars) * netDuration;
++    const cueStart = Math.round(currentTime * 100) / 100;
++    const cueEnd = Math.round((cueStart + cueDuration) * 100) / 100;
++
++    // Build word-level breakdowns within the cue
++    const words = text.split(/\s+/).filter(Boolean);
++    const wordCharCounts = words.map((w) => Math.max(1, w.length));
++    const wordTotalChars = wordCharCounts.reduce((acc, c) => acc + c, 0);
++
++    let wordCurrentTime = cueStart;
++    const cueWords: SubtitleWord[] = [];
++
++    for (let w = 0; w < words.length; w++) {
++      const wText = words[w];
++      const wDuration = (wordCharCounts[w] / wordTotalChars) * cueDuration;
++      const wStart = Math.round(wordCurrentTime * 100) / 100;
++      const wEnd = Math.round((wStart + wDuration) * 100) / 100;
++
++      cueWords.push({
++        word: wText,
++        start: wStart,
++        end: wEnd,
++      });
++
++      wordCurrentTime += wDuration;
++    }
++
++    cues.push({
++      id: `cue-${i + 1}`,
++      start: cueStart,
++      end: cueEnd,
++      text,
++      words: cueWords,
++    });
++
++    currentTime = cueEnd + gap;
++  }
++
++  return cues;
++}
+diff --git a/src/service/tts/tts-config.test.ts b/src/service/tts/tts-config.test.ts
+new file mode 100644
+index 0000000..5a88c3c
+--- /dev/null
++++ b/src/service/tts/tts-config.test.ts
+@@ -0,0 +1,277 @@
++import { beforeEach, describe, expect, it } from "vitest";
++import { defaultScene } from "../../model/model.ts";
++import type { Ctx } from "../ctx.ts";
++import { createSceneGenerateSpeechTool } from "../tools/scene-generate-speech.ts";
++import {
++  DEFAULT_TTS_MODEL,
++  DEFAULT_TTS_VOICE,
++  loadEnvSafely,
++  OPENROUTER_API_URL,
++  resolveDefaultTtsModel,
++  resolveDefaultTtsVoice,
++  resolveOpenRouterApiKey,
++  resolveOpenRouterBaseUrl,
++  resolveTtsRuntimeConfig,
++} from "./config.ts";
++import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
++import {
++  DEFAULT_TTS_PREFERENCES,
++  loadTtsPreferences,
++  saveTtsPreferences,
++} from "./preferences.ts";
++import type { SynthesizeSpeechRequest, TtsService } from "./types.ts";
++
++describe("Runtime environment loading and resolution (R1, R2, D1)", () => {
++  beforeEach(() => {
++    delete process.env.OPENROUTER_API_KEY;
++    delete process.env.OPENROUTER_API_BASE_URL;
++    delete process.env.OPENROUTER_TTS_MODEL;
++    delete process.env.OPENROUTER_TTS_VOICE;
++  });
++
++  it("loadEnvSafely runs without error even if .env file does not exist", () => {
++    expect(() => loadEnvSafely("/non/existent/path/.env")).not.toThrow();
++  });
++
++  it("resolves API key from process.env", () => {
++    process.env.OPENROUTER_API_KEY = "sk-env-key-123";
++    expect(resolveOpenRouterApiKey()).toBe("sk-env-key-123");
++  });
++
++  it("resolves base URL with fallback to default and env override", () => {
++    expect(resolveOpenRouterBaseUrl()).toBe(OPENROUTER_API_URL);
++
++    process.env.OPENROUTER_API_BASE_URL = "https://custom.proxy/api/speech";
++    expect(resolveOpenRouterBaseUrl()).toBe("https://custom.proxy/api/speech");
++
++    // Explicit override takes precedence
++    expect(resolveOpenRouterBaseUrl("https://explicit.proxy/api/speech")).toBe(
++      "https://explicit.proxy/api/speech",
++    );
++  });
++
++  it("resolves default model from env or falls back to standard model", () => {
++    expect(resolveDefaultTtsModel()).toBe(DEFAULT_TTS_MODEL);
++
++    process.env.OPENROUTER_TTS_MODEL = "elevenlabs/eleven_multilingual_v2";
++    expect(resolveDefaultTtsModel()).toBe("elevenlabs/eleven_multilingual_v2");
++
++    expect(resolveDefaultTtsModel("custom/model-id")).toBe("custom/model-id");
++  });
++
++  it("resolves default voice from env or falls back to standard voice", () => {
++    expect(resolveDefaultTtsVoice()).toBe(DEFAULT_TTS_VOICE);
++
++    process.env.OPENROUTER_TTS_VOICE = "rachel";
++    expect(resolveDefaultTtsVoice()).toBe("rachel");
++
++    expect(resolveDefaultTtsVoice("custom-voice")).toBe("custom-voice");
++  });
++
++  it("resolveTtsRuntimeConfig aggregates all resolved configuration", () => {
++    process.env.OPENROUTER_API_KEY = "sk-config-key";
++    process.env.OPENROUTER_API_BASE_URL = "https://my-proxy.com";
++    process.env.OPENROUTER_TTS_MODEL = "openai/tts-1-hd";
++    process.env.OPENROUTER_TTS_VOICE = "shimmer";
++
++    const config = resolveTtsRuntimeConfig();
++    expect(config.apiKey).toBe("sk-config-key");
++    expect(config.baseUrl).toBe("https://my-proxy.com");
++    expect(config.defaultModel).toBe("openai/tts-1-hd");
++    expect(config.defaultVoice).toBe("shimmer");
++  });
++});
++
++describe("Dynamic base URL support in OpenRouter adapter (R2, D2)", () => {
++  it("uses custom baseUrl passed to synthesizeSpeech", async () => {
++    let requestedUrl = "";
++    const fakeAudioData = new Uint8Array([10, 20, 30]);
++
++    const mockFetch = async (url: RequestInfo | URL) => {
++      requestedUrl = String(url);
++      return new Response(fakeAudioData.buffer, {
++        status: 200,
++        headers: { "Content-Type": "audio/mpeg" },
++      });
++    };
++
++    const adapter = new OpenRouterTtsAdapter(
++      "test-key",
++      "https://default-endpoint.com/speech",
++      mockFetch as unknown as typeof fetch,
++    );
++
++    const result = await adapter.synthesizeSpeech({
++      text: "Testing custom base URL",
++      voice: "alloy",
++      baseUrl: "https://per-request.endpoint/v1/speech",
++    });
++
++    expect(requestedUrl).toBe("https://per-request.endpoint/v1/speech");
++    expect(result.audioBuffer.length).toBe(3);
++  });
++});
++
++describe("Browser UI preferences persistence (R5, D3)", () => {
++  // Simple mock storage for Node vitest environment
++  const mockStorage: Record<string, string> = {};
++  const fakeLocalStorage = {
++    getItem: (k: string) => mockStorage[k] ?? null,
++    setItem: (k: string, v: string) => {
++      mockStorage[k] = v;
++    },
++    removeItem: (k: string) => {
++      delete mockStorage[k];
++    },
++    clear: () => {
++      for (const k of Object.keys(mockStorage)) delete mockStorage[k];
++    },
++  };
++
++  beforeEach(() => {
++    fakeLocalStorage.clear();
++    // @ts-expect-error
++    globalThis.window = { localStorage: fakeLocalStorage };
++  });
++
++  it("loads default preferences when localStorage is empty", () => {
++    const prefs = loadTtsPreferences();
++    expect(prefs.model).toBe(DEFAULT_TTS_PREFERENCES.model);
++    expect(prefs.voice).toBe(DEFAULT_TTS_PREFERENCES.voice);
++    expect(prefs.speed).toBe(1.0);
++    expect(prefs.generateSubtitles).toBe(true);
++    expect(prefs.adjustDuration).toBe(true);
++  });
++
++  it("saves and reloads updated preferences", () => {
++    saveTtsPreferences({
++      model: "mistralai/mistral-speech",
++      voice: "custom-speaker",
++      speed: 1.25,
++      generateSubtitles: false,
++      adjustDuration: false,
++      isCustomModel: true,
++      isCustomVoice: true,
++    });
++
++    const loaded = loadTtsPreferences();
++    expect(loaded.model).toBe("mistralai/mistral-speech");
++    expect(loaded.voice).toBe("custom-speaker");
++    expect(loaded.speed).toBe(1.25);
++    expect(loaded.generateSubtitles).toBe(false);
++    expect(loaded.adjustDuration).toBe(false);
++    expect(loaded.isCustomModel).toBe(true);
++    expect(loaded.isCustomVoice).toBe(true);
++  });
++});
++
++describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => {
++  beforeEach(() => {
++    delete process.env.OPENROUTER_TTS_MODEL;
++    delete process.env.OPENROUTER_TTS_VOICE;
++    delete process.env.OPENROUTER_API_KEY;
++  });
++
++  it("falls back to environment variables when model and voice are not specified", async () => {
++    process.env.OPENROUTER_TTS_MODEL = "env-model-id";
++    process.env.OPENROUTER_TTS_VOICE = "env-voice-id";
++    process.env.OPENROUTER_API_KEY = "env-api-key";
++
++    let capturedRequest: SynthesizeSpeechRequest | undefined;
++
++    const fakeTtsService: TtsService = {
++      listModels: async () => [],
++      synthesizeSpeech: async (req) => {
++        capturedRequest = req;
++        return {
++          audioBuffer: new Uint8Array(100),
++          format: "mp3",
++          mimeType: "audio/mpeg",
++          durationSeconds: 2.0,
++        };
++      },
++    };
++
++    const tool = createSceneGenerateSpeechTool({ ttsService: fakeTtsService });
++
++    // Mock context
++    const fakeCtx = {
++      root: "/tmp",
++      store: {
++        animPresets: async () => [],
++        readScene: async () => defaultScene(),
++        writeScene: async () => "test-scene",
++      },
++    };
++
++    const result = await tool.run(
++      {
++        scene: "test-scene",
++        script: "Hello world script",
++        speed: 1.0,
++        volume: 1.0,
++        startOffset: 0,
++        adjustSceneDuration: true,
++        subtitles: true,
++      },
++      fakeCtx as unknown as Ctx,
++    );
++
++    expect(capturedRequest).toBeDefined();
++    expect(capturedRequest?.model).toBe("env-model-id");
++    expect(capturedRequest?.voice).toBe("env-voice-id");
++    expect(capturedRequest?.apiKey).toBe("env-api-key");
++    expect((result as unknown as { assetId: string }).assetId).toBeDefined();
++  });
++
++  it("prefers explicit arguments over environment variables", async () => {
++    process.env.OPENROUTER_TTS_MODEL = "env-model-id";
++    process.env.OPENROUTER_TTS_VOICE = "env-voice-id";
++
++    let capturedRequest: SynthesizeSpeechRequest | undefined;
++
++    const fakeTtsService: TtsService = {
++      listModels: async () => [],
++      synthesizeSpeech: async (req) => {
++        capturedRequest = req;
++        return {
++          audioBuffer: new Uint8Array(100),
++          format: "mp3",
++          mimeType: "audio/mpeg",
++          durationSeconds: 2.0,
++        };
++      },
++    };
++
++    const tool = createSceneGenerateSpeechTool({ ttsService: fakeTtsService });
++
++    const fakeCtx = {
++      root: "/tmp",
++      store: {
++        animPresets: async () => [],
++        readScene: async () => defaultScene(),
++        writeScene: async () => "test-scene",
++      },
++    };
++
++    await tool.run(
++      {
++        scene: "test-scene",
++        script: "Explicit script",
++        model: "explicit-model",
++        voice: "explicit-voice",
++        apiKey: "explicit-key",
++        speed: 1.0,
++        volume: 1.0,
++        startOffset: 0,
++        adjustSceneDuration: true,
++        subtitles: true,
++      },
++      fakeCtx as unknown as Ctx,
++    );
++
++    expect(capturedRequest?.model).toBe("explicit-model");
++    expect(capturedRequest?.voice).toBe("explicit-voice");
++    expect(capturedRequest?.apiKey).toBe("explicit-key");
++  });
++});
+diff --git a/src/service/tts/tts.test.ts b/src/service/tts/tts.test.ts
+new file mode 100644
+index 0000000..c43f5a5
+--- /dev/null
++++ b/src/service/tts/tts.test.ts
+@@ -0,0 +1,169 @@
++import { describe, expect, it } from "vitest";
++import { defaultScene } from "../../model/model.ts";
++import { resolveOpenRouterApiKey } from "./config.ts";
++import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
++import { attachSpeechToScene } from "./scene-audio.ts";
++import { alignScriptToCues, splitIntoSentences } from "./speech-alignment.ts";
++
++describe("OpenRouter configuration and key resolution (R1, D1)", () => {
++  it("resolves explicit API key with top priority", () => {
++    const key = resolveOpenRouterApiKey("sk-explicit-test-key");
++    expect(key).toBe("sk-explicit-test-key");
++  });
++
++  it("trims whitespace from resolved key", () => {
++    const key = resolveOpenRouterApiKey("  sk-whitespace-key   ");
++    expect(key).toBe("sk-whitespace-key");
++  });
++
++  it("returns empty string when no key is found", () => {
++    const original = process.env.OPENROUTER_API_KEY;
++    delete process.env.OPENROUTER_API_KEY;
++    const meta = (import.meta as unknown as { env?: Record<string, string> })
++      ?.env;
++    const origMeta = meta?.OPENROUTER_API_KEY;
++    const origViteMeta = meta?.VITE_OPENROUTER_API_KEY;
++    if (meta) {
++      delete meta.OPENROUTER_API_KEY;
++      delete meta.VITE_OPENROUTER_API_KEY;
++    }
++    try {
++      expect(resolveOpenRouterApiKey("")).toBe("");
++    } finally {
++      if (original) process.env.OPENROUTER_API_KEY = original;
++      if (meta && origMeta !== undefined) meta.OPENROUTER_API_KEY = origMeta;
++      if (meta && origViteMeta !== undefined)
++        meta.VITE_OPENROUTER_API_KEY = origViteMeta;
++    }
++  });
++});
++
++describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
++  it("lists popular models and voices", async () => {
++    const adapter = new OpenRouterTtsAdapter();
++    const models = await adapter.listModels();
++    expect(models.length).toBeGreaterThan(0);
++    expect(models.some((m) => m.id.includes("openai"))).toBe(true);
++    expect(models.some((m) => m.id.includes("elevenlabs"))).toBe(true);
++  });
++
++  it("throws error when API key is missing", async () => {
++    const origEnv = process.env.OPENROUTER_API_KEY;
++    delete process.env.OPENROUTER_API_KEY;
++    const meta = (import.meta as unknown as { env?: Record<string, string> })
++      ?.env;
++    const origMeta = meta?.OPENROUTER_API_KEY;
++    const origViteMeta = meta?.VITE_OPENROUTER_API_KEY;
++    if (meta) {
++      delete meta.OPENROUTER_API_KEY;
++      delete meta.VITE_OPENROUTER_API_KEY;
++    }
++    try {
++      const adapter = new OpenRouterTtsAdapter("", "https://example.com");
++      await expect(
++        adapter.synthesizeSpeech({ text: "Hello", voice: "alloy", apiKey: "" }),
++      ).rejects.toThrow(/Clave de API/);
++    } finally {
++      if (origEnv) process.env.OPENROUTER_API_KEY = origEnv;
++      if (meta && origMeta !== undefined) meta.OPENROUTER_API_KEY = origMeta;
++      if (meta && origViteMeta !== undefined)
++        meta.VITE_OPENROUTER_API_KEY = origViteMeta;
++    }
++  });
++
++  it("synthesizes speech with mocked fetch", async () => {
++    const fakeAudioData = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
++    const mockFetch = async (_url: RequestInfo | URL, init?: RequestInit) => {
++      const body = JSON.parse(init?.body as string);
++      expect(body.input).toBe("Test speech");
++      expect(body.voice).toBe("alloy");
++      return new Response(fakeAudioData.buffer, {
++        status: 200,
++        headers: { "Content-Type": "audio/mpeg" },
++      });
++    };
++
++    const adapter = new OpenRouterTtsAdapter(
++      "test-key",
++      "https://fake.openrouter/speech",
++      mockFetch as unknown as typeof fetch,
++    );
++
++    const result = await adapter.synthesizeSpeech({
++      text: "Test speech",
++      voice: "alloy",
++      apiKey: "test-key",
++    });
++
++    expect(result.format).toBe("mp3");
++    expect(result.audioBuffer.length).toBe(8);
++  });
++});
++
++describe("Pure Speech Alignment (R5, D4)", () => {
++  it("splits text into sentences properly", () => {
++    const text = "Hola mundo. Esto es una prueba! Funciona genial?";
++    const sentences = splitIntoSentences(text);
++    expect(sentences.length).toBe(3);
++    expect(sentences[0]).toBe("Hola mundo.");
++    expect(sentences[1]).toBe("Esto es una prueba!");
++    expect(sentences[2]).toBe("Funciona genial?");
++  });
++
++  it("generates proportional subtitle cues with word breakdowns", () => {
++    const script = "Primera frase corta. Segunda frase un poco más extendida y completa.";
++    const cues = alignScriptToCues(script, {
++      totalDuration: 6.0,
++      startOffset: 0.5,
++      gap: 0.1,
++    });
++
++    expect(cues.length).toBe(2);
++    expect(cues[0].start).toBe(0.5);
++    expect(cues[0].end).toBeLessThan(cues[1].start);
++    expect(cues[1].end).toBeLessThanOrEqual(6.0);
++
++    // Verify word timing
++    expect(cues[0].words).toBeDefined();
++    expect(cues[0].words?.length).toBe(3);
++    expect(cues[0].words?.[0].word).toBe("Primera");
++    expect(cues[0].words?.[0].start).toBe(cues[0].start);
++  });
++});
++
++describe("Scene Audio Attachment and Duration Adjustment (R4, D3)", () => {
++  it("attaches audio asset and extends scene duration to match speech length", () => {
++    const scene = defaultScene();
++    scene.duration = 4.0;
++
++    const cues = alignScriptToCues("Frase de prueba.", { totalDuration: 5.0 });
++    const updated = attachSpeechToScene(scene, {
++      assetId: "/assets/audio-123.mp3",
++      audioDuration: 7.5,
++      startOffset: 0.5,
++      adjustSceneDuration: true,
++      cues,
++    });
++
++    expect(updated.audio?.assetId).toBe("/assets/audio-123.mp3");
++    expect(updated.duration).toBeGreaterThanOrEqual(8.0);
++
++    // Verify subtitles element added
++    const sub = updated.elements.find((e) => e.kind === "subtitles");
++    expect(sub).toBeDefined();
++    expect((sub as unknown as { cues: unknown[] }).cues.length).toBe(cues.length);
++  });
++
++  it("does not shrink scene duration if scene is already longer than speech", () => {
++    const scene = defaultScene();
++    scene.duration = 15.0;
++
++    const updated = attachSpeechToScene(scene, {
++      assetId: "/assets/audio-123.mp3",
++      audioDuration: 4.0,
++      adjustSceneDuration: true,
++    });
++
++    expect(updated.duration).toBe(15.0);
++  });
++});
+diff --git a/src/service/tts/types.ts b/src/service/tts/types.ts
+new file mode 100644
+index 0000000..9a0f285
+--- /dev/null
++++ b/src/service/tts/types.ts
+@@ -0,0 +1,120 @@
++/**
++ * Domain types and interface for Text-To-Speech services (D2, R2).
++ * Follows Principle 3 (Service Layer + Anti-Corruption / Dependency Inversion).
++ */
++
++export interface TtsVoice {
++  id: string;
++  name: string;
++  language?: string;
++  gender?: "male" | "female" | "neutral";
++}
++
++export interface TtsModel {
++  id: string;
++  name: string;
++  provider: string;
++  voices: TtsVoice[];
++}
++
++export interface SynthesizeSpeechRequest {
++  text: string;
++  voice: string;
++  model?: string;
++  speed?: number;
++  format?: "mp3" | "wav" | "aac" | "opus";
++  apiKey?: string;
++  baseUrl?: string;
++}
++
++export interface SynthesizeSpeechResult {
++  audioBuffer: Uint8Array;
++  mimeType: string;
++  format: string;
++  /** Estimated or calculated audio duration in seconds. */
++  durationSeconds?: number;
++}
++
++export interface TtsService {
++  /**
++   * Synthesizes audio from text using the configured provider.
++   */
++  synthesizeSpeech(
++    request: SynthesizeSpeechRequest,
++  ): Promise<SynthesizeSpeechResult>;
++
++  /**
++   * Available TTS models and standard voices.
++   */
++  listModels(): Promise<TtsModel[]>;
++}
++
++/** Standard models and voices offered in Lienzo */
++export const POPULAR_TTS_MODELS: TtsModel[] = [
++  {
++    id: "openai/tts-1",
++    name: "OpenAI TTS 1",
++    provider: "OpenAI",
++    voices: [
++      { id: "alloy", name: "Alloy", gender: "neutral" },
++      { id: "echo", name: "Echo", gender: "male" },
++      { id: "fable", name: "Fable", gender: "male" },
++      { id: "onyx", name: "Onyx", gender: "male" },
++      { id: "nova", name: "Nova", gender: "female" },
++      { id: "shimmer", name: "Shimmer", gender: "female" },
++    ],
++  },
++  {
++    id: "openai/tts-1-hd",
++    name: "OpenAI TTS 1 HD",
++    provider: "OpenAI",
++    voices: [
++      { id: "alloy", name: "Alloy", gender: "neutral" },
++      { id: "echo", name: "Echo", gender: "male" },
++      { id: "fable", name: "Fable", gender: "male" },
++      { id: "onyx", name: "Onyx", gender: "male" },
++      { id: "nova", name: "Nova", gender: "female" },
++      { id: "shimmer", name: "Shimmer", gender: "female" },
++    ],
++  },
++  {
++    id: "elevenlabs/eleven_multilingual_v2",
++    name: "ElevenLabs Multilingual v2",
++    provider: "ElevenLabs",
++    voices: [
++      { id: "rachel", name: "Rachel", gender: "female" },
++      { id: "drew", name: "Drew", gender: "male" },
++      { id: "clyde", name: "Clyde", gender: "male" },
++      { id: "paul", name: "Paul", gender: "male" },
++      { id: "domi", name: "Domi", gender: "female" },
++      { id: "dave", name: "Dave", gender: "male" },
++      { id: "fin", name: "Fin", gender: "male" },
++      { id: "sarah", name: "Sarah", gender: "female" },
++      { id: "antoni", name: "Antoni", gender: "male" },
++      { id: "thomas", name: "Thomas", gender: "male" },
++      { id: "charlie", name: "Charlie", gender: "male" },
++      { id: "george", name: "George", gender: "male" },
++      { id: "emily", name: "Emily", gender: "female" },
++      { id: "elli", name: "Elli", gender: "female" },
++      { id: "callum", name: "Callum", gender: "male" },
++      { id: "patrick", name: "Patrick", gender: "male" },
++      { id: "harry", name: "Harry", gender: "male" },
++      { id: "liam", name: "Liam", gender: "male" },
++      { id: "dorothy", name: "Dorothy", gender: "female" },
++      { id: "josh", name: "Josh", gender: "male" },
++      { id: "arnold", name: "Arnold", gender: "male" },
++      { id: "charlotte", name: "Charlotte", gender: "female" },
++      { id: "alice", name: "Alice", gender: "female" },
++      { id: "matilda", name: "Matilda", gender: "female" },
++      { id: "james", name: "James", gender: "male" },
++      { id: "joseph", name: "Joseph", gender: "male" },
++      { id: "jeremy", name: "Jeremy", gender: "male" },
++      { id: "michael", name: "Michael", gender: "male" },
++      { id: "ethan", name: "Ethan", gender: "male" },
++      { id: "giggle", name: "Giggle", gender: "female" },
++      { id: "glinda", name: "Glinda", gender: "female" },
++      { id: "giovanni", name: "Giovanni", gender: "male" },
++      { id: "mimi", name: "Mimi", gender: "female" },
++    ],
++  },
++];
+diff --git a/src/test/recording-ctx.ts b/src/test/recording-ctx.ts
+index 500337c..58be4b3 100644
+--- a/src/test/recording-ctx.ts
++++ b/src/test/recording-ctx.ts
+@@ -93,6 +93,7 @@ const STATE = [
+   "filter",
+ ] as const;
+ 
++// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: dynamic canvas method declarations
+ export class RecordingCtx extends Recorder {
+   private m: M = [1, 0, 0, 1, 0, 0];
+   private props: Record<string, unknown> = {
+@@ -182,6 +183,60 @@ export class RecordingCtx extends Recorder {
+     this.rec("putImageData", [x, y]);
+   }
+ }
++
++export interface RecordingCtx {
++  beginPath(): void;
++  closePath(): void;
++  moveTo(x: number, y: number): void;
++  lineTo(x: number, y: number): void;
++  arc(
++    x: number,
++    y: number,
++    radius: number,
++    startAngle: number,
++    endAngle: number,
++    counterclockwise?: boolean,
++  ): void;
++  ellipse(
++    x: number,
++    y: number,
++    radiusX: number,
++    radiusY: number,
++    rotation: number,
++    startAngle: number,
++    endAngle: number,
++    counterclockwise?: boolean,
++  ): void;
++  rect(x: number, y: number, w: number, h: number): void;
++  roundRect(
++    x: number,
++    y: number,
++    w: number,
++    h: number,
++    radii?: number | number[],
++  ): void;
++  bezierCurveTo(
++    cp1x: number,
++    cp1y: number,
++    cp2x: number,
++    cp2y: number,
++    x: number,
++    y: number,
++  ): void;
++  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void;
++  fill(fillRule?: CanvasFillRule): void;
++  fill(path: unknown, fillRule?: CanvasFillRule): void;
++  stroke(): void;
++  stroke(path: unknown): void;
++  clip(fillRule?: CanvasFillRule): void;
++  clip(path: unknown, fillRule?: CanvasFillRule): void;
++  fillRect(x: number, y: number, w: number, h: number): void;
++  strokeRect(x: number, y: number, w: number, h: number): void;
++  clearRect(x: number, y: number, w: number, h: number): void;
++  fillText(text: string, x: number, y: number, maxWidth?: number): void;
++  strokeText(text: string, x: number, y: number, maxWidth?: number): void;
++  drawImage(...args: unknown[]): void;
++}
+ for (const m of [
+   "beginPath",
+   "closePath",
+diff --git a/vite.config.ts b/vite.config.ts
+index df3c9ef..08b2c9e 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -58,11 +58,15 @@ const ASSET_TYPES: Record<string, string> = {
+   svg: "image/svg+xml",
+   webp: "image/webp",
+   glb: "model/gltf-binary",
++  mp3: "audio/mpeg",
++  wav: "audio/wav",
++  aac: "audio/aac",
++  ogg: "audio/ogg",
+ };
+ const MAX_ASSET_BYTES = 20 * 1024 * 1024;
+ 
+ /**
+- * Stores images and 3D models used by scenes in `assets/` at the repo root:
++ * Stores images, 3D models and audio files used by scenes in `assets/` at the repo root:
+  * POST /api/assets?ext=png  -> writes assets/<content hash>.png, returns { path }
+  * GET  /assets/<file>       -> the stored file
+  */
+@@ -77,7 +81,7 @@ function assetStore(): Plugin {
+       res.statusCode = 400;
+       res.end(
+         JSON.stringify({
+-          error: "expected POST with ext=png|jpg|svg|webp|glb",
++          error: "expected POST with ext=png|jpg|svg|webp|glb|mp3|wav|aac|ogg",
+         }),
+       );
+       return;
+@@ -139,5 +143,6 @@ function assetStore(): Plugin {
+ }
+ 
+ export default defineConfig({
++  envPrefix: ["VITE_", "OPENROUTER_"],
+   plugins: [react(), jsonStore(), assetStore()],
+ });
