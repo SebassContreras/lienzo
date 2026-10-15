@@ -1,0 +1,64 @@
+/**
+ * OpenRouter configuration loader and API key resolution (D1, R1).
+ *
+ * Resolves the OpenRouter API key following precedence:
+ * 1. Explicit override passed in options (e.g. from editor settings or CLI flag)
+ * 2. Process environment variables (`process.env.OPENROUTER_API_KEY`)
+ * 3. Browser localStorage if in a browser context (`lienzo_openrouter_api_key`)
+ * 4. Empty string if not found.
+ */
+
+export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/audio/speech";
+export const STORAGE_KEY_OPENROUTER_API_KEY = "lienzo_openrouter_api_key";
+
+export interface TtsSettings {
+  apiKey?: string;
+  defaultModel?: string;
+  defaultVoice?: string;
+}
+
+/**
+ * Resolves the OpenRouter API key from available sources.
+ */
+export function resolveOpenRouterApiKey(explicitKey?: string): string {
+  if (explicitKey && explicitKey.trim().length > 0) {
+    return explicitKey.trim();
+  }
+
+  // Node environment / process.env check
+  if (typeof process !== "undefined" && process.env?.OPENROUTER_API_KEY) {
+    const envKey = process.env.OPENROUTER_API_KEY.trim();
+    if (envKey.length > 0) return envKey;
+  }
+
+  // Browser localStorage check
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const stored = window.localStorage.getItem(STORAGE_KEY_OPENROUTER_API_KEY);
+      if (stored && stored.trim().length > 0) {
+        return stored.trim();
+      }
+    } catch {
+      // LocalStorage access may fail in restricted/private modes
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Saves OpenRouter API key to localStorage (for editor client settings).
+ */
+export function persistOpenRouterApiKey(apiKey: string): void {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      if (apiKey.trim().length > 0) {
+        window.localStorage.setItem(STORAGE_KEY_OPENROUTER_API_KEY, apiKey.trim());
+      } else {
+        window.localStorage.removeItem(STORAGE_KEY_OPENROUTER_API_KEY);
+      }
+    } catch {
+      // Ignore storage errors in browser sandbox
+    }
+  }
+}

@@ -32,4 +32,5 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 025 | effects | done        | 012, 013, 015, 017 | —     | 25 |
 | 026 | audio-track | done        | 001, 007, 010 | —      | 26 |
 | 027 | subtitles | done        | 012, 013, 015 | —      | 27 |
-| 028 | voice-tts | todo | 026, 027 | build  | 28 |
+| 028 | voice-tts | done        | 026, 027 | —      | 28 |
+| 029 | cli-mcp-distribution | todo | 008, 009 | design       | 29 |

@@ -78,6 +78,7 @@ import { Panel } from "./panel.tsx";
 import { type Clock, Stage } from "./stage.tsx";
 import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
+import { TtsDialog } from "./dialogs/tts-dialog.tsx";
 
 /**
  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
@@ -628,6 +629,11 @@ export function App() {
             name={sceneName}
             setName={setSceneName}
             onOpen={loadScene}
+            setStatus={setStatus}
+          />
+          <TtsDialog
+            scene={scene}
+            onUpdateScene={applyScene}
             setStatus={setStatus}
           />
         </div>

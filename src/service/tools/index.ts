@@ -21,6 +21,7 @@ import { sceneGet } from "./scene-get.ts";
 import { sceneInspectLayout } from "./scene-inspect-layout.ts";
 import { sceneList } from "./scene-list.ts";
 import { scenePreview } from "./scene-preview.ts";
+import { sceneGenerateSpeech } from "./scene-generate-speech.ts";
 import { sceneValidate } from "./scene-validate.ts";
 
 export const TOOLS: readonly Tool[] = [
@@ -43,6 +44,7 @@ export const TOOLS: readonly Tool[] = [
   backgroundSet,
   keyframeSet,
   keyframeRemove,
+  sceneGenerateSpeech,
 ];
 
 export const registry = createRegistry(TOOLS);
