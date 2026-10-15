@@ -1,0 +1,89 @@
+/**
+ * Domain model and Zod validation for project workspaces (031/R1, 031/D1).
+ * Encapsulates visual identity: colors, typography, canvas defaults, and assets/presets metadata.
+ */
+import { z } from "zod";
+
+/** Slugs must be lowercase, alphanumeric, hyphen-separated identifiers. */
+export const PROJECT_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const ProjectSlugSchema = z
+  .string()
+  .min(1, "El identificador del proyecto no puede estar vacío")
+  .max(64, "El identificador del proyecto es demasiado largo (máx. 64 caracteres)")
+  .regex(
+    PROJECT_SLUG_REGEX,
+    "El identificador debe contener solo letras minúsculas, números y guiones",
+  );
+
+export type ProjectSlug = z.infer<typeof ProjectSlugSchema>;
+
+export const ColorPaletteSchema = z.object({
+  primary: z.string().min(1, "El color primario es obligatorio"),
+  secondary: z.string().optional(),
+  accent: z.string().optional(),
+  background: z.string().optional(),
+  surface: z.string().optional(),
+  text: z.string().optional(),
+  custom: z.array(z.string()).default([]),
+});
+
+export type ColorPalette = z.infer<typeof ColorPaletteSchema>;
+
+export const BrandFontSchema = z.object({
+  family: z.string().min(1, "La familia tipográfica es obligatoria"),
+  role: z.enum(["heading", "body", "accent", "mono"]).default("body"),
+  weights: z.array(z.number()).default([400]),
+});
+
+export type BrandFont = z.infer<typeof BrandFontSchema>;
+
+export const ProjectCanvasDefaultsSchema = z.object({
+  width: z.number().int().positive().default(1080),
+  height: z.number().int().positive().default(1080),
+  fps: z.number().int().positive().default(30),
+  duration: z.number().positive().default(5),
+});
+
+export type ProjectCanvasDefaults = z.infer<typeof ProjectCanvasDefaultsSchema>;
+
+export const ProjectConfigSchema = z.object({
+  name: z.string().min(1, "El nombre del proyecto es obligatorio"),
+  description: z.string().optional(),
+  palette: ColorPaletteSchema.default(() => ({ primary: "#3b82f6", custom: [] })),
+  fonts: BrandFontSchema.array().default(() => []),
+  canvas: ProjectCanvasDefaultsSchema.default(() => ({
+    width: 1080,
+    height: 1080,
+    fps: 30,
+    duration: 5,
+  })),
+});
+
+export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
+
+export const ProjectManifestSchema = ProjectConfigSchema.extend({
+  slug: ProjectSlugSchema,
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
+});
+
+export type ProjectManifest = z.infer<typeof ProjectManifestSchema>;
+
+export type ParseProjectResult =
+  | { ok: true; manifest: ProjectManifest }
+  | { ok: false; error: string; issues: z.ZodIssue[] };
+
+/**
+ * Validates raw JSON into a ProjectManifest with actionable error messages.
+ */
+export function parseProjectManifest(input: unknown): ParseProjectResult {
+  const result = ProjectManifestSchema.safeParse(input);
+  if (!result.success) {
+    const error = result.error.issues
+      .map((i) => `${i.path.join(".") || "(raíz)"}: ${i.message}`)
+      .join("; ");
+    return { ok: false, error, issues: result.error.issues };
+  }
+  return { ok: true, manifest: result.data };
+}

@@ -1,0 +1,26 @@
+diff --git a/src/service/tools/project-list.ts b/src/service/tools/project-list.ts
+new file mode 100644
+index 0000000..b7340da
+--- /dev/null
++++ b/src/service/tools/project-list.ts
+@@ -0,0 +1,20 @@
++import { z } from "zod";
++import { defineTool } from "../registry.ts";
++
++export const ProjectSummarySchema = z.object({
++  slug: z.string(),
++  name: z.string(),
++  description: z.string().optional(),
++  palettePrimary: z.string(),
++  updatedAt: z.string().optional(),
++});
++
++export const projectList = defineTool({
++  name: "project_list",
++  description: "List all existing project workspaces with summary brand metadata.",
++  input: z.object({}),
++  output: z.array(ProjectSummarySchema),
++  async run(_input, ctx) {
++    return ctx.projects.list();
++  },
++});

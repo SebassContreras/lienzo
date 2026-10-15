@@ -5,6 +5,8 @@ import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { handleStore } from "./src/presets/json-store.ts";
+import { handleProjectApi } from "./src/service/project-middleware.ts";
+import { createProjectStore } from "./src/service/project-store.ts";
 
 /** Serves `presets/`, `presets/animations/` and `scenes/` at the repo root through `handleStore`. */
 function jsonStore(): Plugin {
@@ -142,7 +144,23 @@ function assetStore(): Plugin {
   };
 }
 
+function projectStorePlugin(): Plugin {
+  const store = createProjectStore(import.meta.dirname);
+  return {
+    name: "project-store",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url?.startsWith("/api/projects")) return next();
+        handleProjectApi(store, req, res).catch((error: unknown) => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(error) }));
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
   envPrefix: ["VITE_", "OPENROUTER_"],
-  plugins: [react(), jsonStore(), assetStore()],
+  plugins: [react(), jsonStore(), assetStore(), projectStorePlugin()],
 });

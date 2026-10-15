@@ -21,6 +21,7 @@ export const elementAdd = defineTool({
   input: z
     .object({
       scene: z.string().min(1),
+      project: z.string().optional(),
       preset: z.string().min(1).optional(),
       kind: z.string().min(1).optional(),
       at: z.object({ x: z.number(), y: z.number() }).optional(),
@@ -31,10 +32,31 @@ export const elementAdd = defineTool({
       path: ["preset"],
     }),
   output: SceneResult.extend({ id: z.string() }),
-  async run({ scene, preset, kind, at, set }, ctx) {
+  async run({ scene, project, preset, kind, at, set }, ctx) {
+    const effectiveCtx = project
+      ? {
+          ...ctx,
+          store: await ctx.projects.projectStore(project),
+        }
+      : ctx;
+
+    const notices: string[] = [];
+    if (project && set) {
+      const assetKeys = ["src", "assetId", "image", "audio"];
+      for (const key of assetKeys) {
+        const val = set[key];
+        if (typeof val === "string" && val.length > 0) {
+          const check = await ctx.projects.checkAsset(project, val);
+          if (!check.ok && check.warning) {
+            notices.push(check.warning);
+          }
+        }
+      }
+    }
+
     let el: Element;
     if (preset !== undefined) {
-      const r = resolveElement((await findPreset(ctx, preset)).recipe);
+      const r = resolveElement((await findPreset(effectiveCtx, preset)).recipe);
       if ("error" in r) fail("invalid_preset", r.error, "preset");
       el = r.element;
     } else {
@@ -44,12 +66,12 @@ export const elementAdd = defineTool({
     if (set) el = patched(el, set);
     const added = el;
     const placed = set && ["x", "y", "a", "b"].some((k) => k in set);
-    const result = await editScene(ctx, scene, (s) => {
+    const result = await editScene(effectiveCtx, scene, (s) => {
       const p =
         at ?? (placed ? undefined : { x: s.width / 2, y: s.height / 2 });
       const out = p ? centerOn(added, p.x, p.y) : added;
       return { ...s, elements: [...s.elements, out] };
     });
-    return { ...result, id: added.id };
+    return { ...result, notices: [...result.notices, ...notices], id: added.id };
   },
 });

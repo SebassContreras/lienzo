@@ -1,0 +1,259 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 98e4cbc..f15db78 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -79,6 +79,9 @@ import { type Clock, Stage } from "./stage.tsx";
+ import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
+ import { TracksPanel } from "./timeline/tracks-panel.tsx";
+ import { TtsDialog } from "./dialogs/tts-dialog.tsx";
++import { ProjectSelector } from "./project-selector.tsx";
++import { ProjectContext } from "./project-context.ts";
++import type { ColorPalette } from "../model/project.ts";
+ 
+ /**
+  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
+@@ -176,6 +179,8 @@ export function App() {
+   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
+   const [backgroundFocus, setBackgroundFocus] = useState(0);
+   const [presetFilter, setPresetFilter] = useState("");
++  const [activeProjectSlug, setActiveProjectSlug] = useState<string | undefined>();
++  const [activePalette, setActivePalette] = useState<ColorPalette | undefined>();
+ 
+   const setScene = useCallback((s: Scene) => {
+     sceneRef.current = s;
+@@ -576,7 +581,13 @@ export function App() {
+     filterByName(items, presetFilter);
+ 
+   return (
+-    <div className="app">
++    <ProjectContext.Provider
++      value={{
++        activeProjectSlug,
++        palette: activePalette,
++      }}
++    >
++      <div className="app">
+       <header className="topbar">
+         <div className="brand">
+           <Sparkles size={16} /> Lienzo
+@@ -631,6 +642,14 @@ export function App() {
+             onOpen={loadScene}
+             setStatus={setStatus}
+           />
++          <ProjectSelector
++            activeSlug={activeProjectSlug}
++            onSelectProject={(slug, palette) => {
++              setActiveProjectSlug(slug);
++              setActivePalette(palette);
++            }}
++            setStatus={setStatus}
++          />
+           <TtsDialog
+             scene={scene}
+             onUpdateScene={applyScene}
+@@ -839,6 +858,7 @@ export function App() {
+         )}
+       </Panel>
+     </div>
++    </ProjectContext.Provider>
+   );
+ }
+ 
+diff --git a/src/editor/controls.tsx b/src/editor/controls.tsx
+index 60d7712..661ad44 100644
+--- a/src/editor/controls.tsx
++++ b/src/editor/controls.tsx
+@@ -1,5 +1,6 @@
+ /** The inspector's basic controls: a collapsible section and one row per value. */
+ import type { ReactNode, Ref } from "react";
++import { useProject } from "./project-context.ts";
+ 
+ export function Section({
+   title,
+@@ -69,22 +70,58 @@ export function Color({
+   value: string;
+   onChange: (v: string) => void;
+ }) {
++  const { palette } = useProject();
++  const swatches = palette
++    ? [
++        palette.primary,
++        palette.secondary,
++        palette.accent,
++        palette.background,
++        palette.surface,
++        palette.text,
++        ...(palette.custom ?? []),
++      ].filter((c): c is string => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c))
++    : [];
++
+   return (
+-    <label className="field">
+-      <span>{label}</span>
+-      <input
+-        type="color"
+-        value={value}
+-        onChange={(e) => onChange(e.target.value)}
+-      />
+-      <input
+-        className="hex"
+-        value={value}
+-        onChange={(e) => {
+-          if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value);
+-        }}
+-      />
+-    </label>
++    <div className="color-field-container">
++      <label className="field">
++        <span>{label}</span>
++        <input
++          type="color"
++          value={value}
++          onChange={(e) => onChange(e.target.value)}
++        />
++        <input
++          className="hex"
++          value={value}
++          onChange={(e) => {
++            if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value);
++          }}
++        />
++      </label>
++      {swatches.length > 0 && (
++        <div className="color-swatches" style={{ display: "flex", gap: "4px", padding: "2px 0 6px 0", flexWrap: "wrap" }}>
++          {swatches.map((color, idx) => (
++            <button
++              key={`${color}-${idx}`}
++              type="button"
++              title={`Color de marca: ${color}`}
++              style={{
++                width: "16px",
++                height: "16px",
++                borderRadius: "3px",
++                backgroundColor: color,
++                border: color.toLowerCase() === value.toLowerCase() ? "2px solid #fff" : "1px solid rgba(255,255,255,0.2)",
++                cursor: "pointer",
++                padding: 0,
++              }}
++              onClick={() => onChange(color)}
++            />
++          ))}
++        </div>
++      )}
++    </div>
+   );
+ }
+ 
+diff --git a/src/editor/project-context.ts b/src/editor/project-context.ts
+new file mode 100644
+index 0000000..cde91fa
+--- /dev/null
++++ b/src/editor/project-context.ts
+@@ -0,0 +1,11 @@
++import { createContext, useContext } from "react";
++import type { ColorPalette } from "../model/project.ts";
++
++export type ProjectContextType = {
++  activeProjectSlug?: string;
++  palette?: ColorPalette;
++};
++
++export const ProjectContext = createContext<ProjectContextType>({});
++
++export const useProject = () => useContext(ProjectContext);
+diff --git a/src/editor/project-selector.tsx b/src/editor/project-selector.tsx
+new file mode 100644
+index 0000000..e634634
+--- /dev/null
++++ b/src/editor/project-selector.tsx
+@@ -0,0 +1,90 @@
++import { Briefcase } from "lucide-react";
++import { useEffect, useState } from "react";
++import type { ColorPalette } from "../model/project.ts";
++import type { ProjectSummary } from "../service/project-store.ts";
++
++export type ProjectSelectorProps = {
++  activeSlug?: string;
++  onSelectProject: (slug: string | undefined, palette?: ColorPalette) => void;
++  setStatus: (status: string) => void;
++};
++
++export function ProjectSelector({
++  activeSlug,
++  onSelectProject,
++  setStatus,
++}: ProjectSelectorProps) {
++  const [projects, setProjects] = useState<ProjectSummary[]>([]);
++  const [loading, setLoading] = useState(false);
++
++  const fetchProjects = async () => {
++    try {
++      setLoading(true);
++      const res = await fetch("/api/projects");
++      if (res.ok) {
++        const data = await res.json();
++        setProjects(data);
++      }
++    } catch {
++      // Ignore fetch error in offline/unit test mode
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  useEffect(() => {
++    fetchProjects();
++  }, []);
++
++  const handleChange = async (slug: string) => {
++    if (!slug) {
++      onSelectProject(undefined, undefined);
++      setStatus("Proyecto activo: ninguno (global)");
++      return;
++    }
++
++    try {
++      const res = await fetch(`/api/projects/${slug}`);
++      if (res.ok) {
++        const details = await res.json();
++        onSelectProject(slug, details.manifest.palette);
++        setStatus(`Proyecto activo: «${details.manifest.name}»`);
++      } else {
++        onSelectProject(slug, undefined);
++      }
++    } catch {
++      onSelectProject(slug, undefined);
++    }
++  };
++
++  return (
++    <div className="project-selector" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
++      <span title="Espacio de trabajo del proyecto" style={{ display: "inline-flex", alignItems: "center" }}>
++        <Briefcase size={16} />
++      </span>
++      <select
++        value={activeSlug ?? ""}
++        disabled={loading}
++        title="Seleccionar espacio de trabajo de proyecto"
++        onChange={(e) => handleChange(e.target.value)}
++        style={{
++          background: "transparent",
++          color: "inherit",
++          border: "1px solid rgba(255,255,255,0.2)",
++          borderRadius: "4px",
++          padding: "2px 6px",
++          fontSize: "12px",
++        }}
++      >
++        <option value="" style={{ background: "#222" }}>
++          (Sin proyecto - Global)
++        </option>
++        {projects.map((p) => (
++          <option key={p.slug} value={p.slug} style={{ background: "#222" }}>
++            {p.name}
++          </option>
++        ))}
++      </select>
++    </div>
++  );
++}

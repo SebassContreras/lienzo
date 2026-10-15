@@ -79,6 +79,9 @@ import { type Clock, Stage } from "./stage.tsx";
 import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
 import { TtsDialog } from "./dialogs/tts-dialog.tsx";
+import { ProjectSelector } from "./project-selector.tsx";
+import { ProjectContext } from "./project-context.ts";
+import type { ColorPalette } from "../model/project.ts";
 
 /**
  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
@@ -176,6 +179,8 @@ export function App() {
   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
   const [backgroundFocus, setBackgroundFocus] = useState(0);
   const [presetFilter, setPresetFilter] = useState("");
+  const [activeProjectSlug, setActiveProjectSlug] = useState<string | undefined>();
+  const [activePalette, setActivePalette] = useState<ColorPalette | undefined>();
 
   const setScene = useCallback((s: Scene) => {
     sceneRef.current = s;
@@ -576,7 +581,13 @@ export function App() {
     filterByName(items, presetFilter);
 
   return (
-    <div className="app">
+    <ProjectContext.Provider
+      value={{
+        activeProjectSlug,
+        palette: activePalette,
+      }}
+    >
+      <div className="app">
       <header className="topbar">
         <div className="brand">
           <Sparkles size={16} /> Lienzo
@@ -629,6 +640,14 @@ export function App() {
             name={sceneName}
             setName={setSceneName}
             onOpen={loadScene}
+            setStatus={setStatus}
+          />
+          <ProjectSelector
+            activeSlug={activeProjectSlug}
+            onSelectProject={(slug, palette) => {
+              setActiveProjectSlug(slug);
+              setActivePalette(palette);
+            }}
             setStatus={setStatus}
           />
           <TtsDialog
@@ -839,6 +858,7 @@ export function App() {
         )}
       </Panel>
     </div>
+    </ProjectContext.Provider>
   );
 }
 
