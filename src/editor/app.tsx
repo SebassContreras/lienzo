@@ -671,9 +671,18 @@ export function App() {
             />
             <ProjectSelector
               activeSlug={activeProjectSlug}
-              onSelectProject={(slug, palette) => {
+              onSelectProject={(slug, palette, canvasDefaults) => {
                 setActiveProjectSlug(slug);
                 setActivePalette(palette);
+                if (canvasDefaults) {
+                  applyScene({
+                    ...sceneRef.current,
+                    width: canvasDefaults.width,
+                    height: canvasDefaults.height,
+                    fps: canvasDefaults.fps,
+                    duration: canvasDefaults.duration,
+                  });
+                }
               }}
               setStatus={setStatus}
             />

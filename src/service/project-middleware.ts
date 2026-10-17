@@ -1,5 +1,13 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { createProjectStore, type ProjectStore } from "./project-store.ts";
+import { join } from "node:path";
+import {
+  ASSET_TYPES,
+  hashBuffer,
+  MAX_ASSET_BYTES,
+  normalizeExtension,
+} from "./asset-helpers.ts";
+import type { ProjectStore } from "./project-store.ts";
 
 export type ProjectApiReply = { status: number; body: unknown };
 
@@ -75,6 +83,71 @@ export async function handleProjectApi(
         }
         jsonReply(200, { ok: true, slug });
         return;
+      }
+    }
+
+    // Project assets: /api/projects/<slug>/assets
+    if (segments.length >= 2 && segments[1] === "assets") {
+      const slug = segments[0];
+
+      // POST /api/projects/<slug>/assets?ext=png -> upload asset into projects/<slug>/assets/
+      if (segments.length === 2 && method === "POST") {
+        const extParam = (url.searchParams.get("ext") ?? "").toLowerCase();
+        const ext = normalizeExtension(extParam);
+        if (!ASSET_TYPES[ext]) {
+          jsonReply(400, {
+            error:
+              "Formato no soportado. Se esperaba: png, jpg, svg, webp, glb, mp3, wav, aac, ogg, ttf, otf, woff, woff2",
+          });
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+        let size = 0;
+        for await (const chunk of req) {
+          size += (chunk as Buffer).length;
+          if (size > MAX_ASSET_BYTES) {
+            jsonReply(413, { error: "Archivo demasiado grande (máx 20MB)" });
+            return;
+          }
+          chunks.push(chunk as Buffer);
+        }
+
+        const data = Buffer.concat(chunks);
+        const hash = hashBuffer(data);
+        const filename = `${hash}.${ext}`;
+        const assetsDir = store.resolvePath(slug, "assets");
+
+        await mkdir(assetsDir, { recursive: true });
+        await writeFile(join(assetsDir, filename), data);
+
+        const relativePath = `/projects/${slug}/assets/${filename}`;
+        jsonReply(201, { path: relativePath, filename });
+        return;
+      }
+
+      // GET /api/projects/<slug>/assets/<filename> -> serve project asset
+      if (segments.length === 3 && method === "GET") {
+        const filename = segments[2];
+        const ext = normalizeExtension(filename.split(".").pop() ?? "");
+        if (!/^[\w-]+\.\w+$/.test(filename) || !ASSET_TYPES[ext]) {
+          res.statusCode = 404;
+          res.end("Not Found");
+          return;
+        }
+
+        const filePath = join(store.resolvePath(slug, "assets"), filename);
+        try {
+          const data = await readFile(filePath);
+          res.setHeader("content-type", ASSET_TYPES[ext]);
+          res.statusCode = 200;
+          res.end(data);
+          return;
+        } catch {
+          res.statusCode = 404;
+          res.end("Not Found");
+          return;
+        }
       }
     }
 
