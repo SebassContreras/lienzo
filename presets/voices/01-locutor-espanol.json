@@ -1,0 +1,11 @@
+{
+  "name": "Locutor Español",
+  "category": "Voces",
+  "provider": "openrouter",
+  "model": "openai/tts-1",
+  "voice": "alloy",
+  "speed": 1.0,
+  "sampleScript": "Lienzo es un editor de publicaciones animadas para redes sociales.",
+  "generateSubtitles": true,
+  "adjustDuration": true
+}

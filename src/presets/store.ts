@@ -1,6 +1,7 @@
 import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
+import { parseVoicePreset, type VoicePreset } from "../model/voice-preset.ts";
 import { oneLine } from "./json-files.ts";
 
 /** Before recipes, a user preset stored the whole element. */
@@ -91,6 +92,39 @@ export async function saveAnimPreset(
   await postJson(`/api/animations?name=${encodeURIComponent(name)}`, preset);
 }
 
+/** Voice presets in `presets/voices/` (037/D3, R4); files that fail the schema are left out. */
+export async function loadVoicePresetFiles(): Promise<
+  { file: string; preset: VoicePreset }[]
+> {
+  const items = await getJson<{ name: string; data: unknown }[]>("/api/voices");
+  return items.flatMap((item) => {
+    const parsed = parseVoicePreset(item.data);
+    return parsed.ok ? [{ file: item.name, preset: parsed.value }] : [];
+  });
+}
+
+/** `data` as a voice preset, or an error naming `what`. */
+export function toVoicePreset(data: unknown, what: string): VoicePreset {
+  const parsed = parseVoicePreset(data);
+  if (!parsed.ok)
+    throw new Error(
+      `${what} no es un preset de voz válido: ${oneLine(parsed.error)}`,
+    );
+  return parsed.value;
+}
+
+/**
+ * Writes a voice preset to `presets/voices/<file>.json`, validated first.
+ */
+export async function saveVoicePreset(
+  data: unknown,
+  file?: string,
+): Promise<void> {
+  const preset = toVoicePreset(data, `«${file ?? "el preset de voz"}»`);
+  const name = file ?? preset.name;
+  await postJson(`/api/voices?name=${encodeURIComponent(name)}`, preset);
+}
+
 /** Scenes live as JSON files in `scenes/`. */
 export async function loadScenes(): Promise<{ name: string; data: Scene }[]> {
   return getJson("/api/scenes");
@@ -146,7 +180,7 @@ async function call(url: string, method: string): Promise<void> {
   );
 }
 
-export type StoreKind = "presets" | "animations" | "scenes";
+export type StoreKind = "presets" | "animations" | "voices" | "scenes";
 
 /** Removes a stored preset or scene by its file name. */
 export async function deleteStored(

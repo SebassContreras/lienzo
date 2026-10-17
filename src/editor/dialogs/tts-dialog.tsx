@@ -1,8 +1,12 @@
-import { Edit3, List, Mic, Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Bookmark, Edit3, List, Mic, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Scene } from "../../model/model.ts";
-import { uploadAsset } from "../../presets/store.ts";
-import { resolveOpenRouterApiKey, type TtsProviderType } from "../../service/tts/config.ts";
+import type { VoicePreset } from "../../model/voice-preset.ts";
+import { saveVoicePreset, uploadAsset } from "../../presets/store.ts";
+import {
+  resolveOpenRouterApiKey,
+  type TtsProviderType,
+} from "../../service/tts/config.ts";
 import { createTtsService } from "../../service/tts/factory.ts";
 import { POPULAR_LOCAL_TTS_MODELS } from "../../service/tts/local-adapter.ts";
 import {
@@ -22,6 +26,9 @@ export interface TtsDialogProps {
   onUpdateScene: (updatedScene: Scene) => void;
   setStatus: (msg: string) => void;
   ttsService?: TtsService;
+  isOpen?: boolean;
+  onClose?: () => void;
+  initialVoicePreset?: Partial<VoicePreset> | null;
 }
 
 export function TtsDialog({
@@ -29,6 +36,9 @@ export function TtsDialog({
   onUpdateScene,
   setStatus,
   ttsService: injectedService,
+  isOpen,
+  onClose,
+  initialVoicePreset,
 }: TtsDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [provider, setProvider] = useState<TtsProviderType>("openrouter");
@@ -76,24 +86,100 @@ export function TtsDialog({
     }
   }, []);
 
-  const currentModel = models.find((m) => m.id === selectedModel);
-
-  const handleOpen = () => {
+  const handleOpen = useCallback(() => {
     setErrorMsg("");
     const prefs = loadTtsPreferences();
     setApiKey(resolveOpenRouterApiKey(prefs.apiKey));
     dialog.current?.showModal();
-  };
+  }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     dialog.current?.close();
-  };
+    onClose?.();
+  }, [onClose]);
 
-  const updatePreferences = (
-    updates: Parameters<typeof saveTtsPreferences>[0],
-  ) => {
-    saveTtsPreferences(updates);
-  };
+  const updatePreferences = useCallback(
+    (updates: Parameters<typeof saveTtsPreferences>[0]) => {
+      saveTtsPreferences(updates);
+    },
+    [],
+  );
+
+  const handleProviderChange = useCallback(
+    (newProvider: TtsProviderType) => {
+      setProvider(newProvider);
+      updatePreferences({ provider: newProvider });
+
+      if (newProvider === "local" || newProvider === "kokoro") {
+        setModels(POPULAR_LOCAL_TTS_MODELS);
+        setSelectedModel("kokoro-es");
+        setSelectedVoice("ef_dora");
+        setIsCustomModel(false);
+        setIsCustomVoice(false);
+        updatePreferences({
+          model: "kokoro-es",
+          voice: "ef_dora",
+          isCustomModel: false,
+          isCustomVoice: false,
+        });
+      } else {
+        setModels(POPULAR_TTS_MODELS);
+        setSelectedModel("openai/tts-1");
+        setSelectedVoice("alloy");
+        setIsCustomModel(false);
+        setIsCustomVoice(false);
+        updatePreferences({
+          model: "openai/tts-1",
+          voice: "alloy",
+          isCustomModel: false,
+          isCustomVoice: false,
+        });
+      }
+    },
+    [updatePreferences],
+  );
+
+  // Sync external isOpen prop
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      if (isOpen) {
+        handleOpen();
+      } else {
+        dialog.current?.close();
+      }
+    }
+  }, [isOpen, handleOpen]);
+
+  // Apply initialVoicePreset when provided
+  useEffect(() => {
+    if (initialVoicePreset) {
+      if (initialVoicePreset.provider) {
+        handleProviderChange(initialVoicePreset.provider as TtsProviderType);
+      }
+      if (initialVoicePreset.model) {
+        setSelectedModel(initialVoicePreset.model);
+        setIsCustomModel(Boolean(initialVoicePreset.isCustomModel));
+      }
+      if (initialVoicePreset.voice) {
+        setSelectedVoice(initialVoicePreset.voice);
+        setIsCustomVoice(Boolean(initialVoicePreset.isCustomVoice));
+      }
+      if (typeof initialVoicePreset.speed === "number") {
+        setSpeed(initialVoicePreset.speed);
+      }
+      if (initialVoicePreset.sampleScript) {
+        setScript(initialVoicePreset.sampleScript);
+      }
+      if (typeof initialVoicePreset.generateSubtitles === "boolean") {
+        setGenerateSubtitles(initialVoicePreset.generateSubtitles);
+      }
+      if (typeof initialVoicePreset.adjustDuration === "boolean") {
+        setAdjustDuration(initialVoicePreset.adjustDuration);
+      }
+    }
+  }, [initialVoicePreset, handleProviderChange]);
+
+  const currentModel = models.find((m) => m.id === selectedModel);
 
   const handleApiKeyChange = (key: string) => {
     setApiKey(key);
@@ -105,7 +191,6 @@ export function TtsDialog({
     setIsCustomModel(custom);
     updatePreferences({ model, isCustomModel: custom });
 
-    // If switching to a preset model, pick its default voice if current voice doesn't exist in it
     if (!custom) {
       const target = models.find((m) => m.id === model);
       if (target && target.voices.length > 0) {
@@ -125,37 +210,6 @@ export function TtsDialog({
     setSelectedVoice(voice);
     setIsCustomVoice(custom);
     updatePreferences({ voice, isCustomVoice: custom });
-  };
-
-  const handleProviderChange = (newProvider: TtsProviderType) => {
-    setProvider(newProvider);
-    updatePreferences({ provider: newProvider });
-
-    if (newProvider === "local" || newProvider === "kokoro") {
-      setModels(POPULAR_LOCAL_TTS_MODELS);
-      setSelectedModel("kokoro-es");
-      setSelectedVoice("ef_dora");
-      setIsCustomModel(false);
-      setIsCustomVoice(false);
-      updatePreferences({
-        model: "kokoro-es",
-        voice: "ef_dora",
-        isCustomModel: false,
-        isCustomVoice: false,
-      });
-    } else {
-      setModels(POPULAR_TTS_MODELS);
-      setSelectedModel("openai/tts-1");
-      setSelectedVoice("alloy");
-      setIsCustomModel(false);
-      setIsCustomVoice(false);
-      updatePreferences({
-        model: "openai/tts-1",
-        voice: "alloy",
-        isCustomModel: false,
-        isCustomVoice: false,
-      });
-    }
   };
 
   const handleSpeedChange = (val: number) => {
@@ -179,7 +233,8 @@ export function TtsDialog({
       return;
     }
 
-    const isLocal = provider === "local" || provider === "kokoro" || provider === "custom";
+    const isLocal =
+      provider === "local" || provider === "kokoro" || provider === "custom";
     const resolvedKey = isLocal ? undefined : resolveOpenRouterApiKey(apiKey);
     if (!isLocal && !resolvedKey) {
       setErrorMsg("Se requiere una API Key de OpenRouter.");
@@ -619,20 +674,63 @@ export function TtsDialog({
           )}
         </div>
 
-        <div className="actions" style={{ marginTop: 12 }}>
-          <button type="button" onClick={handleClose} disabled={isGenerating}>
-            Cancelar
-          </button>
-          <button
-            type="button"
-            className="primary"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            style={{ display: "flex", alignItems: "center", gap: 6 }}
-          >
-            <Sparkles size={16} />
-            {isGenerating ? "Generando voz..." : "Generar y Aplicar"}
-          </button>
+        <div
+          className="actions"
+          style={{
+            marginTop: 12,
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <button
+              type="button"
+              title="Guardar esta configuración en la categoría Voces de presets"
+              onClick={async () => {
+                const name = window.prompt(
+                  "Nombre del preset de voz:",
+                  `${selectedVoice} (${provider})`,
+                );
+                if (!name?.trim()) return;
+                try {
+                  await saveVoicePreset({
+                    name: name.trim(),
+                    category: "Voces",
+                    provider,
+                    model: selectedModel,
+                    voice: selectedVoice,
+                    speed,
+                    isCustomModel,
+                    isCustomVoice,
+                    sampleScript: script.trim() || undefined,
+                    generateSubtitles,
+                    adjustDuration,
+                  });
+                  setStatus(`Preset de voz «${name.trim()}» guardado`);
+                } catch (err) {
+                  setErrorMsg(err instanceof Error ? err.message : String(err));
+                }
+              }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              <Bookmark size={15} /> Guardar como preset
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" onClick={handleClose} disabled={isGenerating}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="primary"
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              style={{ display: "flex", alignItems: "center", gap: 6 }}
+            >
+              <Sparkles size={16} />
+              {isGenerating ? "Generando voz..." : "Generar y Aplicar"}
+            </button>
+          </div>
         </div>
       </dialog>
     </>

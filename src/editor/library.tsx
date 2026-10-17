@@ -24,7 +24,11 @@ export type LibraryItem = {
   category?: string;
   /** Stored file name, for user presets. */
   file?: string;
-} & ({ element: Element } | { error: string });
+} & (
+  | { element: Element }
+  | { action: () => void; icon?: ComponentType<{ size?: number }> }
+  | { error: string }
+);
 
 /** A stored preset as its actions see it. */
 export type StoredRef = { file: string; name: string; category?: string };
@@ -191,6 +195,21 @@ export function Library({
             <TriangleAlert size={16} />
             {item.error}
           </div>
+          <span>{item.name}</span>
+        </button>
+      );
+    }
+    if ("action" in item) {
+      const ActionIcon = item.icon ?? Icon;
+      return (
+        <button
+          type="button"
+          key={item.name}
+          className="item"
+          title={`Abrir ${item.name}`}
+          onClick={item.action}
+        >
+          {ActionIcon && <ActionIcon size={18} />}
           <span>{item.name}</span>
         </button>
       );

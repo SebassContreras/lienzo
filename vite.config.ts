@@ -13,6 +13,7 @@ function jsonStore(): Plugin {
   const dirs: Record<string, string> = {
     presets: "presets",
     animations: "presets/animations",
+    voices: "presets/voices",
     scenes: "scenes",
   };
 

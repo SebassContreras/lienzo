@@ -2,6 +2,7 @@ import {
   FilePlus2,
   Layers,
   LayoutGrid,
+  Mic,
   PaintBucket,
   Pause,
   Play,
@@ -40,6 +41,7 @@ import {
 import type { PresetRecipe } from "../model/preset.ts";
 import type { ColorPalette } from "../model/project.ts";
 import { parsePresetRecipe } from "../model/schema.ts";
+import type { VoicePreset } from "../model/voice-preset.ts";
 import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
 import { filterByName } from "../presets/categories.ts";
 import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
@@ -87,6 +89,7 @@ import { ProjectSelector } from "./project-selector.tsx";
 import { type Clock, Stage } from "./stage.tsx";
 import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
+import { VoiceLibrary } from "./voice-library.tsx";
 
 /**
  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
@@ -191,6 +194,9 @@ export function App() {
   const [activePalette, setActivePalette] = useState<
     ColorPalette | undefined
   >();
+  const [isTtsOpen, setIsTtsOpen] = useState(false);
+  const [activeVoicePreset, setActiveVoicePreset] =
+    useState<Partial<VoicePreset> | null>(null);
 
   const setScene = useCallback((s: Scene) => {
     sceneRef.current = s;
@@ -687,6 +693,12 @@ export function App() {
                 scene={scene}
                 onUpdateScene={applyScene}
                 setStatus={setStatus}
+                isOpen={isTtsOpen}
+                onClose={() => {
+                  setIsTtsOpen(false);
+                  setActiveVoicePreset(null);
+                }}
+                initialVoicePreset={activeVoicePreset}
               />
             )}
           </div>
@@ -753,8 +765,18 @@ export function App() {
               </label>
               <Library
                 title="Básicos"
-                items={BASICS}
-                icons={BASIC_ICONS}
+                items={[
+                  ...BASICS,
+                  {
+                    name: "Voz con IA",
+                    action: () => setIsTtsOpen(true),
+                    icon: ({ size }) => <Mic size={size ?? 18} />,
+                  },
+                ]}
+                icons={[
+                  ...BASIC_ICONS,
+                  ({ size }) => <Mic size={size ?? 18} />,
+                ]}
                 background={scene.background}
                 onAdd={(element) => addElement(element)}
               />
@@ -789,6 +811,23 @@ export function App() {
                   selection={selection}
                   filter={matching}
                   onApply={applyScene}
+                  setStatus={setStatus}
+                />
+              )}
+              {!isStatic && (
+                <VoiceLibrary
+                  filter={matching}
+                  onApply={(preset) => {
+                    setActiveVoicePreset(preset);
+                    setIsTtsOpen(true);
+                    setStatus(
+                      `Preset de voz «${preset.name}» cargado en generador`,
+                    );
+                  }}
+                  onOpenVoiceDialog={(preset) => {
+                    setActiveVoicePreset(preset ?? null);
+                    setIsTtsOpen(true);
+                  }}
                   setStatus={setStatus}
                 />
               )}

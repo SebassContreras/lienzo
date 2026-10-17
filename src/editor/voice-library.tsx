@@ -1,0 +1,201 @@
+import { Mic, Upload } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import type { VoicePreset } from "../model/voice-preset.ts";
+import { groupByCategory } from "../presets/categories.ts";
+import { downloadJson, freeSlug, readJsonFile } from "../presets/json-files.ts";
+import {
+  deleteStored,
+  loadVoicePresetFiles,
+  renameStored,
+  saveVoicePreset,
+  toVoicePreset,
+} from "../presets/store.ts";
+import { ItemActions, type StoredRef } from "./library.tsx";
+
+type Stored = { file: string; preset: VoicePreset };
+
+const withCategory = (preset: VoicePreset, category?: string): VoicePreset => ({
+  ...preset,
+  category: category || "Voces",
+});
+
+/**
+ * The "Voces" library section (037/D4): browses, applies, and manages stored voice presets.
+ */
+export function VoiceLibrary({
+  filter,
+  onApply,
+  setStatus,
+  onOpenVoiceDialog,
+}: {
+  filter: <T extends { name: string }>(items: T[]) => T[];
+  onApply: (preset: VoicePreset) => void;
+  setStatus: (message: string) => void;
+  onOpenVoiceDialog: (preset?: VoicePreset) => void;
+}) {
+  const [stored, setStored] = useState<Stored[]>([]);
+
+  const fail = useCallback(
+    (error: unknown) =>
+      setStatus(`Error: ${error instanceof Error ? error.message : error}`),
+    [setStatus],
+  );
+
+  const reload = useCallback(() => {
+    loadVoicePresetFiles().then(setStored).catch(fail);
+  }, [fail]);
+
+  useEffect(reload, [reload]);
+
+  const change = (work: Promise<void>, done: string) =>
+    work
+      .then(() => {
+        setStatus(done);
+        reload();
+      })
+      .catch(fail);
+
+  const find = (ref: StoredRef) => {
+    const s = stored.find((item) => item.file === ref.file);
+    if (!s) throw new Error(`«${ref.name}» ya no existe`);
+    return s.preset;
+  };
+
+  const importPreset = (file: File) =>
+    change(
+      readJsonFile(file).then(async (data) => {
+        const preset = toVoicePreset(data, `«${file.name}»`);
+        await saveVoicePreset(
+          preset,
+          freeSlug(
+            preset.name,
+            stored.map((s) => s.file),
+          ),
+        );
+      }),
+      `Preset de voz «${file.name}» importado`,
+    );
+
+  const groups = groupByCategory(
+    filter(stored.map((s) => ({ ...s.preset, file: s.file }))),
+  );
+
+  return (
+    <section className="voice-library">
+      <h3>Voces</h3>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <button
+          type="button"
+          className="file-button"
+          title="Abrir generador para crear nueva voz"
+          onClick={() => onOpenVoiceDialog()}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+          }}
+        >
+          <Mic size={14} /> Nueva voz IA
+        </button>
+        <label
+          className="file-button"
+          title="Importar preset de voz desde un archivo .json"
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            margin: 0,
+          }}
+        >
+          <Upload size={14} /> Importar voz
+          <input
+            type="file"
+            accept=".json,application/json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) importPreset(file);
+            }}
+          />
+        </label>
+      </div>
+
+      {stored.length === 0 && (
+        <p className="hint">
+          No hay presets de voz guardados. Crea o importa presets para
+          reutilizar locutores.
+        </p>
+      )}
+
+      {groups.map((group) => (
+        <div key={group.category} className="category">
+          {group.category && <h4>{group.category}</h4>}
+          <div className="grid">
+            {group.items.map((item) => (
+              <div className="item-wrap" key={item.file}>
+                <button
+                  type="button"
+                  className="item voice-item"
+                  title={`Aplicar preset de voz: ${item.model} (${item.voice})`}
+                  onClick={() => onApply(find(item))}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "10px 6px",
+                    gap: 6,
+                  }}
+                >
+                  <Mic size={20} />
+                  <span style={{ fontWeight: 600 }}>{item.name}</span>
+                  <span style={{ fontSize: 11, color: "var(--fg-muted)" }}>
+                    {item.voice} • {item.provider}
+                  </span>
+                </button>
+                <ItemActions
+                  item={item}
+                  actions={{
+                    rename: (ref, to) =>
+                      change(
+                        renameStored("voices", ref.file, to),
+                        `Renombrado a «${to}»`,
+                      ),
+                    setCategory: (ref, category) =>
+                      change(
+                        saveVoicePreset(
+                          withCategory(find(ref), category),
+                          ref.file,
+                        ),
+                        category
+                          ? `«${ref.name}» en «${category}»`
+                          : `«${ref.name}» sin categoría`,
+                      ),
+                    remove: (ref) =>
+                      change(
+                        deleteStored("voices", ref.file),
+                        `«${ref.name}» borrado`,
+                      ),
+                    exportJson: (ref) => {
+                      try {
+                        downloadJson(ref.file, find(ref));
+                      } catch (error) {
+                        fail(error);
+                      }
+                    },
+                    overwriteHint: "Editar voz en generador",
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}

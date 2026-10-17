@@ -41,5 +41,5 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 034 | layers-panel | done        | 001, 012, 020 | —            | 34 |
 | 035 | multi-audio-tracks | done        | 026, 007, 010 | —            | 35 |
 | 036 | subtitles-speech-sync | done        | 027, 028 | —            | 36 |
-| 037 | voice-library-integration | todo        | 028, 003, 004, 035 | design       | 37 |
+| 037 | voice-library-integration | done        | 028, 003, 004, 035 | —            | 37 |
 
