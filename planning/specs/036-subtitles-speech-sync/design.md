@@ -4,8 +4,9 @@
 
 - D1@2 (implements R1, R2): Add pure mathematical synchronization helpers in `src/engine/subtitles/sync.ts` (`scaleSubtitleTimings(cues, speedFactor, originTime?)` and `offsetSubtitleTimings(cues, deltaSeconds)`) that immutably rescale and shift cues without overengineering.
 - ~~D2@1 (implements R3): Add a pure audio duration fitting helper calculateFitSpeedRatio in src/engine/subtitles/sync.ts.~~ retired 2026-10-17
-- D3@2 (implements R1): Simplify `src/editor/widgets/cues-editor.tsx` to provide only start offset adjustment and speed slider, removing relative shift and fit-to-audio buttons.
+- D3@3 (implements R1, R6): `src/editor/widgets/cues-editor.tsx` integrates text-based pause tokens and gap-detection on file import, rendering plain text on canvas while showing pause timings in the editor.
 - D4@1 (implements R5): Retain global canvas time `t` indexing for subtitle element transforms and keyframe tracks (`src/engine/tracks.ts`), ensuring `drawSubtitles` visual rendering reads scaled cue timestamps without altering timeline playback clock semantics.
+- D5@1 (implements R1, R6): Pure conversion functions in `src/engine/subtitles/pauses.ts` (`parseTextWithPauses` and `cuesToTextWithPauses`) that translate between timed words and pause-tokenized text immutably with configurable silence thresholds.
 
 ## Trade-offs & Mitigations
 

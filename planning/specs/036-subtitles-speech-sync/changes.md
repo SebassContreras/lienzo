@@ -9,3 +9,12 @@ Why: Se eliminó la sobreingeniería de ajuste automático al audio y desplazami
 - REMOVED D2@1
 - MODIFIED D3@1 → D3@2
 - Tasks: T007, T008
+
+## 2026-10-17 — Compatibilidad de pausas de voz y gaps entre palabras
+Why: Permitir pausas explícitas entre palabras (ej. [0.5s]) en el texto para sincronizar con silencios del audio y mantener compatibilidad bidireccional con VTT/SRT/Whisper importados.
+- MODIFIED R1@2 → R1@3
+- ADDED R6@1
+- MODIFIED D3@2 → D3@3
+- ADDED D5@1
+- Tasks: T009, T010, T011
+
