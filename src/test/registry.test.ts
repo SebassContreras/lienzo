@@ -207,6 +207,7 @@ describe("descriptors", () => {
       "code",
       "chart",
       "path",
+      "subtitles",
     ]);
     for (const d of descriptors) {
       expect(typeof d.draw).toBe("function");

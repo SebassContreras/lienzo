@@ -19,6 +19,20 @@ beforeEach(async () => {
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   ctx = createCtx(root, fakeRenderer());
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (
+    url: string | URL | Request,
+    init?: RequestInit,
+  ) => {
+    if (String(url).includes("speech") || String(url).includes("audio")) {
+      return new Response(new Uint8Array(100), {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      });
+    }
+    return originalFetch(url, init);
+  }) as typeof fetch;
 });
 
 /** Runs a command line in-process and captures what it prints. */
@@ -126,6 +140,19 @@ describe("lienzo CLI", () => {
       "x",
       "--t",
       "0",
+    ]);
+    await ok(["project_create", "--slug", "test-proj", "--name", "Test Proj"]);
+    await ok(["project_list"]);
+    await ok(["project_inspect", "--slug", "test-proj"]);
+    await ok(["project_delete", "--slug", "test-proj"]);
+    await ok([
+      "scene_generate_speech",
+      "--scene",
+      "demo",
+      "--script",
+      "Hola mundo",
+      "--provider",
+      "local",
     ]);
     await ok(["scene_preview", "--scene", "demo", "--t", "1"]);
     await ok(["scene_inspect_layout", "--name", "demo"]);
