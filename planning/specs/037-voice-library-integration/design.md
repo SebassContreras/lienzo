@@ -2,11 +2,12 @@
 
 ## Approach
 
-- D1@1 (implements R1, R2): Add an action element item "Voz con IA" to the basic elements toolbar (`src/editor/app.tsx` & `src/editor/library.tsx`) that triggers the TTS modal dialog (`TtsDialog`) directly with pre-populated voice provider and script inputs.
+- ~~D1@1 (implements R1, R2): Add an action element item "Voz con IA" to the basic elements toolbar (src/editor/app.tsx & src/editor/library.tsx) that triggers the TTS modal dialog (TtsDialog) directly with pre-populated voice provider and script inputs.~~ retired 2026-10-17
 - D2@1 (implements R3): Ensure TTS generated audio binary data is strictly saved as unversioned content-addressed files under `assets/` (via `src/presets/store.ts:uploadAsset` and `src/service/tts/asset-store.ts:saveAudioAsset`), attaching `/assets/<hash>.<ext>` to the scene audio tracks (`scene.audioTracks` / `scene.audio`) without committing audio binaries to git.
-- D3@1 (implements R4): Add a pure voice preset model and schema in `src/model/voice-preset.ts` (`VoicePresetSchema`) representing reusable voiceover configurations (name, category: "Voces", provider, model, voice, speed, custom flags) and register built-in voice presets in `presets/built-in/`.
-- D4@1 (implements R4, R5): Extend preset loading and application in `src/presets/store.ts` and `src/editor/app.tsx` to handle the dedicated "Voces" preset category: applying a voice preset updates the TTS configuration and preferences without injecting binary audio data into Git or scene files.
-- D5@1 (implements R4): Provide a "Guardar como preset de voz" action in `src/editor/dialogs/tts-dialog.tsx` allowing creators to capture their current voice setup directly into the "Voces" library category.
+- ~~D3@1 (implements R4): Add a pure voice preset model and schema in src/model/voice-preset.ts (VoicePresetSchema) representing reusable voiceover configurations (name, category: "Voces", provider, model, voice, speed, custom flags) and register built-in voice presets in presets/built-in/.~~ retired 2026-10-17
+- ~~D4@1 (implements R4, R5): Extend preset loading and application in src/presets/store.ts and src/editor/app.tsx to handle the dedicated Voces preset category.~~ retired 2026-10-17
+- ~~D5@1 (implements R4): Provide a "Guardar como preset de voz" action in src/editor/dialogs/tts-dialog.tsx allowing creators to capture their current voice setup directly into the "Voces" library category.~~ retired 2026-10-17
+- D6@1 (implements R2): The TTS modal dialog (`TtsDialog`) is opened exclusively from the primary "Voz con IA" button in the editor top bar (`header.topbar`), without polluting basic elements or preset categories.
 
 ## Trade-offs & Mitigations
 

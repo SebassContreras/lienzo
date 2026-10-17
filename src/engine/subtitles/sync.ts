@@ -62,30 +62,29 @@ export function scaleSubtitleTimings(
 }
 
 /**
- * Immutably shifts subtitle cues and their word timestamps by a given offset in seconds.
- * Can shift all cues or only cues from a given index onwards.
+ * Immutably sets a new starting time for subtitle cues by shifting all cues
+ * so that the first cue begins at newStartTime.
  *
  * @param cues Array of SubtitleCue.
- * @param deltaSeconds Positive (delay) or negative (advance) offset in seconds.
- * @param fromCueIndex Starting cue index to shift (defaults to 0 = all cues).
+ * @param newStartTime Desired start time in seconds (must be >= 0).
  */
-export function shiftSubtitleTimings(
+export function setSubtitleStartTime(
   cues: SubtitleCue[],
-  deltaSeconds: number,
-  fromCueIndex: number = 0,
+  newStartTime: number,
 ): SubtitleCue[] {
   if (!cues || cues.length === 0) return [];
-  if (deltaSeconds === 0) return [...cues];
+  const validStartTime = Math.max(0, roundToMs(newStartTime));
+  const currentStart = Math.min(...cues.map((c) => c.start));
+  const delta = validStartTime - currentStart;
+  if (delta === 0) return [...cues];
 
-  return cues.map((cue, idx) => {
-    if (idx < fromCueIndex) return cue;
-
-    const start = Math.max(0, roundToMs(cue.start + deltaSeconds));
+  return cues.map((cue) => {
+    const start = Math.max(0, roundToMs(cue.start + delta));
     const duration = roundToMs(cue.end - cue.start);
     const end = roundToMs(start + Math.max(0, duration));
 
     const words = cue.words?.map((w): SubtitleWord => {
-      const wStart = Math.max(0, roundToMs(w.start + deltaSeconds));
+      const wStart = Math.max(0, roundToMs(w.start + delta));
       const wDur = roundToMs(w.end - w.start);
       return {
         word: w.word,
@@ -101,35 +100,4 @@ export function shiftSubtitleTimings(
       ...(words ? { words } : {}),
     };
   });
-}
-
-/**
- * Computes the speed factor needed to stretch or compress subtitle cues
- * so their active timespan matches a target audio duration.
- *
- * @param cues Subtitle cues to measure.
- * @param targetDuration Total target duration in seconds (must be > 0).
- * @param startOffset Starting audio offset in seconds (defaults to 0).
- * @returns The speed factor to pass to scaleSubtitleTimings, or 1 if cues have no duration.
- */
-export function calculateFitSpeedRatio(
-  cues: SubtitleCue[],
-  targetDuration: number,
-  startOffset: number = 0,
-): number {
-  if (!cues || cues.length === 0 || targetDuration <= 0) return 1;
-
-  const firstStart = Math.min(...cues.map((c) => c.start));
-  const lastEnd = Math.max(...cues.map((c) => c.end));
-  const currentDuration = lastEnd - firstStart;
-
-  if (currentDuration <= 0) return 1;
-
-  const availableDuration = targetDuration - startOffset;
-  if (availableDuration <= 0) return 1;
-
-  // speedFactor = currentDuration / availableDuration
-  // Example: cues are 10s, target audio is 5s -> speedFactor = 10 / 5 = 2.0 (speed up)
-  // Example: cues are 5s, target audio is 10s -> speedFactor = 5 / 10 = 0.5 (slow down)
-  return roundToMs(currentDuration / availableDuration);
 }

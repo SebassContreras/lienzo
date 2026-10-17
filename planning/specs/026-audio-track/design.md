@@ -7,7 +7,7 @@
 - D3@1 (implements R3): Audio playback in the editor is encapsulated behind an `AudioPlayer` interface (`src/engine/audio/audio-player.ts`) using the Web Audio API (`AudioContext`, `AudioBufferSourceNode`, `GainNode`); it synchronizes play, pause, seek, loop, and volume with canvas timeline time `t`.
 - D4@2 (implements R4): Video export in `src/export/video-encoder.ts` uses Mediabunny's `AudioBufferSource` and `Output.addAudioTrack` to multiplex the scene audio track (with robust codec capability checking via `canEncodeAudio`, selecting AAC or PCM/Opus fallback), accurately matching scene duration, `startOffset`, and `trimOffset`.
 - D5@1 (implements R5): Headless rendering in `src/export/render-page.ts` and `scene_export` passes audio asset data through the render context, ensuring Playwright headless Chromium renders video with the multiplexed audio track intact.
-- D6@1 (implements R6): An `AudioTrackControl` component in the editor timeline (`src/editor/timeline/audio-track-control.tsx`) provides UI controls to attach/upload an audio file, adjust volume and start offset, mute/unmute, and remove the audio track.
+- D6@1 (implements R6): An audio control in the editor footer (`src/editor/footer/editor-footer.tsx`) provides UI controls to attach/upload an audio file, adjust volume and start offset, mute/unmute, and remove the audio track.
 
 ## Trade-offs & Mitigations
 
@@ -26,7 +26,7 @@
 - `src/engine/audio/audio-timing.ts`: Pure audio slice and offset timing calculation helper.
 - `src/engine/audio/audio-player.ts`: Web Audio API playback adapter.
 - `src/export/video-encoder.ts`: Audio track multiplexing via Mediabunny `AudioBufferSource`.
-- `src/editor/timeline/audio-track-control.tsx`: Audio track UI controls in timeline toolbar.
+- `src/editor/footer/editor-footer.tsx`: Audio track UI controls in editor footer.
 - Unit tests: `src/engine/audio/audio-timing.test.ts`, `src/model/scene-audio.test.ts`.
 
 ## Sequencing

@@ -1,0 +1,907 @@
+diff --git a/src/components/subtitles/descriptor.ts b/src/components/subtitles/descriptor.ts
+index c7d2622..240cec9 100644
+--- a/src/components/subtitles/descriptor.ts
++++ b/src/components/subtitles/descriptor.ts
+@@ -25,25 +25,14 @@ const DEFAULT_CUES: SubtitleCue[] = [
+   {
+     id: "cue-1",
+     start: 0,
+-    end: 2.5,
+-    text: "Subtítulos sincronizados con Lienzo",
++    end: 3.5,
++    text: "Subtítulo de ejemplo en Lienzo",
+     words: [
+-      { word: "Subtítulos", start: 0, end: 0.8 },
+-      { word: "sincronizados", start: 0.8, end: 1.6 },
+-      { word: "con", start: 1.6, end: 1.9 },
+-      { word: "Lienzo", start: 1.9, end: 2.5 },
+-    ],
+-  },
+-  {
+-    id: "cue-2",
+-    start: 2.5,
+-    end: 5,
+-    text: "¡Crea contenido viral fácilmente!",
+-    words: [
+-      { word: "¡Crea", start: 2.5, end: 3.1 },
+-      { word: "contenido", start: 3.1, end: 3.8 },
+-      { word: "viral", start: 3.8, end: 4.3 },
+-      { word: "fácilmente!", start: 4.3, end: 5 },
++      { word: "Subtítulo", start: 0, end: 0.9 },
++      { word: "de", start: 0.9, end: 1.2 },
++      { word: "ejemplo", start: 1.2, end: 2.2 },
++      { word: "en", start: 2.2, end: 2.5 },
++      { word: "Lienzo", start: 2.5, end: 3.5 },
+     ],
+   },
+ ];
+diff --git a/src/editor/timeline/audio-track-control.tsx b/src/editor/timeline/audio-track-control.tsx
+deleted file mode 100644
+index 32d841a..0000000
+--- a/src/editor/timeline/audio-track-control.tsx
++++ /dev/null
+@@ -1,426 +0,0 @@
+-import {
+-  ArrowDown,
+-  ArrowUp,
+-  Music,
+-  Plus,
+-  Trash2,
+-  Volume2,
+-  VolumeX,
+-} from "lucide-react";
+-import { useCallback, useRef } from "react";
+-import {
+-  createAudioTrack,
+-  getSceneAudioTracks,
+-} from "../../engine/audio/audio-tracks.ts";
+-import type { AudioTrackItem, Scene, SceneAudio } from "../../model/model.ts";
+-import { AUDIO_FILES, uploadAsset } from "../../presets/store.ts";
+-
+-export type AudioTrackControlProps = {
+-  scene: Scene;
+-  onChange?: (audio: SceneAudio | undefined) => void;
+-  onTracksChange?: (tracks: AudioTrackItem[]) => void;
+-  setStatus?: (status: string) => void;
+-};
+-
+-export function AudioTrackControl({
+-  scene,
+-  onChange,
+-  onTracksChange,
+-  setStatus,
+-}: AudioTrackControlProps) {
+-  const fileInputRef = useRef<HTMLInputElement>(null);
+-  const replaceTargetRef = useRef<string | null>(null);
+-
+-  const tracks = getSceneAudioTracks(scene);
+-
+-  const updateTracks = useCallback(
+-    (newTracks: AudioTrackItem[]) => {
+-      if (onTracksChange) {
+-        onTracksChange(newTracks);
+-      } else if (onChange) {
+-        // Fallback for single track legacy prop
+-        if (newTracks.length > 0) {
+-          const first = newTracks[0]!;
+-          onChange({
+-            assetId: first.assetId,
+-            volume: first.muted ? 0 : first.volume,
+-            startOffset: first.startOffset,
+-            trimOffset: first.trimOffset,
+-          });
+-        } else {
+-          onChange(undefined);
+-        }
+-      }
+-    },
+-    [onChange, onTracksChange],
+-  );
+-
+-  const handleUpload = useCallback(
+-    async (file: File) => {
+-      try {
+-        const path = await uploadAsset(file, AUDIO_FILES);
+-        const targetId = replaceTargetRef.current;
+-        replaceTargetRef.current = null;
+-
+-        if (targetId) {
+-          // Replace existing track's asset
+-          const updated = tracks.map((t) =>
+-            t.id === targetId
+-              ? {
+-                  ...t,
+-                  assetId: path,
+-                  name: file.name.replace(/\.[^/.]+$/, ""),
+-                }
+-              : t,
+-          );
+-          updateTracks(updated);
+-          setStatus?.(`Audio reemplazado: ${file.name}`);
+-        } else {
+-          // Add new audio track
+-          const newTrack = createAudioTrack(path, {
+-            name: file.name.replace(/\.[^/.]+$/, ""),
+-          });
+-          updateTracks([...tracks, newTrack]);
+-          setStatus?.(`Pista de audio añadida: ${file.name}`);
+-        }
+-      } catch (err) {
+-        setStatus?.(
+-          `Error al cargar audio: ${err instanceof Error ? err.message : String(err)}`,
+-        );
+-      }
+-    },
+-    [tracks, updateTracks, setStatus],
+-  );
+-
+-  const toggleMute = useCallback(
+-    (id: string) => {
+-      const updated = tracks.map((t) =>
+-        t.id === id ? { ...t, muted: !t.muted } : t,
+-      );
+-      updateTracks(updated);
+-    },
+-    [tracks, updateTracks],
+-  );
+-
+-  const updateVolume = useCallback(
+-    (id: string, vol: number) => {
+-      const updated = tracks.map((t) =>
+-        t.id === id ? { ...t, volume: vol } : t,
+-      );
+-      updateTracks(updated);
+-    },
+-    [tracks, updateTracks],
+-  );
+-
+-  const updateStartOffset = useCallback(
+-    (id: string, offset: number) => {
+-      const updated = tracks.map((t) =>
+-        t.id === id ? { ...t, startOffset: Math.max(0, offset) } : t,
+-      );
+-      updateTracks(updated);
+-    },
+-    [tracks, updateTracks],
+-  );
+-
+-  const updateTrimOffset = useCallback(
+-    (id: string, offset: number) => {
+-      const updated = tracks.map((t) =>
+-        t.id === id ? { ...t, trimOffset: Math.max(0, offset) } : t,
+-      );
+-      updateTracks(updated);
+-    },
+-    [tracks, updateTracks],
+-  );
+-
+-  const removeTrack = useCallback(
+-    (id: string) => {
+-      const updated = tracks.filter((t) => t.id !== id);
+-      updateTracks(updated);
+-      setStatus?.("Pista de audio eliminada");
+-    },
+-    [tracks, updateTracks, setStatus],
+-  );
+-
+-  const moveTrack = useCallback(
+-    (index: number, direction: -1 | 1) => {
+-      const newIndex = index + direction;
+-      if (newIndex < 0 || newIndex >= tracks.length) return;
+-      const copy = [...tracks];
+-      const [item] = copy.splice(index, 1);
+-      if (!item) return;
+-      copy.splice(newIndex, 0, item);
+-      updateTracks(copy);
+-    },
+-    [tracks, updateTracks],
+-  );
+-
+-  const triggerUploadNew = () => {
+-    replaceTargetRef.current = null;
+-    fileInputRef.current?.click();
+-  };
+-
+-  const triggerReplace = (id: string) => {
+-    replaceTargetRef.current = id;
+-    fileInputRef.current?.click();
+-  };
+-
+-  return (
+-    <div
+-      className="audio-tracks-container"
+-      style={{
+-        display: "flex",
+-        flexDirection: "column",
+-        gap: "4px",
+-        fontSize: "12px",
+-      }}
+-    >
+-      <input
+-        ref={fileInputRef}
+-        type="file"
+-        accept=".mp3,.wav,.aac,.ogg,audio/*"
+-        hidden
+-        onChange={(e) => {
+-          const file = e.target.files?.[0];
+-          e.target.value = "";
+-          if (file) handleUpload(file);
+-        }}
+-      />
+-
+-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+-        <button
+-          type="button"
+-          className="audio-add-btn"
+-          title="Añadir pista de audio a la escena"
+-          onClick={triggerUploadNew}
+-          style={{
+-            display: "inline-flex",
+-            alignItems: "center",
+-            gap: "4px",
+-            background: "rgba(255,255,255,0.06)",
+-            border: "1px dashed rgba(255,255,255,0.3)",
+-            color: "inherit",
+-            cursor: "pointer",
+-            padding: "2px 8px",
+-            borderRadius: "4px",
+-          }}
+-        >
+-          <Plus size={14} /> Añadir audio
+-        </button>
+-      </div>
+-
+-      {tracks.length > 0 && (
+-        <div
+-          className="audio-tracks-list"
+-          style={{
+-            display: "flex",
+-            flexDirection: "column",
+-            gap: "3px",
+-            marginTop: "2px",
+-          }}
+-        >
+-          {tracks.map((track, idx) => {
+-            const fileName =
+-              track.name ||
+-              (track.assetId ? track.assetId.split("/").pop() : "Audio");
+-            const isMuted = track.muted || (track.volume ?? 1) <= 0;
+-
+-            return (
+-              <div
+-                key={track.id}
+-                className="audio-track-strip"
+-                style={{
+-                  display: "flex",
+-                  alignItems: "center",
+-                  gap: "6px",
+-                  padding: "3px 6px",
+-                  background: "rgba(0,0,0,0.25)",
+-                  borderRadius: "4px",
+-                }}
+-              >
+-                <div style={{ display: "flex", flexDirection: "column" }}>
+-                  <button
+-                    type="button"
+-                    disabled={idx === 0}
+-                    onClick={() => moveTrack(idx, -1)}
+-                    title="Mover arriba"
+-                    style={{
+-                      background: "transparent",
+-                      border: "none",
+-                      color: idx === 0 ? "rgba(255,255,255,0.2)" : "inherit",
+-                      cursor: idx === 0 ? "default" : "pointer",
+-                      padding: 0,
+-                      lineHeight: 1,
+-                    }}
+-                  >
+-                    <ArrowUp size={10} />
+-                  </button>
+-                  <button
+-                    type="button"
+-                    disabled={idx === tracks.length - 1}
+-                    onClick={() => moveTrack(idx, 1)}
+-                    title="Mover abajo"
+-                    style={{
+-                      background: "transparent",
+-                      border: "none",
+-                      color:
+-                        idx === tracks.length - 1
+-                          ? "rgba(255,255,255,0.2)"
+-                          : "inherit",
+-                      cursor: idx === tracks.length - 1 ? "default" : "pointer",
+-                      padding: 0,
+-                      lineHeight: 1,
+-                    }}
+-                  >
+-                    <ArrowDown size={10} />
+-                  </button>
+-                </div>
+-
+-                <span
+-                  title={fileName}
+-                  style={{
+-                    maxWidth: "95px",
+-                    overflow: "hidden",
+-                    textOverflow: "ellipsis",
+-                    whiteSpace: "nowrap",
+-                    display: "inline-flex",
+-                    alignItems: "center",
+-                    gap: "4px",
+-                  }}
+-                >
+-                  <Music size={12} />
+-                  {fileName}
+-                </span>
+-
+-                <button
+-                  type="button"
+-                  title="Reemplazar audio"
+-                  onClick={() => triggerReplace(track.id)}
+-                  style={{
+-                    background: "transparent",
+-                    border: "none",
+-                    color: "inherit",
+-                    cursor: "pointer",
+-                    padding: "2px",
+-                    fontSize: "11px",
+-                  }}
+-                >
+-                  Cambiar
+-                </button>
+-
+-                <button
+-                  type="button"
+-                  title={isMuted ? "Activar sonido" : "Silenciar audio"}
+-                  onClick={() => toggleMute(track.id)}
+-                  style={{
+-                    background: "transparent",
+-                    border: "none",
+-                    color: isMuted ? "#f87171" : "inherit",
+-                    cursor: "pointer",
+-                    padding: "2px",
+-                  }}
+-                >
+-                  {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+-                </button>
+-
+-                <label
+-                  style={{
+-                    display: "inline-flex",
+-                    alignItems: "center",
+-                    gap: "2px",
+-                  }}
+-                  title="Volumen"
+-                >
+-                  <input
+-                    type="range"
+-                    min={0}
+-                    max={1}
+-                    step={0.05}
+-                    value={track.volume ?? 1}
+-                    onChange={(e) =>
+-                      updateVolume(track.id, Number(e.target.value))
+-                    }
+-                    style={{ width: "45px" }}
+-                  />
+-                </label>
+-
+-                <label
+-                  style={{
+-                    display: "inline-flex",
+-                    alignItems: "center",
+-                    gap: "2px",
+-                  }}
+-                  title="Inicio en escena (segundos)"
+-                >
+-                  Ini:
+-                  <input
+-                    type="number"
+-                    min={0}
+-                    max={scene.duration}
+-                    step={0.1}
+-                    value={track.startOffset ?? 0}
+-                    onChange={(e) =>
+-                      updateStartOffset(track.id, Number(e.target.value))
+-                    }
+-                    style={{
+-                      width: "38px",
+-                      background: "rgba(0,0,0,0.3)",
+-                      border: "1px solid rgba(255,255,255,0.2)",
+-                      color: "inherit",
+-                      borderRadius: "2px",
+-                      padding: "1px 2px",
+-                    }}
+-                  />
+-                  s
+-                </label>
+-
+-                <label
+-                  style={{
+-                    display: "inline-flex",
+-                    alignItems: "center",
+-                    gap: "2px",
+-                  }}
+-                  title="Recorte inicial (segundos del archivo original)"
+-                >
+-                  Corte:
+-                  <input
+-                    type="number"
+-                    min={0}
+-                    step={0.1}
+-                    value={track.trimOffset ?? 0}
+-                    onChange={(e) =>
+-                      updateTrimOffset(track.id, Number(e.target.value))
+-                    }
+-                    style={{
+-                      width: "38px",
+-                      background: "rgba(0,0,0,0.3)",
+-                      border: "1px solid rgba(255,255,255,0.2)",
+-                      color: "inherit",
+-                      borderRadius: "2px",
+-                      padding: "1px 2px",
+-                    }}
+-                  />
+-                  s
+-                </label>
+-
+-                <button
+-                  type="button"
+-                  title="Eliminar pista de audio"
+-                  onClick={() => removeTrack(track.id)}
+-                  style={{
+-                    background: "transparent",
+-                    border: "none",
+-                    color: "inherit",
+-                    cursor: "pointer",
+-                    padding: "2px",
+-                  }}
+-                >
+-                  <Trash2 size={13} />
+-                </button>
+-              </div>
+-            );
+-          })}
+-        </div>
+-      )}
+-    </div>
+-  );
+-}
+diff --git a/src/editor/widgets/cues-editor.tsx b/src/editor/widgets/cues-editor.tsx
+index 0445d91..cc3c6b5 100644
+--- a/src/editor/widgets/cues-editor.tsx
++++ b/src/editor/widgets/cues-editor.tsx
+@@ -1,4 +1,4 @@
+-import { FileUp, Plus, Trash2 } from "lucide-react";
++import { FileUp } from "lucide-react";
+ import { type ChangeEvent, useState } from "react";
+ import { parseSrt } from "../../engine/subtitles/parsers/srt.ts";
+ import { parseVtt } from "../../engine/subtitles/parsers/vtt.ts";
+@@ -14,12 +14,58 @@ export interface CuesEditorProps {
+   audioDuration?: number;
+ }
+ 
++/**
++ * Creates or updates a single SubtitleCue from raw user text, generating
++ * proportional word karaoke timings based on current start and speed.
++ */
++function buildSingleCue(
++  text: string,
++  start: number = 0,
++  speedFactor: number = 1.0,
++  existingCue?: SubtitleCue,
++): SubtitleCue[] {
++  const wordsRaw = text.trim().split(/\s+/).filter(Boolean);
++  // Default speech rate: ~0.4s per word at 1.0x speed, adjusted by speedFactor
++  const wordDuration = Math.max(0.15, 0.4 / Math.max(0.1, speedFactor));
++  const totalDuration = Math.max(1.5, wordsRaw.length * wordDuration);
++  const end = Math.round((start + totalDuration) * 1000) / 1000;
++
++  let currentWordStart = start;
++  const words = wordsRaw.map((w) => {
++    const wStart = Math.round(currentWordStart * 1000) / 1000;
++    const wEnd = Math.round((wStart + wordDuration) * 1000) / 1000;
++    currentWordStart = wEnd;
++    return {
++      word: w,
++      start: wStart,
++      end: wEnd,
++    };
++  });
++
++  return [
++    {
++      id: existingCue?.id ?? `cue-${Date.now()}`,
++      start,
++      end,
++      text,
++      words: words.length > 0 ? words : undefined,
++    },
++  ];
++}
++
+ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
+   const [error, setError] = useState<string>("");
+   const [speedFactor, setSpeedFactor] = useState<number>(1);
+ 
++  const activeCue = cues[0];
++  const currentText = activeCue ? activeCue.text : "";
+   const currentStartTime = cues.length > 0 ? Math.min(...cues.map((c) => c.start)) : 0;
+ 
++  const handleTextChange = (newText: string) => {
++    const updated = buildSingleCue(newText, currentStartTime, speedFactor, activeCue);
++    onChange(updated);
++  };
++
+   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     e.target.value = "";
+@@ -44,7 +90,11 @@ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
+           return;
+         }
+ 
+-        onChange(parsed);
++        // Use the parsed text
++        const combinedText = parsed.map((p) => p.text).join(" ");
++        const firstStart = parsed[0]?.start ?? 0;
++        const single = buildSingleCue(combinedText, firstStart, speedFactor, activeCue);
++        onChange(single);
+       } catch (err: unknown) {
+         setError(`Error al leer archivo: ${String(err)}`);
+       }
+@@ -52,32 +102,6 @@ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
+     reader.readAsText(file);
+   };
+ 
+-  const updateCue = (index: number, patch: Partial<SubtitleCue>) => {
+-    const next = [...cues];
+-    if (next[index]) {
+-      next[index] = { ...next[index], ...patch };
+-      onChange(next);
+-    }
+-  };
+-
+-  const removeCue = (index: number) => {
+-    const next = cues.filter((_, i) => i !== index);
+-    onChange(next);
+-  };
+-
+-  const addCue = () => {
+-    const lastCue = cues[cues.length - 1];
+-    const start = lastCue ? lastCue.end : 0;
+-    const end = start + 2;
+-    const newCue: SubtitleCue = {
+-      id: `cue-${Date.now()}`,
+-      start,
+-      end,
+-      text: "Nuevo subtítulo",
+-    };
+-    onChange([...cues, newCue]);
+-  };
+-
+   const applySpeed = (factor: number) => {
+     if (factor <= 0 || cues.length === 0) return;
+     try {
+@@ -90,7 +114,11 @@ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
+   };
+ 
+   const handleStartTimeChange = (newStart: number) => {
+-    if (cues.length === 0) return;
++    if (cues.length === 0) {
++      const single = buildSingleCue("", newStart, speedFactor);
++      onChange(single);
++      return;
++    }
+     try {
+       const shifted = setSubtitleStartTime(cues, newStart);
+       onChange(shifted);
+@@ -108,203 +136,115 @@ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
+         width: "100%",
+       }}
+     >
+-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+-        <label
+-          className="file-pick"
++      {/* Sincronización general */}
++      <div
++        style={{
++          display: "flex",
++          flexDirection: "column",
++          gap: 8,
++          padding: "8px 10px",
++          background: "rgba(255, 255, 255, 0.03)",
++          borderRadius: 6,
++          border: "1px solid rgba(255, 255, 255, 0.08)",
++        }}
++      >
++        <div
+           style={{
+-            flex: 1,
+-            cursor: "pointer",
+-            display: "inline-flex",
+-            alignItems: "center",
+-            justifyContent: "center",
+-            gap: 6,
++            fontSize: 11,
++            fontWeight: 600,
++            textTransform: "uppercase",
++            letterSpacing: "0.05em",
++            color: "rgba(255, 255, 255, 0.7)",
+           }}
+         >
+-          <FileUp size={14} />
+-          Importar .srt / .vtt
++          Sincronización
++        </div>
++
++        {/* Cuándo empieza el subtítulo */}
++        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
++          <span style={{ fontSize: 11, flex: 1 }}>
++            Inicio:
++          </span>
+           <input
+-            type="file"
+-            accept=".srt,.vtt,text/vtt,application/x-subrip"
+-            style={{ display: "none" }}
+-            onChange={handleFileUpload}
++            type="number"
++            min={0}
++            step={0.1}
++            value={currentStartTime}
++            onChange={(e) => handleStartTimeChange(Number(e.target.value))}
++            style={{ width: 60, padding: "2px 4px", fontSize: 11 }}
+           />
+-        </label>
+-        <button
+-          type="button"
+-          onClick={addCue}
+-          title="Agregar subtítulo"
+-          style={{
+-            display: "inline-flex",
+-            alignItems: "center",
+-            gap: 4,
+-            padding: "4px 8px",
+-          }}
+-        >
+-          <Plus size={14} /> Agregar
+-        </button>
++          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>s</span>
++        </div>
++
++        {/* Velocidad para comprimir o estirar el tempo */}
++        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
++          <span style={{ fontSize: 11, flex: 1 }}>
++            Velocidad ({speedFactor.toFixed(2)}x):
++          </span>
++          <input
++            type="range"
++            min={0.5}
++            max={2.5}
++            step={0.05}
++            value={speedFactor}
++            onChange={(e) => setSpeedFactor(Number(e.target.value))}
++            style={{ flex: 2 }}
++          />
++          <button
++            type="button"
++            onClick={() => applySpeed(speedFactor)}
++            title="Aplicar velocidad"
++            style={{ padding: "2px 8px", fontSize: 11 }}
++          >
++            Aplicar
++          </button>
++        </div>
+       </div>
+ 
+-      {cues.length > 0 && (
+-        <div
+-          style={{
+-            display: "flex",
+-            flexDirection: "column",
+-            gap: 8,
+-            padding: "8px 10px",
+-            background: "rgba(255, 255, 255, 0.03)",
+-            borderRadius: 6,
+-            border: "1px solid rgba(255, 255, 255, 0.08)",
+-          }}
+-        >
+-          <div
++      {/* Cuadro de texto único y directo */}
++      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
++        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
++          <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>
++            Texto del subtítulo:
++          </span>
++          <label
++            className="file-pick"
++            title="Importar texto desde un archivo .srt o .vtt"
+             style={{
++              cursor: "pointer",
++              display: "inline-flex",
++              alignItems: "center",
++              gap: 4,
+               fontSize: 11,
+-              fontWeight: 600,
+-              textTransform: "uppercase",
+-              letterSpacing: "0.05em",
+-              color: "rgba(255, 255, 255, 0.7)",
++              opacity: 0.8,
+             }}
+           >
+-            Sincronización
+-          </div>
+-
+-          {/* Cuándo empieza el subtítulo */}
+-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+-            <span style={{ fontSize: 11, flex: 1 }}>
+-              Inicio general:
+-            </span>
++            <FileUp size={12} />
++            Importar .srt/.vtt
+             <input
+-              type="number"
+-              min={0}
+-              step={0.1}
+-              value={currentStartTime}
+-              onChange={(e) => handleStartTimeChange(Number(e.target.value))}
+-              style={{ width: 60, padding: "2px 4px", fontSize: 11 }}
++              type="file"
++              accept=".srt,.vtt,text/vtt,application/x-subrip"
++              style={{ display: "none" }}
++              onChange={handleFileUpload}
+             />
+-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>s</span>
+-          </div>
+-
+-          {/* Velocidad para comprimir o estirar el tempo */}
+-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+-            <span style={{ fontSize: 11, flex: 1 }}>
+-              Velocidad ({speedFactor.toFixed(2)}x):
+-            </span>
+-            <input
+-              type="range"
+-              min={0.5}
+-              max={2.5}
+-              step={0.05}
+-              value={speedFactor}
+-              onChange={(e) => setSpeedFactor(Number(e.target.value))}
+-              style={{ flex: 2 }}
+-            />
+-            <button
+-              type="button"
+-              onClick={() => applySpeed(speedFactor)}
+-              title="Aplicar velocidad"
+-              style={{ padding: "2px 8px", fontSize: 11 }}
+-            >
+-              Aplicar
+-            </button>
+-          </div>
++          </label>
+         </div>
+-      )}
++        <textarea
++          rows={3}
++          value={currentText}
++          placeholder="Escribe el subtítulo aquí…"
++          onChange={(e) => handleTextChange(e.target.value)}
++          style={{
++            width: "100%",
++            padding: "6px 8px",
++            fontSize: 12,
++            resize: "vertical",
++            lineHeight: 1.4,
++          }}
++        />
++      </div>
+ 
+       {error && <div className="hint error">{error}</div>}
+-
+-      <div
+-        style={{
+-          display: "flex",
+-          flexDirection: "column",
+-          gap: 6,
+-          maxHeight: 260,
+-          overflowY: "auto",
+-          paddingRight: 4,
+-        }}
+-      >
+-        {cues.length === 0 ? (
+-          <div className="hint">
+-            Sin subtítulos. Importa un archivo o agrega uno manual.
+-          </div>
+-        ) : (
+-          cues.map((cue, index) => (
+-            <div
+-              key={cue.id ?? index}
+-              style={{
+-                display: "flex",
+-                flexDirection: "column",
+-                gap: 4,
+-                padding: "6px 8px",
+-                background: "rgba(255, 255, 255, 0.05)",
+-                borderRadius: 4,
+-                border: "1px solid rgba(255, 255, 255, 0.1)",
+-              }}
+-            >
+-              <div
+-                style={{
+-                  display: "flex",
+-                  alignItems: "center",
+-                  justifyContent: "space-between",
+-                  gap: 6,
+-                  fontSize: 12,
+-                }}
+-              >
+-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+-                  <span>Inicio:</span>
+-                  <input
+-                    type="number"
+-                    step={0.1}
+-                    min={0}
+-                    value={cue.start}
+-                    onChange={(e) =>
+-                      updateCue(index, { start: Number(e.target.value) })
+-                    }
+-                    style={{ width: 55, padding: "2px 4px", fontSize: 11 }}
+-                  />
+-                  <span>Fin:</span>
+-                  <input
+-                    type="number"
+-                    step={0.1}
+-                    min={0}
+-                    value={cue.end}
+-                    onChange={(e) =>
+-                      updateCue(index, { end: Number(e.target.value) })
+-                    }
+-                    style={{ width: 55, padding: "2px 4px", fontSize: 11 }}
+-                  />
+-                </div>
+-                <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+-                  <button
+-                    type="button"
+-                    onClick={() => removeCue(index)}
+-                    title="Eliminar subtítulo"
+-                    style={{
+-                      background: "transparent",
+-                      border: "none",
+-                      cursor: "pointer",
+-                      color: "rgba(255, 255, 255, 0.6)",
+-                      padding: 2,
+-                    }}
+-                  >
+-                    <Trash2 size={13} />
+-                  </button>
+-                </div>
+-              </div>
+-              <input
+-                type="text"
+-                value={cue.text}
+-                onChange={(e) => updateCue(index, { text: e.target.value })}
+-                style={{ width: "100%", padding: "3px 6px", fontSize: 12 }}
+-              />
+-              {cue.words && cue.words.length > 0 && (
+-                <div className="hint" style={{ fontSize: 10, opacity: 0.7 }}>
+-                  {cue.words.length} palabras con timing karaoke
+-                </div>
+-              )}
+-            </div>
+-          ))
+-        )}
+-      </div>
+     </div>
+   );
+ }
+diff --git a/src/styles.css b/src/styles.css
+index 04c82ee..83ad0c0 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -206,7 +206,7 @@ textarea {
+ 
+ .center {
+   display: grid;
+-  grid-template-rows: 1fr 44px auto;
++  grid-template-rows: 1fr auto auto;
+   min-width: 0;
+   min-height: 0;
+ }

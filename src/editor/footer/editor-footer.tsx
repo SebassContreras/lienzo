@@ -1,58 +1,96 @@
 import {
   ArrowDown,
   ArrowUp,
+  ChevronDown,
+  ChevronUp,
   Music,
+  Pause,
+  Play,
   Plus,
   Trash2,
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useCallback, useRef } from "react";
+import {
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   createAudioTrack,
   getSceneAudioTracks,
 } from "../../engine/audio/audio-tracks.ts";
 import type { AudioTrackItem, Scene, SceneAudio } from "../../model/model.ts";
 import { AUDIO_FILES, uploadAsset } from "../../presets/store.ts";
+import type { Clock } from "../stage.tsx";
 
-export type AudioTrackControlProps = {
+export type EditorFooterProps = {
+  clock: MutableRefObject<Clock>;
+  duration: number;
+  playing: boolean;
+  togglePlay: () => void;
+  onScrub: (t: number) => void;
   scene: Scene;
-  onChange?: (audio: SceneAudio | undefined) => void;
-  onTracksChange?: (tracks: AudioTrackItem[]) => void;
+  onAudioChange: (audio: SceneAudio | undefined) => void;
+  onTracksChange?: (audioTracks: AudioTrackItem[]) => void;
   setStatus?: (status: string) => void;
 };
 
-export function AudioTrackControl({
+export function EditorFooter({
+  clock,
+  duration,
+  playing,
+  togglePlay,
+  onScrub,
   scene,
-  onChange,
+  onAudioChange,
   onTracksChange,
   setStatus,
-}: AudioTrackControlProps) {
+}: EditorFooterProps) {
+  const range = useRef<HTMLInputElement>(null);
+  const readout = useRef<HTMLSpanElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceTargetRef = useRef<string | null>(null);
+  const [tracksCollapsed, setTracksCollapsed] = useState(false);
 
   const tracks = getSceneAudioTracks(scene);
+
+  useEffect(() => {
+    let frame = 0;
+    const tick = () => {
+      if (range.current && document.activeElement !== range.current) {
+        range.current.value = String(clock.current.t);
+      }
+      if (readout.current) {
+        readout.current.textContent = `${clock.current.t.toFixed(2)}s / ${duration.toFixed(1)}s`;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [clock, duration]);
 
   const updateTracks = useCallback(
     (newTracks: AudioTrackItem[]) => {
       if (onTracksChange) {
         onTracksChange(newTracks);
-      } else if (onChange) {
-        // Fallback for single track legacy prop
+      } else if (onAudioChange) {
         if (newTracks.length > 0) {
           const first = newTracks[0]!;
-          onChange({
+          onAudioChange({
             assetId: first.assetId,
             volume: first.muted ? 0 : first.volume,
             startOffset: first.startOffset,
             trimOffset: first.trimOffset,
           });
         } else {
-          onChange(undefined);
+          onAudioChange(undefined);
         }
       }
     },
-    [onChange, onTracksChange],
+    [onAudioChange, onTracksChange],
   );
 
   const handleUpload = useCallback(
@@ -63,7 +101,6 @@ export function AudioTrackControl({
         replaceTargetRef.current = null;
 
         if (targetId) {
-          // Replace existing track's asset
           const updated = tracks.map((t) =>
             t.id === targetId
               ? {
@@ -76,7 +113,6 @@ export function AudioTrackControl({
           updateTracks(updated);
           setStatus?.(`Audio reemplazado: ${file.name}`);
         } else {
-          // Add new audio track
           const newTrack = createAudioTrack(path, {
             name: file.name.replace(/\.[^/.]+$/, ""),
           });
@@ -165,15 +201,8 @@ export function AudioTrackControl({
   };
 
   return (
-    <div
-      className="audio-tracks-container"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "4px",
-        fontSize: "12px",
-      }}
-    >
+    <footer className="editor-footer">
+      {/* Hidden file input for uploading audio */}
       <input
         ref={fileInputRef}
         type="file"
@@ -186,38 +215,52 @@ export function AudioTrackControl({
         }}
       />
 
-      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      {/* Row 1: Playback bar with play/pause, scrub slider, time readout, and tracks toggle */}
+      <div className="playback-bar">
         <button
           type="button"
-          className="audio-add-btn"
-          title="Añadir pista de audio a la escena"
-          onClick={triggerUploadNew}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px dashed rgba(255,255,255,0.3)",
-            color: "inherit",
-            cursor: "pointer",
-            padding: "2px 8px",
-            borderRadius: "4px",
-          }}
+          className="play-toggle-btn"
+          title="Reproducir / pausar (Espacio)"
+          onClick={togglePlay}
         >
-          <Plus size={14} /> Añadir audio
+          {playing ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+        <input
+          ref={range}
+          type="range"
+          min={0}
+          max={duration}
+          step={0.01}
+          defaultValue={0}
+          onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
+          className="scrub-slider"
+        />
+        <span ref={readout} className="readout" />
+        <button
+          type="button"
+          className="tracks-toggle-btn"
+          title={
+            tracksCollapsed
+              ? "Mostrar pistas de audio"
+              : "Ocultar pistas de audio"
+          }
+          onClick={() => setTracksCollapsed((v) => !v)}
+        >
+          <Music size={14} />
+          <span>
+            {tracks.length} {tracks.length === 1 ? "pista" : "pistas"}
+          </span>
+          {tracksCollapsed ? (
+            <ChevronUp size={14} />
+          ) : (
+            <ChevronDown size={14} />
+          )}
         </button>
       </div>
 
-      {tracks.length > 0 && (
-        <div
-          className="audio-tracks-list"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "3px",
-            marginTop: "2px",
-          }}
-        >
+      {/* Row 2+: Audio tracks rendered as clean horizontal rows underneath */}
+      {!tracksCollapsed && (
+        <div className="audio-tracks-rows">
           {tracks.map((track, idx) => {
             const fileName =
               track.name ||
@@ -225,111 +268,61 @@ export function AudioTrackControl({
             const isMuted = track.muted || (track.volume ?? 1) <= 0;
 
             return (
-              <div
-                key={track.id}
-                className="audio-track-strip"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "3px 6px",
-                  background: "rgba(0,0,0,0.25)",
-                  borderRadius: "4px",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column" }}>
+              <div key={track.id} className="audio-track-row">
+                {/* Reorder buttons */}
+                <div className="track-order-btns">
                   <button
                     type="button"
                     disabled={idx === 0}
                     onClick={() => moveTrack(idx, -1)}
-                    title="Mover arriba"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: idx === 0 ? "rgba(255,255,255,0.2)" : "inherit",
-                      cursor: idx === 0 ? "default" : "pointer",
-                      padding: 0,
-                      lineHeight: 1,
-                    }}
+                    title="Mover pista arriba"
+                    className="order-btn"
                   >
-                    <ArrowUp size={10} />
+                    <ArrowUp size={11} />
                   </button>
                   <button
                     type="button"
                     disabled={idx === tracks.length - 1}
                     onClick={() => moveTrack(idx, 1)}
-                    title="Mover abajo"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color:
-                        idx === tracks.length - 1
-                          ? "rgba(255,255,255,0.2)"
-                          : "inherit",
-                      cursor: idx === tracks.length - 1 ? "default" : "pointer",
-                      padding: 0,
-                      lineHeight: 1,
-                    }}
+                    title="Mover pista abajo"
+                    className="order-btn"
                   >
-                    <ArrowDown size={10} />
+                    <ArrowDown size={11} />
                   </button>
                 </div>
 
-                <span
-                  title={fileName}
-                  style={{
-                    maxWidth: "95px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <Music size={12} />
-                  {fileName}
-                </span>
+                {/* Track icon and title */}
+                <div className="track-title" title={fileName}>
+                  <Music size={13} className="track-icon" />
+                  <span className="track-name">{fileName}</span>
+                </div>
 
+                {/* Replace asset button */}
                 <button
                   type="button"
-                  title="Reemplazar audio"
+                  title="Reemplazar archivo de audio"
                   onClick={() => triggerReplace(track.id)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "inherit",
-                    cursor: "pointer",
-                    padding: "2px",
-                    fontSize: "11px",
-                  }}
+                  className="row-action-btn"
                 >
                   Cambiar
                 </button>
 
+                {/* Mute button */}
                 <button
                   type="button"
                   title={isMuted ? "Activar sonido" : "Silenciar audio"}
                   onClick={() => toggleMute(track.id)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: isMuted ? "#f87171" : "inherit",
-                    cursor: "pointer",
-                    padding: "2px",
-                  }}
+                  className={`mute-btn ${isMuted ? "muted" : ""}`}
                 >
-                  {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                  {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                 </button>
 
-                <label
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "2px",
-                  }}
-                  title="Volumen"
+                {/* Volume slider */}
+                <div
+                  className="track-control-group"
+                  title="Volumen de la pista"
                 >
+                  <span className="control-label">Vol:</span>
                   <input
                     type="range"
                     min={0}
@@ -339,19 +332,19 @@ export function AudioTrackControl({
                     onChange={(e) =>
                       updateVolume(track.id, Number(e.target.value))
                     }
-                    style={{ width: "45px" }}
+                    className="volume-slider"
                   />
-                </label>
+                  <span className="control-val">
+                    {Math.round((track.volume ?? 1) * 100)}%
+                  </span>
+                </div>
 
-                <label
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "2px",
-                  }}
-                  title="Inicio en escena (segundos)"
+                {/* Start offset in scene */}
+                <div
+                  className="track-control-group"
+                  title="Inicio en la escena (segundos)"
                 >
-                  Ini:
+                  <span className="control-label">Inicio:</span>
                   <input
                     type="number"
                     min={0}
@@ -361,27 +354,17 @@ export function AudioTrackControl({
                     onChange={(e) =>
                       updateStartOffset(track.id, Number(e.target.value))
                     }
-                    style={{
-                      width: "38px",
-                      background: "rgba(0,0,0,0.3)",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      color: "inherit",
-                      borderRadius: "2px",
-                      padding: "1px 2px",
-                    }}
+                    className="offset-input"
                   />
-                  s
-                </label>
+                  <span className="control-unit">s</span>
+                </div>
 
-                <label
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "2px",
-                  }}
-                  title="Recorte inicial (segundos del archivo original)"
+                {/* Trim offset from file */}
+                <div
+                  className="track-control-group"
+                  title="Recorte inicial del archivo (segundos)"
                 >
-                  Corte:
+                  <span className="control-label">Recorte:</span>
                   <input
                     type="number"
                     min={0}
@@ -390,37 +373,38 @@ export function AudioTrackControl({
                     onChange={(e) =>
                       updateTrimOffset(track.id, Number(e.target.value))
                     }
-                    style={{
-                      width: "38px",
-                      background: "rgba(0,0,0,0.3)",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      color: "inherit",
-                      borderRadius: "2px",
-                      padding: "1px 2px",
-                    }}
+                    className="offset-input"
                   />
-                  s
-                </label>
+                  <span className="control-unit">s</span>
+                </div>
 
+                {/* Remove track button */}
                 <button
                   type="button"
                   title="Eliminar pista de audio"
                   onClick={() => removeTrack(track.id)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "inherit",
-                    cursor: "pointer",
-                    padding: "2px",
-                  }}
+                  className="remove-btn"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             );
           })}
+
+          {/* Add track button */}
+          <div className="add-track-row">
+            <button
+              type="button"
+              className="add-track-btn"
+              title="Añadir una nueva pista de audio a la escena"
+              onClick={triggerUploadNew}
+            >
+              <Plus size={14} />
+              <span>Añadir pista de audio</span>
+            </button>
+          </div>
         </div>
       )}
-    </div>
+    </footer>
   );
 }

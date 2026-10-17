@@ -18,3 +18,21 @@
       covers: D2@1, D4@1, R3@1, R5@1
       kind: test
       changes: src/editor/voice-library.test.ts (+62 -0)
+- [x] T007 [agent] [status:done] Remove "Voz con IA" action button from basic elements toolbar
+      covers: D6@1, R2@2
+      retires: T004
+      changes: src/editor/app.tsx (+2 -12)
+- [x] T008 [agent] [status:done] Remove VoiceLibrary panel and presets/voices category from sidebar
+      covers: D6@1, R2@2
+      retires: T005
+      changes: src/editor/app.tsx (+0 -18), src/editor/voice-library.tsx (+0 -201)
+- [x] T009 [agent] [status:done] Verification tests for topbar AI voice button and unversioned audio generation
+      covers: D2@1, D6@1, R2@2, R3@1
+      kind: test
+      retires: T006
+      changes: src/editor/voice-library.test.ts (+3 -42)
+- [x] T010 [agent] [status:done] Remove unused voice presets storage and schema artifacts
+      covers: D6@1, R2@2
+      retires: T001, T002, T003
+      changes: presets/voices/01-locutor-espanol.json (+0 -11), src/editor/dialogs/tts-dialog.tsx (+3 -37)
+

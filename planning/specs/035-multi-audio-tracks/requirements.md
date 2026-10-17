@@ -12,7 +12,7 @@ Video creators producing rich animated social media posts who need layered sound
 
 - R1@1: The scene model schema supports a list of audio tracks (`audioTracks: AudioTrackItem[]`), while maintaining backwards compatibility with legacy single-track `scene.audio`.
 - R2@1: Each `AudioTrackItem` specifies an asset ID (`assets/`), name or label, volume (0 to 1), `startOffset` (seconds in scene), `trimOffset` (seconds into file), and a `muted` boolean flag.
-- R3@1: Below the playback bar in the timeline, users can add new audio tracks via a `+ Añadir audio` button, delete tracks, and rearrange them vertically.
+- R3@2: The editor features a unified footer component displaying playback controls and time scrubbing at the top, and audio tracks arranged clearly as horizontal rows underneath, with controls to add, mute, adjust volume and timing offsets for each track.
 - R4@1: Each audio track in the timeline renders an interactive track strip with a volume slider, mute toggle, timing offset controls, and a remove button.
 - R5@1: Real-time playback using Web Audio API mixes all active (unmuted) tracks in exact synchronization with canvas time `t`, scrubbing, and looping.
 - R6@1: Video export via Mediabunny (and headless render via Playwright) mixes all active audio tracks into the final container with correct relative start and trim timings.

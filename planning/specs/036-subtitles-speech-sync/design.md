@@ -2,9 +2,9 @@
 
 ## Approach
 
-- D1@1 (implements R1, R2): Add pure mathematical synchronization helpers in `src/engine/subtitles/sync.ts` (`scaleSubtitleTimings(cues, speedFactor, originTime?)` and `shiftSubtitleTimings(cues, deltaSeconds, fromCueIndex?)`) that immutably rescale and shift both cue boundaries (`start`, `end`) and word-level karaoke timestamps (`words: [{ word, start, end }]`), with rounding to millisecond precision (3 decimals) to eliminate floating-point drift.
-- D2@1 (implements R3): Add a pure audio duration fitting helper `calculateFitSpeedRatio(cues, audioDuration, startOffset?)` in `src/engine/subtitles/sync.ts` that calculates the exact speed ratio to stretch or compress cues to match the target scene audio duration (derived via `getSceneAudioTracks`).
-- D3@1 (implements R1, R4): Extend the `subtitles` component descriptor (`src/components/subtitles/descriptor.ts`) with a dedicated "Sincronización" section and integrate interactive speed slider (0.5x–2.5x), global offset inputs, and relative cue shift controls into `src/editor/widgets/cues-editor.tsx` with Spanish labels per A16.
+- D1@2 (implements R1, R2): Add pure mathematical synchronization helpers in `src/engine/subtitles/sync.ts` (`scaleSubtitleTimings(cues, speedFactor, originTime?)` and `offsetSubtitleTimings(cues, deltaSeconds)`) that immutably rescale and shift cues without overengineering.
+- ~~D2@1 (implements R3): Add a pure audio duration fitting helper calculateFitSpeedRatio in src/engine/subtitles/sync.ts.~~ retired 2026-10-17
+- D3@2 (implements R1): Simplify `src/editor/widgets/cues-editor.tsx` to provide only start offset adjustment and speed slider, removing relative shift and fit-to-audio buttons.
 - D4@1 (implements R5): Retain global canvas time `t` indexing for subtitle element transforms and keyframe tracks (`src/engine/tracks.ts`), ensuring `drawSubtitles` visual rendering reads scaled cue timestamps without altering timeline playback clock semantics.
 
 ## Trade-offs & Mitigations

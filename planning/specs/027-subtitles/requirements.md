@@ -17,7 +17,7 @@ on-screen captions.
 - R2@1: The component holds an array of timestamped cues (`start`, `end`, `text`, and optional per-word timestamps `words: [{ word, start, end }]`).
 - R3@2: Subtitles render deterministically in `drawScene` at canvas time `t` constrained within the element's bounding box `(w, h)`: when a cue exceeds the box capacity, words are paginated dynamically into a synchronized active word window (2–4 words / fit lines) so text never overflows the box.
 - R4@1: Standard `.srt` and `.vtt` subtitle files can be imported into the component, parsing timestamps and text into the component cues.
-- R5@1: The inspector provides an interface to edit cue text and timestamps, add/remove cues, and configure text appearance and background styles.
+- R5@2: The subtitles inspector provides a direct single-text input to write the caption content, without complex multi-cue item lists, configuring start offset and speed in the synchronization section.
 - R6@1: At least one built-in preset recipe exists in a fitting category (e.g. reels captions / viral subtitles).
 
 ## Out of scope

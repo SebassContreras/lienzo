@@ -23,8 +23,8 @@
       covers: D5@1
       changes: presets/built-in/44-subtitulos-virales.json (+25 -0)
 - [x] T008 [agent] [status:done] Subtitles parser and deterministic rendering tests
-      covers: R1@1, R2@1, R3@2, R4@1, R5@1, R6@1
-      └─ reviewed 2026-10-15: word window pagination tests added to verify R3@2
+      covers: R1@1, R2@1, R3@2, R4@1, R5@2, R6@1
+      └─ reviewed 2026-10-17: Rendering and parser tests remain valid under direct single-text subtitle R5@2
       kind: test
       changes: src/engine/subtitles/subtitles.test.ts (+110 -0)
 - [x] T009 [agent] [status:done] Fix subtitles canvas positioning and bounding box alignment
@@ -35,6 +35,14 @@
       covers: D2@3
       retires: T009
       changes: src/components/subtitles/descriptor.ts (+1 -0), src/components/subtitles/draw.ts (+26 -1), src/engine/subtitles/index.ts (+2 -0), src/engine/subtitles/subtitles.test.ts (+40 -0), src/engine/subtitles/word-window.ts (+87 -0)
+- [x] T011 [agent] [status:done] Direct single-text subtitle editing in cues-editor and descriptor
+      covers: D4@2, R5@2
+      retires: T006
+      changes: src/components/subtitles/descriptor.ts (+7 -18), src/editor/timeline/audio-track-control.tsx (+0 -426), src/editor/widgets/cues-editor.tsx (+150 -210), src/styles.css (+1 -1)
+- [x] T012 [agent] [status:done] Unit and widget tests for direct single-text subtitle editing
+      covers: D4@2, R5@2
+      kind: test
+      changes: src/engine/subtitles/subtitles.test.ts (+26 -0)
 
 
 

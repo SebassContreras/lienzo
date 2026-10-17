@@ -1,0 +1,75 @@
+diff --git a/presets/voices/01-locutor-espanol.json b/presets/voices/01-locutor-espanol.json
+deleted file mode 100644
+index f8380fd..0000000
+--- a/presets/voices/01-locutor-espanol.json
++++ /dev/null
+@@ -1,11 +0,0 @@
+-{
+-  "name": "Locutor Español",
+-  "category": "Voces",
+-  "provider": "openrouter",
+-  "model": "openai/tts-1",
+-  "voice": "alloy",
+-  "speed": 1.0,
+-  "sampleScript": "Lienzo es un editor de publicaciones animadas para redes sociales.",
+-  "generateSubtitles": true,
+-  "adjustDuration": true
+-}
+diff --git a/src/editor/dialogs/tts-dialog.tsx b/src/editor/dialogs/tts-dialog.tsx
+index 31fd96f..0ec7ad2 100644
+--- a/src/editor/dialogs/tts-dialog.tsx
++++ b/src/editor/dialogs/tts-dialog.tsx
+@@ -1,8 +1,8 @@
+-import { Bookmark, Edit3, List, Mic, Sparkles, X } from "lucide-react";
++import { Edit3, List, Mic, Sparkles, X } from "lucide-react";
+ import { useCallback, useEffect, useRef, useState } from "react";
+ import type { Scene } from "../../model/model.ts";
+ import type { VoicePreset } from "../../model/voice-preset.ts";
+-import { saveVoicePreset, uploadAsset } from "../../presets/store.ts";
++import { uploadAsset } from "../../presets/store.ts";
+ import {
+   resolveOpenRouterApiKey,
+   type TtsProviderType,
+@@ -682,41 +682,7 @@ export function TtsDialog({
+             justifyContent: "space-between",
+           }}
+         >
+-          <div>
+-            <button
+-              type="button"
+-              title="Guardar esta configuración en la categoría Voces de presets"
+-              onClick={async () => {
+-                const name = window.prompt(
+-                  "Nombre del preset de voz:",
+-                  `${selectedVoice} (${provider})`,
+-                );
+-                if (!name?.trim()) return;
+-                try {
+-                  await saveVoicePreset({
+-                    name: name.trim(),
+-                    category: "Voces",
+-                    provider,
+-                    model: selectedModel,
+-                    voice: selectedVoice,
+-                    speed,
+-                    isCustomModel,
+-                    isCustomVoice,
+-                    sampleScript: script.trim() || undefined,
+-                    generateSubtitles,
+-                    adjustDuration,
+-                  });
+-                  setStatus(`Preset de voz «${name.trim()}» guardado`);
+-                } catch (err) {
+-                  setErrorMsg(err instanceof Error ? err.message : String(err));
+-                }
+-              }}
+-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+-            >
+-              <Bookmark size={15} /> Guardar como preset
+-            </button>
+-          </div>
+-          <div style={{ display: "flex", gap: 8 }}>
++          <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+             <button type="button" onClick={handleClose} disabled={isGenerating}>
+               Cancelar
+             </button>

@@ -1,0 +1,268 @@
+diff --git a/src/editor/widgets/cues-editor.tsx b/src/editor/widgets/cues-editor.tsx
+index 8d8da02..0445d91 100644
+--- a/src/editor/widgets/cues-editor.tsx
++++ b/src/editor/widgets/cues-editor.tsx
+@@ -1,11 +1,10 @@
+-import { FastForward, FileUp, Plus, StepForward, Trash2 } from "lucide-react";
++import { FileUp, Plus, Trash2 } from "lucide-react";
+ import { type ChangeEvent, useState } from "react";
+ import { parseSrt } from "../../engine/subtitles/parsers/srt.ts";
+ import { parseVtt } from "../../engine/subtitles/parsers/vtt.ts";
+ import {
+-  calculateFitSpeedRatio,
+   scaleSubtitleTimings,
+-  shiftSubtitleTimings,
++  setSubtitleStartTime,
+ } from "../../engine/subtitles/sync.ts";
+ import type { SubtitleCue } from "../../engine/subtitles/types.ts";
+ 
+@@ -15,10 +14,11 @@ export interface CuesEditorProps {
+   audioDuration?: number;
+ }
+ 
+-export function CuesEditor({ cues, onChange, audioDuration }: CuesEditorProps) {
++export function CuesEditor({ cues, onChange }: CuesEditorProps) {
+   const [error, setError] = useState<string>("");
+   const [speedFactor, setSpeedFactor] = useState<number>(1);
+-  const [shiftOffset, setShiftOffset] = useState<number>(0.2);
++
++  const currentStartTime = cues.length > 0 ? Math.min(...cues.map((c) => c.start)) : 0;
+ 
+   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+@@ -89,29 +89,13 @@ export function CuesEditor({ cues, onChange, audioDuration }: CuesEditorProps) {
+     }
+   };
+ 
+-  const applyGlobalShift = (delta: number) => {
+-    if (cues.length === 0 || delta === 0) return;
+-    const shifted = shiftSubtitleTimings(cues, delta, 0);
+-    onChange(shifted);
+-  };
+-
+-  const applyRelativeShift = (fromIndex: number, delta: number) => {
+-    if (cues.length === 0 || delta === 0) return;
+-    const shifted = shiftSubtitleTimings(cues, delta, fromIndex);
+-    onChange(shifted);
+-  };
+-
+-  const fitToAudio = () => {
+-    if (!audioDuration || audioDuration <= 0) {
+-      setError("No hay duración de audio detectada en la escena.");
+-      return;
+-    }
+-    const ratio = calculateFitSpeedRatio(cues, audioDuration);
+-    if (ratio && ratio > 0 && ratio !== 1) {
+-      const origin = cues[0]?.start ?? 0;
+-      const scaled = scaleSubtitleTimings(cues, ratio, origin);
+-      setSpeedFactor(ratio);
+-      onChange(scaled);
++  const handleStartTimeChange = (newStart: number) => {
++    if (cues.length === 0) return;
++    try {
++      const shifted = setSubtitleStartTime(cues, newStart);
++      onChange(shifted);
++    } catch (err: unknown) {
++      setError(String(err));
+     }
+   };
+ 
+@@ -181,9 +165,26 @@ export function CuesEditor({ cues, onChange, audioDuration }: CuesEditorProps) {
+               color: "rgba(255, 255, 255, 0.7)",
+             }}
+           >
+-            Sincronización de voz
++            Sincronización
++          </div>
++
++          {/* Cuándo empieza el subtítulo */}
++          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
++            <span style={{ fontSize: 11, flex: 1 }}>
++              Inicio general:
++            </span>
++            <input
++              type="number"
++              min={0}
++              step={0.1}
++              value={currentStartTime}
++              onChange={(e) => handleStartTimeChange(Number(e.target.value))}
++              style={{ width: 60, padding: "2px 4px", fontSize: 11 }}
++            />
++            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>s</span>
+           </div>
+ 
++          {/* Velocidad para comprimir o estirar el tempo */}
+           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+             <span style={{ fontSize: 11, flex: 1 }}>
+               Velocidad ({speedFactor.toFixed(2)}x):
+@@ -200,66 +201,12 @@ export function CuesEditor({ cues, onChange, audioDuration }: CuesEditorProps) {
+             <button
+               type="button"
+               onClick={() => applySpeed(speedFactor)}
+-              title="Aplicar velocidad de habla"
++              title="Aplicar velocidad"
+               style={{ padding: "2px 8px", fontSize: 11 }}
+             >
+               Aplicar
+             </button>
+           </div>
+-
+-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+-            <span style={{ fontSize: 11, flex: 1 }}>
+-              Desplazamiento global:
+-            </span>
+-            <input
+-              type="number"
+-              step={0.1}
+-              min={0.1}
+-              max={5}
+-              value={shiftOffset}
+-              onChange={(e) => setShiftOffset(Number(e.target.value))}
+-              style={{ width: 45, padding: "2px 4px", fontSize: 11 }}
+-            />
+-            <button
+-              type="button"
+-              onClick={() => applyGlobalShift(-shiftOffset)}
+-              title="Adelantar subtítulos (-s)"
+-              style={{ padding: "2px 6px", fontSize: 11 }}
+-            >
+-              -{shiftOffset}s
+-            </button>
+-            <button
+-              type="button"
+-              onClick={() => applyGlobalShift(shiftOffset)}
+-              title="Retrasar subtítulos (+s)"
+-              style={{ padding: "2px 6px", fontSize: 11 }}
+-            >
+-              +{shiftOffset}s
+-            </button>
+-          </div>
+-
+-          {audioDuration && audioDuration > 0 ? (
+-            <button
+-              type="button"
+-              onClick={fitToAudio}
+-              style={{
+-                display: "inline-flex",
+-                alignItems: "center",
+-                justifyContent: "center",
+-                gap: 6,
+-                padding: "4px 8px",
+-                fontSize: 11,
+-                background: "rgba(59, 130, 246, 0.2)",
+-                border: "1px solid rgba(59, 130, 246, 0.4)",
+-                color: "#93c5fd",
+-                borderRadius: 4,
+-                cursor: "pointer",
+-              }}
+-            >
+-              <FastForward size={13} /> Ajustar al audio (
+-              {audioDuration.toFixed(1)}s)
+-            </button>
+-          ) : null}
+         </div>
+       )}
+ 
+@@ -327,20 +274,6 @@ export function CuesEditor({ cues, onChange, audioDuration }: CuesEditorProps) {
+                   />
+                 </div>
+                 <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+-                  <button
+-                    type="button"
+-                    onClick={() => applyRelativeShift(index, 0.2)}
+-                    title="Mover este y siguientes +0.2s"
+-                    style={{
+-                      background: "transparent",
+-                      border: "none",
+-                      cursor: "pointer",
+-                      color: "rgba(255, 255, 255, 0.6)",
+-                      padding: 2,
+-                    }}
+-                  >
+-                    <StepForward size={13} />
+-                  </button>
+                   <button
+                     type="button"
+                     onClick={() => removeCue(index)}
+diff --git a/src/engine/subtitles/sync.ts b/src/engine/subtitles/sync.ts
+index c9d5914..a9644dd 100644
+--- a/src/engine/subtitles/sync.ts
++++ b/src/engine/subtitles/sync.ts
+@@ -62,30 +62,29 @@ export function scaleSubtitleTimings(
+ }
+ 
+ /**
+- * Immutably shifts subtitle cues and their word timestamps by a given offset in seconds.
+- * Can shift all cues or only cues from a given index onwards.
++ * Immutably sets a new starting time for subtitle cues by shifting all cues
++ * so that the first cue begins at newStartTime.
+  *
+  * @param cues Array of SubtitleCue.
+- * @param deltaSeconds Positive (delay) or negative (advance) offset in seconds.
+- * @param fromCueIndex Starting cue index to shift (defaults to 0 = all cues).
++ * @param newStartTime Desired start time in seconds (must be >= 0).
+  */
+-export function shiftSubtitleTimings(
++export function setSubtitleStartTime(
+   cues: SubtitleCue[],
+-  deltaSeconds: number,
+-  fromCueIndex: number = 0,
++  newStartTime: number,
+ ): SubtitleCue[] {
+   if (!cues || cues.length === 0) return [];
+-  if (deltaSeconds === 0) return [...cues];
++  const validStartTime = Math.max(0, roundToMs(newStartTime));
++  const currentStart = Math.min(...cues.map((c) => c.start));
++  const delta = validStartTime - currentStart;
++  if (delta === 0) return [...cues];
+ 
+-  return cues.map((cue, idx) => {
+-    if (idx < fromCueIndex) return cue;
+-
+-    const start = Math.max(0, roundToMs(cue.start + deltaSeconds));
++  return cues.map((cue) => {
++    const start = Math.max(0, roundToMs(cue.start + delta));
+     const duration = roundToMs(cue.end - cue.start);
+     const end = roundToMs(start + Math.max(0, duration));
+ 
+     const words = cue.words?.map((w): SubtitleWord => {
+-      const wStart = Math.max(0, roundToMs(w.start + deltaSeconds));
++      const wStart = Math.max(0, roundToMs(w.start + delta));
+       const wDur = roundToMs(w.end - w.start);
+       return {
+         word: w.word,
+@@ -102,34 +101,3 @@ export function shiftSubtitleTimings(
+     };
+   });
+ }
+-
+-/**
+- * Computes the speed factor needed to stretch or compress subtitle cues
+- * so their active timespan matches a target audio duration.
+- *
+- * @param cues Subtitle cues to measure.
+- * @param targetDuration Total target duration in seconds (must be > 0).
+- * @param startOffset Starting audio offset in seconds (defaults to 0).
+- * @returns The speed factor to pass to scaleSubtitleTimings, or 1 if cues have no duration.
+- */
+-export function calculateFitSpeedRatio(
+-  cues: SubtitleCue[],
+-  targetDuration: number,
+-  startOffset: number = 0,
+-): number {
+-  if (!cues || cues.length === 0 || targetDuration <= 0) return 1;
+-
+-  const firstStart = Math.min(...cues.map((c) => c.start));
+-  const lastEnd = Math.max(...cues.map((c) => c.end));
+-  const currentDuration = lastEnd - firstStart;
+-
+-  if (currentDuration <= 0) return 1;
+-
+-  const availableDuration = targetDuration - startOffset;
+-  if (availableDuration <= 0) return 1;
+-
+-  // speedFactor = currentDuration / availableDuration
+-  // Example: cues are 10s, target audio is 5s -> speedFactor = 10 / 5 = 2.0 (speed up)
+-  // Example: cues are 5s, target audio is 10s -> speedFactor = 5 / 10 = 0.5 (slow down)
+-  return roundToMs(currentDuration / availableDuration);
+-}

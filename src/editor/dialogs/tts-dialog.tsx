@@ -1,8 +1,8 @@
-import { Bookmark, Edit3, List, Mic, Sparkles, X } from "lucide-react";
+import { Edit3, List, Mic, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Scene } from "../../model/model.ts";
 import type { VoicePreset } from "../../model/voice-preset.ts";
-import { saveVoicePreset, uploadAsset } from "../../presets/store.ts";
+import { uploadAsset } from "../../presets/store.ts";
 import {
   resolveOpenRouterApiKey,
   type TtsProviderType,
@@ -682,41 +682,7 @@ export function TtsDialog({
             justifyContent: "space-between",
           }}
         >
-          <div>
-            <button
-              type="button"
-              title="Guardar esta configuración en la categoría Voces de presets"
-              onClick={async () => {
-                const name = window.prompt(
-                  "Nombre del preset de voz:",
-                  `${selectedVoice} (${provider})`,
-                );
-                if (!name?.trim()) return;
-                try {
-                  await saveVoicePreset({
-                    name: name.trim(),
-                    category: "Voces",
-                    provider,
-                    model: selectedModel,
-                    voice: selectedVoice,
-                    speed,
-                    isCustomModel,
-                    isCustomVoice,
-                    sampleScript: script.trim() || undefined,
-                    generateSubtitles,
-                    adjustDuration,
-                  });
-                  setStatus(`Preset de voz «${name.trim()}» guardado`);
-                } catch (err) {
-                  setErrorMsg(err instanceof Error ? err.message : String(err));
-                }
-              }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              <Bookmark size={15} /> Guardar como preset
-            </button>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
             <button type="button" onClick={handleClose} disabled={isGenerating}>
               Cancelar
             </button>

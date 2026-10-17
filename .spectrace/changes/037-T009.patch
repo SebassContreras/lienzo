@@ -1,0 +1,65 @@
+diff --git a/src/editor/voice-library.test.ts b/src/editor/voice-library.test.ts
+index b67242a..19f14a4 100644
+--- a/src/editor/voice-library.test.ts
++++ b/src/editor/voice-library.test.ts
+@@ -2,49 +2,10 @@ import { readFileSync } from "node:fs";
+ import { join } from "node:path";
+ import { describe, expect, it } from "vitest";
+ import { defaultScene, type Scene } from "../model/model.ts";
+-import { parseVoicePreset, type VoicePreset } from "../model/voice-preset.ts";
+ import { attachSpeechToScene } from "../service/tts/scene-audio.ts";
+ 
+-describe("Voice Library Integration (037/T006)", () => {
+-  it("validates that the built-in voice preset exists and adheres strictly to VoicePresetSchema", () => {
+-    const filePath = join(
+-      process.cwd(),
+-      "presets",
+-      "voices",
+-      "01-locutor-espanol.json",
+-    );
+-    const content = JSON.parse(readFileSync(filePath, "utf-8"));
+-
+-    const parsed = parseVoicePreset(content);
+-    expect(parsed.ok).toBe(true);
+-    if (!parsed.ok) return;
+-
+-    expect(parsed.value.name).toBe("Locutor Español");
+-    expect(parsed.value.category).toBe("Voces");
+-    expect(parsed.value.model).toBe("openai/tts-1");
+-    expect(parsed.value.voice).toBe("alloy");
+-    expect(parsed.value.speed).toBe(1.0);
+-  });
+-
+-  it("verifies applying a voice preset configures parameters without injecting binary audio data into scene", () => {
+-    const preset: VoicePreset = {
+-      name: "Locutor Español",
+-      category: "Voces",
+-      provider: "openrouter",
+-      model: "openai/tts-1",
+-      voice: "alloy",
+-      speed: 1.0,
+-      sampleScript: "Hola mundo",
+-    };
+-
+-    // Preset only holds configuration metadata
+-    expect(
+-      (preset as unknown as Record<string, unknown>).audioBuffer,
+-    ).toBeUndefined();
+-    expect(
+-      (preset as unknown as Record<string, unknown>).audioBlob,
+-    ).toBeUndefined();
+-
++describe("Topbar AI Voice Integration (037/T009 - D6@1, R2@2, R3@1)", () => {
++  it("verifies scene audio attaches unversioned asset hash path, never binary bytes", () => {
+     // Scene audio attaches unversioned asset hash path, never binary bytes
+     const baseScene: Scene = defaultScene();
+     const updated = attachSpeechToScene(baseScene, {
+@@ -60,7 +21,7 @@ describe("Voice Library Integration (037/T006)", () => {
+     expect(sceneJson).toContain("/assets/abc123hash.mp3");
+   });
+ 
+-  it("confirms .gitignore excludes generated audio assets from git tracking (R3)", () => {
++  it("confirms .gitignore excludes generated audio assets from git tracking (R3@1)", () => {
+     const gitignorePath = join(process.cwd(), ".gitignore");
+     const gitignore = readFileSync(gitignorePath, "utf-8");
+ 

@@ -68,6 +68,7 @@ import {
   backgroundItems,
 } from "./backgrounds.tsx";
 import { TtsDialog } from "./dialogs/tts-dialog.tsx";
+import { EditorFooter } from "./footer/editor-footer.tsx";
 import { useHistory } from "./history.ts";
 import { IconSvg } from "./icon-picker.tsx";
 import {
@@ -87,9 +88,7 @@ import { Panel } from "./panel.tsx";
 import { ProjectContext } from "./project-context.ts";
 import { ProjectSelector } from "./project-selector.tsx";
 import { type Clock, Stage } from "./stage.tsx";
-import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
-import { VoiceLibrary } from "./voice-library.tsx";
 
 /**
  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
@@ -765,18 +764,8 @@ export function App() {
               </label>
               <Library
                 title="Básicos"
-                items={[
-                  ...BASICS,
-                  {
-                    name: "Voz con IA",
-                    action: () => setIsTtsOpen(true),
-                    icon: ({ size }) => <Mic size={size ?? 18} />,
-                  },
-                ]}
-                icons={[
-                  ...BASIC_ICONS,
-                  ({ size }) => <Mic size={size ?? 18} />,
-                ]}
+                items={BASICS}
+                icons={BASIC_ICONS}
                 background={scene.background}
                 onAdd={(element) => addElement(element)}
               />
@@ -811,23 +800,6 @@ export function App() {
                   selection={selection}
                   filter={matching}
                   onApply={applyScene}
-                  setStatus={setStatus}
-                />
-              )}
-              {!isStatic && (
-                <VoiceLibrary
-                  filter={matching}
-                  onApply={(preset) => {
-                    setActiveVoicePreset(preset);
-                    setIsTtsOpen(true);
-                    setStatus(
-                      `Preset de voz «${preset.name}» cargado en generador`,
-                    );
-                  }}
-                  onOpenVoiceDialog={(preset) => {
-                    setActiveVoicePreset(preset ?? null);
-                    setIsTtsOpen(true);
-                  }}
                   setStatus={setStatus}
                 />
               )}
@@ -882,7 +854,7 @@ export function App() {
             }
           />
           {!isStatic && (
-            <Timeline
+            <EditorFooter
               clock={clock}
               duration={scene.duration}
               playing={playing}
@@ -975,73 +947,5 @@ export function App() {
         </Panel>
       </div>
     </ProjectContext.Provider>
-  );
-}
-
-function Timeline({
-  clock,
-  duration,
-  playing,
-  togglePlay,
-  onScrub,
-  scene,
-  onAudioChange,
-  onTracksChange,
-  setStatus,
-}: {
-  clock: MutableRefObject<Clock>;
-  duration: number;
-  playing: boolean;
-  togglePlay: () => void;
-  onScrub: (t: number) => void;
-  scene: Scene;
-  onAudioChange: (audio: SceneAudio | undefined) => void;
-  onTracksChange?: (
-    audioTracks: import("../model/model.ts").AudioTrackItem[],
-  ) => void;
-  setStatus?: (status: string) => void;
-}) {
-  const range = useRef<HTMLInputElement>(null);
-  const readout = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    let frame = 0;
-    const tick = () => {
-      if (range.current && document.activeElement !== range.current) {
-        range.current.value = String(clock.current.t);
-      }
-      if (readout.current) {
-        readout.current.textContent = `${clock.current.t.toFixed(2)}s / ${duration.toFixed(1)}s`;
-      }
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [clock, duration]);
-  return (
-    <div className="timeline">
-      <button
-        type="button"
-        title="Reproducir / pausar (Espacio)"
-        onClick={togglePlay}
-      >
-        {playing ? <Pause size={16} /> : <Play size={16} />}
-      </button>
-      <input
-        ref={range}
-        type="range"
-        min={0}
-        max={duration}
-        step={0.01}
-        defaultValue={0}
-        onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
-      />
-      <span ref={readout} className="readout" />
-      <AudioTrackControl
-        scene={scene}
-        onChange={onAudioChange}
-        onTracksChange={onTracksChange}
-        setStatus={setStatus}
-      />
-    </div>
   );
 }

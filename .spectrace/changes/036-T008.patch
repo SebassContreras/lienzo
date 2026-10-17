@@ -1,0 +1,123 @@
+diff --git a/src/engine/subtitles/sync.test.ts b/src/engine/subtitles/sync.test.ts
+index ac7a620..a105ddc 100644
+--- a/src/engine/subtitles/sync.test.ts
++++ b/src/engine/subtitles/sync.test.ts
+@@ -1,9 +1,8 @@
+ import { describe, expect, it } from "vitest";
+ import {
+-  calculateFitSpeedRatio,
+   roundToMs,
+   scaleSubtitleTimings,
+-  shiftSubtitleTimings,
++  setSubtitleStartTime,
+ } from "./sync.ts";
+ import type { SubtitleCue } from "./types.ts";
+ 
+@@ -64,9 +63,7 @@ describe("scaleSubtitleTimings", () => {
+ 
+   it("scales relative to a specified originTime", () => {
+     const scaled = scaleSubtitleTimings(sampleCues, 2.0, 1.0);
+-    // cue-1 start was 1, so (1 - 1) * 0.5 + 1 = 1
+     expect(scaled[0].start).toBe(1);
+-    // cue-1 end was 3, so (3 - 1) * 0.5 + 1 = 2
+     expect(scaled[0].end).toBe(2);
+   });
+ 
+@@ -80,7 +77,7 @@ describe("scaleSubtitleTimings", () => {
+   });
+ });
+ 
+-describe("shiftSubtitleTimings", () => {
++describe("setSubtitleStartTime", () => {
+   const sampleCues: SubtitleCue[] = [
+     {
+       id: "cue-1",
+@@ -98,73 +95,26 @@ describe("shiftSubtitleTimings", () => {
+     },
+   ];
+ 
+-  it("delays all cues positively by 0.5s", () => {
+-    const shifted = shiftSubtitleTimings(sampleCues, 0.5);
+-    expect(shifted[0].start).toBe(1.5);
+-    expect(shifted[0].end).toBe(2.5);
+-    expect(shifted[0].words?.[0].start).toBe(1.5);
+-    expect(shifted[0].words?.[0].end).toBe(2.5);
++  it("moves start time to a later timestamp", () => {
++    const shifted = setSubtitleStartTime(sampleCues, 2.5);
++    expect(shifted[0].start).toBe(2.5);
++    expect(shifted[0].end).toBe(3.5);
++    expect(shifted[0].words?.[0].start).toBe(2.5);
++    expect(shifted[0].words?.[0].end).toBe(3.5);
+ 
+-    expect(shifted[1].start).toBe(3.5);
+-    expect(shifted[1].end).toBe(5);
++    expect(shifted[1].start).toBe(4.5);
++    expect(shifted[1].end).toBe(6);
+   });
+ 
+-  it("advances all cues negatively by -0.5s", () => {
+-    const shifted = shiftSubtitleTimings(sampleCues, -0.5);
+-    expect(shifted[0].start).toBe(0.5);
+-    expect(shifted[0].end).toBe(1.5);
+-    expect(shifted[1].start).toBe(2.5);
+-    expect(shifted[1].end).toBe(4);
+-  });
+-
+-  it("clamps negative shift so start time does not go below 0", () => {
+-    const shifted = shiftSubtitleTimings(sampleCues, -2.0);
++  it("moves start time to 0", () => {
++    const shifted = setSubtitleStartTime(sampleCues, 0);
+     expect(shifted[0].start).toBe(0);
+-    expect(shifted[0].end).toBe(1); // keeps duration 1s
+-    expect(shifted[0].words?.[0].start).toBe(0);
+-  });
+-
+-  it("shifts only subsequent cues from index onwards", () => {
+-    const shifted = shiftSubtitleTimings(sampleCues, 1.0, 1);
+-    expect(shifted[0].start).toBe(1);
+-    expect(shifted[0].end).toBe(2);
+-
+-    expect(shifted[1].start).toBe(4);
+-    expect(shifted[1].end).toBe(5.5);
++    expect(shifted[0].end).toBe(1);
++    expect(shifted[1].start).toBe(2);
++    expect(shifted[1].end).toBe(3.5);
+   });
+ 
+-  it("returns unchanged copy when delta is 0", () => {
+-    const shifted = shiftSubtitleTimings(sampleCues, 0);
+-    expect(shifted).toEqual(sampleCues);
+-  });
+-});
+-
+-describe("calculateFitSpeedRatio", () => {
+-  const cues: SubtitleCue[] = [
+-    { id: "1", start: 0, end: 5, text: "Parte 1" },
+-    { id: "2", start: 5, end: 10, text: "Parte 2" },
+-  ];
+-
+-  it("calculates 2.0x speed when target duration is half current duration", () => {
+-    const speed = calculateFitSpeedRatio(cues, 5);
+-    expect(speed).toBe(2);
+-  });
+-
+-  it("calculates 0.5x speed when target duration is double current duration", () => {
+-    const speed = calculateFitSpeedRatio(cues, 20);
+-    expect(speed).toBe(0.5);
+-  });
+-
+-  it("factors in startOffset", () => {
+-    // Current duration: 10s. Target duration: 7s, startOffset: 2s -> available duration: 5s.
+-    // Speed factor: 10 / 5 = 2.0
+-    const speed = calculateFitSpeedRatio(cues, 7, 2);
+-    expect(speed).toBe(2);
+-  });
+-
+-  it("returns 1 for empty or invalid inputs", () => {
+-    expect(calculateFitSpeedRatio([], 10)).toBe(1);
+-    expect(calculateFitSpeedRatio(cues, 0)).toBe(1);
+-    expect(calculateFitSpeedRatio(cues, -5)).toBe(1);
++  it("handles empty array cleanly", () => {
++    expect(setSubtitleStartTime([], 2)).toEqual([]);
+   });
+ });

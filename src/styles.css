@@ -206,7 +206,7 @@ textarea {
 
 .center {
   display: grid;
-  grid-template-rows: 1fr 44px auto;
+  grid-template-rows: 1fr auto auto;
   min-width: 0;
   min-height: 0;
 }
@@ -257,6 +257,199 @@ textarea {
   color: var(--muted);
   width: 110px;
   text-align: right;
+}
+
+/* Unified Editor Footer (035/D2@2) */
+.editor-footer {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  user-select: none;
+}
+.editor-footer .playback-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  height: 42px;
+}
+.editor-footer .play-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: inherit;
+  cursor: pointer;
+}
+.editor-footer .scrub-slider {
+  flex: 1;
+}
+.editor-footer .tracks-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.editor-footer .tracks-toggle-btn:hover {
+  color: inherit;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.editor-footer .audio-tracks-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 12px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  max-height: 180px;
+  overflow-y: auto;
+}
+.editor-footer .audio-track-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.editor-footer .track-order-btns {
+  display: flex;
+  flex-direction: column;
+}
+.editor-footer .order-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.6;
+}
+.editor-footer .order-btn:hover:not(:disabled) {
+  opacity: 1;
+}
+.editor-footer .order-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+.editor-footer .track-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 140px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-footer .track-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.editor-footer .track-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.editor-footer .row-action-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+.editor-footer .row-action-btn:hover {
+  color: inherit;
+}
+.editor-footer .mute-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+}
+.editor-footer .mute-btn.muted {
+  color: #f87171;
+}
+.editor-footer .track-control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+}
+.editor-footer .control-label {
+  font-size: 11px;
+}
+.editor-footer .volume-slider {
+  width: 60px;
+}
+.editor-footer .control-val {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  width: 32px;
+}
+.editor-footer .offset-input {
+  width: 48px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: inherit;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+.editor-footer .control-unit {
+  font-size: 11px;
+}
+.editor-footer .remove-btn {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+.editor-footer .remove-btn:hover {
+  color: #f87171;
+}
+.editor-footer .add-track-row {
+  display: flex;
+  margin-top: 2px;
+}
+.editor-footer .add-track-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.editor-footer .add-track-btn:hover {
+  color: inherit;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .panel {

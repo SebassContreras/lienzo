@@ -25,3 +25,12 @@
       covers: D3@1, R5@1
       kind: test
       changes: src/engine/audio/audio-player.test.ts (+73 -0)
+- [x] T009 [agent] [status:done] Unified editor footer with playback controls and horizontal audio track rows
+      covers: D2@2, R3@2, R4@1
+      retires: T007
+      changes: src/editor/app.tsx (+2 -70), src/editor/footer/editor-footer.tsx (+397 -0), src/styles.css (+193 -0)
+- [x] T010 [agent] [status:done] Unit and render tests for EditorFooter component and audio track rows
+      covers: D2@2, R4@1
+      kind: test
+      changes: src/editor/footer/editor-footer.test.tsx (+42 -0)
+
