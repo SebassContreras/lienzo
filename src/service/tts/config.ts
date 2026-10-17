@@ -15,8 +15,8 @@ export const DEFAULT_LOCAL_TTS_URL = "http://localhost:8880/v1/audio/speech";
 export const STORAGE_KEY_OPENROUTER_API_KEY = "lienzo_openrouter_api_key";
 export const DEFAULT_TTS_MODEL = "openai/tts-1";
 export const DEFAULT_TTS_VOICE = "alloy";
-export const DEFAULT_LOCAL_TTS_MODEL = "kokoro";
-export const DEFAULT_LOCAL_TTS_VOICE = "af_heart";
+export const DEFAULT_LOCAL_TTS_MODEL = "kokoro-es";
+export const DEFAULT_LOCAL_TTS_VOICE = "ef_dora";
 
 export type TtsProviderType = "openrouter" | "local" | "kokoro" | "custom";
 

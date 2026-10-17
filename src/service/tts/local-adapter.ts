@@ -44,6 +44,31 @@ export const POPULAR_LOCAL_TTS_MODELS: TtsModel[] = [
       { id: "bm_lewis", name: "Lewis (Male / UK)", gender: "male" },
     ],
   },
+  {
+    id: "kokoro-es",
+    name: "Kokoro Español (Local)",
+    provider: "Kokoro",
+    voices: [
+      {
+        id: "ef_dora",
+        name: "Dora (Femenina / ES)",
+        gender: "female",
+        language: "es",
+      },
+      {
+        id: "em_alex",
+        name: "Alex (Masculina / ES)",
+        gender: "male",
+        language: "es",
+      },
+      {
+        id: "em_santa",
+        name: "Santa (Masculina / ES)",
+        gender: "male",
+        language: "es",
+      },
+    ],
+  },
 ];
 
 /**

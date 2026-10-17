@@ -133,13 +133,13 @@ export function TtsDialog({
 
     if (newProvider === "local" || newProvider === "kokoro") {
       setModels(POPULAR_LOCAL_TTS_MODELS);
-      setSelectedModel("kokoro");
-      setSelectedVoice("af_heart");
+      setSelectedModel("kokoro-es");
+      setSelectedVoice("ef_dora");
       setIsCustomModel(false);
       setIsCustomVoice(false);
       updatePreferences({
-        model: "kokoro",
-        voice: "af_heart",
+        model: "kokoro-es",
+        voice: "ef_dora",
         isCustomModel: false,
         isCustomVoice: false,
       });
