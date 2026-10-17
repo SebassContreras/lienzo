@@ -3,7 +3,7 @@ import type { SubtitleCue, SubtitleWord } from "./types.ts";
 
 /**
  * Regular expression matching pause tokens in cue text:
- * Supports formats like `[0.5s]`, `[0.5]`, `[pause:0.5s]`, `[pause:0.5]`, `[p:500ms]`
+ * Supports clean formats like `[0.5]`, `[1]`, `[0.5s]`, `[pause:0.5]`, `[p:500ms]`
  */
 const PAUSE_REGEX = /^\[(?:pause:|p:)?(\d+(?:\.\d+)?)(s|ms)?\]$/i;
 
@@ -123,7 +123,7 @@ export function wordsToTextWithPauses(
       const prev = words[i - 1];
       const gap = roundToMs(current.start - prev.end);
       if (gap >= minGapThreshold) {
-        parts.push(`[${gap}s]`);
+        parts.push(`[${gap}]`);
       }
     }
     parts.push(current.word);

@@ -23,13 +23,27 @@ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
   const [speedFactor, setSpeedFactor] = useState<number>(1);
 
   const activeCue = cues[0];
-  // Format current text displaying any inter-word pause tokens if present
-  const currentText =
+  const derivedText =
     cuesToTextWithPauses(cues) || (activeCue ? activeCue.text : "");
+
+  // Local text buffer so user can type spaces and enters freely without immediate serialization collapse
+  const [localText, setLocalText] = useState<string>(derivedText);
+  const isEditingRef = useState<{ current: boolean }>({ current: false })[0];
+
+  // Only sync derivedText from external cues changes when the user is NOT actively typing into the field
+  const [lastExternalCues, setLastExternalCues] = useState<SubtitleCue[]>(cues);
+  if (cues !== lastExternalCues) {
+    setLastExternalCues(cues);
+    if (!isEditingRef.current) {
+      setLocalText(derivedText);
+    }
+  }
+
   const currentStartTime =
     cues.length > 0 ? Math.min(...cues.map((c) => c.start)) : 0;
 
   const handleTextChange = (newText: string) => {
+    setLocalText(newText);
     const updated = parseTextWithPauses(
       newText,
       currentStartTime,
@@ -217,8 +231,17 @@ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
         </div>
         <textarea
           rows={3}
-          value={currentText}
-          placeholder="Escribe el subtítulo aquí… Ej: Hola [0.5s] amigos"
+          value={localText}
+          placeholder="Escribe el subtítulo aquí… Ej: Hola [0.5] amigos"
+          onFocus={() => {
+            isEditingRef.current = true;
+          }}
+          onBlur={() => {
+            isEditingRef.current = false;
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+          }}
           onChange={(e) => handleTextChange(e.target.value)}
           style={{
             width: "100%",
@@ -229,8 +252,8 @@ export function CuesEditor({ cues, onChange }: CuesEditorProps) {
           }}
         />
         <span style={{ fontSize: 10, color: "var(--muted)" }}>
-          Tip: Usa [0.5s] para insertar pausas exactas entre palabras (ej: Hola
-          [0.8s] mundo).
+          Tip: El texto se distribuye automáticamente con el habla. Puedes usar
+          [0.5] o [1] para pausas opcionales.
         </span>
       </div>
 

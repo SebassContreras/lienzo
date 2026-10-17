@@ -74,11 +74,10 @@ export function EditorFooter({
 
   const updateTracks = useCallback(
     (newTracks: AudioTrackItem[]) => {
-      if (onTracksChange) {
-        onTracksChange(newTracks);
-      } else if (onAudioChange) {
-        if (newTracks.length > 0) {
-          const first = newTracks[0]!;
+      onTracksChange?.(newTracks);
+      if (onAudioChange) {
+        const first = newTracks[0];
+        if (first) {
           onAudioChange({
             assetId: first.assetId,
             volume: first.muted ? 0 : first.volume,
@@ -236,30 +235,43 @@ export function EditorFooter({
           className="scrub-slider"
         />
         <span ref={readout} className="readout" />
-        <button
-          type="button"
-          className="tracks-toggle-btn"
-          title={
-            tracksCollapsed
-              ? "Mostrar pistas de audio"
-              : "Ocultar pistas de audio"
-          }
-          onClick={() => setTracksCollapsed((v) => !v)}
-        >
-          <Music size={14} />
-          <span>
-            {tracks.length} {tracks.length === 1 ? "pista" : "pistas"}
-          </span>
-          {tracksCollapsed ? (
-            <ChevronUp size={14} />
-          ) : (
-            <ChevronDown size={14} />
-          )}
-        </button>
+        {tracks.length > 0 ? (
+          <button
+            type="button"
+            className="tracks-toggle-btn"
+            title={
+              tracksCollapsed
+                ? "Mostrar pistas de audio"
+                : "Ocultar pistas de audio"
+            }
+            onClick={() => setTracksCollapsed((v) => !v)}
+          >
+            <Music size={14} />
+            <span>
+              {tracks.length} {tracks.length === 1 ? "pista" : "pistas"}
+            </span>
+            {tracksCollapsed ? (
+              <ChevronUp size={14} />
+            ) : (
+              <ChevronDown size={14} />
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="tracks-toggle-btn add-btn"
+            title="Añadir pista de audio a la escena"
+            onClick={triggerUploadNew}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+          >
+            <Plus size={14} />
+            <span>Añadir pista</span>
+          </button>
+        )}
       </div>
 
-      {/* Row 2+: Audio tracks rendered as clean horizontal rows underneath */}
-      {!tracksCollapsed && (
+      {/* Row 2+: Audio tracks rendered as clean horizontal rows underneath when present and not collapsed */}
+      {!tracksCollapsed && tracks.length > 0 && (
         <div className="audio-tracks-rows">
           {tracks.map((track, idx) => {
             const fileName =

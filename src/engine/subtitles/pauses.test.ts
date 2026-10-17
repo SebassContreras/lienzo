@@ -75,7 +75,7 @@ describe("Subtitles Pause Parsing & Gap Detection", () => {
       ];
 
       const serialized = wordsToTextWithPauses(words, 0.2);
-      expect(serialized).toBe("Hola [0.8s] mundo");
+      expect(serialized).toBe("Hola [0.8] mundo");
     });
 
     it("ignores natural micro-gaps below threshold", () => {
@@ -89,11 +89,11 @@ describe("Subtitles Pause Parsing & Gap Detection", () => {
     });
 
     it("round-trips text with pauses accurately", () => {
-      const originalText = "Hola [0.75s] amigos míos";
+      const originalText = "Hola [0.75] amigos míos";
       const parsedCues = parseTextWithPauses(originalText, 0, 1.0);
       const roundTripped = cuesToTextWithPauses(parsedCues, 0.2);
 
-      expect(roundTripped).toBe("Hola [0.75s] amigos míos");
+      expect(roundTripped).toBe("Hola [0.75] amigos míos");
     });
   });
 });

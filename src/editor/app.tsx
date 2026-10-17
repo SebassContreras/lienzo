@@ -2,22 +2,13 @@ import {
   FilePlus2,
   Layers,
   LayoutGrid,
-  Mic,
   PaintBucket,
-  Pause,
-  Play,
   Redo2,
   Sparkles,
   Undo2,
   Upload,
 } from "lucide-react";
-import {
-  type MutableRefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { COMPONENTS, createElement } from "../components/index.ts";
 import { demoScene } from "../demo.ts";
 import { centerOn, indexById, type Pt, translate } from "../engine/geometry.ts";
@@ -36,7 +27,6 @@ import {
   type Element,
   isStaticMode,
   type Scene,
-  type SceneAudio,
 } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import type { ColorPalette } from "../model/project.ts";
@@ -865,7 +855,14 @@ export function App() {
                 applyScene({ ...sceneRef.current, audio })
               }
               onTracksChange={(audioTracks) =>
-                applyScene({ ...sceneRef.current, audioTracks })
+                applyScene({
+                  ...sceneRef.current,
+                  audioTracks,
+                  audio:
+                    audioTracks.length === 0
+                      ? undefined
+                      : sceneRef.current.audio,
+                })
               }
               setStatus={setStatus}
             />
