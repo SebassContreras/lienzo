@@ -1,5 +1,5 @@
 import { Briefcase, Plus, Settings } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ColorPalette, ProjectCanvasDefaults } from "../model/project.ts";
 import type { ProjectSummary } from "../service/project-store.ts";
 import { BrandManagerDialog } from "./dialogs/brand-manager-dialog.tsx";
