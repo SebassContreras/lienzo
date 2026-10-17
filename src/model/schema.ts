@@ -40,6 +40,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
   background: BackgroundSchema,
   elements: z.array(ElementSchema),
   audio: SceneAudioSchema.optional(),
+  mode: z.enum(["static", "video"]).optional(),
 });
 
 const traitParam = z.union([z.string(), z.number(), z.boolean()]);

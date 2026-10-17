@@ -1,0 +1,150 @@
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+index 4af6c35..b9027ba 100644
+--- a/src/components/descriptor.ts
++++ b/src/components/descriptor.ts
+@@ -42,6 +42,10 @@ export type ElementOf<K extends string, F extends Fields> = {
+   animPreset?: AnimPresetRef;
+   /** Effects: blur, blend and mask (025). */
+   effects?: import("./fields/effects.ts").EffectsDefaults;
++  /** Hidden from canvas and rendering (034). */
++  hidden?: boolean;
++  /** Locked against selection and canvas drag edits (034). */
++  locked?: boolean;
+ } & ValueOf<F>;
+ 
+ /** Which animation preset an element's animation was copied from, and where it started. */
+diff --git a/src/engine/layers.test.ts b/src/engine/layers.test.ts
+index 982eb4f..8223693 100644
+--- a/src/engine/layers.test.ts
++++ b/src/engine/layers.test.ts
+@@ -1,5 +1,6 @@
+ import { describe, expect, it } from "vitest";
+-import type { Element, GroupEl, RectEl } from "../model/model.ts";
++import { createElement } from "../components/index.ts";
++import type { Element, GroupEl } from "../model/model.ts";
+ import {
+   moveElementLayer,
+   reorderElements,
+@@ -9,34 +10,11 @@ import {
+   visualLayerOrder,
+ } from "./layers.ts";
+ 
+-function makeEl(id: string, name: string): RectEl {
+-  return {
+-    id,
+-    name,
+-    kind: "rect",
+-    x: 0,
+-    y: 0,
+-    w: 100,
+-    h: 100,
+-    radius: 0,
+-    fill: { color: "#ffffff", opacity: 1 },
+-    stroke: { color: "#000000", width: 1, style: "solid" },
+-    shadow: { color: "#000000", blur: 0, x: 0, y: 0 },
+-    borderGlow: { color: "#000000", blur: 0 },
+-    label: {
+-      text: "",
+-      font: "Inter",
+-      size: 16,
+-      weight: 400,
+-      color: "#000000",
+-      align: "center",
+-      pos: "center",
+-      dx: 0,
+-      dy: 0,
+-      box: false,
+-    },
+-    anim: { in: "none", out: "none", loop: "none", inSec: 0, outSec: 0, speed: 1 },
+-  };
++function makeEl(id: string, name: string): Element {
++  const el = createElement("rect");
++  el.id = id;
++  el.name = name;
++  return el;
+ }
+ 
+ describe("layers", () => {
+@@ -78,27 +56,12 @@ describe("layers", () => {
+   it("moves element layer inside nested groups", () => {
+     const el1 = makeEl("1", "One");
+     const el2 = makeEl("2", "Two");
+-    const group: GroupEl = {
+-      id: "g1",
+-      name: "Group 1",
+-      kind: "group",
+-      x: 0,
+-      y: 0,
+-      w: 200,
+-      h: 200,
+-      cw: 200,
+-      ch: 200,
+-      frame: "none",
+-      title: "",
+-      bg: { color: "#ffffff", opacity: 0 },
+-      stroke: { color: "#000000", width: 0, style: "solid" },
+-      shadow: { color: "#000000", blur: 0, x: 0, y: 0 },
+-      borderGlow: { color: "#000000", blur: 0 },
+-      anim: { in: "none", out: "none", loop: "none", inSec: 0, outSec: 0, speed: 1 },
+-      children: [el1, el2],
+-    };
+-
+-    const sceneElements: Element[] = [group];
++    const groupEl = createElement("group") as GroupEl;
++    groupEl.id = "g1";
++    groupEl.name = "Group 1";
++    groupEl.children = [el1, el2];
++
++    const sceneElements: Element[] = [groupEl];
+     const moved = moveElementLayer(sceneElements, "1", "up");
+     const updatedGroup = moved[0] as GroupEl;
+     expect((updatedGroup.children as Element[]).map((c) => c.id)).toEqual(["2", "1"]);
+@@ -109,14 +72,14 @@ describe("layers", () => {
+     const elements: Element[] = [el1];
+ 
+     const hidden = toggleElementVisibility(elements, "1");
+-    expect((hidden[0] as unknown as { hidden?: boolean }).hidden).toBe(true);
++    expect(hidden[0].hidden).toBe(true);
+ 
+     const visible = toggleElementVisibility(hidden, "1");
+-    expect((visible[0] as unknown as { hidden?: boolean }).hidden).toBeUndefined();
++    expect(visible[0].hidden).toBeUndefined();
+ 
+     // Forced visibility
+     const forced = toggleElementVisibility(elements, "1", true);
+-    expect((forced[0] as unknown as { hidden?: boolean }).hidden).toBe(true);
++    expect(forced[0].hidden).toBe(true);
+   });
+ 
+   it("toggles element lock status", () => {
+@@ -124,14 +87,14 @@ describe("layers", () => {
+     const elements: Element[] = [el1];
+ 
+     const locked = toggleElementLock(elements, "1");
+-    expect((locked[0] as unknown as { locked?: boolean }).locked).toBe(true);
++    expect(locked[0].locked).toBe(true);
+ 
+     const unlocked = toggleElementLock(locked, "1");
+-    expect((unlocked[0] as unknown as { locked?: boolean }).locked).toBeUndefined();
++    expect(unlocked[0].locked).toBeUndefined();
+ 
+     // Forced lock
+     const forced = toggleElementLock(elements, "1", true);
+-    expect((forced[0] as unknown as { locked?: boolean }).locked).toBe(true);
++    expect(forced[0].locked).toBe(true);
+   });
+ 
+   it("maps visual layer order and indices", () => {
+diff --git a/src/model/element-schema.ts b/src/model/element-schema.ts
+index 9a5c879..ef87330 100644
+--- a/src/model/element-schema.ts
++++ b/src/model/element-schema.ts
+@@ -37,6 +37,8 @@ function elementUnion(): z.ZodType<Element> {
+       tracks: TracksSchema.optional(),
+       animPreset: AnimPresetRefSchema.optional(),
+       effects: EffectsSchema,
++      hidden: z.boolean().optional(),
++      locked: z.boolean().optional(),
+       ...shapeOf(d.fields),
+     }),
+   );

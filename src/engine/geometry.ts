@@ -150,7 +150,7 @@ export function hitTest(
   const byId = indexById(scene);
   for (let i = scene.elements.length - 1; i >= 0; i--) {
     const el = scene.elements[i] as Element;
-    if (el.id === skipId || (only && !only(el))) continue;
+    if (el.id === skipId || el.hidden || el.locked || (only && !only(el))) continue;
     if (el.kind === "line") {
       const s = samplePath(resolveLine(el, byId), 40);
       if (distToPath(s, p) <= Math.max(tol, el.width / 2 + tol / 2)) return el;

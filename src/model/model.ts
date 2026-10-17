@@ -58,6 +58,10 @@ export type SceneAudio = {
   trimOffset?: number;
 };
 
+import type { SceneMode } from "./mode.ts";
+export type { SceneMode } from "./mode.ts";
+export { isStaticMode } from "./mode.ts";
+
 export type Scene = {
   width: number;
   height: number;
@@ -67,6 +71,7 @@ export type Scene = {
   background: Background;
   elements: Element[];
   audio?: SceneAudio;
+  mode?: SceneMode;
 };
 
 export { FONTS } from "./fonts.ts";

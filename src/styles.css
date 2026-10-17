@@ -655,3 +655,184 @@ code {
 .library .anim-apply input {
   width: 100%;
 }
+
+/* Sidebar navigation tabs (Biblioteca vs Capas) */
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+  gap: 2px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sidebar-tab:hover {
+  color: var(--fg);
+}
+
+.sidebar-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Layers panel container */
+.layers-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.layers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px 8px;
+}
+
+.layers-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.layers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.layers-empty {
+  padding: 16px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Layer item row */
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.layer-row:hover {
+  background: var(--panel);
+  border-color: var(--line);
+}
+
+.layer-row.selected {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.layer-row.hidden-layer {
+  opacity: 0.5;
+}
+
+.layer-row.locked-layer {
+  color: var(--muted);
+}
+
+.layer-collapse-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-right: 2px;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+}
+
+.layer-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.layer-row.selected .layer-icon {
+  color: var(--accent);
+}
+
+.layer-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+
+.layer-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+
+.layer-row:hover .layer-actions,
+.layer-row.selected .layer-actions {
+  opacity: 1;
+}
+
+.layer-action-btn {
+  background: transparent;
+  border: none;
+  padding: 3px 4px;
+  border-radius: 3px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layer-action-btn:hover:not(:disabled) {
+  background: var(--line);
+  color: var(--fg);
+}
+
+.layer-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.layer-action-btn.active {
+  color: var(--accent);
+}
+
+.layer-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+

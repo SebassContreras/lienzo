@@ -1,0 +1,58 @@
+diff --git a/src/service/tools/scene-create.ts b/src/service/tools/scene-create.ts
+index d07408f..a4d0298 100644
+--- a/src/service/tools/scene-create.ts
++++ b/src/service/tools/scene-create.ts
+@@ -8,17 +8,19 @@ export const sceneCreate = defineTool({
+   name: "scene_create",
+   description:
+     "Create a scene in scenes/. Fields given in `scene` (width, height, duration, fps, " +
+-    "background, elements) replace the defaults: an empty 1080x1080, 4 s, 30 fps scene. " +
++    "background, elements, mode) replace the defaults: an empty 1080x1080, 4 s, 30 fps scene. " +
++    "`mode` can be 'static' (graphic post/image) or 'video' (animated video, default). " +
+     "Elements may name an animation preset in `animPreset`; it is copied in. Fails if the " +
+     "name is taken unless `overwrite` is true.",
+   input: z.object({
+     name: z.string().min(1),
+     project: z.string().optional(),
++    mode: z.enum(["static", "video"]).optional(),
+     scene: z.record(z.string(), z.unknown()).optional(),
+     overwrite: z.boolean().optional(),
+   }),
+   output: SceneResult,
+-  async run({ name, project, scene, overwrite }, ctx) {
++  async run({ name, project, mode, scene, overwrite }, ctx) {
+     const effectiveCtx = project
+       ? {
+           ...ctx,
+@@ -47,6 +49,7 @@ export const sceneCreate = defineTool({
+       }
+     }
+ 
+-    return saveScene(effectiveCtx, name, { ...defaults, ...scene });
++    const sceneData = { ...defaults, ...(mode ? { mode } : {}), ...scene };
++    return saveScene(effectiveCtx, name, sceneData);
+   },
+ });
+diff --git a/src/service/tools/scene-export.ts b/src/service/tools/scene-export.ts
+index 39416a4..a8feeab 100644
+--- a/src/service/tools/scene-export.ts
++++ b/src/service/tools/scene-export.ts
+@@ -47,10 +47,14 @@ export const sceneExport = defineTool({
+       time: t,
+     });
+     const ext = EXTENSIONS[rendered.type] ?? format;
+-    const notices =
+-      format === "mp4" && ext !== "mp4"
+-        ? ["H.264 no está disponible en este navegador; se exportó WebM"]
+-        : [];
++    const isStatic = scene.mode === "static";
++    const notices: string[] = [];
++    if (isStatic && (format === "mp4" || format === "gif")) {
++      notices.push("La escena está configurada en modo 'static'; se recomienda exportar como 'png'.");
++    }
++    if (format === "mp4" && ext !== "mp4") {
++      notices.push("H.264 no está disponible en este navegador; se exportó WebM");
++    }
+     const target = resolve(ctx.root, out ?? `exports/${name}.${ext}`).replace(
+       /\.\w+$/,
+       `.${ext}`,

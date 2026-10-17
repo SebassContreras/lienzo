@@ -1,0 +1,60 @@
+diff --git a/src/model/mode.test.ts b/src/model/mode.test.ts
+new file mode 100644
+index 0000000..a694a67
+--- /dev/null
++++ b/src/model/mode.test.ts
+@@ -0,0 +1,54 @@
++import { describe, expect, it } from "vitest";
++import { isStaticMode } from "./mode.ts";
++import { SceneSchema } from "./schema.ts";
++
++describe("SceneMode domain logic & schema validation (033, R1, D1)", () => {
++  it("defaults to false ('video' mode) when target is undefined or null", () => {
++    expect(isStaticMode(undefined)).toBe(false);
++    expect(isStaticMode(null)).toBe(false);
++    expect(isStaticMode({})).toBe(false);
++  });
++
++  it("correctly identifies static mode from object or string", () => {
++    expect(isStaticMode({ mode: "static" })).toBe(true);
++    expect(isStaticMode("static")).toBe(true);
++    expect(isStaticMode({ mode: "video" })).toBe(false);
++    expect(isStaticMode("video")).toBe(false);
++    expect(isStaticMode("other")).toBe(false);
++  });
++
++  it("validates SceneSchema with mode property", () => {
++    const validScene = {
++      width: 1080,
++      height: 1080,
++      duration: 4,
++      fps: 30,
++      background: {
++        color: "#ffffff",
++        color2: "#ffffff",
++        gradient: false,
++        angle: 0,
++        dots: false,
++        dotColor: "#000000",
++        dotGap: 20,
++        spotlight: 0,
++        spotlightColor: "#ffffff",
++      },
++      elements: [],
++      mode: "static" as const,
++    };
++
++    const parsed = SceneSchema.safeParse(validScene);
++    expect(parsed.success).toBe(true);
++    if (parsed.success) {
++      expect(parsed.data.mode).toBe("static");
++    }
++
++    const invalidModeScene = {
++      ...validScene,
++      mode: "invalid_mode",
++    };
++    const invalidParsed = SceneSchema.safeParse(invalidModeScene);
++    expect(invalidParsed.success).toBe(false);
++  });
++});

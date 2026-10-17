@@ -1,0 +1,96 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 2b84fdf..e591cf9 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -1,5 +1,7 @@
+ import {
+   FilePlus2,
++  Layers,
++  LayoutGrid,
+   PaintBucket,
+   Pause,
+   Play,
+@@ -75,6 +77,7 @@ import {
+   recipeItems,
+   type StoredRef,
+ } from "./library.tsx";
++import { LayersPanel } from "./layers-panel.tsx";
+ import { Panel } from "./panel.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
+ import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
+@@ -181,6 +184,7 @@ export function App() {
+   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
+   const [backgroundFocus, setBackgroundFocus] = useState(0);
+   const [presetFilter, setPresetFilter] = useState("");
++  const [sidebarTab, setSidebarTab] = useState<"library" | "layers">("library");
+   const [activeProjectSlug, setActiveProjectSlug] = useState<string | undefined>();
+   const [activePalette, setActivePalette] = useState<ColorPalette | undefined>();
+ 
+@@ -687,18 +691,46 @@ export function App() {
+         />
+       </header>
+       <aside className="library">
+-        <input
+-          className="preset-filter"
+-          type="search"
+-          placeholder="Filtrar por nombre…"
+-          aria-label="Filtrar presets por nombre"
+-          value={presetFilter}
+-          onChange={(e) => setPresetFilter(e.target.value)}
+-        />
+-        <label
+-          className="file-button"
+-          title="Importar un preset desde un archivo .json"
+-        >
++        <div className="sidebar-tabs">
++          <button
++            type="button"
++            className={`sidebar-tab ${sidebarTab === "library" ? "active" : ""}`}
++            onClick={() => setSidebarTab("library")}
++            title="Biblioteca de componentes y presets"
++          >
++            <LayoutGrid size={14} /> Biblioteca
++          </button>
++          <button
++            type="button"
++            className={`sidebar-tab ${sidebarTab === "layers" ? "active" : ""}`}
++            onClick={() => setSidebarTab("layers")}
++            title="Capas del lienzo"
++          >
++            <Layers size={14} /> Capas
++          </button>
++        </div>
++
++        {sidebarTab === "layers" ? (
++          <LayersPanel
++            scene={scene}
++            selection={selection}
++            onSelect={setSelection}
++            onChangeScene={applyScene}
++          />
++        ) : (
++          <>
++            <input
++              className="preset-filter"
++              type="search"
++              placeholder="Filtrar por nombre…"
++              aria-label="Filtrar presets por nombre"
++              value={presetFilter}
++              onChange={(e) => setPresetFilter(e.target.value)}
++            />
++            <label
++              className="file-button"
++              title="Importar un preset desde un archivo .json"
++            >
+           <Upload size={14} /> Importar preset
+           <input
+             type="file"
+@@ -779,6 +811,8 @@ export function App() {
+             applyScene({ ...sceneRef.current, background })
+           }
+         />
++        </>
++        )}
+       </aside>
+       <main className="center">
+         <Stage

@@ -37,8 +37,8 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 030 | dynamic-tts-config | done        | 028 | —      | 30 |
 | 031 | project-workspaces | done        | 003, 007, 008, 009 | —      | 31 |
 | 032 | pluggable-tts-providers | done        | 028, 030 | —      | 32 |
-| 033 | project-modes-static-video | todo        | 001, 007, 031 | design       | 33 |
-| 034 | layers-panel | todo        | 001, 012, 020 | design       | 34 |
+| 033 | project-modes-static-video | done        | 001, 007, 031 | —            | 33 |
+| 034 | layers-panel | done        | 001, 012, 020 | —            | 34 |
 | 035 | multi-audio-tracks | todo        | 026, 007, 010 | design       | 35 |
 | 036 | subtitles-speech-sync | todo        | 027, 028 | design       | 36 |
 | 037 | voice-library-integration | todo        | 028, 003, 004, 035 | design       | 37 |

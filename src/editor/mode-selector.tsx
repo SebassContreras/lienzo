@@ -1,0 +1,87 @@
+import { Film, Image as ImageIcon } from "lucide-react";
+import type { SceneMode } from "../model/mode.ts";
+
+export interface ProjectModeSelectorProps {
+  mode?: SceneMode;
+  onChangeMode: (mode: SceneMode) => void;
+  disabled?: boolean;
+}
+
+/**
+ * Topbar / dialog selector allowing users to switch between "Diseño / Imagen" (static)
+ * and "Video / Animación" (video) project modes (R2, D2).
+ * Adheres to SRP by managing only mode representation and selection events.
+ */
+export function ProjectModeSelector({
+  mode = "video",
+  onChangeMode,
+  disabled = false,
+}: ProjectModeSelectorProps) {
+  const isStatic = mode === "static";
+
+  return (
+    <div
+      className="project-mode-selector"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        backgroundColor: "var(--bg-subtle, rgba(255, 255, 255, 0.08))",
+        borderRadius: "6px",
+        padding: "2px",
+        gap: "2px",
+      }}
+      role="group"
+      aria-label="Modo de proyecto"
+    >
+      <button
+        type="button"
+        title="Modo diseño estático (sin línea de tiempo ni controles de video)"
+        disabled={disabled}
+        onClick={() => onChangeMode("static")}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "4px",
+          padding: "3px 8px",
+          fontSize: "12px",
+          borderRadius: "4px",
+          border: "none",
+          cursor: disabled ? "not-allowed" : "pointer",
+          backgroundColor: isStatic ? "var(--bg-active, #2563eb)" : "transparent",
+          color: isStatic ? "#ffffff" : "var(--text-muted, #94a3b8)",
+          fontWeight: isStatic ? 600 : 400,
+          transition: "background-color 0.15s ease, color 0.15s ease",
+        }}
+        aria-pressed={isStatic}
+      >
+        <ImageIcon size={14} />
+        <span>Diseño</span>
+      </button>
+
+      <button
+        type="button"
+        title="Modo video y animación (con línea de tiempo y pistas de audio)"
+        disabled={disabled}
+        onClick={() => onChangeMode("video")}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "4px",
+          padding: "3px 8px",
+          fontSize: "12px",
+          borderRadius: "4px",
+          border: "none",
+          cursor: disabled ? "not-allowed" : "pointer",
+          backgroundColor: !isStatic ? "var(--bg-active, #2563eb)" : "transparent",
+          color: !isStatic ? "#ffffff" : "var(--text-muted, #94a3b8)",
+          fontWeight: !isStatic ? 600 : 400,
+          transition: "background-color 0.15s ease, color 0.15s ease",
+        }}
+        aria-pressed={!isStatic}
+      >
+        <Film size={14} />
+        <span>Video</span>
+      </button>
+    </div>
+  );
+}

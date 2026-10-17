@@ -1,0 +1,74 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index da6586d..b404ea2 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -33,6 +33,7 @@ import {
+   type Element,
+   type Scene,
+   type SceneAudio,
++  isStaticMode,
+ } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { parsePresetRecipe } from "../model/schema.ts";
+@@ -580,6 +581,7 @@ export function App() {
+     category ? { ...recipe, category } : recipe;
+   const matching = <T extends { name: string }>(items: T[]) =>
+     filterByName(items, presetFilter);
++  const isStatic = isStaticMode(scene);
+ 
+   return (
+     <ProjectContext.Provider
+@@ -729,13 +731,15 @@ export function App() {
+               : "Selecciona un elemento para sobrescribir",
+           }}
+         />
+-        <AnimLibrary
+-          scene={scene}
+-          selection={selection}
+-          filter={matching}
+-          onApply={applyScene}
+-          setStatus={setStatus}
+-        />
++        {!isStatic && (
++          <AnimLibrary
++            scene={scene}
++            selection={selection}
++            filter={matching}
++            onApply={applyScene}
++            setStatus={setStatus}
++          />
++        )}
+         <BackgroundLibrary
+           items={matching([...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds])}
+           actions={{
+@@ -781,17 +785,19 @@ export function App() {
+               : "Clic en un área vacía para editar el fondo"
+           }
+         />
+-        <Timeline
+-          clock={clock}
+-          duration={scene.duration}
+-          playing={playing}
+-          togglePlay={togglePlay}
+-          onScrub={seek}
+-          scene={scene}
+-          onAudioChange={(audio) => applyScene({ ...sceneRef.current, audio })}
+-          setStatus={setStatus}
+-        />
+-        {selected && (
++        {!isStatic && (
++          <Timeline
++            clock={clock}
++            duration={scene.duration}
++            playing={playing}
++            togglePlay={togglePlay}
++            onScrub={seek}
++            scene={scene}
++            onAudioChange={(audio) => applyScene({ ...sceneRef.current, audio })}
++            setStatus={setStatus}
++          />
++        )}
++        {!isStatic && selected && (
+           <TracksPanel
+             el={selected}
+             duration={scene.duration}

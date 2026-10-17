@@ -37,6 +37,8 @@ function elementUnion(): z.ZodType<Element> {
       tracks: TracksSchema.optional(),
       animPreset: AnimPresetRefSchema.optional(),
       effects: EffectsSchema,
+      hidden: z.boolean().optional(),
+      locked: z.boolean().optional(),
       ...shapeOf(d.fields),
     }),
   );

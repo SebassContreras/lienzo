@@ -16,7 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { type Element, type Scene, SIZE_PRESETS } from "../model/model.ts";
+import { type Element, type Scene, SIZE_PRESETS, isStaticMode } from "../model/model.ts";
 import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";
@@ -33,6 +33,7 @@ export function ElementInspector({
   nameOf,
   canvas,
   time,
+  staticMode,
 }: {
   el: Element;
   onChange: (el: Element) => void;
@@ -47,6 +48,8 @@ export function ElementInspector({
   canvas?: { width: number; height: number; duration?: number };
   /** The playhead, for keyframes (015). */
   time?: number;
+  /** When true, hides animation sections and keyframe controls (033). */
+  staticMode?: boolean;
 }) {
   const [presetName, setPresetName] = useState("");
   const change = <T extends Element>(fn: (draft: T) => void) => {
@@ -92,7 +95,7 @@ export function ElementInspector({
       <FieldEditor
         el={el}
         change={change}
-        ctx={{ nameOf, canvas, onUngroup, onEditParticle, time }}
+        ctx={{ nameOf, canvas, onUngroup, onEditParticle, time, staticMode }}
       />
       {onSavePreset && (
         <Section title="Guardar como preset">
@@ -273,29 +276,33 @@ export function SceneInspector({
             })
           }
         />
-        <Num
-          label="Duración (s)"
-          value={scene.duration}
-          min={1}
-          max={20}
-          step={0.5}
-          onChange={(v) =>
-            change((d) => {
-              d.duration = v;
-            })
-          }
-        />
-        <Num
-          label="FPS"
-          value={scene.fps}
-          min={10}
-          max={60}
-          onChange={(v) =>
-            change((d) => {
-              d.fps = v;
-            })
-          }
-        />
+        {!isStaticMode(scene) && (
+          <>
+            <Num
+              label="Duración (s)"
+              value={scene.duration}
+              min={1}
+              max={20}
+              step={0.5}
+              onChange={(v) =>
+                change((d) => {
+                  d.duration = v;
+                })
+              }
+            />
+            <Num
+              label="FPS"
+              value={scene.fps}
+              min={10}
+              max={60}
+              onChange={(v) =>
+                change((d) => {
+                  d.fps = v;
+                })
+              }
+            />
+          </>
+        )}
       </Section>
       <Section title="Fondo" ref={backgroundRef}>
         <Color

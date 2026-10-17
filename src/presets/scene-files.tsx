@@ -174,7 +174,23 @@ export function SceneFiles({
                   {s.error.split("\n")[0]}
                 </div>
               )}
-              <span className="scene-title">{s.name}</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
+                <span className="scene-title">{s.name}</span>
+                {"scene" in s && (
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      padding: "1px 4px",
+                      borderRadius: "3px",
+                      backgroundColor: s.scene.mode === "static" ? "rgba(16, 185, 129, 0.2)" : "rgba(37, 99, 235, 0.2)",
+                      color: s.scene.mode === "static" ? "#10b981" : "#60a5fa",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {s.scene.mode === "static" ? "Estático" : "Video"}
+                  </span>
+                )}
+              </div>
               <div className="item-actions">
                 <button
                   type="button"

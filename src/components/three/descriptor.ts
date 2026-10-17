@@ -71,7 +71,7 @@ const fields = {
     min: -6,
     max: 6,
     int: true,
-    ...O,
+    section: "Animación",
   }),
   material: material({
     color: "#60a5fa",

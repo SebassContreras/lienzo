@@ -56,6 +56,7 @@ function idsInBox(scene: Scene, box: Box): string[] {
   const byId = indexById(scene);
   return scene.elements
     .filter((el) => {
+      if (el.hidden || el.locked) return false;
       if (el.kind !== "line") return boxesTouch(box, boxOf(el));
       const r = resolveLine(el, byId);
       return boxesTouch(box, spanBox(r.a, r.b));
@@ -549,7 +550,7 @@ export function Stage({
     const tol = 9 / zoom;
     const s = shown();
     const sel = single();
-    if (sel && !e.shiftKey) {
+    if (sel && !sel.locked && !e.shiftKey) {
       const h = handleAt(s, sel, p, tol);
       if (h) {
         checkpoint();

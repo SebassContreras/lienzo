@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isStaticMode } from "../model/mode.ts";
 import type { Scene } from "../model/model.ts";
 import { download } from "./download.ts";
 import { type ExportFormat, exportScene } from "./export.ts";
@@ -17,9 +18,17 @@ export function ExportControls({
   fileName: string;
   setStatus: (s: string) => void;
 }) {
+  const isStatic = isStaticMode(scene);
   const [format, setFormat] = useState<ExportFormat>("png");
   const [scale, setScale] = useState(1);
   const [busy, setBusy] = useState(false);
+
+  // When scene switches to static mode, default format back to PNG (R5, D5)
+  useEffect(() => {
+    if (isStatic && format !== "png") {
+      setFormat("png");
+    }
+  }, [isStatic, format]);
 
   const run = async () => {
     setBusy(true);
@@ -49,10 +58,15 @@ export function ExportControls({
         aria-label="Formato"
         value={format}
         onChange={(e) => setFormat(e.target.value as ExportFormat)}
+        title={isStatic ? "En modo diseño estático solo se exporta imagen (PNG)" : "Formato de exportación"}
       >
-        <option value="png">PNG (cuadro actual)</option>
-        <option value="gif">GIF (loop)</option>
-        <option value="mp4">MP4 (loop)</option>
+        <option value="png">PNG (imagen)</option>
+        <option value="gif" disabled={isStatic}>
+          {isStatic ? "GIF (solo en modo video)" : "GIF (loop)"}
+        </option>
+        <option value="mp4" disabled={isStatic}>
+          {isStatic ? "MP4 (solo en modo video)" : "MP4 (loop)"}
+        </option>
       </select>
       <select
         aria-label="Tamaño"

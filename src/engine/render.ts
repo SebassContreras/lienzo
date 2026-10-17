@@ -37,6 +37,8 @@ export function drawElements(
 
   const dc = { scene, t, byId, drawElements };
   for (const el of elements) {
+    // A hidden element is skipped from drawing (034/D4)
+    if (el.hidden) continue;
     // A mask element itself is skipped instead of being drawn directly (025/D2)
     if (maskIds.has(el.id)) continue;
 

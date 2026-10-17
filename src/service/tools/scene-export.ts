@@ -47,10 +47,14 @@ export const sceneExport = defineTool({
       time: t,
     });
     const ext = EXTENSIONS[rendered.type] ?? format;
-    const notices =
-      format === "mp4" && ext !== "mp4"
-        ? ["H.264 no está disponible en este navegador; se exportó WebM"]
-        : [];
+    const isStatic = scene.mode === "static";
+    const notices: string[] = [];
+    if (isStatic && (format === "mp4" || format === "gif")) {
+      notices.push("La escena está configurada en modo 'static'; se recomienda exportar como 'png'.");
+    }
+    if (format === "mp4" && ext !== "mp4") {
+      notices.push("H.264 no está disponible en este navegador; se exportó WebM");
+    }
     const target = resolve(ctx.root, out ?? `exports/${name}.${ext}`).replace(
       /\.\w+$/,
       `.${ext}`,

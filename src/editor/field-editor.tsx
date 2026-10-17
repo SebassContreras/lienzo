@@ -54,6 +54,8 @@ export type EditorContext = {
   onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
   /** The playhead (s): fields show their value there and keyframes are set there (015). */
   time?: number;
+  /** When true (static mode), hides keyframe controls and animation sections (033). */
+  staticMode?: boolean;
 };
 
 type WidgetProps = {
@@ -458,8 +460,10 @@ export function FieldEditor({
   const t = ctx.time;
   // what the element is at the playhead, so keyframed fields show their value there
   const shown = t !== undefined && el.tracks ? applyTracks(el, t).el : el;
+  const isStatic = Boolean(ctx.staticMode);
   const sections = inspectorLayout(d as never, shown)
     .filter((s) => s.items.length > 0)
+    .filter((s) => !isStatic || s.title !== "Animación")
     .map((s) => (
       <Section key={s.title} title={s.title} open={s.open}>
         {s.items.map((item) => {
@@ -473,7 +477,7 @@ export function FieldEditor({
               ctx={ctx}
             />
           );
-          return t !== undefined && d.animatable.includes(key) ? (
+          return !isStatic && t !== undefined && d.animatable.includes(key) ? (
             <div className="keyed" key={key}>
               {control}
               <KeyButton el={el} path={key} t={t} change={change} />
@@ -487,7 +491,7 @@ export function FieldEditor({
   return (
     <>
       {sections}
-      {t !== undefined && el.kind !== "line" && (
+      {!isStatic && t !== undefined && el.kind !== "line" && (
         <ChannelSection el={el} t={t} change={change} />
       )}
     </>
