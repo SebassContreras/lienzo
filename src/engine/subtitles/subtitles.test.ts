@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { drawSubtitles } from "../../components/subtitles/draw.ts";
+import { applyTracks } from "../tracks.ts";
 import { getActiveCue, isWordActive } from "./cue-timing.ts";
 import { layoutSubtitleCue } from "./layout.ts";
 import { parseSrt } from "./parsers/srt.ts";
 import { extractVttWords, parseVtt } from "./parsers/vtt.ts";
+import { scaleSubtitleTimings } from "./sync.ts";
 import type { SubtitleCue } from "./types.ts";
 import { paginateCueForTime } from "./word-window.ts";
 
@@ -240,5 +242,43 @@ describe("Subtitles domain tests", () => {
     expect(page3.words?.[0]?.word).toBe("nueve");
     expect(page3.words?.[1]?.word).toBe("diez");
   });
-});
 
+  it("keeps keyframe tracks locked to canvas time t while rendering recalibrated cues (R5@1, D4@1)", () => {
+    // Recalibrate cues by 2.0x (duration shrinks from 4s to 2s)
+    const originalCues: SubtitleCue[] = [
+      { id: "c1", start: 0, end: 2, text: "Parte 1" },
+      { id: "c2", start: 2, end: 4, text: "Parte 2" },
+    ];
+    const scaledCues = scaleSubtitleTimings(originalCues, 2.0);
+
+    const el = {
+      id: "sub-1",
+      kind: "subtitles",
+      x: 100,
+      y: 200,
+      w: 800,
+      h: 160,
+      cues: scaledCues,
+      tracks: {
+        x: [
+          { t: 0, value: 100, easing: "linear" },
+          { t: 2, value: 300, easing: "linear" },
+        ],
+      },
+    };
+
+    // At t=1.0:
+    // Keyframe track on x is halfway between 100 and 300 -> 200
+    const { el: atT1 } = applyTracks(el as any, 1.0);
+    expect(atT1.x).toBe(200);
+
+    // In scaled cues (cue 1 is [0, 1], cue 2 is [1, 2]):
+    // At t=0.5 -> "Parte 1"
+    const cueAt05 = getActiveCue(atT1.cues, 0.5);
+    expect(cueAt05?.text).toBe("Parte 1");
+
+    // At t=1.5 -> "Parte 2"
+    const cueAt15 = getActiveCue(atT1.cues, 1.5);
+    expect(cueAt15?.text).toBe("Parte 2");
+  });
+});

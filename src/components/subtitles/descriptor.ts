@@ -16,6 +16,7 @@ import { drawSubtitles } from "./draw.ts";
 import { subtitleCuesSchema } from "./schema.ts";
 
 const C = { section: "Subtítulos" };
+const S = { section: "Sincronización" };
 const T = { section: "Tipografía" };
 const K = { section: "Karaoke" };
 const B = { section: "Fondo" };
@@ -51,7 +52,7 @@ const fields = {
   ...box(800, 160, { section: "Subtítulos", min: 100, max: 2000 }),
   cues: custom("cues-editor", DEFAULT_CUES, subtitleCuesSchema, {
     label: "Cues",
-    ...C,
+    ...S,
   }),
   font: { ...font("Inter"), ...T },
   size: num(48, { label: "Tamaño", min: 14, max: 200, ...T }),
@@ -59,15 +60,33 @@ const fields = {
   textColor: color("#ffffff", { label: "Texto", ...T }),
   align: { ...align("center"), ...T },
   maxWidth: num(800, { label: "Ancho máx.", min: 200, max: 2000, ...T }),
-  lineHeight: num(1.2, { label: "Interlineado", min: 0.8, max: 2.5, step: 0.05, ...T }),
+  lineHeight: num(1.2, {
+    label: "Interlineado",
+    min: 0.8,
+    max: 2.5,
+    step: 0.05,
+    ...T,
+  }),
   wordsPerWindow: num(4, { label: "Palabras/ventana", min: 1, max: 12, ...C }),
 
   highlightColor: color("#facc15", { label: "Color activo", ...K }),
-  highlightScale: num(1.05, { label: "Escala activa", min: 1, max: 1.5, step: 0.01, ...K }),
+  highlightScale: num(1.05, {
+    label: "Escala activa",
+    min: 1,
+    max: 1.5,
+    step: 0.01,
+    ...K,
+  }),
 
   background: check(true, { label: "Caja de fondo", ...B }),
   bgColor: color("#000000", { label: "Color fondo", ...B }),
-  bgOpacity: num(0.7, { label: "Opacidad fondo", min: 0, max: 1, step: 0.05, ...B }),
+  bgOpacity: num(0.7, {
+    label: "Opacidad fondo",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    ...B,
+  }),
   paddingX: num(20, { label: "Margen H", min: 0, max: 100, ...B }),
   paddingY: num(12, { label: "Margen V", min: 0, max: 100, ...B }),
   radius: num(12, { label: "Esquinas", min: 0, max: 60, ...B }),
@@ -84,6 +103,7 @@ export const subtitles = defineComponent<SubtitlesEl>({
   fields,
   sections: [
     { title: "Subtítulos" },
+    { title: "Sincronización" },
     { title: "Tipografía" },
     { title: "Karaoke" },
     { title: "Fondo" },
