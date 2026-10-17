@@ -26,3 +26,7 @@ assets/*
 scenes/*
 !scenes/.gitkeep
 !scenes/ejemplo-keyframes.json
+
+# User project workspaces
+projects/*
+!projects/.gitkeep
