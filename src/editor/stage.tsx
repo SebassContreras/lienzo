@@ -486,11 +486,10 @@ export function Stage({
       if (clock.current.playing) {
         clock.current.t = (clock.current.t + dt) % s.duration;
       }
-      audioPlayerRef.current?.sync(
+      audioPlayerRef.current?.syncScene(
         clock.current.t,
         clock.current.playing,
-        s.duration,
-        s.audio,
+        s,
       );
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");

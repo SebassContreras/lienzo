@@ -93,7 +93,9 @@ export function getSharedDecodeAudioContext(): AudioContext | null {
   return decodeAudioContext;
 }
 
-export async function loadAudioBuffer(src: string): Promise<AudioBuffer | null> {
+export async function loadAudioBuffer(
+  src: string,
+): Promise<AudioBuffer | null> {
   const ctx = getSharedDecodeAudioContext();
   if (!ctx) return null;
   try {
@@ -113,6 +115,11 @@ for (const ext of ["mp3", "wav", "aac", "ogg"]) {
 function sceneSources(scene: Scene, out: Set<string>): Set<string> {
   if (scene.audio?.assetId) {
     out.add(scene.audio.assetId);
+  }
+  if (scene.audioTracks) {
+    for (const track of scene.audioTracks) {
+      if (track.assetId) out.add(track.assetId);
+    }
   }
   const collect = (elements: Element[]) => {
     for (const el of elements) {

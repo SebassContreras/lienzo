@@ -32,6 +32,16 @@ export const SceneAudioSchema = z.object({
   trimOffset: z.number().min(0).optional(),
 });
 
+export const AudioTrackItemSchema = z.object({
+  id: z.string().min(1),
+  assetId: z.string().min(1),
+  name: z.string().optional(),
+  volume: z.number().min(0).max(1).optional(),
+  startOffset: z.number().min(0).optional(),
+  trimOffset: z.number().min(0).optional(),
+  muted: z.boolean().optional(),
+});
+
 export const SceneSchema: z.ZodType<Scene> = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
@@ -40,6 +50,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
   background: BackgroundSchema,
   elements: z.array(ElementSchema),
   audio: SceneAudioSchema.optional(),
+  audioTracks: z.array(AudioTrackItemSchema).optional(),
   mode: z.enum(["static", "video"]).optional(),
 });
 

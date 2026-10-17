@@ -58,7 +58,18 @@ export type SceneAudio = {
   trimOffset?: number;
 };
 
+export type AudioTrackItem = {
+  id: string;
+  assetId: string;
+  name?: string;
+  volume?: number;
+  startOffset?: number;
+  trimOffset?: number;
+  muted?: boolean;
+};
+
 import type { SceneMode } from "./mode.ts";
+
 export type { SceneMode } from "./mode.ts";
 export { isStaticMode } from "./mode.ts";
 
@@ -71,6 +82,7 @@ export type Scene = {
   background: Background;
   elements: Element[];
   audio?: SceneAudio;
+  audioTracks?: AudioTrackItem[];
   mode?: SceneMode;
 };
 

@@ -33,11 +33,12 @@ import {
   cloneElements,
   defaultScene,
   type Element,
+  isStaticMode,
   type Scene,
   type SceneAudio,
-  isStaticMode,
 } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
+import type { ColorPalette } from "../model/project.ts";
 import { parsePresetRecipe } from "../model/schema.ts";
 import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
 import { filterByName } from "../presets/categories.ts";
@@ -64,6 +65,7 @@ import {
   BackgroundLibrary,
   backgroundItems,
 } from "./backgrounds.tsx";
+import { TtsDialog } from "./dialogs/tts-dialog.tsx";
 import { useHistory } from "./history.ts";
 import { IconSvg } from "./icon-picker.tsx";
 import {
@@ -71,22 +73,20 @@ import {
   MultiInspector,
   SceneInspector,
 } from "./inspector.tsx";
+import { LayersPanel } from "./layers-panel.tsx";
 import {
   Library,
   type LibraryItem,
   recipeItems,
   type StoredRef,
 } from "./library.tsx";
-import { LayersPanel } from "./layers-panel.tsx";
+import { ProjectModeSelector } from "./mode-selector.tsx";
 import { Panel } from "./panel.tsx";
+import { ProjectContext } from "./project-context.ts";
+import { ProjectSelector } from "./project-selector.tsx";
 import { type Clock, Stage } from "./stage.tsx";
 import { AudioTrackControl } from "./timeline/audio-track-control.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
-import { TtsDialog } from "./dialogs/tts-dialog.tsx";
-import { ProjectSelector } from "./project-selector.tsx";
-import { ProjectModeSelector } from "./mode-selector.tsx";
-import { ProjectContext } from "./project-context.ts";
-import type { ColorPalette } from "../model/project.ts";
 
 /**
  * Removes `ids` (with everything inside removed groups) and leaves lines that were attached
@@ -185,8 +185,12 @@ export function App() {
   const [backgroundFocus, setBackgroundFocus] = useState(0);
   const [presetFilter, setPresetFilter] = useState("");
   const [sidebarTab, setSidebarTab] = useState<"library" | "layers">("library");
-  const [activeProjectSlug, setActiveProjectSlug] = useState<string | undefined>();
-  const [activePalette, setActivePalette] = useState<ColorPalette | undefined>();
+  const [activeProjectSlug, setActiveProjectSlug] = useState<
+    string | undefined
+  >();
+  const [activePalette, setActivePalette] = useState<
+    ColorPalette | undefined
+  >();
 
   const setScene = useCallback((s: Scene) => {
     sceneRef.current = s;
@@ -597,328 +601,340 @@ export function App() {
       }}
     >
       <div className="app">
-      <header className="topbar">
-        <div className="brand">
-          <Sparkles size={16} /> Lienzo
-        </div>
-        <div className="group">
-          <button
-            type="button"
-            title="Deshacer (Ctrl+Z)"
-            disabled={!canUndo}
-            onClick={undo}
-          >
-            <Undo2 size={16} />
-          </button>
-          <button
-            type="button"
-            title="Rehacer (Ctrl+Shift+Z)"
-            disabled={!canRedo}
-            onClick={redo}
-          >
-            <Redo2 size={16} />
-          </button>
-        </div>
-        <div className="group">
-          <button
-            type="button"
-            title="Escena en blanco"
-            onClick={() =>
-              loadScene({
-                ...defaultScene(),
-                ...(sceneRef.current.mode ? { mode: sceneRef.current.mode } : {}),
-              })
-            }
-          >
-            <FilePlus2 size={16} />
-          </button>
-          <button
-            type="button"
-            title="Cargar la demo de MCP"
-            onClick={() => loadScene(demoScene())}
-          >
-            Demo
-          </button>
-          <button
-            type="button"
-            title="Editar el fondo de la publicación"
-            onClick={() => {
-              setSelection([]);
-              setBackgroundFocus((n) => n + 1);
-            }}
-          >
-            <PaintBucket size={16} /> Fondo
-          </button>
-          <SceneFiles
-            scene={scene}
-            name={sceneName}
-            setName={setSceneName}
-            onOpen={loadScene}
-            setStatus={setStatus}
-          />
-          <ProjectModeSelector
-            mode={scene.mode}
-            onChangeMode={(newMode) => {
-              if (newMode === "static") {
-                seek(0);
+        <header className="topbar">
+          <div className="brand">
+            <Sparkles size={16} /> Lienzo
+          </div>
+          <div className="group">
+            <button
+              type="button"
+              title="Deshacer (Ctrl+Z)"
+              disabled={!canUndo}
+              onClick={undo}
+            >
+              <Undo2 size={16} />
+            </button>
+            <button
+              type="button"
+              title="Rehacer (Ctrl+Shift+Z)"
+              disabled={!canRedo}
+              onClick={redo}
+            >
+              <Redo2 size={16} />
+            </button>
+          </div>
+          <div className="group">
+            <button
+              type="button"
+              title="Escena en blanco"
+              onClick={() =>
+                loadScene({
+                  ...defaultScene(),
+                  ...(sceneRef.current.mode
+                    ? { mode: sceneRef.current.mode }
+                    : {}),
+                })
               }
-              applyScene({ ...sceneRef.current, mode: newMode });
-              setStatus(`Modo cambiado a: ${newMode === "static" ? "Diseño (Estático)" : "Video (Animación)"}`);
-            }}
-          />
-          <ProjectSelector
-            activeSlug={activeProjectSlug}
-            onSelectProject={(slug, palette) => {
-              setActiveProjectSlug(slug);
-              setActivePalette(palette);
-            }}
+            >
+              <FilePlus2 size={16} />
+            </button>
+            <button
+              type="button"
+              title="Cargar la demo de MCP"
+              onClick={() => loadScene(demoScene())}
+            >
+              Demo
+            </button>
+            <button
+              type="button"
+              title="Editar el fondo de la publicación"
+              onClick={() => {
+                setSelection([]);
+                setBackgroundFocus((n) => n + 1);
+              }}
+            >
+              <PaintBucket size={16} /> Fondo
+            </button>
+            <SceneFiles
+              scene={scene}
+              name={sceneName}
+              setName={setSceneName}
+              onOpen={loadScene}
+              setStatus={setStatus}
+            />
+            <ProjectModeSelector
+              mode={scene.mode}
+              onChangeMode={(newMode) => {
+                if (newMode === "static") {
+                  seek(0);
+                }
+                applyScene({ ...sceneRef.current, mode: newMode });
+                setStatus(
+                  `Modo cambiado a: ${newMode === "static" ? "Diseño (Estático)" : "Video (Animación)"}`,
+                );
+              }}
+            />
+            <ProjectSelector
+              activeSlug={activeProjectSlug}
+              onSelectProject={(slug, palette) => {
+                setActiveProjectSlug(slug);
+                setActivePalette(palette);
+              }}
+              setStatus={setStatus}
+            />
+            {!isStatic && (
+              <TtsDialog
+                scene={scene}
+                onUpdateScene={applyScene}
+                setStatus={setStatus}
+              />
+            )}
+          </div>
+          <div className="status">{status}</div>
+          <ExportControls
+            scene={scene}
+            time={() => clock.current.t}
+            fileName={sceneName}
             setStatus={setStatus}
+          />
+        </header>
+        <aside className="library">
+          <div className="sidebar-tabs">
+            <button
+              type="button"
+              className={`sidebar-tab ${sidebarTab === "library" ? "active" : ""}`}
+              onClick={() => setSidebarTab("library")}
+              title="Biblioteca de componentes y presets"
+            >
+              <LayoutGrid size={14} /> Biblioteca
+            </button>
+            <button
+              type="button"
+              className={`sidebar-tab ${sidebarTab === "layers" ? "active" : ""}`}
+              onClick={() => setSidebarTab("layers")}
+              title="Capas del lienzo"
+            >
+              <Layers size={14} /> Capas
+            </button>
+          </div>
+
+          {sidebarTab === "layers" ? (
+            <LayersPanel
+              scene={scene}
+              selection={selection}
+              onSelect={setSelection}
+              onChangeScene={applyScene}
+            />
+          ) : (
+            <>
+              <input
+                className="preset-filter"
+                type="search"
+                placeholder="Filtrar por nombre…"
+                aria-label="Filtrar presets por nombre"
+                value={presetFilter}
+                onChange={(e) => setPresetFilter(e.target.value)}
+              />
+              <label
+                className="file-button"
+                title="Importar un preset desde un archivo .json"
+              >
+                <Upload size={14} /> Importar preset
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) importPreset(file);
+                  }}
+                />
+              </label>
+              <Library
+                title="Básicos"
+                items={BASICS}
+                icons={BASIC_ICONS}
+                background={scene.background}
+                onAdd={(element) => addElement(element)}
+              />
+              <Library
+                title="Prediseñados"
+                items={matching(BUILT_INS)}
+                background={scene.background}
+                onAdd={(element) => addElement(element)}
+              />
+              <Library
+                title="Mis presets"
+                items={matching(userPresets)}
+                background={scene.background}
+                onAdd={(element) => addElement(element)}
+                empty="Selecciona un elemento y usa «Guardar como preset»."
+                actions={{
+                  rename: renamePreset,
+                  remove: removePreset,
+                  setCategory: setPresetCategory,
+                  exportJson: exportPreset,
+                  overwrite: selected
+                    ? (item) => savePreset(selected, item.name, item)
+                    : undefined,
+                  overwriteHint: selected
+                    ? "Sobrescribir con el elemento seleccionado"
+                    : "Selecciona un elemento para sobrescribir",
+                }}
+              />
+              {!isStatic && (
+                <AnimLibrary
+                  scene={scene}
+                  selection={selection}
+                  filter={matching}
+                  onApply={applyScene}
+                  setStatus={setStatus}
+                />
+              )}
+              <BackgroundLibrary
+                items={matching([
+                  ...BUILT_IN_BACKGROUND_ITEMS,
+                  ...userBackgrounds,
+                ])}
+                actions={{
+                  rename: renamePreset,
+                  remove: removePreset,
+                  setCategory: setPresetCategory,
+                  exportJson: exportPreset,
+                  overwrite: (item) =>
+                    presetChange(
+                      saveUserPreset(
+                        withCategory(
+                          recipeFromBackground(
+                            item.name,
+                            sceneRef.current.background,
+                          ),
+                          item.category,
+                        ),
+                        item.file,
+                      ),
+                      `Fondo «${item.name}» sobrescrito`,
+                    ),
+                  overwriteHint: "Sobrescribir con el fondo actual",
+                }}
+                onApply={(background) =>
+                  applyScene({ ...sceneRef.current, background })
+                }
+              />
+            </>
+          )}
+        </aside>
+        <main className="center">
+          <Stage
+            scene={scene}
+            sceneRef={sceneRef}
+            setScene={setScene}
+            selection={selection}
+            setSelection={setSelection}
+            clock={clock}
+            checkpoint={checkpoint}
+            stopClock={() => seek()}
+            onDropElement={addElement}
+            hint={
+              selection.length > 0
+                ? undefined
+                : "Clic en un área vacía para editar el fondo"
+            }
           />
           {!isStatic && (
-            <TtsDialog
+            <Timeline
+              clock={clock}
+              duration={scene.duration}
+              playing={playing}
+              togglePlay={togglePlay}
+              onScrub={seek}
               scene={scene}
-              onUpdateScene={applyScene}
+              onAudioChange={(audio) =>
+                applyScene({ ...sceneRef.current, audio })
+              }
+              onTracksChange={(audioTracks) =>
+                applyScene({ ...sceneRef.current, audioTracks })
+              }
               setStatus={setStatus}
             />
           )}
-        </div>
-        <div className="status">{status}</div>
-        <ExportControls
-          scene={scene}
-          time={() => clock.current.t}
-          fileName={sceneName}
-          setStatus={setStatus}
-        />
-      </header>
-      <aside className="library">
-        <div className="sidebar-tabs">
-          <button
-            type="button"
-            className={`sidebar-tab ${sidebarTab === "library" ? "active" : ""}`}
-            onClick={() => setSidebarTab("library")}
-            title="Biblioteca de componentes y presets"
-          >
-            <LayoutGrid size={14} /> Biblioteca
-          </button>
-          <button
-            type="button"
-            className={`sidebar-tab ${sidebarTab === "layers" ? "active" : ""}`}
-            onClick={() => setSidebarTab("layers")}
-            title="Capas del lienzo"
-          >
-            <Layers size={14} /> Capas
-          </button>
-        </div>
-
-        {sidebarTab === "layers" ? (
-          <LayersPanel
-            scene={scene}
-            selection={selection}
-            onSelect={setSelection}
-            onChangeScene={applyScene}
-          />
-        ) : (
-          <>
-            <input
-              className="preset-filter"
-              type="search"
-              placeholder="Filtrar por nombre…"
-              aria-label="Filtrar presets por nombre"
-              value={presetFilter}
-              onChange={(e) => setPresetFilter(e.target.value)}
-            />
-            <label
-              className="file-button"
-              title="Importar un preset desde un archivo .json"
-            >
-          <Upload size={14} /> Importar preset
-          <input
-            type="file"
-            accept=".json,application/json"
-            hidden
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (file) importPreset(file);
-            }}
-          />
-        </label>
-        <Library
-          title="Básicos"
-          items={BASICS}
-          icons={BASIC_ICONS}
-          background={scene.background}
-          onAdd={(element) => addElement(element)}
-        />
-        <Library
-          title="Prediseñados"
-          items={matching(BUILT_INS)}
-          background={scene.background}
-          onAdd={(element) => addElement(element)}
-        />
-        <Library
-          title="Mis presets"
-          items={matching(userPresets)}
-          background={scene.background}
-          onAdd={(element) => addElement(element)}
-          empty="Selecciona un elemento y usa «Guardar como preset»."
-          actions={{
-            rename: renamePreset,
-            remove: removePreset,
-            setCategory: setPresetCategory,
-            exportJson: exportPreset,
-            overwrite: selected
-              ? (item) => savePreset(selected, item.name, item)
-              : undefined,
-            overwriteHint: selected
-              ? "Sobrescribir con el elemento seleccionado"
-              : "Selecciona un elemento para sobrescribir",
-          }}
-        />
-        {!isStatic && (
-          <AnimLibrary
-            scene={scene}
-            selection={selection}
-            filter={matching}
-            onApply={applyScene}
-            setStatus={setStatus}
-          />
-        )}
-        <BackgroundLibrary
-          items={matching([...BUILT_IN_BACKGROUND_ITEMS, ...userBackgrounds])}
-          actions={{
-            rename: renamePreset,
-            remove: removePreset,
-            setCategory: setPresetCategory,
-            exportJson: exportPreset,
-            overwrite: (item) =>
-              presetChange(
-                saveUserPreset(
-                  withCategory(
-                    recipeFromBackground(
-                      item.name,
-                      sceneRef.current.background,
-                    ),
-                    item.category,
+          {!isStatic && selected && (
+            <TracksPanel
+              el={selected}
+              duration={scene.duration}
+              clock={clock}
+              seek={seek}
+              checkpoint={checkpoint}
+              change={(fn) => {
+                const draft = structuredClone(selected);
+                fn(draft);
+                setScene({
+                  ...sceneRef.current,
+                  elements: sceneRef.current.elements.map((e) =>
+                    e.id === draft.id ? draft : e,
                   ),
-                  item.file,
-                ),
-                `Fondo «${item.name}» sobrescrito`,
-              ),
-            overwriteHint: "Sobrescribir con el fondo actual",
+                });
+              }}
+            />
+          )}
+        </main>
+        <Panel
+          checkpoint={() => {
+            checkpoint();
+            // editing a keyframed element stops the clock where it is, to edit there
+            if (playing && selected?.tracks) seek();
           }}
-          onApply={(background) =>
-            applyScene({ ...sceneRef.current, background })
-          }
-        />
-        </>
-        )}
-      </aside>
-      <main className="center">
-        <Stage
-          scene={scene}
-          sceneRef={sceneRef}
-          setScene={setScene}
-          selection={selection}
-          setSelection={setSelection}
-          clock={clock}
-          checkpoint={checkpoint}
-          stopClock={() => seek()}
-          onDropElement={addElement}
-          hint={
-            selection.length > 0
-              ? undefined
-              : "Clic en un área vacía para editar el fondo"
-          }
-        />
-        {!isStatic && (
-          <Timeline
-            clock={clock}
-            duration={scene.duration}
-            playing={playing}
-            togglePlay={togglePlay}
-            onScrub={seek}
-            scene={scene}
-            onAudioChange={(audio) => applyScene({ ...sceneRef.current, audio })}
-            setStatus={setStatus}
-          />
-        )}
-        {!isStatic && selected && (
-          <TracksPanel
-            el={selected}
-            duration={scene.duration}
-            clock={clock}
-            seek={seek}
-            checkpoint={checkpoint}
-            change={(fn) => {
-              const draft = structuredClone(selected);
-              fn(draft);
-              setScene({
-                ...sceneRef.current,
-                elements: sceneRef.current.elements.map((e) =>
-                  e.id === draft.id ? draft : e,
-                ),
-              });
-            }}
-          />
-        )}
-      </main>
-      <Panel
-        checkpoint={() => {
-          checkpoint();
-          // editing a keyframed element stops the clock where it is, to edit there
-          if (playing && selected?.tracks) seek();
-        }}
-      >
-        {selected ? (
-          <ElementInspector
-            key={selected.id}
-            el={selected}
-            nameOf={(id) =>
-              scene.elements.find((e) => e.id === id)?.name ?? "?"
-            }
-            onChange={(el) =>
-              setScene({
-                ...sceneRef.current,
-                elements: sceneRef.current.elements.map((e) =>
-                  e.id === el.id ? el : e,
-                ),
-              })
-            }
-            onDelete={removeSelected}
-            onDuplicate={duplicateSelected}
-            onLayer={(dir) => moveLayer(selected.id, dir)}
-            onSavePreset={(name) => savePreset(selected, name)}
-            onUngroup={ungroupSelected}
-            onEditParticle={editParticle}
-            canvas={scene}
-            time={playhead}
-            staticMode={isStatic}
-          />
-        ) : selection.length > 1 ? (
-          <MultiInspector
-            count={selection.length}
-            onDelete={removeSelected}
-            onDuplicate={duplicateSelected}
-            onGroup={groupSelected}
-            onAlign={alignSelected}
-            onUseAsParticle={particlePair && makeParticle}
-          />
-        ) : (
-          <SceneInspector
-            scene={scene}
-            onChange={setScene}
-            focusBackground={backgroundFocus}
-            onSaveBackground={(name) =>
-              presetChange(
-                saveUserPreset(recipeFromBackground(name, scene.background)),
-                `Fondo «${name}» guardado`,
-              )
-            }
-          />
-        )}
-      </Panel>
-    </div>
+        >
+          {selected ? (
+            <ElementInspector
+              key={selected.id}
+              el={selected}
+              nameOf={(id) =>
+                scene.elements.find((e) => e.id === id)?.name ?? "?"
+              }
+              onChange={(el) =>
+                setScene({
+                  ...sceneRef.current,
+                  elements: sceneRef.current.elements.map((e) =>
+                    e.id === el.id ? el : e,
+                  ),
+                })
+              }
+              onDelete={removeSelected}
+              onDuplicate={duplicateSelected}
+              onLayer={(dir) => moveLayer(selected.id, dir)}
+              onSavePreset={(name) => savePreset(selected, name)}
+              onUngroup={ungroupSelected}
+              onEditParticle={editParticle}
+              canvas={scene}
+              time={playhead}
+              staticMode={isStatic}
+            />
+          ) : selection.length > 1 ? (
+            <MultiInspector
+              count={selection.length}
+              onDelete={removeSelected}
+              onDuplicate={duplicateSelected}
+              onGroup={groupSelected}
+              onAlign={alignSelected}
+              onUseAsParticle={particlePair && makeParticle}
+            />
+          ) : (
+            <SceneInspector
+              scene={scene}
+              onChange={setScene}
+              focusBackground={backgroundFocus}
+              onSaveBackground={(name) =>
+                presetChange(
+                  saveUserPreset(recipeFromBackground(name, scene.background)),
+                  `Fondo «${name}» guardado`,
+                )
+              }
+            />
+          )}
+        </Panel>
+      </div>
     </ProjectContext.Provider>
   );
 }
@@ -931,6 +947,7 @@ function Timeline({
   onScrub,
   scene,
   onAudioChange,
+  onTracksChange,
   setStatus,
 }: {
   clock: MutableRefObject<Clock>;
@@ -940,6 +957,9 @@ function Timeline({
   onScrub: (t: number) => void;
   scene: Scene;
   onAudioChange: (audio: SceneAudio | undefined) => void;
+  onTracksChange?: (
+    audioTracks: import("../model/model.ts").AudioTrackItem[],
+  ) => void;
   setStatus?: (status: string) => void;
 }) {
   const range = useRef<HTMLInputElement>(null);
@@ -980,6 +1000,7 @@ function Timeline({
       <AudioTrackControl
         scene={scene}
         onChange={onAudioChange}
+        onTracksChange={onTracksChange}
         setStatus={setStatus}
       />
     </div>

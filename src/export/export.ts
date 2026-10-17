@@ -1,5 +1,10 @@
-import { assetFor, loadAudioBuffer, loadSceneAssets } from "../engine/assets.ts";
-import { prepareAudioBufferForExport } from "../engine/audio/audio-export.ts";
+import {
+  assetFor,
+  loadAudioBuffer,
+  loadSceneAssets,
+} from "../engine/assets.ts";
+import { mixAudioTracksForExport } from "../engine/audio/audio-export.ts";
+import { getSceneAudioTracks } from "../engine/audio/audio-tracks.ts";
 import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
 import type { FrameEncoder } from "./frame-encoder.ts";
@@ -58,22 +63,34 @@ export async function exportScene(
     audioBuffer?: AudioBuffer | null;
     audioStartOffset?: number;
   } = {};
-  if (options.format === "mp4" && scene.audio?.assetId) {
-    let rawAudio = assetFor<AudioBuffer>(scene.audio.assetId);
-    if (!rawAudio) {
-      rawAudio = (await loadAudioBuffer(scene.audio.assetId)) ?? undefined;
-    }
-    if (rawAudio) {
-      const prepared = prepareAudioBufferForExport(
-        rawAudio,
-        scene.duration,
-        scene.audio,
-      );
-      if (prepared) {
-        videoOptions = {
-          audioBuffer: prepared.buffer,
-          audioStartOffset: prepared.startOffset,
-        };
+  if (options.format === "mp4") {
+    const tracks = getSceneAudioTracks(scene);
+    if (tracks.length > 0) {
+      const trackInputs: import("../engine/audio/audio-export.ts").TrackBufferInput[] =
+        [];
+      for (const track of tracks) {
+        let rawAudio = assetFor<AudioBuffer>(track.assetId);
+        if (!rawAudio) {
+          rawAudio = (await loadAudioBuffer(track.assetId)) ?? undefined;
+        }
+        if (rawAudio) {
+          trackInputs.push({
+            buffer: rawAudio,
+            volume: track.volume,
+            startOffset: track.startOffset,
+            trimOffset: track.trimOffset,
+            muted: track.muted,
+          });
+        }
+      }
+      if (trackInputs.length > 0) {
+        const mixed = mixAudioTracksForExport(trackInputs, scene.duration);
+        if (mixed) {
+          videoOptions = {
+            audioBuffer: mixed,
+            audioStartOffset: 0,
+          };
+        }
       }
     }
   }

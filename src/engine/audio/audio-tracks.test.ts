@@ -1,0 +1,142 @@
+import { describe, expect, it } from "vitest";
+import { defaultScene } from "../../model/model.ts";
+import { parseScene } from "../../model/schema.ts";
+import { createAudioTrack, getSceneAudioTracks } from "./audio-tracks.ts";
+
+describe("audio tracks normalization and validation (035/R1, 035/R2)", () => {
+  it("normalizes legacy single audio track into audioTracks list", () => {
+    const scene = {
+      ...defaultScene(),
+      audio: {
+        assetId: "/assets/music.mp3",
+        volume: 0.7,
+        startOffset: 1.2,
+        trimOffset: 0.3,
+      },
+    };
+
+    const tracks = getSceneAudioTracks(scene);
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0]).toEqual({
+      id: "legacy-track",
+      assetId: "/assets/music.mp3",
+      name: "Audio principal",
+      volume: 0.7,
+      startOffset: 1.2,
+      trimOffset: 0.3,
+      muted: false,
+    });
+  });
+
+  it("prioritizes audioTracks over legacy audio", () => {
+    const scene = {
+      ...defaultScene(),
+      audio: {
+        assetId: "/assets/old.mp3",
+      },
+      audioTracks: [
+        {
+          id: "t1",
+          assetId: "/assets/voice.mp3",
+          name: "Voz",
+          volume: 1,
+          startOffset: 0,
+          trimOffset: 0,
+          muted: false,
+        },
+        {
+          id: "t2",
+          assetId: "/assets/bg.mp3",
+          name: "Música de fondo",
+          volume: 0.4,
+          startOffset: 2,
+          trimOffset: 1,
+          muted: true,
+        },
+      ],
+    };
+
+    const tracks = getSceneAudioTracks(scene);
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0].name).toBe("Voz");
+    expect(tracks[1].name).toBe("Música de fondo");
+    expect(tracks[1].muted).toBe(true);
+  });
+
+  it("returns empty array when neither audio nor audioTracks is set", () => {
+    const scene = defaultScene();
+    expect(getSceneAudioTracks(scene)).toEqual([]);
+  });
+
+  it("creates a fresh audio track with unique ID and defaults", () => {
+    const track = createAudioTrack("/assets/sfx.wav", { name: "Efecto" });
+    expect(track.assetId).toBe("/assets/sfx.wav");
+    expect(track.name).toBe("Efecto");
+    expect(track.volume).toBe(1);
+    expect(track.startOffset).toBe(0);
+    expect(track.trimOffset).toBe(0);
+    expect(track.muted).toBe(false);
+    expect(track.id).toMatch(/^track-/);
+  });
+
+  it("validates scenes with audioTracks schema", () => {
+    const scene = {
+      ...defaultScene(),
+      audioTracks: [
+        {
+          id: "t1",
+          assetId: "/assets/music.mp3",
+          name: "Música",
+          volume: 0.5,
+          startOffset: 0,
+          trimOffset: 0,
+          muted: false,
+        },
+      ],
+    };
+
+    const res = parseScene(scene);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.value.audioTracks).toHaveLength(1);
+      expect(res.value.audioTracks?.[0].assetId).toBe("/assets/music.mp3");
+    }
+  });
+
+  it("rejects invalid volume in audioTracks", () => {
+    const scene = {
+      ...defaultScene(),
+      audioTracks: [
+        {
+          id: "t1",
+          assetId: "/assets/music.mp3",
+          volume: 2.0,
+        },
+      ],
+    };
+
+    const res = parseScene(scene);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.path).toBe("audioTracks.0.volume");
+    }
+  });
+
+  it("rejects empty assetId in audioTracks", () => {
+    const scene = {
+      ...defaultScene(),
+      audioTracks: [
+        {
+          id: "t1",
+          assetId: "",
+        },
+      ],
+    };
+
+    const res = parseScene(scene);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.path).toBe("audioTracks.0.assetId");
+    }
+  });
+});
