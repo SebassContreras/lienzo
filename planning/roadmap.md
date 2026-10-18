@@ -45,4 +45,4 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 038 | web-project-brand-manager | done        | 001, 003, 007, 031 | —      | 38 |
 | 039 | codebase-fixes-and-optimization | done        | 007, 009, 010, 011, 027, 028, 032 | —      | 39 |
 | 040 | project-centric-storage | done        | 031, 038, 039 | —     | 40 |
-
+| 041 | workspace-assets-presets-fixes | done        | 040 | —     | 41 |

@@ -21,12 +21,14 @@ import {
 } from "../engine/lines.ts";
 import { drawScene } from "../engine/render.ts";
 import { applyTracks, commitAt } from "../engine/tracks.ts";
-import type { Element, LineEl, Scene } from "../model/model.ts";
+import { createElement } from "../components/index.ts";
+import type { Element, ImageEl, LineEl, Scene } from "../model/model.ts";
 import { type Snap, snapBox, unionBox } from "./snap.ts";
 
 export type Clock = { t: number; playing: boolean };
 
 export const PRESET_MIME = "application/x-lienzo-element";
+export const ASSET_MIME = "application/x-lienzo-asset";
 
 type Handle = "nw" | "ne" | "sw" | "se" | "a" | "b" | "bend";
 
@@ -659,16 +661,43 @@ export function Stage({
       aria-label="Lienzo"
       ref={wrapRef}
       onDragOver={(e) => {
-        if (e.dataTransfer.types.includes(PRESET_MIME)) {
+        if (
+          e.dataTransfer.types.includes(PRESET_MIME) ||
+          e.dataTransfer.types.includes(ASSET_MIME)
+        ) {
           e.preventDefault();
           e.dataTransfer.dropEffect = "copy";
         }
       }}
       onDrop={(e) => {
-        const json = e.dataTransfer.getData(PRESET_MIME);
-        if (!json) return;
-        e.preventDefault();
-        onDropElement(JSON.parse(json) as Element, toScene(e));
+        if (e.dataTransfer.types.includes(PRESET_MIME)) {
+          const json = e.dataTransfer.getData(PRESET_MIME);
+          if (!json) return;
+          e.preventDefault();
+          onDropElement(JSON.parse(json) as Element, toScene(e));
+          return;
+        }
+
+        if (e.dataTransfer.types.includes(ASSET_MIME)) {
+          const assetJson = e.dataTransfer.getData(ASSET_MIME);
+          if (!assetJson) return;
+          e.preventDefault();
+          try {
+            const { path, filename } = JSON.parse(assetJson) as {
+              path: string;
+              filename: string;
+            };
+            const pos = toScene(e);
+            const imageEl = createElement("image") as ImageEl;
+            imageEl.src = path;
+            imageEl.name = filename;
+            imageEl.x = Math.round(pos.x - imageEl.w / 2);
+            imageEl.y = Math.round(pos.y - imageEl.h / 2);
+            onDropElement(imageEl, pos);
+          } catch {
+            // ignore bad payload
+          }
+        }
       }}
     >
       <canvas

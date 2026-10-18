@@ -124,6 +124,37 @@ describe("project-middleware asset endpoints", () => {
     expect(getBuffer()).toEqual(pngData);
   });
 
+  it("handles project-scoped presets via /api/projects/:slug/presets", async () => {
+    const presetPayload = JSON.stringify({
+      name: "Mi Preset de Marca",
+      kind: "rect",
+      traits: ["palette-brand"],
+    });
+
+    // POST /api/projects/acme/presets?name=mi-preset
+    const saveReq = createMockReq({
+      method: "POST",
+      url: "/api/projects/acme/presets?name=mi-preset",
+      body: Buffer.from(presetPayload),
+    });
+    const { res: saveRes, getStatus: getSaveStatus } = createMockRes();
+    await handleProjectApi(store, saveReq, saveRes);
+    expect(getSaveStatus()).toBe(200);
+
+    // GET /api/projects/acme/presets
+    const listReq = createMockReq({
+      method: "GET",
+      url: "/api/projects/acme/presets",
+    });
+    const { res: listRes, getStatus: getListStatus, getBody: getListBody } = createMockRes();
+    await handleProjectApi(store, listReq, listRes);
+    expect(getListStatus()).toBe(200);
+    const presets = JSON.parse(getListBody());
+    expect(presets).toHaveLength(1);
+    expect(presets[0].name).toBe("mi-preset");
+    expect(presets[0].data.name).toBe("Mi Preset de Marca");
+  });
+
   it("rejects unsupported extensions", async () => {
     const req = createMockReq({
       method: "POST",

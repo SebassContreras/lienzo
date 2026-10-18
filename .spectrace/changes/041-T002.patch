@@ -1,0 +1,59 @@
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index 1556908..5a51cd3 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -57,6 +57,54 @@ export async function saveUserPreset(
+   await postJson(`/api/presets?name=${encodeURIComponent(file)}`, preset);
+ }
+ 
++/** Project presets live as recipe JSON files in `projects/<slug>/presets/`. */
++export async function loadProjectPresetFiles(
++  projectSlug = "mi-proyecto",
++): Promise<{ file: string; recipe: PresetRecipe }[]> {
++  const items = await getJson<{ name: string; data: PresetRecipe | LegacyPreset }[]>(
++    `/api/projects/${encodeURIComponent(projectSlug)}/presets`,
++  );
++  return items.map((item) => ({
++    file: item.name,
++    recipe: asRecipe(item.data),
++  }));
++}
++
++/** Writes a project preset to `projects/<slug>/presets/<file>.json`. */
++export async function saveProjectPreset(
++  preset: PresetRecipe,
++  file = preset.name,
++  projectSlug = "mi-proyecto",
++): Promise<void> {
++  await postJson(
++    `/api/projects/${encodeURIComponent(projectSlug)}/presets?name=${encodeURIComponent(file)}`,
++    preset,
++  );
++}
++
++/** Removes a project preset by file name. */
++export async function deleteProjectPreset(
++  file: string,
++  projectSlug = "mi-proyecto",
++): Promise<void> {
++  await call(
++    `/api/projects/${encodeURIComponent(projectSlug)}/presets?name=${encodeURIComponent(file)}`,
++    "DELETE",
++  );
++}
++
++/** Renames a project preset. */
++export async function renameProjectPreset(
++  from: string,
++  to: string,
++  projectSlug = "mi-proyecto",
++): Promise<void> {
++  await call(
++    `/api/projects/${encodeURIComponent(projectSlug)}/presets/rename?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
++    "POST",
++  );
++}
++
+ /** Animation presets in `presets/animations/`; files that fail the schema are left out. */
+ export async function loadAnimPresetFiles(): Promise<
+   { file: string; preset: AnimPreset }[]

@@ -41,7 +41,21 @@ export function ProjectSelector({
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+    if (activeSlug) {
+      fetch(`/api/projects/${activeSlug}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((details) => {
+          if (details?.manifest) {
+            onSelectProject(
+              activeSlug,
+              details.manifest.palette,
+              details.manifest.canvas,
+            );
+          }
+        })
+        .catch(() => {});
+    }
+  }, [fetchProjects, activeSlug]);
 
   const handleChange = async (slug: string) => {
     if (!slug) {
@@ -109,7 +123,7 @@ export function ProjectSelector({
           <Briefcase size={16} />
         </span>
         <select
-          value={activeSlug ?? ""}
+          value={activeSlug ?? "mi-proyecto"}
           disabled={loading}
           title="Seleccionar espacio de trabajo de proyecto"
           onChange={(e) => handleChange(e.target.value)}
@@ -122,14 +136,16 @@ export function ProjectSelector({
             fontSize: "12px",
           }}
         >
-          <option value="" style={{ background: "#222" }}>
-            (Sin proyecto - Global)
-          </option>
           {projects.map((p) => (
             <option key={p.slug} value={p.slug} style={{ background: "#222" }}>
               {p.name}
             </option>
           ))}
+          {projects.length === 0 && (
+            <option value="mi-proyecto" style={{ background: "#222" }}>
+              Mi Proyecto
+            </option>
+          )}
         </select>
 
         {/* Brand Manager Triggers (R1, D1, D6) */}

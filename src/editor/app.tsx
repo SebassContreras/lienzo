@@ -1,5 +1,7 @@
 import {
   FilePlus2,
+  FolderArchive,
+  Image as ImageIcon,
   Layers,
   LayoutGrid,
   PaintBucket,
@@ -77,6 +79,8 @@ import { ProjectModeSelector } from "./mode-selector.tsx";
 import { Panel } from "./panel.tsx";
 import { ProjectContext } from "./project-context.ts";
 import { ProjectSelector } from "./project-selector.tsx";
+import { ProjectAssetsTab } from "./sidebar/project-assets-tab.tsx";
+import { ProjectPresetsTab } from "./sidebar/project-presets-tab.tsx";
 import { type Clock, Stage } from "./stage.tsx";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
 
@@ -131,11 +135,13 @@ function duplicateElements(scene: Scene, ids: string[]): Element[] {
   );
 }
 
-const AUTOSAVE_KEY = "lienzo-scene";
+function autosaveKey(slug = "mi-proyecto"): string {
+  return `lienzo-scene:${slug}`;
+}
 
-function loadInitialScene(): Scene {
+function loadInitialScene(slug = "mi-proyecto"): Scene {
   try {
-    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    const raw = localStorage.getItem(autosaveKey(slug));
     if (raw) return JSON.parse(raw) as Scene;
   } catch {
     // no stored scene or storage blocked: start from the demo
@@ -176,10 +182,12 @@ export function App() {
   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
   const [backgroundFocus, setBackgroundFocus] = useState(0);
   const [presetFilter, setPresetFilter] = useState("");
-  const [sidebarTab, setSidebarTab] = useState<"library" | "layers">("library");
+  const [sidebarTab, setSidebarTab] = useState<
+    "library" | "layers" | "assets" | "presets"
+  >("library");
   const [activeProjectSlug, setActiveProjectSlug] = useState<
     string | undefined
-  >();
+  >("mi-proyecto");
   const [activePalette, setActivePalette] = useState<
     ColorPalette | undefined
   >();
@@ -200,11 +208,11 @@ export function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(scene));
+      localStorage.setItem(autosaveKey(activeProjectSlug), JSON.stringify(scene));
     } catch {
       // storage unavailable: autosave is a convenience only
     }
-  }, [scene]);
+  }, [scene, activeProjectSlug]);
 
   const refreshPresets = useCallback(() => {
     loadUserPresetFiles()
@@ -673,8 +681,24 @@ export function App() {
             <ProjectSelector
               activeSlug={activeProjectSlug}
               onSelectProject={(slug, palette, canvasDefaults) => {
+                const prevSlug = activeProjectSlug;
                 setActiveProjectSlug(slug);
                 setActivePalette(palette);
+
+                if (slug && prevSlug && slug !== prevSlug) {
+                  // Workspace switched: load scene for target workspace
+                  const targetScene = loadInitialScene(slug);
+                  if (canvasDefaults) {
+                    targetScene.width = canvasDefaults.width;
+                    targetScene.height = canvasDefaults.height;
+                    targetScene.fps = canvasDefaults.fps;
+                    targetScene.duration = canvasDefaults.duration;
+                  }
+                  applyScene(targetScene);
+                  setSelection([]);
+                  return;
+                }
+
                 if (canvasDefaults) {
                   applyScene({
                     ...sceneRef.current,
@@ -727,6 +751,22 @@ export function App() {
             >
               <Layers size={14} /> Capas
             </button>
+            <button
+              type="button"
+              className={`sidebar-tab ${sidebarTab === "assets" ? "active" : ""}`}
+              onClick={() => setSidebarTab("assets")}
+              title="Recursos del proyecto"
+            >
+              <ImageIcon size={14} /> Recursos
+            </button>
+            <button
+              type="button"
+              className={`sidebar-tab ${sidebarTab === "presets" ? "active" : ""}`}
+              onClick={() => setSidebarTab("presets")}
+              title="Presets del proyecto"
+            >
+              <FolderArchive size={14} /> Presets
+            </button>
           </div>
 
           {sidebarTab === "layers" ? (
@@ -735,6 +775,20 @@ export function App() {
               selection={selection}
               onSelect={setSelection}
               onChangeScene={applyScene}
+            />
+          ) : sidebarTab === "assets" ? (
+            <ProjectAssetsTab
+              projectSlug={activeProjectSlug}
+              setStatus={setStatus}
+            />
+          ) : sidebarTab === "presets" ? (
+            <ProjectPresetsTab
+              projectSlug={activeProjectSlug}
+              palette={activePalette}
+              scene={scene}
+              selectedElement={selected}
+              onAddElement={(element) => addElement(element)}
+              setStatus={setStatus}
             />
           ) : (
             <>

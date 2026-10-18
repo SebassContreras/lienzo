@@ -106,6 +106,26 @@ export async function handleProjectApi(
       return;
     }
 
+    // Project presets: /api/projects/<slug>/presets
+    if (segments.length >= 2 && segments[1] === "presets") {
+      const slug = segments[0];
+      const projectPresetsDir = store.resolvePath(slug, "presets");
+      const { handleStore } = await import("../presets/json-store.ts");
+
+      // Adapt URL pathname so handleStore parses action/name params naturally
+      const subUrl = new URL(url.toString());
+      subUrl.pathname = subUrl.pathname.replace(/^\/api\/projects\/[^/]+\/presets/, "/api/presets");
+
+      const reply = await handleStore(
+        projectPresetsDir,
+        method,
+        subUrl,
+        readBody,
+      );
+      jsonReply(reply.status, reply.body);
+      return;
+    }
+
     // Project assets: /api/projects/<slug>/assets
     if (segments.length >= 2 && segments[1] === "assets") {
       const slug = segments[0];
