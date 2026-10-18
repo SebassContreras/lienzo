@@ -7,7 +7,9 @@ export const sceneList = defineTool({
   description:
     "List the saved scenes in scenes/ with their size, duration and element count; " +
     "`valid` is false for a file the editor would refuse.",
-  input: z.object({}),
+  input: z.object({
+    project: z.string().optional(),
+  }),
   output: z.array(
     z.object({
       name: z.string(),
@@ -18,8 +20,10 @@ export const sceneList = defineTool({
       elements: z.number().optional(),
     }),
   ),
-  async run(_input, ctx) {
-    return (await ctx.store.scenes()).map(({ name, data }) => {
+  async run({ project }, ctx) {
+    const { resolveProjectScope } = await import("../project-scope.ts");
+    const { effectiveCtx } = await resolveProjectScope(ctx, project);
+    return (await effectiveCtx.store.scenes()).map(({ name, data }) => {
       const parsed = parseScene(data);
       if (!parsed.ok) return { name, valid: false };
       const { width, height, duration, elements } = parsed.value;

@@ -21,32 +21,29 @@ export const sceneCreate = defineTool({
   }),
   output: SceneResult,
   async run({ name, project, mode, scene, overwrite }, ctx) {
-    const effectiveCtx = project
-      ? {
-          ...ctx,
-          store: await ctx.projects.projectStore(project),
-        }
-      : ctx;
+    const { resolveProjectScope } = await import("../project-scope.ts");
+    const { slug: projectSlug, effectiveCtx } = await resolveProjectScope(
+      ctx,
+      project,
+    );
 
     if (!overwrite && (await effectiveCtx.store.readScene(name)) !== undefined)
       fail("exists", `Ya existe la escena «${slugify(name)}»`, "name");
 
     let defaults = defaultScene();
-    if (project) {
-      const p = await ctx.projects.get(project);
-      if (p) {
-        defaults = {
-          ...defaults,
-          width: p.manifest.canvas.width,
-          height: p.manifest.canvas.height,
-          fps: p.manifest.canvas.fps,
-          duration: p.manifest.canvas.duration,
-          background: {
-            ...defaults.background,
-            color: p.manifest.palette.background ?? defaults.background.color,
-          },
-        };
-      }
+    const p = await ctx.projects.get(projectSlug);
+    if (p) {
+      defaults = {
+        ...defaults,
+        width: p.manifest.canvas.width,
+        height: p.manifest.canvas.height,
+        fps: p.manifest.canvas.fps,
+        duration: p.manifest.canvas.duration,
+        background: {
+          ...defaults.background,
+          color: p.manifest.palette.background ?? defaults.background.color,
+        },
+      };
     }
 
     const sceneData = { ...defaults, ...(mode ? { mode } : {}), ...scene };

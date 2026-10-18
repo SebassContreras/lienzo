@@ -14,6 +14,7 @@ export const sceneBuild = defineTool({
     "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true.",
   input: z.object({
     compact: CompactSceneSchema,
+    project: z.string().optional(),
     save: z.string().optional(),
     overwrite: z.boolean().optional(),
   }),
@@ -21,13 +22,16 @@ export const sceneBuild = defineTool({
     scene: SceneSchema,
     saved: SceneResult.optional(),
   }),
-  async run({ compact, save, overwrite }, ctx) {
+  async run({ compact, project, save, overwrite }, ctx) {
+    const { resolveProjectScope } = await import("../project-scope.ts");
+    const { effectiveCtx } = await resolveProjectScope(ctx, project);
+
     let expanded: ReturnType<typeof checkScene>;
     try {
       const full = await expandScene(compact, {
         findPreset: async (name) => {
           try {
-            const found = await findPreset(ctx, name);
+            const found = await findPreset(effectiveCtx, name);
             return found.recipe;
           } catch {
             return undefined;
@@ -35,7 +39,7 @@ export const sceneBuild = defineTool({
         },
         animLibrary: await (async () => {
           const { animLibrary } = await import("../scenes.ts");
-          return animLibrary(ctx);
+          return animLibrary(effectiveCtx);
         })(),
       });
       expanded = checkScene(full);
@@ -46,10 +50,10 @@ export const sceneBuild = defineTool({
 
     let saved: z.infer<typeof SceneResult> | undefined;
     if (save) {
-      if (!overwrite && (await ctx.store.readScene(save)) !== undefined) {
+      if (!overwrite && (await effectiveCtx.store.readScene(save)) !== undefined) {
         fail("exists", `Ya existe la escena «${slugify(save)}»`, "save");
       }
-      saved = await saveScene(ctx, save, expanded);
+      saved = await saveScene(effectiveCtx, save, expanded);
     }
 
     return {

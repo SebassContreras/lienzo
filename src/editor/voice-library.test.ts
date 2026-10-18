@@ -21,12 +21,13 @@ describe("Topbar AI Voice Integration (037/T009 - D6@1, R2@2, R3@1)", () => {
     expect(sceneJson).toContain("/assets/abc123hash.mp3");
   });
 
-  it("confirms .gitignore excludes generated audio assets from git tracking (R3@1)", () => {
+  it("confirms .gitignore excludes user workspaces and generated assets from git tracking (R3@1, 040/R6)", () => {
     const gitignorePath = join(process.cwd(), ".gitignore");
     const gitignore = readFileSync(gitignorePath, "utf-8");
 
-    // Must exclude assets/* while preserving .gitkeep
-    expect(gitignore).toMatch(/assets\/\*/);
-    expect(gitignore).toMatch(/!assets\/\.gitkeep/);
+    // Must exclude projects/* while preserving .gitkeep and mi-proyecto template
+    expect(gitignore).toMatch(/projects\/\*/);
+    expect(gitignore).toMatch(/!projects\/\.gitkeep/);
+    expect(gitignore).toMatch(/!projects\/mi-proyecto\//);
   });
 });

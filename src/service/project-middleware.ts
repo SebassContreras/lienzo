@@ -86,6 +86,26 @@ export async function handleProjectApi(
       }
     }
 
+    // Project scenes: /api/projects/<slug>/scenes
+    if (segments.length >= 2 && segments[1] === "scenes") {
+      const slug = segments[0];
+      const projectScenesDir = store.resolvePath(slug, "scenes");
+      const { handleStore } = await import("../presets/json-store.ts");
+
+      // Adapt URL pathname so handleStore parses action/name params naturally
+      const subUrl = new URL(url.toString());
+      subUrl.pathname = subUrl.pathname.replace(/^\/api\/projects\/[^/]+\/scenes/, "/api/scenes");
+
+      const reply = await handleStore(
+        projectScenesDir,
+        method,
+        subUrl,
+        readBody,
+      );
+      jsonReply(reply.status, reply.body);
+      return;
+    }
+
     // Project assets: /api/projects/<slug>/assets
     if (segments.length >= 2 && segments[1] === "assets") {
       const slug = segments[0];

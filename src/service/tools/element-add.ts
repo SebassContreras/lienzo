@@ -33,20 +33,19 @@ export const elementAdd = defineTool({
     }),
   output: SceneResult.extend({ id: z.string() }),
   async run({ scene, project, preset, kind, at, set }, ctx) {
-    const effectiveCtx = project
-      ? {
-          ...ctx,
-          store: await ctx.projects.projectStore(project),
-        }
-      : ctx;
+    const { resolveProjectScope } = await import("../project-scope.ts");
+    const { slug: projectSlug, effectiveCtx } = await resolveProjectScope(
+      ctx,
+      project,
+    );
 
     const notices: string[] = [];
-    if (project && set) {
+    if (set) {
       const assetKeys = ["src", "assetId", "image", "audio"];
       for (const key of assetKeys) {
         const val = set[key];
         if (typeof val === "string" && val.length > 0) {
-          const check = await ctx.projects.checkAsset(project, val);
+          const check = await ctx.projects.checkAsset(projectSlug, val);
           if (!check.ok && check.warning) {
             notices.push(check.warning);
           }

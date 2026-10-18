@@ -11,12 +11,16 @@ export const scenePreview = defineTool({
     "browser on first use.",
   input: z.object({
     scene: z.string().min(1),
+    project: z.string().optional(),
     t: z.number().min(0).optional(),
     scale: z.number().min(0.1).max(2).optional(),
   }),
   output: ImageResult,
-  async run({ scene: name, t = 0, scale = 0.5 }, ctx) {
-    const { rendered } = await resolveAndRenderScene(ctx, name, {
+  async run({ scene: name, project, t = 0, scale = 0.5 }, ctx) {
+    const { resolveProjectScope } = await import("../project-scope.ts");
+    const { effectiveCtx } = await resolveProjectScope(ctx, project);
+
+    const { rendered } = await resolveAndRenderScene(effectiveCtx, name, {
       format: "png",
       scale,
       time: t,

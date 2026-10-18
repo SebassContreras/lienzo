@@ -3,15 +3,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 /**
- * Saves binary asset data to `assets/<hash>.<ext>` at the repository root.
- * Returns the asset path `/assets/<hash>.<ext>`.
+ * Saves binary asset data to `projects/<projectSlug>/assets/<hash>.<ext>`.
+ * Returns the asset path `/projects/<projectSlug>/assets/<hash>.<ext>`.
  */
 export async function saveAudioAsset(
   root: string,
   audioBuffer: Uint8Array,
   format: string,
+  projectSlug = "mi-proyecto",
 ): Promise<string> {
-  const dir = join(root, "assets");
+  const dir = join(root, "projects", projectSlug, "assets");
   await mkdir(dir, { recursive: true });
 
   const ext = format.toLowerCase().trim() || "mp3";
@@ -23,5 +24,5 @@ export async function saveAudioAsset(
   const filePath = join(dir, fileName);
 
   await writeFile(filePath, audioBuffer);
-  return `/assets/${fileName}`;
+  return `/projects/${projectSlug}/assets/${fileName}`;
 }

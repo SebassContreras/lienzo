@@ -1,0 +1,22 @@
+{
+  "name": "Mi Proyecto",
+  "description": "Espacio de trabajo principal y predeterminado",
+  "palette": {
+    "primary": "#3B82F6",
+    "custom": [],
+    "background": "#0B0F19",
+    "surface": "#1E293B",
+    "text": "#F8FAFC",
+    "accent": "#F59E0B"
+  },
+  "canvas": {
+    "width": 1080,
+    "height": 1080,
+    "fps": 30,
+    "duration": 4
+  },
+  "fonts": [],
+  "slug": "mi-proyecto",
+  "createdAt": "2026-10-18T12:00:00.000Z",
+  "updatedAt": "2026-10-18T12:00:00.000Z"
+}

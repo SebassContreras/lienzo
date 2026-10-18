@@ -656,6 +656,7 @@ export function App() {
               setName={setSceneName}
               onOpen={loadScene}
               setStatus={setStatus}
+              projectSlug={activeProjectSlug}
             />
             <ProjectModeSelector
               mode={scene.mode}

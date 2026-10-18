@@ -24,6 +24,7 @@ export const sceneExport = defineTool({
     "`scale` sizes it relative to the scene (default 1). Starts a headless browser on first use.",
   input: z.object({
     scene: z.string().min(1),
+    project: z.string().optional(),
     format: z.enum(["png", "gif", "mp4"]),
     t: z.number().min(0).optional(),
     scale: z.number().min(0.1).max(2).optional(),
@@ -36,8 +37,14 @@ export const sceneExport = defineTool({
     bytes: z.number(),
     notices: z.array(z.string()),
   }),
-  async run({ scene: name, format, t = 0, scale = 1, fps, out }, ctx) {
-    const { scene, rendered } = await resolveAndRenderScene(ctx, name, {
+  async run({ scene: name, project, format, t = 0, scale = 1, fps, out }, ctx) {
+    const { resolveProjectScope } = await import("../project-scope.ts");
+    const { slug: projectSlug, effectiveCtx } = await resolveProjectScope(
+      ctx,
+      project,
+    );
+
+    const { scene, rendered } = await resolveAndRenderScene(effectiveCtx, name, {
       format,
       scale,
       fps,
@@ -52,7 +59,8 @@ export const sceneExport = defineTool({
     if (format === "mp4" && ext !== "mp4") {
       notices.push("H.264 no está disponible en este navegador; se exportó WebM");
     }
-    const target = resolve(ctx.root, out ?? `exports/${name}.${ext}`).replace(
+    const defaultOut = `projects/${projectSlug}/exports/${name}.${ext}`;
+    const target = resolve(ctx.root, out ?? defaultOut).replace(
       /\.\w+$/,
       `.${ext}`,
     );

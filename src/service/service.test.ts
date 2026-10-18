@@ -40,11 +40,15 @@ async function ok(name: string, input: unknown) {
   return r.value as Record<string, unknown>;
 }
 
-const sceneFiles = () => readdir(join(ctx.root, "scenes")).catch(() => []);
+const sceneFiles = () =>
+  readdir(join(ctx.root, "projects", "mi-proyecto", "scenes")).catch(() => []);
 
 /** The file on disk, checked to open in the editor (R5). */
 async function onDisk(name: string): Promise<Scene> {
-  const raw = await readFile(join(ctx.root, "scenes", `${name}.json`), "utf8");
+  const raw = await readFile(
+    join(ctx.root, "projects", "mi-proyecto", "scenes", `${name}.json`),
+    "utf8",
+  );
   const parsed = parseScene(JSON.parse(raw));
   if (!parsed.ok) throw new Error(parsed.error);
   return parsed.value;
@@ -118,10 +122,14 @@ describe("service tools", () => {
   it("writes nothing when an edit would make the scene invalid (R4)", async () => {
     await ok("scene_create", { name: "demo" });
     const { id } = await ok("element_add", { scene: "demo", kind: "rect" });
-    const before = await readFile(
-      join(ctx.root, "scenes", "demo.json"),
-      "utf8",
+    const scenePath = join(
+      ctx.root,
+      "projects",
+      "mi-proyecto",
+      "scenes",
+      "demo.json",
     );
+    const before = await readFile(scenePath, "utf8");
     const r = await call("element_update", {
       scene: "demo",
       id,
@@ -131,9 +139,7 @@ describe("service tools", () => {
       ok: false,
       error: { path: expect.stringMatching(/w/) },
     });
-    expect(await readFile(join(ctx.root, "scenes", "demo.json"), "utf8")).toBe(
-      before,
-    );
+    expect(await readFile(scenePath, "utf8")).toBe(before);
     const bad = await call("scene_create", {
       name: "bad",
       scene: { width: -1 },
@@ -272,7 +278,9 @@ describe("scene_export (010/R1)", () => {
   it("writes exports/<scene>.<ext>, or `out` relative to the root", async () => {
     await ok("scene_create", { name: "demo" });
     const png = await ok("scene_export", { scene: "demo", format: "png" });
-    expect(png.file).toBe(join(ctx.root, "exports", "demo.png"));
+    expect(png.file).toBe(
+      join(ctx.root, "projects", "mi-proyecto", "exports", "demo.png"),
+    );
     expect(png.notices).toEqual([]);
     const gif = await ok("scene_export", {
       scene: "demo",

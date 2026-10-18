@@ -14,7 +14,7 @@ function jsonStore(): Plugin {
     presets: "presets",
     animations: "presets/animations",
     voices: "presets/voices",
-    scenes: "scenes",
+    scenes: "projects/mi-proyecto/scenes",
   };
 
   async function handle(
@@ -74,7 +74,7 @@ const MAX_ASSET_BYTES = 20 * 1024 * 1024;
  * GET  /assets/<file>       -> the stored file
  */
 function assetStore(): Plugin {
-  const dir = join(import.meta.dirname, "assets");
+  const dir = join(import.meta.dirname, "projects", "mi-proyecto", "assets");
 
   async function upload(req: IncomingMessage, res: ServerResponse) {
     const url = new URL(req.url ?? "", "http://localhost");
@@ -105,7 +105,7 @@ function assetStore(): Plugin {
     const file = `${hash}.${ext === "jpeg" ? "jpg" : ext}`;
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, file), data);
-    res.end(JSON.stringify({ path: `/assets/${file}` }));
+    res.end(JSON.stringify({ path: `/projects/mi-proyecto/assets/${file}` }));
   }
 
   async function serve(req: IncomingMessage, res: ServerResponse) {

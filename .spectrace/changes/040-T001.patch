@@ -1,0 +1,75 @@
+diff --git a/.gitignore b/.gitignore
+index 7a6ccb7..d9356a1 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -17,16 +17,8 @@ coverage/
+ Thumbs.db
+ .muxel/
+ 
+-# scene_export output
+-exports/
+-
+-# User assets and scenes
+-assets/*
+-!assets/.gitkeep
+-scenes/*
+-!scenes/.gitkeep
+-!scenes/ejemplo-keyframes.json
+-
+-# User project workspaces
++# User project workspaces (mi-proyecto is the default committed template)
+ projects/*
+ !projects/.gitkeep
++!projects/mi-proyecto/
++!projects/mi-proyecto/**
+diff --git a/assets/.gitkeep b/assets/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/projects/mi-proyecto/project.json b/projects/mi-proyecto/project.json
+new file mode 100644
+index 0000000..cee236d
+--- /dev/null
++++ b/projects/mi-proyecto/project.json
+@@ -0,0 +1,22 @@
++{
++  "name": "Mi Proyecto",
++  "description": "Espacio de trabajo principal y predeterminado",
++  "palette": {
++    "primary": "#3B82F6",
++    "custom": [],
++    "background": "#0B0F19",
++    "surface": "#1E293B",
++    "text": "#F8FAFC",
++    "accent": "#F59E0B"
++  },
++  "canvas": {
++    "width": 1080,
++    "height": 1080,
++    "fps": 30,
++    "duration": 4
++  },
++  "fonts": [],
++  "slug": "mi-proyecto",
++  "createdAt": "2026-10-18T12:00:00.000Z",
++  "updatedAt": "2026-10-18T12:00:00.000Z"
++}
+diff --git a/scenes/ejemplo-keyframes.json b/projects/mi-proyecto/scenes/ejemplo-keyframes.json
+similarity index 100%
+rename from scenes/ejemplo-keyframes.json
+rename to projects/mi-proyecto/scenes/ejemplo-keyframes.json
+diff --git a/scenes/.gitkeep b/scenes/.gitkeep
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/src/engine/tracks.test.ts b/src/engine/tracks.test.ts
+index 19ac546..951d7ee 100644
+--- a/src/engine/tracks.test.ts
++++ b/src/engine/tracks.test.ts
+@@ -208,7 +208,7 @@ describe("scenes", () => {
+ 
+   it("the keyframes example is valid: the arrow enters from outside and each square stays blue", () => {
+     const file = new URL(
+-      "../../scenes/ejemplo-keyframes.json",
++      "../../projects/mi-proyecto/scenes/ejemplo-keyframes.json",
+       import.meta.url,
+     );
+     const parsed = parseScene(JSON.parse(readFileSync(file, "utf8")));

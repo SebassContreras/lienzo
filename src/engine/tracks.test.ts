@@ -208,7 +208,7 @@ describe("scenes", () => {
 
   it("the keyframes example is valid: the arrow enters from outside and each square stays blue", () => {
     const file = new URL(
-      "../../scenes/ejemplo-keyframes.json",
+      "../../projects/mi-proyecto/scenes/ejemplo-keyframes.json",
       import.meta.url,
     );
     const parsed = parseScene(JSON.parse(readFileSync(file, "utf8")));

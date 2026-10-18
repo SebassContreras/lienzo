@@ -17,16 +17,8 @@ coverage/
 Thumbs.db
 .muxel/
 
-# scene_export output
-exports/
-
-# User assets and scenes
-assets/*
-!assets/.gitkeep
-scenes/*
-!scenes/.gitkeep
-!scenes/ejemplo-keyframes.json
-
-# User project workspaces
+# User project workspaces (mi-proyecto is the default committed template)
 projects/*
 !projects/.gitkeep
+!projects/mi-proyecto/
+!projects/mi-proyecto/**

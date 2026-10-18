@@ -25,8 +25,9 @@ What exists today:
 - Time is applied only by `animate(el, t, scene)` (`src/engine/animate.ts`) before a component
   draws; components get the result as a transform (A24)
 - Looping animations use whole cycles per loop (A6)
-- Presets in `presets/`, scenes in `scenes/`, images in `assets/`, via the Vite middleware;
-  no database (A7)
+- Presets in `presets/`, and project workspaces in `projects/<slug>/` containing `project.json`,
+  `scenes/`, `assets/`, `presets/`, and `exports/`; no database (A7, spec 040)
+- The default workspace template is `projects/mi-proyecto/`, which is the only project tracked in Git
 - Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
 - Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10)
 - Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12)
@@ -96,12 +97,15 @@ src/types/       type declarations for packages that ship none
 src/demo.ts      the "how MCP works" demo scene
 presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
 presets/animations/  animation presets (JSON)
-scenes/          saved scenes (JSON)
-assets/          images used by scenes, named by content hash
+projects/        project workspaces (e.g. projects/mi-proyecto/ containing scenes/, assets/, presets/, exports/)
 ```
 
 ## Rules for agents
 
+- **Project Boundary & Isolation (Strict Boundary)**: All scenes, generated speech audio, images,
+  and exports MUST be saved within the target project (`projects/<slug>/`). Never write scenes,
+  assets or exports to the repository root. If no project is provided, default to `mi-proyecto`.
+  NEVER borrow or mix assets between different projects; foreign asset references are strictly prohibited.
 - To add a component: add a descriptor folder `src/components/<kind>/` with `descriptor.ts`
   (fields built from `src/components/fields/`, composing the shared groups; sections; the
   animations it offers; label and library icon; `defineComponent`) and `draw.ts` (draws the

@@ -236,8 +236,19 @@ export function createProjectStore(root: string): ProjectStore {
 
     async checkAsset(slug: string, assetRef: string): Promise<{ ok: boolean; warning?: string }> {
       ProjectSlugSchema.parse(slug);
+      const normalized = assetRef.trim().replace(/\\/g, "/");
+
+      // Reject foreign project references: e.g. /projects/other/assets/* or /api/projects/other/assets/*
+      const foreignMatch = normalized.match(/(?:^|\/)(?:api\/)?projects\/([^/]+)\/assets\//);
+      if (foreignMatch && foreignMatch[1] !== slug) {
+        return {
+          ok: false,
+          warning: `Aislamiento estricto: el recurso «${assetRef}» pertenece a otro proyecto («${foreignMatch[1]}») y no puede usarse en «${slug}»`,
+        };
+      }
+
       const base = projectPath(slug);
-      const filename = assetRef.split("/").pop() ?? assetRef;
+      const filename = normalized.split("/").pop() ?? normalized;
       const assetFile = join(base, "assets", filename);
       if (await exists(assetFile)) {
         return { ok: true };

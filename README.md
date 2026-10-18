@@ -37,13 +37,13 @@ the canvas, edit them live, and export PNG, GIF or MP4.
 - **Backgrounds:** the "Fondo" button (or a click on an empty part of the canvas) opens the
   background settings: color or gradient, dots, spotlight. The "Fondos" library section
   applies a background preset (undoable); "Guardar fondo como preset" saves yours.
-- **Scenes:** scenes are JSON files in `scenes/`. The scenes dialog shows each saved scene
-  with a thumbnail to open, rename, duplicate, export or delete it, and imports scenes
-  from `.json` files.
+- **Scenes & Workspaces:** scenes are JSON files residing inside project workspaces (`projects/<slug>/scenes/`).
+  The scenes dialog shows each saved scene with a thumbnail to open, rename, duplicate, export or delete it,
+  and imports scenes from `.json` files.
 - **Validation:** an imported preset or scene is checked before anything is written; an
   invalid file is rejected with the exact path that is wrong (e.g. `elements.1.fill.color`).
-- **Files:** presets, scenes and the images in `assets/` are plain files you can version
-  with the repo.
+- **Files:** presets and project workspaces (`projects/<slug>/` containing scenes, local assets and exports)
+  are plain files you can version with the repo. `projects/mi-proyecto/` serves as the committed default project.
 - **Export:** PNG (current frame), looping GIF, and MP4 (WebM when the browser cannot
   encode H.264).
 

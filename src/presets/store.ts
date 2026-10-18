@@ -125,13 +125,22 @@ export async function saveVoicePreset(
   await postJson(`/api/voices?name=${encodeURIComponent(name)}`, preset);
 }
 
-/** Scenes live as JSON files in `scenes/`. */
-export async function loadScenes(): Promise<{ name: string; data: Scene }[]> {
-  return getJson("/api/scenes");
+/** Scenes live as JSON files in `projects/<slug>/scenes/`. */
+export async function loadScenes(
+  projectSlug = "mi-proyecto",
+): Promise<{ name: string; data: Scene }[]> {
+  return getJson(`/api/projects/${encodeURIComponent(projectSlug)}/scenes`);
 }
 
-export async function saveScene(name: string, scene: Scene): Promise<void> {
-  await postJson(`/api/scenes?name=${encodeURIComponent(name)}`, scene);
+export async function saveScene(
+  name: string,
+  scene: Scene,
+  projectSlug = "mi-proyecto",
+): Promise<void> {
+  await postJson(
+    `/api/projects/${encodeURIComponent(projectSlug)}/scenes?name=${encodeURIComponent(name)}`,
+    scene,
+  );
 }
 
 const IMAGE_FILES = {

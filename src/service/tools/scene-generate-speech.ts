@@ -32,6 +32,7 @@ export function createSceneGenerateSpeechTool(
       "and attach the resulting audio and synchronized subtitle cues to a scene.",
     input: z.object({
       scene: z.string().min(1),
+      project: z.string().optional(),
       script: z.string().min(1),
       provider: z.enum(["openrouter", "local", "kokoro", "custom"]).optional(),
       voice: z.string().optional(),
@@ -117,13 +118,21 @@ export function createSceneGenerateSpeechTool(
               Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
             );
 
-      // 4. Save audio buffer into assets/
+      // 4. Resolve project scope (defaults to mi-proyecto)
+      const { resolveProjectScope } = await import("../project-scope.ts");
+      const { slug: projectSlug, effectiveCtx } = await resolveProjectScope(
+        ctx,
+        input.project,
+      );
+
+      // 5. Save audio buffer into projects/<projectSlug>/assets/
       let assetId: string;
       try {
         assetId = await saveAudioAsset(
           ctx.root,
           speechResult.audioBuffer,
           speechResult.format,
+          projectSlug,
         );
       } catch (err) {
         return fail(
@@ -133,7 +142,7 @@ export function createSceneGenerateSpeechTool(
         );
       }
 
-      // 5. Generate subtitle cues if requested
+      // 6. Generate subtitle cues if requested
       const cues = input.subtitles
         ? alignScriptToCues(input.script, {
             totalDuration: estimatedDuration,
@@ -141,8 +150,8 @@ export function createSceneGenerateSpeechTool(
           })
         : undefined;
 
-      // 6. Attach audio and subtitles to scene
-      const editResult = await editScene(ctx, input.scene, (scene) =>
+      // 7. Attach audio and subtitles to scene within effective project context
+      const editResult = await editScene(effectiveCtx, input.scene, (scene) =>
         attachSpeechToScene(scene, {
           assetId,
           audioDuration: estimatedDuration,

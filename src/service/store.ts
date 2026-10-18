@@ -34,7 +34,7 @@ export type Store = {
 
 export function createStore(root: string): Store {
   const presets = join(root, "presets");
-  const scenes = join(root, "scenes");
+  const defaultProjectScenes = join(root, "projects", "mi-proyecto", "scenes");
   const tag = (source: PresetSource) => (items: JsonItem[]) =>
     items.map((i) => ({ file: i.name, source, data: i.data }));
   return {
@@ -43,8 +43,8 @@ export function createStore(root: string): Store {
       ...tag("user")(await listJson(presets)),
     ],
     animPresets: () => listJson(join(presets, "animations")),
-    scenes: () => listJson(scenes),
-    readScene: (name) => readJson(scenes, name),
-    writeScene: (name, scene) => writeJson(scenes, name, scene),
+    scenes: () => listJson(defaultProjectScenes),
+    readScene: (name) => readJson(defaultProjectScenes, name),
+    writeScene: (name, scene) => writeJson(defaultProjectScenes, name, scene),
   };
 }

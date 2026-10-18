@@ -26,17 +26,20 @@ export function SceneFiles({
   setName,
   onOpen,
   setStatus,
+  projectSlug = "mi-proyecto",
 }: {
   scene: Scene;
   name: string;
   setName: (name: string) => void;
   onOpen: (scene: Scene) => void;
   setStatus: (s: string) => void;
+  projectSlug?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [scenes, setScenes] = useState<StoredScene[]>([]);
+  const effectiveProjectSlug = projectSlug || "mi-proyecto";
   const refresh = () =>
-    loadScenes()
+    loadScenes(effectiveProjectSlug)
       .then((items) =>
         setScenes(
           items.map((item) => {
@@ -76,7 +79,7 @@ export function SceneFiles({
           scenes.map((s) => s.name),
         );
         return change(
-          saveScene(target, parsed.value),
+          saveScene(target, parsed.value, effectiveProjectSlug),
           `Escena «${target}» importada`,
         );
       })
@@ -105,8 +108,8 @@ export function SceneFiles({
         type="button"
         title="Guardar escena como JSON"
         onClick={() =>
-          saveScene(name, scene)
-            .then(() => setStatus(`Escena «${name}» guardada en scenes/`))
+          saveScene(name, scene, effectiveProjectSlug)
+            .then(() => setStatus(`Escena «${name}» guardada en ${effectiveProjectSlug}/scenes/`))
             .catch((error: unknown) => setStatus(`Error: ${error}`))
         }
       >
