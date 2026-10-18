@@ -50,8 +50,9 @@ export function createSceneGenerateSpeechTool(
       cuesCount: z.number(),
     }),
     async run(input, ctx) {
-      // 1. Resolve active TTS service instance (options -> factory)
+      // 1. Resolve active TTS service instance (ctx -> options -> factory)
       const service =
+        ctx.tts ??
         options.ttsService ??
         createTtsService({
           provider: input.provider,

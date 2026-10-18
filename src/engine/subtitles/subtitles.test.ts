@@ -76,6 +76,29 @@ describe("Subtitles domain tests", () => {
     expect(layout.lines[0]?.words[0]?.word).toBe("Uno");
   });
 
+  it("reserves clearance padding between words when highlightScale > 1 (039/R3, D3)", () => {
+    const cue: SubtitleCue = {
+      start: 0,
+      end: 2,
+      text: "Hola mundo",
+      words: [
+        { word: "Hola", start: 0, end: 1 },
+        { word: "mundo", start: 1, end: 2 },
+      ],
+    };
+
+    const measure = (s: string) => s.length * 10;
+    // highlightScale 1.0 vs 1.2
+    const unscaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.0);
+    const scaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.2);
+
+    const unscaledGap = unscaled.lines[0]!.words[1]!.x - (unscaled.lines[0]!.words[0]!.x + unscaled.lines[0]!.words[0]!.width);
+    const scaledGap = scaled.lines[0]!.words[1]!.x - (scaled.lines[0]!.words[0]!.x + scaled.lines[0]!.words[0]!.width);
+
+    // Scaled gap should be wider than unscaled gap by wordWidth * (scale - 1)
+    expect(scaledGap).toBeGreaterThan(unscaledGap);
+  });
+
   it("parses WebVTT with word karaoke timing tags", () => {
     const vtt = `WEBVTT
 

@@ -20,10 +20,3 @@ export function getActiveCue(cues: SubtitleCue[], t: number): SubtitleCue | unde
 export function isWordActive(word: SubtitleWord, t: number): boolean {
   return t >= word.start && t <= word.end;
 }
-
-/**
- * Determines if a word has already finished playing prior to time `t`.
- */
-export function isWordCompleted(word: SubtitleWord, t: number): boolean {
-  return t > word.end;
-}

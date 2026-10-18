@@ -96,26 +96,41 @@ export async function resolveSceneBackground(
 
 /** Normalizes anim shorthand: if a string or single kind is given, maps it to { in/loop: ... } */
 export function normalizeAnim(rawAnim: unknown): unknown {
-  if (typeof rawAnim !== "string") return rawAnim;
-
-  const kind = rawAnim.toLowerCase();
-  const LOOP_CANDIDATES = [
-    "float",
-    "pulse",
-    "breathe",
-    "spin",
-    "bounce",
-    "glow",
-  ];
-  if (LOOP_CANDIDATES.includes(kind)) {
+  if (typeof rawAnim === "string") {
+    const kind = rawAnim.toLowerCase();
+    const LOOP_CANDIDATES = [
+      "float",
+      "pulse",
+      "breathe",
+      "spin",
+      "bounce",
+      "glow",
+    ];
+    if (LOOP_CANDIDATES.includes(kind)) {
+      return {
+        loop: { kind, amount: 12, cycles: 1, delay: 0 },
+      };
+    }
     return {
-      loop: { kind, amount: 12, cycles: 1, delay: 0 },
+      in: { kind, amount: 12, delay: 0, from: "down" },
     };
   }
 
-  return {
-    in: { kind, amount: 12, delay: 0, from: "down" },
-  };
+  if (typeof rawAnim === "object" && rawAnim !== null) {
+    const animObj = { ...(rawAnim as Record<string, unknown>) };
+    if (typeof animObj.in === "string") {
+      animObj.in = { kind: animObj.in };
+    }
+    if (typeof animObj.loop === "string") {
+      animObj.loop = { kind: animObj.loop };
+    }
+    if (typeof animObj.out === "string") {
+      animObj.out = { kind: animObj.out };
+    }
+    return animObj;
+  }
+
+  return rawAnim;
 }
 
 /** Builds an element from preset or kind, applying deepMerge and children expansion */
@@ -169,7 +184,19 @@ export async function buildElement(
 
   if (anim !== undefined) {
     const normalized = normalizeAnim(anim);
-    (element as unknown as Record<string, unknown>).anim = normalized;
+    if (
+      typeof normalized === "object" &&
+      normalized !== null &&
+      typeof element.anim === "object" &&
+      element.anim !== null
+    ) {
+      deepMerge(
+        element.anim as unknown as Record<string, unknown>,
+        normalized as Record<string, unknown>,
+      );
+    } else {
+      (element as unknown as Record<string, unknown>).anim = normalized;
+    }
   }
 
   if (animPreset !== undefined) {

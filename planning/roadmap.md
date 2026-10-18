@@ -43,4 +43,5 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 036 | subtitles-speech-sync | done        | 027, 028 | —            | 36 |
 | 037 | voice-library-integration | done        | 028, 003, 004, 035 | —            | 37 |
 | 038 | web-project-brand-manager | done        | 001, 003, 007, 031 | —      | 38 |
+| 039 | codebase-fixes-and-optimization | done        | 007, 009, 010, 011, 027, 028, 032 | —      | 39 |
 

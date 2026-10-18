@@ -1,0 +1,1059 @@
+diff --git a/.gitignore b/.gitignore
+index 6500ccc..7a6ccb7 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -26,3 +26,7 @@ assets/*
+ scenes/*
+ !scenes/.gitkeep
+ !scenes/ejemplo-keyframes.json
++
++# User project workspaces
++projects/*
++!projects/.gitkeep
+diff --git a/projects/.gitkeep b/projects/.gitkeep
+new file mode 100644
+index 0000000..59f0bfa
+--- /dev/null
++++ b/projects/.gitkeep
+@@ -0,0 +1 @@
++# Preserves the projects/ directory structure in git while ignoring user workspaces.
+diff --git a/src/editor/brand-manager.test.ts b/src/editor/brand-manager.test.ts
+index 4504cba..8adf10d 100644
+--- a/src/editor/brand-manager.test.ts
++++ b/src/editor/brand-manager.test.ts
+@@ -30,9 +30,7 @@ describe("Brand Manager workflow and validation", () => {
+         fps: 60,
+         duration: 10,
+       },
+-      fonts: [
+-        { family: "Inter", role: "body", weights: [400, 600] },
+-      ],
++      fonts: [{ family: "Inter", role: "body", weights: [400, 600] }],
+     };
+ 
+     const res = parseProjectManifest(rawConfig);
+diff --git a/src/editor/brand/brand-asset-manager.tsx b/src/editor/brand/brand-asset-manager.tsx
+index c5655d9..ee4dec3 100644
+--- a/src/editor/brand/brand-asset-manager.tsx
++++ b/src/editor/brand/brand-asset-manager.tsx
+@@ -1,4 +1,11 @@
+-import { Image, Loader2, Upload, FileType, CheckCircle, AlertCircle } from "lucide-react";
++import {
++  AlertCircle,
++  CheckCircle,
++  FileType,
++  Image,
++  Loader2,
++  Upload,
++} from "lucide-react";
+ import { type ChangeEvent, type DragEvent, useRef, useState } from "react";
+ 
+ export type BrandAssetManagerProps = {
+@@ -22,7 +29,9 @@ export function BrandAssetManager({
+ 
+   const uploadFile = async (file: File) => {
+     if (!slug) {
+-      setErrorMsg("Debe seleccionar o guardar un proyecto antes de subir recursos.");
++      setErrorMsg(
++        "Debe seleccionar o guardar un proyecto antes de subir recursos.",
++      );
+       return;
+     }
+ 
+@@ -46,7 +55,9 @@ export function BrandAssetManager({
+ 
+       if (!res.ok) {
+         const data = await res.json().catch(() => ({}));
+-        throw new Error(data.error || `Error al subir el archivo: ${res.status}`);
++        throw new Error(
++          data.error || `Error al subir el archivo: ${res.status}`,
++        );
+       }
+ 
+       const result = await res.json();
+@@ -88,11 +99,23 @@ export function BrandAssetManager({
+     }
+   };
+ 
+-  const isImageFile = (name: string) => /\.(png|jpg|jpeg|webp|svg)$/i.test(name);
++  const isImageFile = (name: string) =>
++    /\.(png|jpg|jpeg|webp|svg)$/i.test(name);
+ 
+   return (
+-    <div className="brand-asset-manager" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+-      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
++    <div
++      className="brand-asset-manager"
++      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
++    >
++      <div
++        style={{
++          display: "flex",
++          alignItems: "center",
++          gap: "8px",
++          fontWeight: 600,
++          fontSize: "13px",
++        }}
++      >
+         <Image size={16} />
+         <span>Recursos Gráficos del Proyecto ({assets.length})</span>
+       </div>
+@@ -102,13 +125,17 @@ export function BrandAssetManager({
+         onDrop={handleDrop}
+         onDragOver={handleDragOver}
+         onDragLeave={handleDragLeave}
+-        onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
++        onClick={() =>
++          !disabled && !isUploading && fileInputRef.current?.click()
++        }
+         style={{
+           border: `2px dashed ${isDragging ? "#3b82f6" : "rgba(255,255,255,0.2)"}`,
+           borderRadius: "8px",
+           padding: "20px",
+           textAlign: "center",
+-          background: isDragging ? "rgba(59, 130, 246, 0.08)" : "rgba(255,255,255,0.02)",
++          background: isDragging
++            ? "rgba(59, 130, 246, 0.08)"
++            : "rgba(255,255,255,0.02)",
+           cursor: disabled || isUploading ? "not-allowed" : "pointer",
+           transition: "all 0.2s ease",
+           display: "flex",
+@@ -127,9 +154,18 @@ export function BrandAssetManager({
+         />
+ 
+         {isUploading ? (
+-          <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#3b82f6" }}>
++          <div
++            style={{
++              display: "flex",
++              alignItems: "center",
++              gap: "8px",
++              color: "#3b82f6",
++            }}
++          >
+             <Loader2 size={24} className="spin" />
+-            <span style={{ fontSize: "12px" }}>Subiendo archivo al proyecto...</span>
++            <span style={{ fontSize: "12px" }}>
++              Subiendo archivo al proyecto...
++            </span>
+           </div>
+         ) : (
+           <>
+@@ -140,7 +176,8 @@ export function BrandAssetManager({
+               Arrastra un archivo aquí o haz clic para subirlo
+             </div>
+             <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)" }}>
+-              Imágenes (PNG, JPG, SVG, WebP), Modelos 3D (GLB), Audio o Fuentes (máx 20MB)
++              Imágenes (PNG, JPG, SVG, WebP), Modelos 3D (GLB), Audio o Fuentes
++              (máx 20MB)
+             </div>
+           </>
+         )}
+@@ -148,13 +185,29 @@ export function BrandAssetManager({
+ 
+       {/* Feedback Messages */}
+       {errorMsg && (
+-        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#ef4444", fontSize: "11px" }}>
++        <div
++          style={{
++            display: "flex",
++            alignItems: "center",
++            gap: "6px",
++            color: "#ef4444",
++            fontSize: "11px",
++          }}
++        >
+           <AlertCircle size={14} />
+           <span>{errorMsg}</span>
+         </div>
+       )}
+       {successMsg && (
+-        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#10b981", fontSize: "11px" }}>
++        <div
++          style={{
++            display: "flex",
++            alignItems: "center",
++            gap: "6px",
++            color: "#10b981",
++            fontSize: "11px",
++          }}
++        >
+           <CheckCircle size={14} />
+           <span>{successMsg}</span>
+         </div>
+@@ -162,12 +215,25 @@ export function BrandAssetManager({
+ 
+       {/* Asset Grid / Gallery */}
+       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+-        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>
++        <span
++          style={{
++            fontSize: "11px",
++            color: "rgba(255,255,255,0.5)",
++            fontWeight: 500,
++          }}
++        >
+           Archivos en projects/{slug || "<slug>"}/assets/
+         </span>
+ 
+         {assets.length === 0 ? (
+-          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", fontStyle: "italic", padding: "10px 0" }}>
++          <div
++            style={{
++              fontSize: "11px",
++              color: "rgba(255,255,255,0.3)",
++              fontStyle: "italic",
++              padding: "10px 0",
++            }}
++          >
+             No hay recursos subidos aún en este proyecto.
+           </div>
+         ) : (
+@@ -182,7 +248,9 @@ export function BrandAssetManager({
+             }}
+           >
+             {assets.map((asset) => {
+-              const assetUrl = slug ? `/api/projects/${slug}/assets/${asset}` : "";
++              const assetUrl = slug
++                ? `/api/projects/${slug}/assets/${asset}`
++                : "";
+               const isImg = isImageFile(asset);
+ 
+               return (
+@@ -217,7 +285,11 @@ export function BrandAssetManager({
+                       <img
+                         src={assetUrl}
+                         alt={asset}
+-                        style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
++                        style={{
++                          maxWidth: "100%",
++                          maxHeight: "100%",
++                          objectFit: "contain",
++                        }}
+                       />
+                     ) : (
+                       <FileType size={24} style={{ opacity: 0.5 }} />
+diff --git a/src/editor/brand/brand-palette-editor.tsx b/src/editor/brand/brand-palette-editor.tsx
+index da3090b..7f94962 100644
+--- a/src/editor/brand/brand-palette-editor.tsx
++++ b/src/editor/brand/brand-palette-editor.tsx
+@@ -15,11 +15,32 @@ interface PaletteColorField {
+ }
+ 
+ const PALETTE_FIELDS: PaletteColorField[] = [
+-  { key: "primary", label: "Primario", description: "Color principal de marca", required: true },
+-  { key: "secondary", label: "Secundario", description: "Color de soporte o contraste" },
+-  { key: "accent", label: "Acento", description: "Llamadas a la acción y destaques" },
+-  { key: "surface", label: "Superficie", description: "Fondos de tarjetas y contenedores" },
+-  { key: "background", label: "Fondo", description: "Fondo predeterminado del lienzo" },
++  {
++    key: "primary",
++    label: "Primario",
++    description: "Color principal de marca",
++    required: true,
++  },
++  {
++    key: "secondary",
++    label: "Secundario",
++    description: "Color de soporte o contraste",
++  },
++  {
++    key: "accent",
++    label: "Acento",
++    description: "Llamadas a la acción y destaques",
++  },
++  {
++    key: "surface",
++    label: "Superficie",
++    description: "Fondos de tarjetas y contenedores",
++  },
++  {
++    key: "background",
++    label: "Fondo",
++    description: "Fondo predeterminado del lienzo",
++  },
+   { key: "text", label: "Texto", description: "Color tipográfico principal" },
+ ];
+ 
+@@ -28,7 +49,10 @@ export function BrandPaletteEditor({
+   onChange,
+   disabled = false,
+ }: BrandPaletteEditorProps) {
+-  const updateField = (key: keyof Omit<ColorPalette, "custom">, colorVal: string) => {
++  const updateField = (
++    key: keyof Omit<ColorPalette, "custom">,
++    colorVal: string,
++  ) => {
+     onChange({
+       ...value,
+       [key]: colorVal || undefined,
+@@ -55,8 +79,19 @@ export function BrandPaletteEditor({
+   };
+ 
+   return (
+-    <div className="brand-palette-editor" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+-      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "13px" }}>
++    <div
++      className="brand-palette-editor"
++      style={{ display: "flex", flexDirection: "column", gap: "14px" }}
++    >
++      <div
++        style={{
++          display: "flex",
++          alignItems: "center",
++          gap: "8px",
++          fontWeight: 600,
++          fontSize: "13px",
++        }}
++      >
+         <Palette size={16} />
+         <span>Paleta de Colores de la Marca</span>
+       </div>
+@@ -69,7 +104,9 @@ export function BrandPaletteEditor({
+         }}
+       >
+         {PALETTE_FIELDS.map(({ key, label, description, required }) => {
+-          const currentColor = (value[key] as string | undefined) ?? (key === "primary" ? "#3b82f6" : "");
++          const currentColor =
++            (value[key] as string | undefined) ??
++            (key === "primary" ? "#3b82f6" : "");
+           return (
+             <div
+               key={key}
+@@ -83,15 +120,26 @@ export function BrandPaletteEditor({
+                 gap: "6px",
+               }}
+             >
+-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
++              <div
++                style={{
++                  display: "flex",
++                  justifyContent: "space-between",
++                  alignItems: "center",
++                }}
++              >
+                 <label style={{ fontSize: "12px", fontWeight: 500 }}>
+-                  {label} {required && <span style={{ color: "#ef4444" }}>*</span>}
++                  {label}{" "}
++                  {required && <span style={{ color: "#ef4444" }}>*</span>}
+                 </label>
+-                <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)" }}>
++                <span
++                  style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)" }}
++                >
+                   {description}
+                 </span>
+               </div>
+-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
++              <div
++                style={{ display: "flex", alignItems: "center", gap: "8px" }}
++              >
+                 <input
+                   type="color"
+                   disabled={disabled}
+@@ -130,9 +178,24 @@ export function BrandPaletteEditor({
+         })}
+       </div>
+ 
+-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" }}>
+-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+-          <span style={{ fontSize: "12px", fontWeight: 500 }}>Colores Adicionales / Personalizados</span>
++      <div
++        style={{
++          display: "flex",
++          flexDirection: "column",
++          gap: "8px",
++          marginTop: "4px",
++        }}
++      >
++        <div
++          style={{
++            display: "flex",
++            justifyContent: "space-between",
++            alignItems: "center",
++          }}
++        >
++          <span style={{ fontSize: "12px", fontWeight: 500 }}>
++            Colores Adicionales / Personalizados
++          </span>
+           <button
+             type="button"
+             disabled={disabled}
+@@ -155,8 +218,14 @@ export function BrandPaletteEditor({
+           </button>
+         </div>
+ 
+-        {(!value.custom || value.custom.length === 0) ? (
+-          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", fontStyle: "italic" }}>
++        {!value.custom || value.custom.length === 0 ? (
++          <div
++            style={{
++              fontSize: "11px",
++              color: "rgba(255,255,255,0.4)",
++              fontStyle: "italic",
++            }}
++          >
+             Sin colores secundarios adicionales definidos.
+           </div>
+         ) : (
+diff --git a/src/editor/dialogs/brand-manager-dialog.tsx b/src/editor/dialogs/brand-manager-dialog.tsx
+index cdd70fc..dadb170 100644
+--- a/src/editor/dialogs/brand-manager-dialog.tsx
++++ b/src/editor/dialogs/brand-manager-dialog.tsx
+@@ -1,6 +1,9 @@
+-import { AlertTriangle, Briefcase, Check, Plus, Save, Trash2, X } from "lucide-react";
++import { AlertTriangle, Briefcase, Plus, Save, Trash2, X } from "lucide-react";
+ import { useEffect, useRef, useState } from "react";
+-import type { ColorPalette, ProjectCanvasDefaults } from "../../model/project.ts";
++import type {
++  ColorPalette,
++  ProjectCanvasDefaults,
++} from "../../model/project.ts";
+ import { PROJECT_SLUG_REGEX } from "../../model/project.ts";
+ import type { ProjectDetails } from "../../service/project-store.ts";
+ import { BrandAssetManager } from "../brand/brand-asset-manager.tsx";
+@@ -13,7 +16,11 @@ export type BrandManagerDialogProps = {
+   mode: BrandManagerMode;
+   initialSlug?: string;
+   onClose: () => void;
+-  onProjectSaved: (slug: string, palette?: ColorPalette, canvasDefaults?: ProjectCanvasDefaults) => void;
++  onProjectSaved: (
++    slug: string,
++    palette?: ColorPalette,
++    canvasDefaults?: ProjectCanvasDefaults,
++  ) => void;
+   onProjectDeleted?: (slug: string) => void;
+   setStatus: (msg: string) => void;
+ };
+@@ -56,7 +63,9 @@ export function BrandManagerDialog({
+   const [assets, setAssets] = useState<string[]>([]);
+ 
+   // Dialog & Async UI State
+-  const [activeTab, setActiveTab] = useState<"identity" | "palette" | "canvas" | "assets">("identity");
++  const [activeTab, setActiveTab] = useState<
++    "identity" | "palette" | "canvas" | "assets"
++  >("identity");
+   const [loading, setLoading] = useState(false);
+   const [submitting, setSubmitting] = useState(false);
+   const [errorMsg, setErrorMsg] = useState("");
+@@ -91,7 +100,8 @@ export function BrandManagerDialog({
+       setSlugAuto(false);
+       fetch(`/api/projects/${initialSlug}`)
+         .then((res) => {
+-          if (!res.ok) throw new Error("No se pudo cargar la información del proyecto");
++          if (!res.ok)
++            throw new Error("No se pudo cargar la información del proyecto");
+           return res.json();
+         })
+         .then((data: ProjectDetails) => {
+@@ -141,7 +151,9 @@ export function BrandManagerDialog({
+ 
+     const cleanSlug = slug.trim();
+     if (!PROJECT_SLUG_REGEX.test(cleanSlug)) {
+-      setErrorMsg("El identificador (slug) debe contener solo letras minúsculas, números y guiones");
++      setErrorMsg(
++        "El identificador (slug) debe contener solo letras minúsculas, números y guiones",
++      );
+       setActiveTab("identity");
+       return;
+     }
+@@ -157,15 +169,20 @@ export function BrandManagerDialog({
+           fonts: [],
+         };
+ 
+-        const res = await fetch(`/api/projects?slug=${encodeURIComponent(cleanSlug)}`, {
+-          method: "POST",
+-          headers: { "Content-Type": "application/json" },
+-          body: JSON.stringify(payload),
+-        });
++        const res = await fetch(
++          `/api/projects?slug=${encodeURIComponent(cleanSlug)}`,
++          {
++            method: "POST",
++            headers: { "Content-Type": "application/json" },
++            body: JSON.stringify(payload),
++          },
++        );
+ 
+         if (!res.ok) {
+           const errData = await res.json().catch(() => ({}));
+-          throw new Error(errData.error || `Error al crear proyecto (${res.status})`);
++          throw new Error(
++            errData.error || `Error al crear proyecto (${res.status})`,
++          );
+         }
+ 
+         setStatus(`Proyecto «${name}» creado exitosamente`);
+@@ -180,15 +197,20 @@ export function BrandManagerDialog({
+           canvas,
+         };
+ 
+-        const res = await fetch(`/api/projects/${encodeURIComponent(cleanSlug)}`, {
+-          method: "PATCH",
+-          headers: { "Content-Type": "application/json" },
+-          body: JSON.stringify(payload),
+-        });
++        const res = await fetch(
++          `/api/projects/${encodeURIComponent(cleanSlug)}`,
++          {
++            method: "PATCH",
++            headers: { "Content-Type": "application/json" },
++            body: JSON.stringify(payload),
++          },
++        );
+ 
+         if (!res.ok) {
+           const errData = await res.json().catch(() => ({}));
+-          throw new Error(errData.error || `Error al actualizar proyecto (${res.status})`);
++          throw new Error(
++            errData.error || `Error al actualizar proyecto (${res.status})`,
++          );
+         }
+ 
+         setStatus(`Proyecto «${name}» actualizado`);
+@@ -206,12 +228,17 @@ export function BrandManagerDialog({
+     if (!initialSlug) return;
+     try {
+       setSubmitting(true);
+-      const res = await fetch(`/api/projects/${encodeURIComponent(initialSlug)}`, {
+-        method: "DELETE",
+-      });
++      const res = await fetch(
++        `/api/projects/${encodeURIComponent(initialSlug)}`,
++        {
++          method: "DELETE",
++        },
++      );
+       if (!res.ok) {
+         const errData = await res.json().catch(() => ({}));
+-        throw new Error(errData.error || `Error al eliminar proyecto (${res.status})`);
++        throw new Error(
++          errData.error || `Error al eliminar proyecto (${res.status})`,
++        );
+       }
+       setStatus(`Proyecto «${initialSlug}» eliminado`);
+       onProjectDeleted?.(initialSlug);
+@@ -243,7 +270,10 @@ export function BrandManagerDialog({
+         onClose();
+       }}
+     >
+-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", maxHeight: "85vh" }}>
++      <form
++        onSubmit={handleSubmit}
++        style={{ display: "flex", flexDirection: "column", maxHeight: "85vh" }}
++      >
+         {/* Header */}
+         <div
+           style={{
+@@ -257,13 +287,20 @@ export function BrandManagerDialog({
+           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+             <Briefcase size={20} color="#3b82f6" />
+             <h2 style={{ fontSize: "16px", fontWeight: 600, margin: 0 }}>
+-              {mode === "create" ? "Nuevo Proyecto de Marca" : `Configurar Marca: ${name || slug}`}
++              {mode === "create"
++                ? "Nuevo Proyecto de Marca"
++                : `Configurar Marca: ${name || slug}`}
+             </h2>
+           </div>
+           <button
+             type="button"
+             onClick={onClose}
+-            style={{ background: "transparent", border: "none", color: "inherit", cursor: "pointer" }}
++            style={{
++              background: "transparent",
++              border: "none",
++              color: "inherit",
++              cursor: "pointer",
++            }}
+           >
+             <X size={18} />
+           </button>
+@@ -290,9 +327,16 @@ export function BrandManagerDialog({
+               type="button"
+               onClick={() => setActiveTab(tab.id as typeof activeTab)}
+               style={{
+-                background: activeTab === tab.id ? "rgba(59, 130, 246, 0.15)" : "transparent",
+-                color: activeTab === tab.id ? "#60a5fa" : "rgba(255,255,255,0.6)",
+-                border: activeTab === tab.id ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid transparent",
++                background:
++                  activeTab === tab.id
++                    ? "rgba(59, 130, 246, 0.15)"
++                    : "transparent",
++                color:
++                  activeTab === tab.id ? "#60a5fa" : "rgba(255,255,255,0.6)",
++                border:
++                  activeTab === tab.id
++                    ? "1px solid rgba(59, 130, 246, 0.3)"
++                    : "1px solid transparent",
+                 borderRadius: "6px",
+                 padding: "6px 12px",
+                 fontSize: "12px",
+@@ -306,7 +350,16 @@ export function BrandManagerDialog({
+         </div>
+ 
+         {/* Body Content */}
+-        <div style={{ padding: "20px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
++        <div
++          style={{
++            padding: "20px",
++            overflowY: "auto",
++            flex: 1,
++            display: "flex",
++            flexDirection: "column",
++            gap: "16px",
++          }}
++        >
+           {errorMsg && (
+             <div
+               style={{
+@@ -327,16 +380,37 @@ export function BrandManagerDialog({
+           )}
+ 
+           {loading ? (
+-            <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.5)", fontSize: "13px" }}>
++            <div
++              style={{
++                textAlign: "center",
++                padding: "40px",
++                color: "rgba(255,255,255,0.5)",
++                fontSize: "13px",
++              }}
++            >
+               Cargando información del proyecto...
+             </div>
+           ) : (
+             <>
+               {activeTab === "identity" && (
+-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
++                <div
++                  style={{
++                    display: "flex",
++                    flexDirection: "column",
++                    gap: "12px",
++                  }}
++                >
+                   <div>
+-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 500, marginBottom: "4px" }}>
+-                      Nombre del Proyecto / Marca <span style={{ color: "#ef4444" }}>*</span>
++                    <label
++                      style={{
++                        display: "block",
++                        fontSize: "12px",
++                        fontWeight: 500,
++                        marginBottom: "4px",
++                      }}
++                    >
++                      Nombre del Proyecto / Marca{" "}
++                      <span style={{ color: "#ef4444" }}>*</span>
+                     </label>
+                     <input
+                       type="text"
+@@ -357,8 +431,16 @@ export function BrandManagerDialog({
+                   </div>
+ 
+                   <div>
+-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 500, marginBottom: "4px" }}>
+-                      Identificador / Carpeta (Slug) <span style={{ color: "#ef4444" }}>*</span>
++                    <label
++                      style={{
++                        display: "block",
++                        fontSize: "12px",
++                        fontWeight: 500,
++                        marginBottom: "4px",
++                      }}
++                    >
++                      Identificador / Carpeta (Slug){" "}
++                      <span style={{ color: "#ef4444" }}>*</span>
+                     </label>
+                     <input
+                       type="text"
+@@ -370,21 +452,39 @@ export function BrandManagerDialog({
+                       style={{
+                         width: "100%",
+                         padding: "8px 10px",
+-                        background: mode === "edit" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.3)",
++                        background:
++                          mode === "edit"
++                            ? "rgba(255,255,255,0.05)"
++                            : "rgba(0,0,0,0.3)",
+                         border: "1px solid rgba(255,255,255,0.15)",
+                         borderRadius: "6px",
+-                        color: mode === "edit" ? "rgba(255,255,255,0.5)" : "inherit",
++                        color:
++                          mode === "edit" ? "rgba(255,255,255,0.5)" : "inherit",
+                         fontSize: "13px",
+                         fontFamily: "monospace",
+                       }}
+                     />
+-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "4px", display: "block" }}>
++                    <span
++                      style={{
++                        fontSize: "11px",
++                        color: "rgba(255,255,255,0.4)",
++                        marginTop: "4px",
++                        display: "block",
++                      }}
++                    >
+                       Ubicación: projects/{slug || "<slug>"}/
+                     </span>
+                   </div>
+ 
+                   <div>
+-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 500, marginBottom: "4px" }}>
++                    <label
++                      style={{
++                        display: "block",
++                        fontSize: "12px",
++                        fontWeight: 500,
++                        marginBottom: "4px",
++                      }}
++                    >
+                       Descripción (Opcional)
+                     </label>
+                     <textarea
+@@ -408,17 +508,43 @@ export function BrandManagerDialog({
+               )}
+ 
+               {activeTab === "palette" && (
+-                <BrandPaletteEditor value={palette} onChange={setPalette} disabled={submitting} />
++                <BrandPaletteEditor
++                  value={palette}
++                  onChange={setPalette}
++                  disabled={submitting}
++                />
+               )}
+ 
+               {activeTab === "canvas" && (
+-                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+-                  <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)" }}>
+-                    Dimensiones y tasa de refresco predeterminadas para nuevos lienzos de esta marca.
++                <div
++                  style={{
++                    display: "flex",
++                    flexDirection: "column",
++                    gap: "14px",
++                  }}
++                >
++                  <span
++                    style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)" }}
++                  >
++                    Dimensiones y tasa de refresco predeterminadas para nuevos
++                    lienzos de esta marca.
+                   </span>
+-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
++                  <div
++                    style={{
++                      display: "grid",
++                      gridTemplateColumns: "1fr 1fr",
++                      gap: "12px",
++                    }}
++                  >
+                     <div>
+-                      <label style={{ display: "block", fontSize: "12px", fontWeight: 500, marginBottom: "4px" }}>
++                      <label
++                        style={{
++                          display: "block",
++                          fontSize: "12px",
++                          fontWeight: 500,
++                          marginBottom: "4px",
++                        }}
++                      >
+                         Ancho (px)
+                       </label>
+                       <input
+@@ -426,7 +552,12 @@ export function BrandManagerDialog({
+                         min={100}
+                         max={4096}
+                         value={canvas.width}
+-                        onChange={(e) => setCanvas({ ...canvas, width: Number(e.target.value) || 1080 })}
++                        onChange={(e) =>
++                          setCanvas({
++                            ...canvas,
++                            width: Number(e.target.value) || 1080,
++                          })
++                        }
+                         style={{
+                           width: "100%",
+                           padding: "8px 10px",
+@@ -439,7 +570,14 @@ export function BrandManagerDialog({
+                       />
+                     </div>
+                     <div>
+-                      <label style={{ display: "block", fontSize: "12px", fontWeight: 500, marginBottom: "4px" }}>
++                      <label
++                        style={{
++                          display: "block",
++                          fontSize: "12px",
++                          fontWeight: 500,
++                          marginBottom: "4px",
++                        }}
++                      >
+                         Alto (px)
+                       </label>
+                       <input
+@@ -447,7 +585,12 @@ export function BrandManagerDialog({
+                         min={100}
+                         max={4096}
+                         value={canvas.height}
+-                        onChange={(e) => setCanvas({ ...canvas, height: Number(e.target.value) || 1080 })}
++                        onChange={(e) =>
++                          setCanvas({
++                            ...canvas,
++                            height: Number(e.target.value) || 1080,
++                          })
++                        }
+                         style={{
+                           width: "100%",
+                           padding: "8px 10px",
+@@ -460,7 +603,14 @@ export function BrandManagerDialog({
+                       />
+                     </div>
+                     <div>
+-                      <label style={{ display: "block", fontSize: "12px", fontWeight: 500, marginBottom: "4px" }}>
++                      <label
++                        style={{
++                          display: "block",
++                          fontSize: "12px",
++                          fontWeight: 500,
++                          marginBottom: "4px",
++                        }}
++                      >
+                         Fotogramas por Segundo (FPS)
+                       </label>
+                       <input
+@@ -468,7 +618,12 @@ export function BrandManagerDialog({
+                         min={10}
+                         max={60}
+                         value={canvas.fps}
+-                        onChange={(e) => setCanvas({ ...canvas, fps: Number(e.target.value) || 30 })}
++                        onChange={(e) =>
++                          setCanvas({
++                            ...canvas,
++                            fps: Number(e.target.value) || 30,
++                          })
++                        }
+                         style={{
+                           width: "100%",
+                           padding: "8px 10px",
+@@ -481,7 +636,14 @@ export function BrandManagerDialog({
+                       />
+                     </div>
+                     <div>
+-                      <label style={{ display: "block", fontSize: "12px", fontWeight: 500, marginBottom: "4px" }}>
++                      <label
++                        style={{
++                          display: "block",
++                          fontSize: "12px",
++                          fontWeight: 500,
++                          marginBottom: "4px",
++                        }}
++                      >
+                         Duración Inicial (segundos)
+                       </label>
+                       <input
+@@ -490,7 +652,12 @@ export function BrandManagerDialog({
+                         max={300}
+                         step={0.5}
+                         value={canvas.duration}
+-                        onChange={(e) => setCanvas({ ...canvas, duration: Number(e.target.value) || 5 })}
++                        onChange={(e) =>
++                          setCanvas({
++                            ...canvas,
++                            duration: Number(e.target.value) || 5,
++                          })
++                        }
+                         style={{
+                           width: "100%",
+                           padding: "8px 10px",
+@@ -551,8 +718,12 @@ export function BrandManagerDialog({
+             )}
+ 
+             {showDeleteConfirm && (
+-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+-                <span style={{ fontSize: "11px", color: "#fca5a5" }}>¿Confirmas eliminar este proyecto?</span>
++              <div
++                style={{ display: "flex", alignItems: "center", gap: "8px" }}
++              >
++                <span style={{ fontSize: "11px", color: "#fca5a5" }}>
++                  ¿Confirmas eliminar este proyecto?
++                </span>
+                 <button
+                   type="button"
+                   onClick={handleDelete}
+@@ -623,7 +794,9 @@ export function BrandManagerDialog({
+               }}
+             >
+               {mode === "create" ? <Plus size={16} /> : <Save size={16} />}
+-              <span>{mode === "create" ? "Crear Proyecto" : "Guardar Cambios"}</span>
++              <span>
++                {mode === "create" ? "Crear Proyecto" : "Guardar Cambios"}
++              </span>
+             </button>
+           </div>
+         </div>
+diff --git a/src/editor/project-selector.tsx b/src/editor/project-selector.tsx
+index 52be0d2..0fd206f 100644
+--- a/src/editor/project-selector.tsx
++++ b/src/editor/project-selector.tsx
+@@ -1,5 +1,5 @@
+ import { Briefcase, Plus, Settings } from "lucide-react";
+-import { useEffect, useState } from "react";
++import { useCallback, useEffect, useState } from "react";
+ import type { ColorPalette, ProjectCanvasDefaults } from "../model/project.ts";
+ import type { ProjectSummary } from "../service/project-store.ts";
+ import { BrandManagerDialog } from "./dialogs/brand-manager-dialog.tsx";
+@@ -24,7 +24,7 @@ export function ProjectSelector({
+   const [dialogOpen, setDialogOpen] = useState(false);
+   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
+ 
+-  const fetchProjects = async () => {
++  const fetchProjects = useCallback(async () => {
+     try {
+       setLoading(true);
+       const res = await fetch("/api/projects");
+@@ -37,11 +37,11 @@ export function ProjectSelector({
+     } finally {
+       setLoading(false);
+     }
+-  };
++  }, []);
+ 
+   useEffect(() => {
+     fetchProjects();
+-  }, []);
++  }, [fetchProjects]);
+ 
+   const handleChange = async (slug: string) => {
+     if (!slug) {
+@@ -54,7 +54,11 @@ export function ProjectSelector({
+       const res = await fetch(`/api/projects/${slug}`);
+       if (res.ok) {
+         const details = await res.json();
+-        onSelectProject(slug, details.manifest.palette, details.manifest.canvas);
++        onSelectProject(
++          slug,
++          details.manifest.palette,
++          details.manifest.canvas,
++        );
+         setStatus(`Proyecto activo: «${details.manifest.name}»`);
+       } else {
+         onSelectProject(slug, undefined, undefined);
+diff --git a/src/engine/particle-field.ts b/src/engine/particle-field.ts
+index 03af9a3..385893b 100644
+--- a/src/engine/particle-field.ts
++++ b/src/engine/particle-field.ts
+@@ -105,7 +105,7 @@ export type Looks = {
+ };
+ 
+ /** How many hue variants a field has at most: each is one sprite (014/D5). */
+-export const HUE_STEPS = 6;
++const HUE_STEPS = 6;
+ 
+ /** The hue turn, degrees, of variant `k` when hues vary up to `shift` either way. */
+ export const hueOf = (k: number, shift: number): number =>
+diff --git a/src/engine/subtitles/cue-timing.ts b/src/engine/subtitles/cue-timing.ts
+index 2c3dd35..fbcf127 100644
+--- a/src/engine/subtitles/cue-timing.ts
++++ b/src/engine/subtitles/cue-timing.ts
+@@ -20,10 +20,3 @@ export function getActiveCue(cues: SubtitleCue[], t: number): SubtitleCue | unde
+ export function isWordActive(word: SubtitleWord, t: number): boolean {
+   return t >= word.start && t <= word.end;
+ }
+-
+-/**
+- * Determines if a word has already finished playing prior to time `t`.
+- */
+-export function isWordCompleted(word: SubtitleWord, t: number): boolean {
+-  return t > word.end;
+-}
+diff --git a/src/engine/tracks.ts b/src/engine/tracks.ts
+index 314a38d..05b55b3 100644
+--- a/src/engine/tracks.ts
++++ b/src/engine/tracks.ts
+@@ -16,7 +16,7 @@ import { EASINGS, easingFn } from "./easing.ts";
+ import { mixColor } from "./paint.ts";
+ 
+ /** Keyframes closer than this (seconds, under half a frame at 60 fps) are the same one. */
+-export const SAME_T = 1 / 120;
++const SAME_T = 1 / 120;
+ 
+ /** How a path's values blend between keyframes. */
+ export type ValueKind = "number" | "int" | "color";
+diff --git a/src/service/project-middleware.test.ts b/src/service/project-middleware.test.ts
+index 7be9055..5bf51e8 100644
+--- a/src/service/project-middleware.test.ts
++++ b/src/service/project-middleware.test.ts
+@@ -15,7 +15,9 @@ function createMockReq(options: {
+   const buf = Buffer.isBuffer(options.body)
+     ? options.body
+     : Buffer.from(options.body ?? "");
+-  const readable = Readable.from(buf.length > 0 ? [buf] : []) as unknown as IncomingMessage;
++  const readable = Readable.from(
++    buf.length > 0 ? [buf] : [],
++  ) as unknown as IncomingMessage;
+   readable.method = options.method ?? "GET";
+   readable.url = options.url;
+   return readable;
+@@ -74,7 +76,9 @@ describe("project-middleware asset endpoints", () => {
+   });
+ 
+   it("uploads an asset to projects/:slug/assets and returns relative path", async () => {
+-    const pngData = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
++    const pngData = Buffer.from([
++      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
++    ]);
+     const req = createMockReq({
+       method: "POST",
+       url: "/api/projects/acme/assets?ext=png",
+@@ -89,12 +93,16 @@ describe("project-middleware asset endpoints", () => {
+     expect(parsed.path).toMatch(/^\/projects\/acme\/assets\/[a-f0-9]+\.png$/);
+     expect(parsed.filename).toMatch(/^[a-f0-9]+\.png$/);
+ 
+-    const onDisk = await readFile(join(store.resolvePath("acme", "assets"), parsed.filename));
++    const onDisk = await readFile(
++      join(store.resolvePath("acme", "assets"), parsed.filename),
++    );
+     expect(onDisk).toEqual(pngData);
+   });
+ 
+   it("serves an uploaded project asset via GET /api/projects/:slug/assets/:filename", async () => {
+-    const pngData = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
++    const pngData = Buffer.from([
++      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
++    ]);
+     const uploadReq = createMockReq({
+       method: "POST",
+       url: "/api/projects/acme/assets?ext=png",
+diff --git a/src/service/project-middleware.ts b/src/service/project-middleware.ts
+index b866c36..43fa3b5 100644
+--- a/src/service/project-middleware.ts
++++ b/src/service/project-middleware.ts
+@@ -3,11 +3,11 @@ import type { IncomingMessage, ServerResponse } from "node:http";
+ import { join } from "node:path";
+ import {
+   ASSET_TYPES,
+-  MAX_ASSET_BYTES,
+   hashBuffer,
++  MAX_ASSET_BYTES,
+   normalizeExtension,
+ } from "./asset-helpers.ts";
+-import { createProjectStore, type ProjectStore } from "./project-store.ts";
++import type { ProjectStore } from "./project-store.ts";
+ 
+ export type ProjectApiReply = { status: number; body: unknown };
+ 
+@@ -96,7 +96,8 @@ export async function handleProjectApi(
+         const ext = normalizeExtension(extParam);
+         if (!ASSET_TYPES[ext]) {
+           jsonReply(400, {
+-            error: "Formato no soportado. Se esperaba: png, jpg, svg, webp, glb, mp3, wav, aac, ogg, ttf, otf, woff, woff2",
++            error:
++              "Formato no soportado. Se esperaba: png, jpg, svg, webp, glb, mp3, wav, aac, ogg, ttf, otf, woff, woff2",
+           });
+           return;
+         }
+@@ -156,4 +157,3 @@ export async function handleProjectApi(
+     jsonReply(400, { error: message });
+   }
+ }
+-

@@ -16,7 +16,7 @@ import { EASINGS, easingFn } from "./easing.ts";
 import { mixColor } from "./paint.ts";
 
 /** Keyframes closer than this (seconds, under half a frame at 60 fps) are the same one. */
-export const SAME_T = 1 / 120;
+const SAME_T = 1 / 120;
 
 /** How a path's values blend between keyframes. */
 export type ValueKind = "number" | "int" | "color";

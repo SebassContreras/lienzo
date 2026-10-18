@@ -52,6 +52,7 @@ export function drawSubtitles(
     lineHeightPx,
     measure,
     el.align,
+    el.highlightScale,
   );
   if (layout.lines.length === 0) {
     ctx.restore();

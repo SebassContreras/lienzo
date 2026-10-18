@@ -1,0 +1,86 @@
+diff --git a/src/components/subtitles/draw.ts b/src/components/subtitles/draw.ts
+index 2b0c87a..83ea9bd 100644
+--- a/src/components/subtitles/draw.ts
++++ b/src/components/subtitles/draw.ts
+@@ -52,6 +52,7 @@ export function drawSubtitles(
+     lineHeightPx,
+     measure,
+     el.align,
++    el.highlightScale,
+   );
+   if (layout.lines.length === 0) {
+     ctx.restore();
+diff --git a/src/engine/subtitles/layout.ts b/src/engine/subtitles/layout.ts
+index 53512cb..6a12a2b 100644
+--- a/src/engine/subtitles/layout.ts
++++ b/src/engine/subtitles/layout.ts
+@@ -37,6 +37,7 @@ export function layoutSubtitleCue(
+   lineHeight: number,
+   measureText: MeasureTextFn,
+   align: "left" | "center" | "right" = "center",
++  highlightScale = 1,
+ ): SubtitleLayout {
+   const wordsToLayout: { text: string; timing?: SubtitleWord }[] = [];
+ 
+@@ -56,13 +57,17 @@ export function layoutSubtitleCue(
+   }
+ 
+   const spaceWidth = measureText(" ");
++  const scaleExpansion = Math.max(0, highlightScale - 1);
+   const lines: SubtitleLine[] = [];
+   let currentLineWords: PositionedWord[] = [];
+   let currentLineWidth = 0;
+ 
+   for (const item of wordsToLayout) {
+     const wordWidth = measureText(item.text);
+-    const addedWidth = currentLineWords.length > 0 ? spaceWidth + wordWidth : wordWidth;
++    // Reserve clearance padding for when a word is active and scaled up (039/R3, D3)
++    const extraPadding = wordWidth * scaleExpansion;
++    const effectiveSpacing = spaceWidth + extraPadding;
++    const addedWidth = currentLineWords.length > 0 ? effectiveSpacing + wordWidth : wordWidth;
+ 
+     if (currentLineWords.length > 0 && currentLineWidth + addedWidth > maxWidth) {
+       // Flush current line
+@@ -76,7 +81,7 @@ export function layoutSubtitleCue(
+       currentLineWidth = 0;
+     }
+ 
+-    const wordX = currentLineWords.length > 0 ? currentLineWidth + spaceWidth : 0;
++    const wordX = currentLineWords.length > 0 ? currentLineWidth + effectiveSpacing : 0;
+     currentLineWords.push({
+       word: item.text,
+       x: wordX,
+diff --git a/src/engine/subtitles/subtitles.test.ts b/src/engine/subtitles/subtitles.test.ts
+index adaba31..a2b7551 100644
+--- a/src/engine/subtitles/subtitles.test.ts
++++ b/src/engine/subtitles/subtitles.test.ts
+@@ -76,6 +76,29 @@ describe("Subtitles domain tests", () => {
+     expect(layout.lines[0]?.words[0]?.word).toBe("Uno");
+   });
+ 
++  it("reserves clearance padding between words when highlightScale > 1 (039/R3, D3)", () => {
++    const cue: SubtitleCue = {
++      start: 0,
++      end: 2,
++      text: "Hola mundo",
++      words: [
++        { word: "Hola", start: 0, end: 1 },
++        { word: "mundo", start: 1, end: 2 },
++      ],
++    };
++
++    const measure = (s: string) => s.length * 10;
++    // highlightScale 1.0 vs 1.2
++    const unscaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.0);
++    const scaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.2);
++
++    const unscaledGap = unscaled.lines[0]!.words[1]!.x - (unscaled.lines[0]!.words[0]!.x + unscaled.lines[0]!.words[0]!.width);
++    const scaledGap = scaled.lines[0]!.words[1]!.x - (scaled.lines[0]!.words[0]!.x + scaled.lines[0]!.words[0]!.width);
++
++    // Scaled gap should be wider than unscaled gap by wordWidth * (scale - 1)
++    expect(scaledGap).toBeGreaterThan(unscaledGap);
++  });
++
+   it("parses WebVTT with word karaoke timing tags", () => {
+     const vtt = `WEBVTT
+ 

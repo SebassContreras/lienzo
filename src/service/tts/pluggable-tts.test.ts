@@ -183,6 +183,51 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       expect(res.scene).toBe("test-scene");
       expect(res.assetId).toBeDefined();
     });
+
+    it("consumes TtsService injected via Ctx (039/R5, D5)", async () => {
+      let callCount = 0;
+      const mockTtsService: TtsService = {
+        async synthesizeSpeech() {
+          callCount++;
+          return {
+            audioBuffer: new Uint8Array(16000),
+            mimeType: "audio/mpeg",
+            format: "mp3",
+            durationSeconds: 1.0,
+          };
+        },
+        async listModels() {
+          return [];
+        },
+      };
+
+      const tool = createSceneGenerateSpeechTool();
+      const fakeCtx = {
+        root: "/tmp",
+        tts: mockTtsService,
+        store: {
+          animPresets: async () => [],
+          readScene: async () => defaultScene(),
+          writeScene: async () => "test-scene",
+        },
+      };
+
+      const result = await tool.run(
+        {
+          scene: "test-scene",
+          script: "Hello from Ctx",
+          speed: 1.0,
+          volume: 1.0,
+          startOffset: 0,
+          adjustSceneDuration: true,
+          subtitles: true,
+        },
+        fakeCtx as unknown as Ctx,
+      );
+
+      expect(callCount).toBe(1);
+      expect(result.assetId).toBeDefined();
+    });
   });
 
   describe("Preferences Persistence for Providers (R5, D5)", () => {

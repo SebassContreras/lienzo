@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ImageResult } from "../image.ts";
 import { defineTool } from "../registry.ts";
-import { openScene } from "../scenes.ts";
+import { resolveAndRenderScene } from "../render-target.ts";
 
 export const scenePreview = defineTool({
   name: "scene_preview",
@@ -16,15 +16,16 @@ export const scenePreview = defineTool({
   }),
   output: ImageResult,
   async run({ scene: name, t = 0, scale = 0.5 }, ctx) {
-    const scene = await openScene(ctx, name);
-    const { bytes } = await ctx.renderer.render(scene, {
+    const { rendered } = await resolveAndRenderScene(ctx, name, {
       format: "png",
       scale,
-      fps: scene.fps,
       time: t,
     });
     return {
-      image: { mimeType: "image/png" as const, data: bytes.toString("base64") },
+      image: {
+        mimeType: "image/png" as const,
+        data: rendered.bytes.toString("base64"),
+      },
     };
   },
 });

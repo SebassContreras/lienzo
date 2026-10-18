@@ -58,20 +58,53 @@ pnpm dev
 
 Open http://localhost:5173.
 
-## Use from Claude Code (MCP)
+## Use from Claude Code & Other MCP Clients (MCP)
 
 `pnpm lienzo mcp` starts an MCP server over stdio that exposes every Lienzo tool (the same
-ones `pnpm lienzo --help` lists) with the same names, descriptions and input schemas. From
-the repo root:
+ones `pnpm lienzo --help` lists) with the same names, descriptions and input schemas.
+
+### Claude Code
+
+From the repo root:
 
 ```sh
 claude mcp add lienzo -- pnpm lienzo mcp
 ```
 
 Add `--scope project` to share it through `.mcp.json`. Check it with `claude mcp list` or
-`/mcp` inside Claude Code. Tools read and write the files of this repo (`scenes/`,
-`presets/`), so start Claude Code from here. A failed call comes back as an MCP error
-result with the same JSON `{ code, message, path }` the CLI prints.
+`/mcp` inside Claude Code.
+
+### OpenCode & Generic Stdio Clients
+
+In OpenCode (`opencode.json`) or other MCP clients, configure the server with explicit `command`, `args`, and `cwd`:
+
+```json
+{
+  "mcpServers": {
+    "lienzo": {
+      "command": "pnpm",
+      "args": ["lienzo", "mcp"],
+      "cwd": "/path/to/lienzo"
+    }
+  }
+}
+```
+
+Or when running the compiled distribution bundle:
+
+```json
+{
+  "mcpServers": {
+    "lienzo": {
+      "command": "node",
+      "args": ["dist/mcp.mjs"],
+      "cwd": "/path/to/lienzo"
+    }
+  }
+}
+```
+
+Tools read and write the files of this repo (`scenes/`, `presets/`), so always set `cwd` to the Lienzo root directory. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
 
 ## Compact Scenes (Spec 011)
 

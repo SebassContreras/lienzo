@@ -1,0 +1,48 @@
+diff --git a/src/model/compact.test.ts b/src/model/compact.test.ts
+index f43980b..553daeb 100644
+--- a/src/model/compact.test.ts
++++ b/src/model/compact.test.ts
+@@ -109,4 +109,30 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
+     const parsed = CompactElementSchema.safeParse(testElement);
+     expect(parsed.success).toBe(true);
+   });
++
++  it("validates recursive compact group children (039/R2, D2)", () => {
++    const groupElement = {
++      kind: "group",
++      children: [
++        {
++          kind: "rect",
++          w: 50,
++          h: 50,
++        },
++        {
++          kind: "group",
++          children: [
++            {
++              kind: "text",
++              text: "Anidado",
++            },
++          ],
++        },
++      ],
++    };
++
++    const parsed = CompactElementSchema.safeParse(groupElement);
++    expect(parsed.success).toBe(true);
++  });
+ });
++
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index e095a15..7d3a9f6 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -106,6 +106,8 @@ export function compactShapeOf(fields: Fields): Record<string, z.ZodType> {
+   for (const [k, field] of dataFields(fields)) {
+     if (k === "anim") {
+       shape[k] = CompactAnimSchema.optional();
++    } else if (k === "children") {
++      shape[k] = z.lazy(() => z.array(CompactElementSchema)).optional();
+     } else {
+       shape[k] = makeCompactFieldSchema(field);
+     }

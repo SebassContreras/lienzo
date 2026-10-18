@@ -37,6 +37,7 @@ export function layoutSubtitleCue(
   lineHeight: number,
   measureText: MeasureTextFn,
   align: "left" | "center" | "right" = "center",
+  highlightScale = 1,
 ): SubtitleLayout {
   const wordsToLayout: { text: string; timing?: SubtitleWord }[] = [];
 
@@ -56,13 +57,17 @@ export function layoutSubtitleCue(
   }
 
   const spaceWidth = measureText(" ");
+  const scaleExpansion = Math.max(0, highlightScale - 1);
   const lines: SubtitleLine[] = [];
   let currentLineWords: PositionedWord[] = [];
   let currentLineWidth = 0;
 
   for (const item of wordsToLayout) {
     const wordWidth = measureText(item.text);
-    const addedWidth = currentLineWords.length > 0 ? spaceWidth + wordWidth : wordWidth;
+    // Reserve clearance padding for when a word is active and scaled up (039/R3, D3)
+    const extraPadding = wordWidth * scaleExpansion;
+    const effectiveSpacing = spaceWidth + extraPadding;
+    const addedWidth = currentLineWords.length > 0 ? effectiveSpacing + wordWidth : wordWidth;
 
     if (currentLineWords.length > 0 && currentLineWidth + addedWidth > maxWidth) {
       // Flush current line
@@ -76,7 +81,7 @@ export function layoutSubtitleCue(
       currentLineWidth = 0;
     }
 
-    const wordX = currentLineWords.length > 0 ? currentLineWidth + spaceWidth : 0;
+    const wordX = currentLineWords.length > 0 ? currentLineWidth + effectiveSpacing : 0;
     currentLineWords.push({
       word: item.text,
       x: wordX,

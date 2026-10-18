@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { z } from "zod";
 import { defineTool } from "../registry.ts";
-import { openScene } from "../scenes.ts";
+import { resolveAndRenderScene } from "../render-target.ts";
 
 /** GIFs above this frame rate only grow; the editor caps them the same way. */
 const GIF_MAX_FPS = 25;
@@ -37,13 +37,10 @@ export const sceneExport = defineTool({
     notices: z.array(z.string()),
   }),
   async run({ scene: name, format, t = 0, scale = 1, fps, out }, ctx) {
-    const scene = await openScene(ctx, name);
-    const rendered = await ctx.renderer.render(scene, {
+    const { scene, rendered } = await resolveAndRenderScene(ctx, name, {
       format,
       scale,
-      fps:
-        fps ??
-        (format === "gif" ? Math.min(scene.fps, GIF_MAX_FPS) : scene.fps),
+      fps,
       time: t,
     });
     const ext = EXTENSIONS[rendered.type] ?? format;

@@ -106,6 +106,8 @@ export function compactShapeOf(fields: Fields): Record<string, z.ZodType> {
   for (const [k, field] of dataFields(fields)) {
     if (k === "anim") {
       shape[k] = CompactAnimSchema.optional();
+    } else if (k === "children") {
+      shape[k] = z.lazy(() => z.array(CompactElementSchema)).optional();
     } else {
       shape[k] = makeCompactFieldSchema(field);
     }

@@ -105,7 +105,7 @@ export type Looks = {
 };
 
 /** How many hue variants a field has at most: each is one sprite (014/D5). */
-export const HUE_STEPS = 6;
+const HUE_STEPS = 6;
 
 /** The hue turn, degrees, of variant `k` when hues vary up to `shift` either way. */
 export const hueOf = (k: number, shift: number): number =>

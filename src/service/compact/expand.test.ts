@@ -366,4 +366,36 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(el.anim?.in?.kind).toBe("pop");
     expect(el.tracks?.["@scale"]).toHaveLength(2);
   });
+
+  it("deep-merges partial anim definitions preserving defaults (039/R1, D1)", async () => {
+    const compact: CompactScene = {
+      elements: [
+        {
+          kind: "rect",
+          anim: {
+            in: { kind: "fade" },
+            loop: "pulse",
+          },
+        },
+      ],
+    };
+
+    const scene = await expandScene(compact);
+    const rect = scene.elements[0] as Extract<
+      import("../../model/model.ts").Element,
+      { kind: "rect" }
+    >;
+
+    // Canonical defaults should be preserved while kind is updated
+    expect(rect.anim?.in?.kind).toBe("fade");
+    expect(rect.anim?.in?.duration).toBeDefined();
+    expect(rect.anim?.in?.easing).toBeDefined();
+
+    expect(rect.anim?.loop?.kind).toBe("pulse");
+    expect(rect.anim?.loop?.cycles).toBe(1);
+
+    // Default 'out' should still be intact on canonical element
+    expect(rect.anim?.out?.kind).toBe("none");
+  });
 });
+

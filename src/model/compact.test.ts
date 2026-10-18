@@ -109,4 +109,30 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
     const parsed = CompactElementSchema.safeParse(testElement);
     expect(parsed.success).toBe(true);
   });
+
+  it("validates recursive compact group children (039/R2, D2)", () => {
+    const groupElement = {
+      kind: "group",
+      children: [
+        {
+          kind: "rect",
+          w: 50,
+          h: 50,
+        },
+        {
+          kind: "group",
+          children: [
+            {
+              kind: "text",
+              text: "Anidado",
+            },
+          ],
+        },
+      ],
+    };
+
+    const parsed = CompactElementSchema.safeParse(groupElement);
+    expect(parsed.success).toBe(true);
+  });
 });
+
