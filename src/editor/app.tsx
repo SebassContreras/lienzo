@@ -50,6 +50,7 @@ import {
   loadAnimPresetFiles,
   loadUserPresetFiles,
   renameStored,
+  saveProjectPreset,
   saveUserPreset,
 } from "../presets/store.ts";
 import { type AlignAction, alignElements } from "./align.ts";
@@ -208,11 +209,16 @@ export function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(autosaveKey(activeProjectSlug), JSON.stringify(scene));
+      localStorage.setItem(
+        autosaveKey(activeProjectSlug),
+        JSON.stringify(scene),
+      );
     } catch {
       // storage unavailable: autosave is a convenience only
     }
   }, [scene, activeProjectSlug]);
+
+  const [projectPresetsVersion, setProjectPresetsVersion] = useState(0);
 
   const refreshPresets = useCallback(() => {
     loadUserPresetFiles()
@@ -249,6 +255,7 @@ export function App() {
         .then(() => {
           setStatus(done);
           refreshPresets();
+          setProjectPresetsVersion((v) => v + 1);
         })
         .catch((error: unknown) =>
           setStatus(`Error: ${error instanceof Error ? error.message : error}`),
@@ -269,17 +276,23 @@ export function App() {
         element.a = { x: r.a.x, y: r.a.y };
         element.b = { x: r.b.x, y: r.b.y };
       }
-      presetChange(
-        saveUserPreset(
-          over?.category
-            ? { ...recipeFromElement(name, element), category: over.category }
-            : recipeFromElement(name, element),
-          over?.file,
-        ),
-        `Preset «${name}» guardado`,
-      );
+      const recipe = over?.category
+        ? { ...recipeFromElement(name, element), category: over.category }
+        : recipeFromElement(name, element);
+
+      if (activeProjectSlug) {
+        presetChange(
+          saveProjectPreset(recipe, over?.file ?? name, activeProjectSlug),
+          `Preset «${name}» guardado en «${activeProjectSlug}»`,
+        );
+      } else {
+        presetChange(
+          saveUserPreset(recipe, over?.file),
+          `Preset «${name}» guardado`,
+        );
+      }
     },
-    [presetChange],
+    [activeProjectSlug, presetChange],
   );
 
   /** `s` as the scene, recorded first as one undoable step: every scene action goes through here. */
@@ -789,6 +802,7 @@ export function App() {
               selectedElement={selected}
               onAddElement={(element) => addElement(element)}
               setStatus={setStatus}
+              refreshKey={projectPresetsVersion}
             />
           ) : (
             <>

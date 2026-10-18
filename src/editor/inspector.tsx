@@ -16,7 +16,12 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { type Element, type Scene, SIZE_PRESETS, isStaticMode } from "../model/model.ts";
+import {
+  type Element,
+  isStaticMode,
+  type Scene,
+  SIZE_PRESETS,
+} from "../model/model.ts";
 import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";
@@ -116,8 +121,8 @@ export function ElementInspector({
             </button>
           </div>
           <div className="hint">
-            Se guarda como JSON en <code>presets/</code> y aparece en la
-            biblioteca.
+            Se guarda como JSON en el proyecto activo y aparece en la pestaña
+            Presets.
           </div>
         </Section>
       )}

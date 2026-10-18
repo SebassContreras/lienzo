@@ -1,20 +1,24 @@
-import { FolderArchive, Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { detachOutside } from "../../engine/groups.ts";
 import { indexById } from "../../engine/geometry.ts";
+import { detachOutside } from "../../engine/groups.ts";
 import { resolveLine } from "../../engine/lines.ts";
 import type { Element, Scene } from "../../model/model.ts";
-import type { PresetRecipe } from "../../model/preset.ts";
 import type { ColorPalette } from "../../model/project.ts";
 import { recipeFromElement } from "../../presets/diff.ts";
-import { downloadJson, freeSlug, oneLine, readJsonFile } from "../../presets/json-files.ts";
+import { downloadJson } from "../../presets/json-files.ts";
 import {
   deleteProjectPreset,
   loadProjectPresetFiles,
   renameProjectPreset,
   saveProjectPreset,
 } from "../../presets/store.ts";
-import { Library, type LibraryItem, recipeItems, type StoredRef } from "../library.tsx";
+import {
+  Library,
+  type LibraryItem,
+  recipeItems,
+  type StoredRef,
+} from "../library.tsx";
 
 export type ProjectPresetsTabProps = {
   projectSlug?: string;
@@ -23,6 +27,7 @@ export type ProjectPresetsTabProps = {
   selectedElement?: Element;
   onAddElement: (element: Element) => void;
   setStatus: (s: string) => void;
+  refreshKey?: number;
 };
 
 export function ProjectPresetsTab({
@@ -32,6 +37,7 @@ export function ProjectPresetsTab({
   selectedElement,
   onAddElement,
   setStatus,
+  refreshKey = 0,
 }: ProjectPresetsTabProps) {
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [filter, setFilter] = useState("");
@@ -56,12 +62,19 @@ export function ProjectPresetsTab({
   }, [projectSlug]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (refreshKey >= 0) {
+      refresh();
+    }
+  }, [refresh, refreshKey]);
 
-  const saveSelectedAsProjectPreset = async (name: string, over?: StoredRef) => {
+  const saveSelectedAsProjectPreset = async (
+    name: string,
+    over?: StoredRef,
+  ) => {
     if (!selectedElement) {
-      setStatus("Selecciona primero un elemento en el lienzo para guardar como preset.");
+      setStatus(
+        "Selecciona primero un elemento en el lienzo para guardar como preset.",
+      );
       return;
     }
     const targetName = name.trim() || selectedElement.name || "Nuevo Preset";
@@ -84,11 +97,15 @@ export function ProjectPresetsTab({
 
     try {
       await saveProjectPreset(recipe, over?.file ?? targetName, projectSlug);
-      setStatus(`Preset «${targetName}» guardado en el proyecto «${projectSlug}»`);
+      setStatus(
+        `Preset «${targetName}» guardado en el proyecto «${projectSlug}»`,
+      );
       setNewPresetName("");
       refresh();
     } catch (e: unknown) {
-      setStatus(`Error al guardar preset: ${e instanceof Error ? e.message : e}`);
+      setStatus(
+        `Error al guardar preset: ${e instanceof Error ? e.message : e}`,
+      );
     }
   };
 
@@ -123,14 +140,56 @@ export function ProjectPresetsTab({
     }
   };
 
+  const setPresetCategory = async (item: StoredRef, category: string) => {
+    try {
+      const stored = await loadProjectPresetFiles(projectSlug);
+      const found = stored.find((s) => s.file === item.file);
+      if (!found) throw new Error(`«${item.name}» ya no existe`);
+      const { category: _old, ...recipe } = found.recipe;
+      await saveProjectPreset(
+        category ? { ...recipe, category } : recipe,
+        item.file,
+        projectSlug,
+      );
+      setStatus(
+        category
+          ? `«${item.name}» en «${category}»`
+          : `«${item.name}» sin categoría`,
+      );
+      refresh();
+    } catch (e: unknown) {
+      setStatus(`Error: ${e instanceof Error ? e.message : e}`);
+    }
+  };
+
   const filteredItems = items.filter((it) =>
     it.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
   return (
-    <div className="project-presets-tab" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
+    <div
+      className="project-presets-tab"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        padding: "4px 0",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
           Presets de «{projectSlug}»
         </span>
         {palette && (
@@ -201,7 +260,7 @@ export function ProjectPresetsTab({
         actions={{
           rename: renamePreset,
           remove: removePreset,
-          setCategory: () => {},
+          setCategory: setPresetCategory,
           exportJson: exportPreset,
           overwrite: selectedElement
             ? (item) => saveSelectedAsProjectPreset(item.name, item)
