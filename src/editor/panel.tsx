@@ -14,9 +14,12 @@ const isTyped = (target: EventTarget) =>
  */
 export function Panel({
   checkpoint,
+  locked = false,
   children,
 }: {
   checkpoint: () => void;
+  /** Shown disabled and not editable: the agent's turn in joint mode (050/D6). */
+  locked?: boolean;
   children: ReactNode;
 }) {
   // set while a typed field has focus and has not changed yet
@@ -30,7 +33,8 @@ export function Panel({
   };
   return (
     <aside
-      className="panel"
+      className={locked ? "panel locked" : "panel"}
+      aria-disabled={locked}
       onPointerDownCapture={(e) => {
         const typed = isTyped(e.target);
         // a typed field records on its first change; anything else, now

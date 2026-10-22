@@ -1,0 +1,26 @@
+/** Whose turn it is in joint mode (050/D3), and when the agent last wrote (ms). */
+export type Turn = { owner: "user" | "agent"; lastAgentAt: number };
+
+export type TurnEvent =
+  | { type: "agentWrote"; at: number }
+  | { type: "tick"; at: number }
+  | { type: "takeControl" };
+
+/** How long the agent must stay quiet before the turn returns to the user. */
+export const IDLE_MS = 3000;
+
+export const USER_TURN: Turn = { owner: "user", lastAgentAt: 0 };
+
+/**
+ * The next turn: an agent write gives it to the agent; 3 s without one, or "Tomar el
+ * control", gives it back to the user. Unchanged events return the same object.
+ */
+export function nextTurn(turn: Turn, event: TurnEvent): Turn {
+  if (event.type === "agentWrote")
+    return { owner: "agent", lastAgentAt: event.at };
+  if (turn.owner === "user") return turn;
+  if (event.type === "takeControl") return { ...turn, owner: "user" };
+  return event.at - turn.lastAgentAt >= IDLE_MS
+    ? { ...turn, owner: "user" }
+    : turn;
+}

@@ -54,4 +54,4 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 047 | image-aspect-and-lint | done        | 044 | —     | 47 |
 | 048 | image-trim | done        | 044, 047 | —     | 48 |
 | 049 | image-trim-service | done        | 048 | —     | 49 |
-| 050 | joint-mode | todo        | 043, 049 | build  | 50 |
+| 050 | joint-mode | done        | 043, 049 | —      | 50 |

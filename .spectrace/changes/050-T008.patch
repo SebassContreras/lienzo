@@ -1,0 +1,88 @@
+diff --git a/src/editor/joint/turn.test.ts b/src/editor/joint/turn.test.ts
+new file mode 100644
+index 0000000..1fe5e30
+--- /dev/null
++++ b/src/editor/joint/turn.test.ts
+@@ -0,0 +1,36 @@
++import { describe, expect, it } from "vitest";
++import { IDLE_MS, nextTurn, USER_TURN } from "./turn.ts";
++
++const AGENT_TURN = nextTurn(USER_TURN, { type: "agentWrote", at: 1000 });
++
++describe("joint mode turns", () => {
++  it("gives the turn to the agent when it writes", () => {
++    expect(AGENT_TURN.owner).toBe("agent");
++  });
++
++  it("keeps the agent's turn while it wrote less than 3 s ago", () => {
++    const turn = nextTurn(AGENT_TURN, { type: "tick", at: 1000 + IDLE_MS - 1 });
++
++    expect(turn.owner).toBe("agent");
++  });
++
++  it("gives the turn back to the user after 3 s without a write", () => {
++    const turn = nextTurn(AGENT_TURN, { type: "tick", at: 1000 + IDLE_MS });
++
++    expect(turn.owner).toBe("user");
++  });
++
++  it("restarts the wait when the agent writes again", () => {
++    const again = nextTurn(AGENT_TURN, { type: "agentWrote", at: 3500 });
++
++    const turn = nextTurn(again, { type: "tick", at: 1000 + IDLE_MS });
++
++    expect(turn.owner).toBe("agent");
++  });
++
++  it("gives the turn back to the user at once on take-control", () => {
++    const turn = nextTurn(AGENT_TURN, { type: "takeControl" });
++
++    expect(turn.owner).toBe("user");
++  });
++});
+diff --git a/src/service/scene-watch.test.ts b/src/service/scene-watch.test.ts
+new file mode 100644
+index 0000000..4fe7743
+--- /dev/null
++++ b/src/service/scene-watch.test.ts
+@@ -0,0 +1,40 @@
++import { join } from "node:path";
++import { describe, expect, it } from "vitest";
++import { sceneChangeOf } from "./scene-watch.ts";
++
++const ROOT = join("repo", "lienzo");
++
++describe("sceneChangeOf", () => {
++  it("names the project and scene of a project scene file", () => {
++    const path = join(ROOT, "projects", "acme", "scenes", "lanzamiento.json");
++
++    expect(sceneChangeOf(ROOT, path)).toEqual({
++      project: "acme",
++      name: "lanzamiento",
++    });
++  });
++
++  it("ignores a file of a project that is not a scene", () => {
++    const path = join(ROOT, "projects", "acme", "presets", "card.json");
++
++    expect(sceneChangeOf(ROOT, path)).toBeUndefined();
++  });
++
++  it("ignores a non-JSON file in a scenes folder", () => {
++    const path = join(ROOT, "projects", "acme", "scenes", "notes.txt");
++
++    expect(sceneChangeOf(ROOT, path)).toBeUndefined();
++  });
++
++  it("ignores a scene in a nested folder", () => {
++    const path = join(ROOT, "projects", "acme", "scenes", "old", "a.json");
++
++    expect(sceneChangeOf(ROOT, path)).toBeUndefined();
++  });
++
++  it("ignores files outside the repo's projects", () => {
++    const path = join(ROOT, "src", "scenes", "a.json");
++
++    expect(sceneChangeOf(ROOT, path)).toBeUndefined();
++  });
++});

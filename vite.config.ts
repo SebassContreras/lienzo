@@ -9,6 +9,7 @@ import { handleFontApi } from "./src/service/font-middleware.ts";
 import { createFontStore } from "./src/service/font-store.ts";
 import { handleProjectApi } from "./src/service/project-middleware.ts";
 import { createProjectStore } from "./src/service/project-store.ts";
+import { sceneWatch } from "./src/service/scene-watch.ts";
 import { TTS_PROXY_PATH } from "./src/service/tts/config.ts";
 import { handleTtsProxy } from "./src/service/tts-proxy.ts";
 
@@ -204,5 +205,6 @@ export default defineConfig({
     projectStorePlugin(),
     fontStorePlugin(),
     ttsProxyPlugin(),
+    sceneWatch(import.meta.dirname),
   ],
 });

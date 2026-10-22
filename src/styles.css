@@ -1118,3 +1118,27 @@ code {
   gap: 2px;
   font-size: 11px;
 }
+
+/* joint mode (050/D6): the agent's turn */
+.joint-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.panel.locked {
+  pointer-events: none;
+  opacity: 0.55;
+}
+.joint-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
