@@ -40,6 +40,7 @@
       covers: R6@1, R7@1
       kind: test
       changes: src/editor/sidebar/asset-folders.test.ts (+54 -0), src/service/asset-path.test.ts (+32 -0), src/service/project-middleware.test.ts (+19 -0)
-- [ ] T013 [agent] [status:todo] `imageElementFor` stores the picture's `aspect` so a corner resize keeps the shape, with a test
+- [x] T013 [agent] [status:done] `imageElementFor` stores the picture's `aspect` so a corner resize keeps the shape, with a test
       covers: D4@2, R3@1
       retires: T004
+      changes: src/editor/asset-drop.test.ts (+2 -0), src/editor/asset-drop.ts (+2 -1)

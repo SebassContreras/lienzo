@@ -1,0 +1,26 @@
+diff --git a/src/editor/asset-drop.test.ts b/src/editor/asset-drop.test.ts
+index 267193c..7feea02 100644
+--- a/src/editor/asset-drop.test.ts
++++ b/src/editor/asset-drop.test.ts
+@@ -23,5 +23,7 @@ describe("imageElementFor", () => {
+     );
+ 
+     expect(el.h).toBe(Math.round(el.w / 2));
++    // resizing from a corner keeps the picture's shape, so `aspect` must match it
++    expect(el.aspect).toBe(2);
+   });
+ });
+diff --git a/src/editor/asset-drop.ts b/src/editor/asset-drop.ts
+index 797b839..eef962a 100644
+--- a/src/editor/asset-drop.ts
++++ b/src/editor/asset-drop.ts
+@@ -15,7 +15,8 @@ export function imageElementFor(
+   el.src = src;
+   el.name = name;
+   if (natural && natural.width > 0 && natural.height > 0) {
+-    el.h = Math.round((el.w * natural.height) / natural.width);
++    el.aspect = natural.width / natural.height;
++    el.h = Math.round(el.w / el.aspect);
+   }
+   el.x = Math.round(at.x - el.w / 2);
+   el.y = Math.round(at.y - el.h / 2);
