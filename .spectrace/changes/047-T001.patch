@@ -1,0 +1,118 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index c5d8693..3d0951a 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -12,6 +12,7 @@ import {
+ } from "lucide-react";
+ import { useCallback, useEffect, useRef, useState } from "react";
+ import { COMPONENTS, createElement } from "../components/index.ts";
++import { imageSize } from "../engine/assets.ts";
+ import { loadFonts, missingFonts } from "../engine/fonts.ts";
+ import { centerOn, indexById, type Pt, translate } from "../engine/geometry.ts";
+ import {
+@@ -64,6 +65,7 @@ import { TtsDialog } from "./dialogs/tts-dialog.tsx";
+ import { EditorFooter } from "./footer/editor-footer.tsx";
+ import { useHistory } from "./history.ts";
+ import { IconSvg } from "./icon-picker.tsx";
++import { imageSources, withImageAspects } from "./image-aspect.ts";
+ import {
+   ElementInspector,
+   MultiInspector,
+@@ -322,6 +324,33 @@ export function App() {
+     [checkpoint, setScene],
+   );
+ 
++  /**
++   * Measures the images of an opened scene and stores their real aspect ratio on the current
++   * scene, with no undo step (047/D1); images that cannot be decoded keep theirs.
++   */
++  const fixImageAspects = useCallback(
++    (s: Scene) => {
++      const sources = [...new Set(imageSources(s.elements))];
++      if (!sources.length) return;
++      Promise.all(
++        sources.map((src) =>
++          imageSize(src)
++            .then(({ width, height }) =>
++              width > 0 && height > 0
++                ? ([src, width / height] as const)
++                : undefined,
++            )
++            .catch(() => undefined),
++        ),
++      ).then((pairs) => {
++        const aspects = new Map(pairs.filter((p) => p !== undefined));
++        const fixed = withImageAspects(sceneRef.current, aspects);
++        if (fixed !== sceneRef.current) setScene(fixed);
++      });
++    },
++    [setScene],
++  );
++
+   /**
+    * Replaces the whole scene as one undoable step, first copying in the animation presets
+    * its elements name (019/D10); what could not be copied is shown as a notice.
+@@ -332,6 +361,7 @@ export function App() {
+         applyScene(next);
+         setSelection([]);
+         reportMissingFonts(next);
++        fixImageAspects(next);
+       };
+       if (!namesAnimPreset(s.elements)) {
+         open(s);
+@@ -352,7 +382,7 @@ export function App() {
+           setStatus(`Error: ${error instanceof Error ? error.message : error}`);
+         });
+     },
+-    [applyScene, reportMissingFonts],
++    [applyScene, reportMissingFonts, fixImageAspects],
+   );
+ 
+   /** A blank scene keeping the current mode; not autosaved, so the draft survives (043/D2). */
+diff --git a/src/editor/image-aspect.ts b/src/editor/image-aspect.ts
+new file mode 100644
+index 0000000..6ddd66d
+--- /dev/null
++++ b/src/editor/image-aspect.ts
+@@ -0,0 +1,41 @@
++import type { Element, Scene } from "../model/model.ts";
++
++/** Every image `src` in `elements`, group children included. */
++export function imageSources(elements: Element[]): string[] {
++  return elements.flatMap((e) => {
++    if (e.kind === "image") return e.src ? [e.src] : [];
++    if (e.kind === "group") return imageSources(e.children);
++    return [];
++  });
++}
++
++/**
++ * `scene` with each image's `aspect` set from `aspects` (by `src`), so a corner resize keeps
++ * the picture's shape (047/D1). Layout is untouched; the same scene when nothing changes.
++ */
++export function withImageAspects(
++  scene: Scene,
++  aspects: ReadonlyMap<string, number>,
++): Scene {
++  const fix = (elements: Element[]): Element[] => {
++    let changed = false;
++    const next = elements.map((e) => {
++      if (e.kind === "image") {
++        const aspect = aspects.get(e.src);
++        if (aspect === undefined || aspect === e.aspect) return e;
++        changed = true;
++        return { ...e, aspect };
++      }
++      if (e.kind === "group") {
++        const children = fix(e.children);
++        if (children === e.children) return e;
++        changed = true;
++        return { ...e, children };
++      }
++      return e;
++    });
++    return changed ? next : elements;
++  };
++  const elements = fix(scene.elements);
++  return elements === scene.elements ? scene : { ...scene, elements };
++}

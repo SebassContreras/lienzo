@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { SubtitlesEl } from "../../components/subtitles/descriptor.ts";
 import { drawSubtitles } from "../../components/subtitles/draw.ts";
 import { applyTracks } from "../tracks.ts";
 import { getActiveCue, isWordActive } from "./cue-timing.ts";
@@ -35,12 +36,14 @@ describe("Subtitles domain tests", () => {
     // In first cue, first word
     const cue1 = getActiveCue(sampleCues, 0.5);
     expect(cue1?.id).toBe("cue-1");
-    expect(isWordActive(cue1!.words![0]!, 0.5)).toBe(true);
-    expect(isWordActive(cue1!.words![1]!, 0.5)).toBe(false);
+    const [w0, w1] = cue1?.words ?? [];
+    if (!w0 || !w1) throw new Error("cue-1 needs two words");
+    expect(isWordActive(w0, 0.5)).toBe(true);
+    expect(isWordActive(w1, 0.5)).toBe(false);
 
     // In first cue, second word
-    expect(isWordActive(cue1!.words![0]!, 1.5)).toBe(false);
-    expect(isWordActive(cue1!.words![1]!, 1.5)).toBe(true);
+    expect(isWordActive(w0, 1.5)).toBe(false);
+    expect(isWordActive(w1, 1.5)).toBe(true);
 
     // In second cue
     const cue2 = getActiveCue(sampleCues, 3);
@@ -90,12 +93,13 @@ describe("Subtitles domain tests", () => {
     const unscaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.0);
     const scaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.2);
 
-    const unscaledGap =
-      unscaled.lines[0]!.words[1]!.x -
-      (unscaled.lines[0]!.words[0]!.x + unscaled.lines[0]!.words[0]!.width);
-    const scaledGap =
-      scaled.lines[0]!.words[1]!.x -
-      (scaled.lines[0]!.words[0]!.x + scaled.lines[0]!.words[0]!.width);
+    const gap = (layout: typeof unscaled) => {
+      const [first, second] = layout.lines[0]?.words ?? [];
+      if (!first || !second) throw new Error("the first line needs two words");
+      return second.x - (first.x + first.width);
+    };
+    const unscaledGap = gap(unscaled);
+    const scaledGap = gap(scaled);
 
     // Scaled gap should be wider than unscaled gap by wordWidth * (scale - 1)
     expect(scaledGap).toBeGreaterThan(unscaledGap);
@@ -294,7 +298,7 @@ describe("Subtitles domain tests", () => {
 
     // At t=1.0:
     // Keyframe track on x is halfway between 100 and 300 -> 200
-    const { el: atT1 } = applyTracks(el as any, 1.0);
+    const { el: atT1 } = applyTracks(el as unknown as SubtitlesEl, 1.0);
     expect(atT1.x).toBe(200);
 
     // In scaled cues (cue 1 is [0, 1], cue 2 is [1, 2]):

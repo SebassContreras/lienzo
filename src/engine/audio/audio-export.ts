@@ -69,7 +69,7 @@ export function prepareAudioBufferForExport(
     for (let i = 0; i < totalSamples; i++) {
       const srcIndex = startSample + i;
       if (srcIndex < srcData.length) {
-        destData[i] = srcData[srcIndex]! * volume;
+        destData[i] = (srcData[srcIndex] ?? 0) * volume;
       } else {
         destData[i] = 0;
       }
@@ -185,19 +185,16 @@ export function mixAudioTracksForExport(
       const srcIdx = srcStartSample + Math.floor(i * ratio);
 
       if (srcIdx < srcLeft.length) {
-        outLeft[destIdx] += srcLeft[srcIdx]! * vol;
-        outRight[destIdx] += srcRight[srcIdx]! * vol;
+        outLeft[destIdx] += (srcLeft[srcIdx] ?? 0) * vol;
+        outRight[destIdx] += (srcRight[srcIdx] ?? 0) * vol;
       }
     }
   }
 
   // Soft clamp to [-1, 1]
   for (let i = 0; i < totalSamples; i++) {
-    if (outLeft[i]! > 1) outLeft[i] = 1;
-    else if (outLeft[i]! < -1) outLeft[i] = -1;
-
-    if (outRight[i]! > 1) outRight[i] = 1;
-    else if (outRight[i]! < -1) outRight[i] = -1;
+    outLeft[i] = Math.max(-1, Math.min(1, outLeft[i] ?? 0));
+    outRight[i] = Math.max(-1, Math.min(1, outRight[i] ?? 0));
   }
 
   return mixedBuffer;

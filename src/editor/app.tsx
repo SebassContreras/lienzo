@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COMPONENTS, createElement } from "../components/index.ts";
+import { imageSize } from "../engine/assets.ts";
 import { loadFonts, missingFonts } from "../engine/fonts.ts";
 import { centerOn, indexById, type Pt, translate } from "../engine/geometry.ts";
 import {
@@ -64,6 +65,7 @@ import { TtsDialog } from "./dialogs/tts-dialog.tsx";
 import { EditorFooter } from "./footer/editor-footer.tsx";
 import { useHistory } from "./history.ts";
 import { IconSvg } from "./icon-picker.tsx";
+import { imageSources, withImageAspects } from "./image-aspect.ts";
 import {
   ElementInspector,
   MultiInspector,
@@ -323,6 +325,33 @@ export function App() {
   );
 
   /**
+   * Measures the images of an opened scene and stores their real aspect ratio on the current
+   * scene, with no undo step (047/D1); images that cannot be decoded keep theirs.
+   */
+  const fixImageAspects = useCallback(
+    (s: Scene) => {
+      const sources = [...new Set(imageSources(s.elements))];
+      if (!sources.length) return;
+      Promise.all(
+        sources.map((src) =>
+          imageSize(src)
+            .then(({ width, height }) =>
+              width > 0 && height > 0
+                ? ([src, width / height] as const)
+                : undefined,
+            )
+            .catch(() => undefined),
+        ),
+      ).then((pairs) => {
+        const aspects = new Map(pairs.filter((p) => p !== undefined));
+        const fixed = withImageAspects(sceneRef.current, aspects);
+        if (fixed !== sceneRef.current) setScene(fixed);
+      });
+    },
+    [setScene],
+  );
+
+  /**
    * Replaces the whole scene as one undoable step, first copying in the animation presets
    * its elements name (019/D10); what could not be copied is shown as a notice.
    */
@@ -332,6 +361,7 @@ export function App() {
         applyScene(next);
         setSelection([]);
         reportMissingFonts(next);
+        fixImageAspects(next);
       };
       if (!namesAnimPreset(s.elements)) {
         open(s);
@@ -352,7 +382,7 @@ export function App() {
           setStatus(`Error: ${error instanceof Error ? error.message : error}`);
         });
     },
-    [applyScene, reportMissingFonts],
+    [applyScene, reportMissingFonts, fixImageAspects],
   );
 
   /** A blank scene keeping the current mode; not autosaved, so the draft survives (043/D2). */
