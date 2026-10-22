@@ -48,6 +48,6 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 041 | workspace-assets-presets-fixes | done        | 040 | —     | 41 |
 | 042 | blank-startup | done        | 041 | —     | 42 |
 | 043 | scenes-sidebar-tab | done        | 041, 042 | —     | 43 |
-| 044 | nested-asset-drag | done        | 041 | —     | 44 |
+| 044 | nested-asset-drag | in_progress | 041 | build | 44 |
 | 045 | external-fonts | done        | 038, 040 | —     | 45 |
 | 046 | audit-cleanup | done        | 040, 045 | —     | 46 |

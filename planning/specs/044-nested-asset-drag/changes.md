@@ -18,3 +18,9 @@ Why: projects organised in subfolders with descriptive names (`products/CAPS mov
 - MODIFIED D3@1 → D3@2
 - ADDED D6@1
 - Tasks: T002 re-pointed to D2@3 and T003 to D3@2 (still valid); added T009, T010, T011, T012
+
+## 2026-10-22 — dropped assets lose their shape on corner resize
+Why: "al redimensionar desde una esquina un asset soltado, se reajusta y pierde la proporción" — the drop set `h` but left `aspect` at the 4/3 default, which the resize then enforced.
+- MODIFIED D4@1 → D4@2
+- Refactor in place: the fix is one added line in `imageElementFor`; removing and rebuilding the rest of T004 would rewrite code that still holds.
+- Tasks: added T013 (retires T004)
