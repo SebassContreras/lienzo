@@ -22,3 +22,8 @@ projects/*
 !projects/.gitkeep
 !projects/mi-proyecto/
 !projects/mi-proyecto/**
+
+# User fonts (045): global fonts/ and every project's fonts/, never committed
+fonts/*
+!fonts/.gitkeep
+projects/mi-proyecto/fonts/

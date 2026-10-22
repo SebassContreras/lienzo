@@ -5,3 +5,7 @@ Why: thumbnails at t = 0 hide elements with an entry animation (already fixed on
 - MODIFIED D1@1 → D1@2
 - MODIFIED D3@1 → D3@2
 - Tasks: T001 re-pointed to D1@2 and T004 to D3@2 (not started); added T006 (tests for `scene-list`)
+
+## 2026-10-22 — five tabs did not fit
+Why: the browser check showed the tab labels cut off once "Escenas" was added.
+- Tasks: added T007

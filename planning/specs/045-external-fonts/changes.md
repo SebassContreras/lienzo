@@ -6,3 +6,7 @@ Why: splitting the file name on the first `-` breaks hyphenated families; the up
 - MODIFIED D5@1 → D5@2
 - MODIFIED D6@1 → D6@2
 - Tasks: T001 → D1@2, T005 → D5@2, T006 → D6@2 (not started); added T008 (Google Fonts adapter tests); A12@1 → A12@2 in planning/changes.md
+
+## 2026-10-22 — new tools in the CLI coverage test
+Why: the CLI test checks that every registry tool is called; `font_list` and `font_install` were missing.
+- Tasks: added T009

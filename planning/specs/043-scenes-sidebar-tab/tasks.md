@@ -18,3 +18,7 @@
       covers: D3@2
       kind: test
       changes: src/presets/scene-list.test.ts (+27 -0)
+- [x] T007 [agent] [status:done] Fit the five sidebar tabs: icon above a short label
+      covers: D4@1
+      changes: src/styles.css (+4 -3)
+      └─ found in the browser check: labels were cut ("Bibliotec", "Recursc")

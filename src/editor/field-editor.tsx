@@ -56,6 +56,8 @@ export type EditorContext = {
   time?: number;
   /** When true (static mode), hides keyframe controls and animation sections (033). */
   staticMode?: boolean;
+  /** Fonts the active project can use, for the font picker (045/D4). */
+  fonts?: readonly ResolvedFont[];
 };
 
 type WidgetProps = {
@@ -245,7 +247,9 @@ function MaskWidget({ value, label, change, ctx }: WidgetProps) {
 
 import type { SubtitleCue } from "../engine/subtitles/types.ts";
 /** Custom fields and widgets, by the name descriptors give them. */
+import type { ResolvedFont } from "../model/font-files.ts";
 import { CuesEditor } from "./widgets/cues-editor.tsx";
+import { FontSelect } from "./widgets/font-select.tsx";
 
 const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
   "cues-editor": ({ value, change, ctx }) => (
@@ -265,6 +269,19 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
       onChange={(v) =>
         change((d) => {
           if (d.kind === "icon") d.icon = v;
+        })
+      }
+    />
+  ),
+  font: ({ item, value, label, change, ctx }) => (
+    <FontSelect
+      label={label}
+      value={value as string}
+      fonts={ctx.fonts}
+      onChange={(v) =>
+        change((d) => {
+          if (item.field.type === "select")
+            writeField(d, item.path, item.field, v);
         })
       }
     />

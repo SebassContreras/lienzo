@@ -49,6 +49,7 @@ export const sceneExport = defineTool({
         scale,
         fps,
         time: t,
+        project: projectSlug,
       },
     );
     const ext = EXTENSIONS[rendered.type] ?? format;

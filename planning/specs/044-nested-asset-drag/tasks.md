@@ -21,3 +21,7 @@
       covers: R5@1
       kind: test
       changes: src/service/project-boundary.test.ts (+21 -0)
+- [x] T008 [agent] [status:done] Fix: a reference relative to the project (`assets/x.png`) still validates
+      covers: D5@1
+      changes: src/service/asset-path.test.ts (+6 -0), src/service/asset-path.ts (+4 -2)
+      └─ found by brand-constraining.test.ts in the full run after T007

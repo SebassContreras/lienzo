@@ -1,0 +1,230 @@
+diff --git a/src/components/fields/label.ts b/src/components/fields/label.ts
+index 17be760..4f99b78 100644
+--- a/src/components/fields/label.ts
++++ b/src/components/fields/label.ts
+@@ -14,12 +14,12 @@ const WEIGHTS = [300, 400, 500, 600, 700, 800, 900].map(
+   (w) => [w, String(w)] as const,
+ );
+ 
+-/** Any font name opens; the list offers the bundled ones. */
++/** Any font name opens; the inspector's picker lists the project's fonts (045/D4). */
+ export function font(value: string) {
+   return select(
+     FONTS.map((f) => [f as string, f] as const),
+     value,
+-    { label: "Fuente", schema: z.string() },
++    { label: "Fuente", schema: z.string(), widget: "font" },
+   );
+ }
+ 
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 52f5be8..9da3f49 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -218,19 +218,19 @@ export function App() {
+     }
+   }, []);
+ 
+-  const [fontsVersion, setFontsVersion] = useState(0);
++  /** Loads the active project's fonts; also called after a font is added. */
++  const refreshFonts = useCallback(
++    () =>
++      loadFonts(activeProjectSlug).then((loaded) => {
++        fontsRef.current = loaded;
++        setFonts(loaded);
++        reportMissingFonts(sceneRef.current);
++      }),
++    [activeProjectSlug, reportMissingFonts],
++  );
+   useEffect(() => {
+-    let live = true;
+-    loadFonts(activeProjectSlug).then((loaded) => {
+-      if (!live) return;
+-      fontsRef.current = loaded;
+-      setFonts(loaded);
+-      reportMissingFonts(sceneRef.current);
+-    });
+-    return () => {
+-      live = false;
+-    };
+-  }, [activeProjectSlug, fontsVersion, reportMissingFonts]);
++    refreshFonts();
++  }, [refreshFonts]);
+ 
+   const [projectPresetsVersion, setProjectPresetsVersion] = useState(0);
+ 
+@@ -1003,6 +1003,7 @@ export function App() {
+             <ElementInspector
+               key={selected.id}
+               el={selected}
++              fonts={fonts}
+               nameOf={(id) =>
+                 scene.elements.find((e) => e.id === id)?.name ?? "?"
+               }
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+index d0ff23d..eaf459f 100644
+--- a/src/editor/field-editor.tsx
++++ b/src/editor/field-editor.tsx
+@@ -56,6 +56,8 @@ export type EditorContext = {
+   time?: number;
+   /** When true (static mode), hides keyframe controls and animation sections (033). */
+   staticMode?: boolean;
++  /** Fonts the active project can use, for the font picker (045/D4). */
++  fonts?: readonly ResolvedFont[];
+ };
+ 
+ type WidgetProps = {
+@@ -245,7 +247,9 @@ function MaskWidget({ value, label, change, ctx }: WidgetProps) {
+ 
+ import type { SubtitleCue } from "../engine/subtitles/types.ts";
+ /** Custom fields and widgets, by the name descriptors give them. */
++import type { ResolvedFont } from "../model/font-files.ts";
+ import { CuesEditor } from "./widgets/cues-editor.tsx";
++import { FontSelect } from "./widgets/font-select.tsx";
+ 
+ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+   "cues-editor": ({ value, change, ctx }) => (
+@@ -269,6 +273,19 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+       }
+     />
+   ),
++  font: ({ item, value, label, change, ctx }) => (
++    <FontSelect
++      label={label}
++      value={value as string}
++      fonts={ctx.fonts}
++      onChange={(v) =>
++        change((d) => {
++          if (item.field.type === "select")
++            writeField(d, item.path, item.field, v);
++        })
++      }
++    />
++  ),
+   image: (p) => <ImageUpload {...p} />,
+   model: (p) => <ModelUpload {...p} />,
+   "path-shapes": ({ el, change }) =>
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 81cb14b..cdec3f3 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -16,6 +16,7 @@ import {
+   Trash2,
+ } from "lucide-react";
+ import { useEffect, useRef, useState } from "react";
++import type { ResolvedFont } from "../model/font-files.ts";
+ import {
+   type Element,
+   isStaticMode,
+@@ -39,6 +40,7 @@ export function ElementInspector({
+   canvas,
+   time,
+   staticMode,
++  fonts,
+ }: {
+   el: Element;
+   onChange: (el: Element) => void;
+@@ -55,6 +57,8 @@ export function ElementInspector({
+   time?: number;
+   /** When true, hides animation sections and keyframe controls (033). */
+   staticMode?: boolean;
++  /** The active project's fonts, for the font picker (045/D4). */
++  fonts?: readonly ResolvedFont[];
+ }) {
+   const [presetName, setPresetName] = useState("");
+   const change = <T extends Element>(fn: (draft: T) => void) => {
+@@ -100,7 +104,15 @@ export function ElementInspector({
+       <FieldEditor
+         el={el}
+         change={change}
+-        ctx={{ nameOf, canvas, onUngroup, onEditParticle, time, staticMode }}
++        ctx={{
++          nameOf,
++          canvas,
++          onUngroup,
++          onEditParticle,
++          time,
++          staticMode,
++          fonts,
++        }}
+       />
+       {onSavePreset && (
+         <Section title="Guardar como preset">
+diff --git a/src/editor/widgets/font-select.tsx b/src/editor/widgets/font-select.tsx
+new file mode 100644
+index 0000000..e05291c
+--- /dev/null
++++ b/src/editor/widgets/font-select.tsx
+@@ -0,0 +1,72 @@
++import type { FontOrigin, ResolvedFont } from "../../model/font-files.ts";
++import { FONTS } from "../../model/fonts.ts";
++
++const GROUP_LABELS: Record<FontOrigin, string> = {
++  bundled: "Incluidas",
++  global: "Globales",
++  project: "Proyecto",
++};
++
++export type FontGroup = { label: string; families: string[] };
++
++/**
++ * The font picker's groups (045/D4): one family per entry, by origin; a current value no
++ * font provides is kept as its own group so the select still shows it.
++ */
++export function fontGroups(
++  fonts: readonly ResolvedFont[],
++  current: string,
++): FontGroup[] {
++  const groups = (["bundled", "global", "project"] as const)
++    .map((origin) => ({
++      label: GROUP_LABELS[origin],
++      families: [
++        ...new Set(
++          fonts.filter((f) => f.origin === origin).map((f) => f.family),
++        ),
++      ],
++    }))
++    .filter((g) => g.families.length > 0);
++  const known = groups.some((g) => g.families.includes(current));
++  return known || !current
++    ? groups
++    : [...groups, { label: "No disponible", families: [current] }];
++}
++
++export function FontSelect({
++  label,
++  value,
++  fonts,
++  onChange,
++}: {
++  label: string;
++  value: string;
++  /** The project's fonts; before they load, the bundled ones. */
++  fonts?: readonly ResolvedFont[];
++  onChange: (family: string) => void;
++}) {
++  const available =
++    fonts && fonts.length > 0
++      ? fonts
++      : FONTS.map((family) => ({
++          family,
++          weight: 400,
++          origin: "bundled" as const,
++        }));
++  return (
++    <label className="field">
++      <span>{label}</span>
++      <select value={value} onChange={(e) => onChange(e.target.value)}>
++        {fontGroups(available, value).map((g) => (
++          <optgroup key={g.label} label={g.label}>
++            {g.families.map((family) => (
++              <option key={family} value={family}>
++                {family}
++              </option>
++            ))}
++          </optgroup>
++        ))}
++      </select>
++    </label>
++  );
++}

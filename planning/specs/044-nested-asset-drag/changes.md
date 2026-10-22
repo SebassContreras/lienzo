@@ -6,3 +6,7 @@ Why: the path check was going to live in the route only while `validateAsset` ke
 - MODIFIED D2@1 → D2@2
 - ADDED D5@1
 - Tasks: T002 re-pointed to D2@2 (not started); added T006 (fix `validateAsset`) and T007 (regression test)
+
+## 2026-10-22 — regression found in the full test run
+Why: `assetSegments` only looked for `/assets/`, so `assets/x.png` references stopped validating.
+- Tasks: added T008 (fix + test)

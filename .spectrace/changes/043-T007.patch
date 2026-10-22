@@ -1,0 +1,24 @@
+diff --git a/src/styles.css b/src/styles.css
+index 973de54..5b374e8 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -882,15 +882,16 @@ code {
+   flex: 1 1 0;
+   min-width: 0;
+   display: flex;
++  flex-direction: column;
+   align-items: center;
+   justify-content: center;
+-  gap: 4px;
+-  padding: 6px 2px;
++  gap: 2px;
++  padding: 5px 1px;
+   background: transparent;
+   border: none;
+   border-bottom: 2px solid transparent;
+   color: var(--muted);
+-  font-size: 11px;
++  font-size: 10px;
+   font-weight: 500;
+   cursor: pointer;
+   white-space: nowrap;

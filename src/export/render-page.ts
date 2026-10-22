@@ -4,6 +4,7 @@
  * comes from the caller, already checked by the service, so the page and the tools always
  * render the same scene; the output is the editor's own `exportScene` (A3, R3).
  */
+import { loadFonts } from "../engine/fonts.ts";
 import type { Scene } from "../model/model.ts";
 import { type ExportOptions, exportScene } from "./export.ts";
 
@@ -13,6 +14,8 @@ export type RenderedFile = { base64: string; type: string };
 export type LienzoExport = (
   scene: Scene,
   options: ExportOptions,
+  /** The project whose fonts the scene uses (045/D3). */
+  project?: string,
 ) => Promise<RenderedFile>;
 
 declare global {
@@ -32,7 +35,8 @@ function toBase64(blob: Blob): Promise<string> {
 }
 
 export function mountRenderPage(): void {
-  window.lienzoExport = async (scene, options) => {
+  window.lienzoExport = async (scene, options, project) => {
+    await loadFonts(project);
     const blob = await exportScene(scene, options, () => {});
     return { base64: await toBase64(blob), type: blob.type };
   };

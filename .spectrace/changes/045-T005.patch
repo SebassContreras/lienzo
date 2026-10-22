@@ -1,0 +1,487 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 9da3f49..0e98da2 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -730,6 +730,7 @@ export function App() {
+                   });
+                 }
+               }}
++              onFontsChanged={refreshFonts}
+               setStatus={setStatus}
+             />
+             {!isStatic && (
+diff --git a/src/editor/brand/brand-font-manager.tsx b/src/editor/brand/brand-font-manager.tsx
+new file mode 100644
+index 0000000..d778480
+--- /dev/null
++++ b/src/editor/brand/brand-font-manager.tsx
+@@ -0,0 +1,160 @@
++import { Loader2, Upload } from "lucide-react";
++import { useCallback, useEffect, useState } from "react";
++import { fetchFonts } from "../../engine/fonts.ts";
++import { parseFontFile, type ResolvedFont } from "../../model/font-files.ts";
++import { uploadFont } from "./font-api.ts";
++
++const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
++
++export type BrandFontManagerProps = {
++  /** The project being edited; without one, fonts can only be global. */
++  slug?: string;
++  /** Called after a font is added, so the editor loads it (045/D3). */
++  onFontsChanged?: () => void;
++};
++
++/** The "Fuentes" tab of the brand manager (045/D5, D6). */
++export function BrandFontManager({
++  slug,
++  onFontsChanged,
++}: BrandFontManagerProps) {
++  const [fonts, setFonts] = useState<ResolvedFont[]>([]);
++  const [scope, setScope] = useState<"project" | "global">(
++    slug ? "project" : "global",
++  );
++  const [file, setFile] = useState<File>();
++  const [family, setFamily] = useState("");
++  const [weight, setWeight] = useState(400);
++  const [busy, setBusy] = useState(false);
++  const [message, setMessage] = useState("");
++
++  const project = scope === "project" ? slug : undefined;
++
++  const refresh = useCallback(
++    () =>
++      fetchFonts(slug)
++        .then((all) => setFonts(all.filter((f) => f.origin !== "bundled")))
++        .catch(() => setFonts([])),
++    [slug],
++  );
++
++  useEffect(() => {
++    refresh();
++  }, [refresh]);
++
++  const added = (text: string) => {
++    setMessage(text);
++    refresh();
++    onFontsChanged?.();
++  };
++
++  const upload = async () => {
++    if (!file) return;
++    setBusy(true);
++    try {
++      const saved = await uploadFont(file, { family, weight, project });
++      added(`Fuente «${saved.family}» ${saved.weight} añadida`);
++      setFile(undefined);
++    } catch (e) {
++      setMessage(e instanceof Error ? e.message : String(e));
++    } finally {
++      setBusy(false);
++    }
++  };
++
++  return (
++    <div className="brand-fonts">
++      <fieldset className="brand-fonts-scope">
++        <legend>Dónde guardar</legend>
++        <label>
++          <input
++            type="radio"
++            checked={scope === "project"}
++            disabled={!slug}
++            onChange={() => setScope("project")}
++          />
++          Solo este proyecto
++        </label>
++        <label>
++          <input
++            type="radio"
++            checked={scope === "global"}
++            onChange={() => setScope("global")}
++          />
++          Global (todos los proyectos)
++        </label>
++      </fieldset>
++
++      <section>
++        <h4 className="brand-fonts-title">Subir archivo (ttf, otf, woff, woff2)</h4>
++        <div className="brand-fonts-row">
++          <label className="file-button">
++            <Upload size={14} /> {file ? file.name : "Elegir archivo"}
++            <input
++              type="file"
++              accept=".ttf,.otf,.woff,.woff2"
++              hidden
++              onChange={(e) => {
++                const chosen = e.target.files?.[0];
++                e.target.value = "";
++                if (!chosen) return;
++                setFile(chosen);
++                const parsed = parseFontFile(chosen.name);
++                if (parsed) {
++                  setFamily(parsed.family);
++                  setWeight(parsed.weight);
++                }
++              }}
++            />
++          </label>
++          <input
++            aria-label="Familia"
++            placeholder="Familia"
++            value={family}
++            onChange={(e) => setFamily(e.target.value)}
++          />
++          <select
++            aria-label="Peso"
++            value={weight}
++            onChange={(e) => setWeight(Number(e.target.value))}
++          >
++            {WEIGHTS.map((w) => (
++              <option key={w} value={w}>
++                {w}
++              </option>
++            ))}
++          </select>
++          <button
++            type="button"
++            disabled={!file || !family.trim() || busy}
++            onClick={upload}
++          >
++            {busy ? <Loader2 size={14} className="spin" /> : "Subir"}
++          </button>
++        </div>
++      </section>
++
++      {message && <p className="hint">{message}</p>}
++
++      <section>
++        <h4 className="brand-fonts-title">Fuentes disponibles</h4>
++        {fonts.length === 0 ? (
++          <p className="hint">Aún no hay fuentes propias.</p>
++        ) : (
++          <ul className="brand-fonts-list">
++            {fonts.map((f) => (
++              <li key={`${f.origin}-${f.family}-${f.weight}`}>
++                <span
++                  style={{ fontFamily: `"${f.family}"`, fontWeight: f.weight }}
++                >
++                  {f.family} {f.weight}
++                </span>
++                <small>{f.origin === "project" ? "Proyecto" : "Global"}</small>
++              </li>
++            ))}
++          </ul>
++        )}
++      </section>
++    </div>
++  );
++}
+diff --git a/src/editor/brand/font-api.ts b/src/editor/brand/font-api.ts
+new file mode 100644
+index 0000000..f2c09a6
+--- /dev/null
++++ b/src/editor/brand/font-api.ts
+@@ -0,0 +1,28 @@
++/** The editor's calls to the font API (045/D5, D6). */
++import type { FontFile } from "../../model/font-files.ts";
++
++async function answer<T>(res: Response): Promise<T> {
++  const body = await res.json().catch(() => ({}));
++  if (!res.ok) throw new Error(body.error ?? `Error ${res.status}`);
++  return body as T;
++}
++
++/** Uploads a font file; `project` omitted = global `fonts/`. */
++export async function uploadFont(
++  file: File,
++  font: { family: string; weight: number; project?: string },
++): Promise<FontFile> {
++  const q = new URLSearchParams({
++    family: font.family,
++    weight: String(font.weight),
++    ext: file.name.split(".").pop()?.toLowerCase() ?? "",
++  });
++  if (font.project) q.set("project", font.project);
++  return answer(
++    await fetch(`/api/fonts/upload?${q}`, {
++      method: "POST",
++      headers: { "content-type": "application/octet-stream" },
++      body: await file.arrayBuffer(),
++    }),
++  );
++}
+diff --git a/src/editor/dialogs/brand-manager-dialog.tsx b/src/editor/dialogs/brand-manager-dialog.tsx
+index 60dc75b..f3e75c1 100644
+--- a/src/editor/dialogs/brand-manager-dialog.tsx
++++ b/src/editor/dialogs/brand-manager-dialog.tsx
+@@ -7,6 +7,7 @@ import type {
+ import { PROJECT_SLUG_REGEX } from "../../model/project.ts";
+ import type { ProjectDetails } from "../../service/project-store.ts";
+ import { BrandAssetManager } from "../brand/brand-asset-manager.tsx";
++import { BrandFontManager } from "../brand/brand-font-manager.tsx";
+ import { BrandPaletteEditor } from "../brand/brand-palette-editor.tsx";
+ 
+ export type BrandManagerMode = "create" | "edit";
+@@ -22,6 +23,8 @@ export type BrandManagerDialogProps = {
+     canvasDefaults?: ProjectCanvasDefaults,
+   ) => void;
+   onProjectDeleted?: (slug: string) => void;
++  /** After a font is added in the Fuentes tab (045/D5). */
++  onFontsChanged?: () => void;
+   setStatus: (msg: string) => void;
+ };
+ 
+@@ -41,6 +44,7 @@ export function BrandManagerDialog({
+   onClose,
+   onProjectSaved,
+   onProjectDeleted,
++  onFontsChanged,
+   setStatus,
+ }: BrandManagerDialogProps) {
+   const dialogRef = useRef<HTMLDialogElement>(null);
+@@ -64,7 +68,7 @@ export function BrandManagerDialog({
+ 
+   // Dialog & Async UI State
+   const [activeTab, setActiveTab] = useState<
+-    "identity" | "palette" | "canvas" | "assets"
++    "identity" | "palette" | "canvas" | "assets" | "fonts"
+   >("identity");
+   const [loading, setLoading] = useState(false);
+   const [submitting, setSubmitting] = useState(false);
+@@ -321,6 +325,7 @@ export function BrandManagerDialog({
+             { id: "palette", label: "Colores" },
+             { id: "canvas", label: "Lienzo" },
+             { id: "assets", label: `Recursos (${assets.length})` },
++            { id: "fonts", label: "Fuentes" },
+           ].map((tab) => (
+             <button
+               key={tab.id}
+@@ -687,6 +692,13 @@ export function BrandManagerDialog({
+                 </div>
+               )}
+ 
++              {activeTab === "fonts" && (
++                <BrandFontManager
++                  slug={mode === "edit" ? initialSlug : undefined}
++                  onFontsChanged={onFontsChanged}
++                />
++              )}
++
+               {activeTab === "assets" && (
+                 <BrandAssetManager
+                   slug={mode === "edit" ? initialSlug : slug}
+diff --git a/src/editor/project-selector.tsx b/src/editor/project-selector.tsx
+index f9f2f4b..72a4395 100644
+--- a/src/editor/project-selector.tsx
++++ b/src/editor/project-selector.tsx
+@@ -11,12 +11,15 @@ export type ProjectSelectorProps = {
+     palette?: ColorPalette,
+     canvasDefaults?: ProjectCanvasDefaults,
+   ) => void;
++  /** After a font is added from the brand manager (045/D5). */
++  onFontsChanged?: () => void;
+   setStatus: (status: string) => void;
+ };
+ 
+ export function ProjectSelector({
+   activeSlug,
+   onSelectProject,
++  onFontsChanged,
+   setStatus,
+ }: ProjectSelectorProps) {
+   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+@@ -205,6 +208,7 @@ export function ProjectSelector({
+         onClose={() => setDialogOpen(false)}
+         onProjectSaved={handleProjectSaved}
+         onProjectDeleted={handleProjectDeleted}
++        onFontsChanged={onFontsChanged}
+         setStatus={setStatus}
+       />
+     </>
+diff --git a/src/editor/sidebar/scene-thumb.tsx b/src/editor/sidebar/scene-thumb.tsx
+index fe1be37..323e650 100644
+--- a/src/editor/sidebar/scene-thumb.tsx
++++ b/src/editor/sidebar/scene-thumb.tsx
+@@ -48,6 +48,7 @@ export function SceneThumb({ scene }: { scene: Scene }) {
+   return (
+     <canvas
+       ref={ref}
++      className="scene-thumb"
+       width={THUMB_W * dpr}
+       height={THUMB_H * dpr}
+       style={{ width: THUMB_W, height: THUMB_H }}
+diff --git a/src/service/font-install.ts b/src/service/font-install.ts
+new file mode 100644
+index 0000000..a3b4e80
+--- /dev/null
++++ b/src/service/font-install.ts
+@@ -0,0 +1,56 @@
++/**
++ * Adding fonts (045/D5, D6): the checks every new font file passes before the font store
++ * writes it, shared by the upload route and the Google Fonts install.
++ */
++import {
++  type FontExtension,
++  type FontFile,
++  fontFileName,
++  isFontExtension,
++  isFontFamilyName,
++} from "../model/font-files.ts";
++import type { FontScope, FontStore } from "./font-store.ts";
++
++export const MAX_FONT_BYTES = 20 * 1024 * 1024;
++
++export type NewFont = {
++  family: string;
++  weight: number;
++  ext: string;
++  /** Omitted = global `fonts/`. */
++  project?: FontScope;
++};
++
++/** Why a new font is refused, or undefined when it is fine. */
++export function fontProblem(font: NewFont, bytes: number): string | undefined {
++  if (!isFontFamilyName(font.family)) {
++    return "Nombre de familia no válido (letras, números, espacios, _ y -)";
++  }
++  if (
++    !Number.isInteger(font.weight) ||
++    font.weight < 100 ||
++    font.weight > 900
++  ) {
++    return "El peso debe ser un entero entre 100 y 900";
++  }
++  if (!isFontExtension(font.ext)) {
++    return "Formato no soportado. Se esperaba: ttf, otf, woff, woff2";
++  }
++  if (bytes === 0) return "El archivo está vacío";
++  if (bytes > MAX_FONT_BYTES) return "Archivo demasiado grande (máx 20MB)";
++  return undefined;
++}
++
++/** Checks and stores one font file; throws with the reason when it is refused. */
++export async function saveFont(
++  store: FontStore,
++  font: NewFont,
++  data: Buffer,
++): Promise<FontFile> {
++  const problem = fontProblem(font, data.length);
++  if (problem) throw new Error(problem);
++  const ext = font.ext.toLowerCase() as FontExtension;
++  const file = fontFileName(font.family, font.weight, ext);
++  await store.write(file, data, font.project);
++  return { family: font.family.trim(), weight: font.weight, file };
++}
+diff --git a/src/service/font-middleware.ts b/src/service/font-middleware.ts
+index 9eaf583..83d9aa1 100644
+--- a/src/service/font-middleware.ts
++++ b/src/service/font-middleware.ts
+@@ -4,11 +4,13 @@
+  * GET /api/fonts?project=<slug>              -> every usable font (resolveFonts)
+  * GET /api/fonts/global/<file>               -> a global font file
+  * GET /api/fonts/project/<slug>/<file>       -> a project font file
++ * POST /api/fonts/upload?family=&weight=&ext=[&project=]  body: the file -> saveFont
+  */
+ import type { IncomingMessage, ServerResponse } from "node:http";
+ import { resolveFonts } from "../model/font-files.ts";
+ import { FONTS } from "../model/fonts.ts";
+ import { ASSET_TYPES } from "./asset-helpers.ts";
++import { MAX_FONT_BYTES, saveFont } from "./font-install.ts";
+ import type { FontStore } from "./font-store.ts";
+ 
+ export async function handleFontApi(
+@@ -60,6 +62,32 @@ export async function handleFontApi(
+       return;
+     }
+ 
++    if (method === "POST" && segments[0] === "upload") {
++      const q = url.searchParams;
++      const chunks: Buffer[] = [];
++      let size = 0;
++      for await (const chunk of req) {
++        size += (chunk as Buffer).length;
++        if (size > MAX_FONT_BYTES) {
++          json(413, { error: "Archivo demasiado grande (máx 20MB)" });
++          return;
++        }
++        chunks.push(chunk as Buffer);
++      }
++      const saved = await saveFont(
++        store,
++        {
++          family: q.get("family") ?? "",
++          weight: Number(q.get("weight") ?? 400),
++          ext: q.get("ext") ?? "",
++          project: q.get("project") || undefined,
++        },
++        Buffer.concat(chunks),
++      );
++      json(201, saved);
++      return;
++    }
++
+     json(404, { error: "Ruta no encontrada" });
+   } catch (error) {
+     json(400, {
+diff --git a/src/styles.css b/src/styles.css
+index acb08e3..658c218 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -676,7 +676,7 @@ code {
+ .scene-card .scene-open {
+   padding: 4px;
+ }
+-.scene-card canvas {
++.scene-thumb {
+   display: block;
+   border-radius: 4px;
+ }
+@@ -1059,3 +1059,48 @@ code {
+   flex-direction: column;
+   gap: 2px;
+ }
++
++/* Fuentes tab of the brand manager (045) */
++.brand-fonts {
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++}
++.brand-fonts-title {
++  margin: 0 0 6px;
++  font-size: 12px;
++}
++.brand-fonts-scope {
++  display: flex;
++  gap: 16px;
++  border: 1px solid var(--line);
++  border-radius: 6px;
++  padding: 6px 10px;
++  font-size: 12px;
++}
++.brand-fonts-row {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 6px;
++  align-items: center;
++}
++.brand-fonts-row input:not([type]) {
++  flex: 1;
++  min-width: 120px;
++}
++.brand-fonts-list {
++  list-style: none;
++  margin: 0;
++  padding: 0;
++  display: grid;
++  gap: 4px;
++}
++.brand-fonts-list li {
++  display: flex;
++  justify-content: space-between;
++  gap: 8px;
++  font-size: 14px;
++}
++.brand-fonts-list small {
++  color: var(--muted);
++}

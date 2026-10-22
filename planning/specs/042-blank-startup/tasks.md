@@ -11,3 +11,7 @@
       covers: R1@1, R2@1, R4@1
       kind: test
       changes: src/editor/startup.test.ts (+45 -0)
+- [x] T005 [agent] [status:done] Fix: applying the project's canvas defaults on start no longer overwrites the saved draft
+      covers: D3@1
+      changes: src/editor/app.tsx (+17 -11), src/editor/autosave.ts (+29 -1), src/editor/startup.test.ts (+37 -1)
+      └─ found in the browser check: the start-up resize counted as an edit and autosaved the blank scene

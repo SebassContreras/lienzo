@@ -7,6 +7,7 @@ import type {
 import { PROJECT_SLUG_REGEX } from "../../model/project.ts";
 import type { ProjectDetails } from "../../service/project-store.ts";
 import { BrandAssetManager } from "../brand/brand-asset-manager.tsx";
+import { BrandFontManager } from "../brand/brand-font-manager.tsx";
 import { BrandPaletteEditor } from "../brand/brand-palette-editor.tsx";
 
 export type BrandManagerMode = "create" | "edit";
@@ -22,6 +23,8 @@ export type BrandManagerDialogProps = {
     canvasDefaults?: ProjectCanvasDefaults,
   ) => void;
   onProjectDeleted?: (slug: string) => void;
+  /** After a font is added in the Fuentes tab (045/D5). */
+  onFontsChanged?: () => void;
   setStatus: (msg: string) => void;
 };
 
@@ -41,6 +44,7 @@ export function BrandManagerDialog({
   onClose,
   onProjectSaved,
   onProjectDeleted,
+  onFontsChanged,
   setStatus,
 }: BrandManagerDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -64,7 +68,7 @@ export function BrandManagerDialog({
 
   // Dialog & Async UI State
   const [activeTab, setActiveTab] = useState<
-    "identity" | "palette" | "canvas" | "assets"
+    "identity" | "palette" | "canvas" | "assets" | "fonts"
   >("identity");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -321,6 +325,7 @@ export function BrandManagerDialog({
             { id: "palette", label: "Colores" },
             { id: "canvas", label: "Lienzo" },
             { id: "assets", label: `Recursos (${assets.length})` },
+            { id: "fonts", label: "Fuentes" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -685,6 +690,13 @@ export function BrandManagerDialog({
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === "fonts" && (
+                <BrandFontManager
+                  slug={mode === "edit" ? initialSlug : undefined}
+                  onFontsChanged={onFontsChanged}
+                />
               )}
 
               {activeTab === "assets" && (

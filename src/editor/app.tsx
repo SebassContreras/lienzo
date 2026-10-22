@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COMPONENTS, createElement } from "../components/index.ts";
+import { loadFonts, missingFonts } from "../engine/fonts.ts";
 import { centerOn, indexById, type Pt, translate } from "../engine/geometry.ts";
 import {
   detachOutside,
@@ -21,6 +22,7 @@ import {
 } from "../engine/groups.ts";
 import { resolveLine } from "../engine/lines.ts";
 import { ExportControls } from "../export/export-controls.tsx";
+import type { ResolvedFont } from "../model/font-files.ts";
 import {
   cloneElement,
   cloneElements,
@@ -52,7 +54,7 @@ import {
 } from "../presets/store.ts";
 import { type AlignAction, alignElements } from "./align.ts";
 import { AnimLibrary } from "./anim-library.tsx";
-import { readAutosave, writeAutosave } from "./autosave.ts";
+import { createDraftGuard, readAutosave, writeAutosave } from "./autosave.ts";
 import {
   type BackgroundItem,
   BackgroundLibrary,
@@ -160,8 +162,13 @@ export function App() {
   // the user recovers it from the Escenas tab.
   const [scene, setSceneState] = useState<Scene>(() => startupState().scene);
   const sceneRef = useRef(scene);
-  /** The blank scene shown on start or switch: not autosaved, so it never hides the draft. */
-  const pristineScene = useRef<Scene | undefined>(scene);
+  /** The blank scene shown on start or switch is not autosaved, so it never hides the draft. */
+  const guardRef = useRef<ReturnType<typeof createDraftGuard>>(undefined);
+  if (!guardRef.current) {
+    guardRef.current = createDraftGuard();
+    guardRef.current.markPristine(scene);
+  }
+  const draftGuard = guardRef.current;
   const [selection, setSelection] = useState<string[]>([]);
   const clock = useRef<Clock>({ t: 0, playing: startupState().playing });
   const [playing, setPlaying] = useState<boolean>(startupState().playing);
@@ -182,6 +189,9 @@ export function App() {
   const [activePalette, setActivePalette] = useState<
     ColorPalette | undefined
   >();
+  /** Fonts the active project can use (045/D3); the inspector's picker lists them. */
+  const [fonts, setFonts] = useState<ResolvedFont[]>([]);
+  const fontsRef = useRef(fonts);
   const [isTtsOpen, setIsTtsOpen] = useState(false);
   const [activeVoicePreset, setActiveVoicePreset] =
     useState<Partial<VoicePreset> | null>(null);
@@ -198,10 +208,33 @@ export function App() {
   );
 
   useEffect(() => {
-    if (scene === pristineScene.current) return;
-    pristineScene.current = undefined;
+    if (!draftGuard.shouldSave(scene)) return;
     writeAutosave(activeProjectSlug, scene);
-  }, [scene, activeProjectSlug]);
+  }, [scene, activeProjectSlug, draftGuard]);
+
+  /** Says which families the scene names that no font provides (045/R6). */
+  const reportMissingFonts = useCallback((s: Scene) => {
+    const missing = missingFonts(s, fontsRef.current);
+    if (missing.length > 0) {
+      setStatus(
+        `Fuentes no disponibles (se usa la predeterminada): ${missing.join(", ")}`,
+      );
+    }
+  }, []);
+
+  /** Loads the active project's fonts; also called after a font is added. */
+  const refreshFonts = useCallback(
+    () =>
+      loadFonts(activeProjectSlug).then((loaded) => {
+        fontsRef.current = loaded;
+        setFonts(loaded);
+        reportMissingFonts(sceneRef.current);
+      }),
+    [activeProjectSlug, reportMissingFonts],
+  );
+  useEffect(() => {
+    refreshFonts();
+  }, [refreshFonts]);
 
   const [projectPresetsVersion, setProjectPresetsVersion] = useState(0);
 
@@ -298,6 +331,7 @@ export function App() {
       const open = (next: Scene) => {
         applyScene(next);
         setSelection([]);
+        reportMissingFonts(next);
       };
       if (!namesAnimPreset(s.elements)) {
         open(s);
@@ -318,7 +352,7 @@ export function App() {
           setStatus(`Error: ${error instanceof Error ? error.message : error}`);
         });
     },
-    [applyScene],
+    [applyScene, reportMissingFonts],
   );
 
   /** A blank scene keeping the current mode; not autosaved, so the draft survives (043/D2). */
@@ -327,9 +361,9 @@ export function App() {
       ...startupState().scene,
       ...(sceneRef.current.mode ? { mode: sceneRef.current.mode } : {}),
     };
-    pristineScene.current = blank;
+    draftGuard.markPristine(blank);
     loadScene(blank);
-  }, [loadScene]);
+  }, [loadScene, draftGuard]);
 
   /** Reopens the workspace's autosaved draft (042/D3). */
   const recoverDraft = useCallback(() => {
@@ -678,7 +712,7 @@ export function App() {
                 if (slug && prevSlug && slug !== prevSlug) {
                   // Workspace switched: a blank scene, like on start (042/R3)
                   const targetScene = startupState().scene;
-                  pristineScene.current = targetScene;
+                  draftGuard.markPristine(targetScene);
                   if (canvasDefaults) {
                     targetScene.width = canvasDefaults.width;
                     targetScene.height = canvasDefaults.height;
@@ -691,15 +725,18 @@ export function App() {
                 }
 
                 if (canvasDefaults) {
-                  applyScene({
+                  const sized = {
                     ...sceneRef.current,
                     width: canvasDefaults.width,
                     height: canvasDefaults.height,
                     fps: canvasDefaults.fps,
                     duration: canvasDefaults.duration,
-                  });
+                  };
+                  draftGuard.carry(sceneRef.current, sized);
+                  applyScene(sized);
                 }
               }}
+              onFontsChanged={refreshFonts}
               setStatus={setStatus}
             />
             {!isStatic && (
@@ -973,6 +1010,7 @@ export function App() {
             <ElementInspector
               key={selected.id}
               el={selected}
+              fonts={fonts}
               nameOf={(id) =>
                 scene.elements.find((e) => e.id === id)?.name ?? "?"
               }

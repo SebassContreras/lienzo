@@ -9,6 +9,8 @@ import { elementAdd } from "./element-add.ts";
 import { elementMove } from "./element-move.ts";
 import { elementRemove } from "./element-remove.ts";
 import { elementUpdate } from "./element-update.ts";
+import { fontInstall } from "./font-install.ts";
+import { fontList } from "./font-list.ts";
 import { keyframeRemove } from "./keyframe-remove.ts";
 import { keyframeSet } from "./keyframe-set.ts";
 import { presetGet } from "./preset-get.ts";
@@ -53,6 +55,8 @@ export const TOOLS: readonly Tool[] = [
   keyframeSet,
   keyframeRemove,
   sceneGenerateSpeech,
+  fontList,
+  fontInstall,
 ];
 
 export const registry = createRegistry(TOOLS);

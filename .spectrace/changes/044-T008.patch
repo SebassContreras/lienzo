@@ -1,0 +1,34 @@
+diff --git a/src/service/asset-path.test.ts b/src/service/asset-path.test.ts
+index 20ef828..7ea32ba 100644
+--- a/src/service/asset-path.test.ts
++++ b/src/service/asset-path.test.ts
+@@ -28,6 +28,12 @@ describe("assetSegments", () => {
+   });
+ });
+ 
++describe("assetSegments for a reference relative to the project", () => {
++  it("drops the leading assets/ folder", () => {
++    expect(assetSegments("assets/brand-logo.png")).toEqual(["brand-logo.png"]);
++  });
++});
++
+ describe("projectAssetUrl", () => {
+   it("encodes each segment but keeps the subfolder slashes", () => {
+     expect(projectAssetUrl("acme", "brand/mi logo.png")).toBe(
+diff --git a/src/service/asset-path.ts b/src/service/asset-path.ts
+index c82d989..a0e0dcb 100644
+--- a/src/service/asset-path.ts
++++ b/src/service/asset-path.ts
+@@ -24,8 +24,10 @@ export function safeAssetPath(segments: readonly string[]): string | undefined {
+ /** The part of an asset reference after `/assets/` (or the whole reference), split on `/`. */
+ export function assetSegments(ref: string): string[] {
+   const normalized = ref.trim().replace(/\\/g, "/").split(/[?#]/)[0] ?? "";
+-  const at = normalized.indexOf("/assets/");
+-  const tail = at >= 0 ? normalized.slice(at + "/assets/".length) : normalized;
++  const match = /(?:^|\/)assets\//.exec(normalized);
++  const tail = match
++    ? normalized.slice(match.index + match[0].length)
++    : normalized;
+   return tail.split("/");
+ }
+ 

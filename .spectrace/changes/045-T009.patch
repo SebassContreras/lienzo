@@ -1,0 +1,86 @@
+diff --git a/src/cli/cli.test.ts b/src/cli/cli.test.ts
+index 214223d..4202e06 100644
+--- a/src/cli/cli.test.ts
++++ b/src/cli/cli.test.ts
+@@ -1,5 +1,5 @@
+ import { execFile } from "node:child_process";
+-import { cp, mkdir, mkdtemp } from "node:fs/promises";
++import { cp, mkdir, mkdtemp, readFile } from "node:fs/promises";
+ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+ import { promisify } from "node:util";
+@@ -159,6 +159,17 @@ describe("lienzo CLI", () => {
+     await ok(["scene_build", "--json", '{"compact":{"elements":[]}}']);
+     await ok(["scene_export", "--scene", "demo", "--format", "gif"]);
+     await ok(["element_remove", "--scene", "demo", "--id", id]);
++    await ok(["font_list"]);
++    // Google Fonts is the network boundary: a recorded css2 answer and fake files.
++    const css = await readFile(
++      "src/test/fixtures/google-css2-roboto.css",
++      "utf8",
++    );
++    ctx.fetch = (async (url: string) =>
++      new Response(
++        url.startsWith("https://fonts.googleapis.com/") ? css : "woff2",
++      )) as typeof fetch;
++    await ok(["font_install", "--family", "Roboto"]);
+     expect([...called].sort()).toEqual(
+       registry.tools.map((t) => t.name).sort(),
+     );
+diff --git a/src/test/fixtures/google-css2-roboto.css b/src/test/fixtures/google-css2-roboto.css
+index f37d1d7..8cc09a0 100644
+--- a/src/test/fixtures/google-css2-roboto.css
++++ b/src/test/fixtures/google-css2-roboto.css
+@@ -1,40 +1,44 @@
+ /* cyrillic */
+ @font-face {
+-  font-family: 'Roboto';
++  font-family: "Roboto";
+   font-style: normal;
+   font-weight: 400;
+   font-stretch: 100%;
+   font-display: swap;
+-  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3iUBGEe.woff2) format('woff2');
++  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3iUBGEe.woff2)
++    format("woff2");
+   unicode-range: U+0000-00FF;
+ }
+ /* latin */
+ @font-face {
+-  font-family: 'Roboto';
++  font-family: "Roboto";
+   font-style: normal;
+   font-weight: 400;
+   font-stretch: 100%;
+   font-display: swap;
+-  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2) format('woff2');
++  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2)
++    format("woff2");
+   unicode-range: U+0000-00FF;
+ }
+ /* cyrillic */
+ @font-face {
+-  font-family: 'Roboto';
++  font-family: "Roboto";
+   font-style: normal;
+   font-weight: 700;
+   font-stretch: 100%;
+   font-display: swap;
+-  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3iUBGEe.woff2) format('woff2');
++  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3iUBGEe.woff2)
++    format("woff2");
+   unicode-range: U+0000-00FF;
+ }
+ /* latin */
+ @font-face {
+-  font-family: 'Roboto';
++  font-family: "Roboto";
+   font-style: normal;
+   font-weight: 700;
+   font-stretch: 100%;
+   font-display: swap;
+-  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2) format('woff2');
++  src: url(https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2)
++    format("woff2");
+   unicode-range: U+0000-00FF;
+ }

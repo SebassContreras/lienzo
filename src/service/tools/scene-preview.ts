@@ -18,12 +18,13 @@ export const scenePreview = defineTool({
   output: ImageResult,
   async run({ scene: name, project, t = 0, scale = 0.5 }, ctx) {
     const { resolveProjectScope } = await import("../project-scope.ts");
-    const { effectiveCtx } = await resolveProjectScope(ctx, project);
+    const { slug, effectiveCtx } = await resolveProjectScope(ctx, project);
 
     const { rendered } = await resolveAndRenderScene(effectiveCtx, name, {
       format: "png",
       scale,
       time: t,
+      project: slug,
     });
     return {
       image: {

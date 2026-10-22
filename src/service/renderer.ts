@@ -20,7 +20,12 @@ import { fail } from "./registry.ts";
 export type Rendered = { bytes: Buffer; type: string };
 
 export type Renderer = {
-  render(scene: Scene, options: ExportOptions): Promise<Rendered>;
+  /** `project` picks the user fonts the page loads (045/D3). */
+  render(
+    scene: Scene,
+    options: ExportOptions,
+    project?: string,
+  ): Promise<Rendered>;
   /** Closes the browser and the dev server, if they started; safe to call twice. */
   dispose(): Promise<void>;
 };
@@ -106,14 +111,14 @@ export function createRenderer(appRoot: string): Renderer {
     return session;
   };
   return {
-    async render(scene, options) {
+    async render(scene, options, project) {
       const { page } = await open();
       const file: RenderedFile = await page.evaluate(
-        ([s, o]) => {
+        ([s, o, p]) => {
           if (!window.lienzoExport) throw new Error("render route not loaded");
-          return window.lienzoExport(s, o);
+          return window.lienzoExport(s, o, p);
         },
-        [scene, options] as const,
+        [scene, options, project] as const,
       );
       return { bytes: Buffer.from(file.base64, "base64"), type: file.type };
     },

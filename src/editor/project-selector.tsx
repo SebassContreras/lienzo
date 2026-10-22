@@ -11,12 +11,15 @@ export type ProjectSelectorProps = {
     palette?: ColorPalette,
     canvasDefaults?: ProjectCanvasDefaults,
   ) => void;
+  /** After a font is added from the brand manager (045/D5). */
+  onFontsChanged?: () => void;
   setStatus: (status: string) => void;
 };
 
 export function ProjectSelector({
   activeSlug,
   onSelectProject,
+  onFontsChanged,
   setStatus,
 }: ProjectSelectorProps) {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -205,6 +208,7 @@ export function ProjectSelector({
         onClose={() => setDialogOpen(false)}
         onProjectSaved={handleProjectSaved}
         onProjectDeleted={handleProjectDeleted}
+        onFontsChanged={onFontsChanged}
         setStatus={setStatus}
       />
     </>

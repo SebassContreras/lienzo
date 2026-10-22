@@ -1,0 +1,190 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 0e98da2..c5d8693 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -54,7 +54,7 @@ import {
+ } from "../presets/store.ts";
+ import { type AlignAction, alignElements } from "./align.ts";
+ import { AnimLibrary } from "./anim-library.tsx";
+-import { readAutosave, writeAutosave } from "./autosave.ts";
++import { createDraftGuard, readAutosave, writeAutosave } from "./autosave.ts";
+ import {
+   type BackgroundItem,
+   BackgroundLibrary,
+@@ -162,8 +162,13 @@ export function App() {
+   // the user recovers it from the Escenas tab.
+   const [scene, setSceneState] = useState<Scene>(() => startupState().scene);
+   const sceneRef = useRef(scene);
+-  /** The blank scene shown on start or switch: not autosaved, so it never hides the draft. */
+-  const pristineScene = useRef<Scene | undefined>(scene);
++  /** The blank scene shown on start or switch is not autosaved, so it never hides the draft. */
++  const guardRef = useRef<ReturnType<typeof createDraftGuard>>(undefined);
++  if (!guardRef.current) {
++    guardRef.current = createDraftGuard();
++    guardRef.current.markPristine(scene);
++  }
++  const draftGuard = guardRef.current;
+   const [selection, setSelection] = useState<string[]>([]);
+   const clock = useRef<Clock>({ t: 0, playing: startupState().playing });
+   const [playing, setPlaying] = useState<boolean>(startupState().playing);
+@@ -203,10 +208,9 @@ export function App() {
+   );
+ 
+   useEffect(() => {
+-    if (scene === pristineScene.current) return;
+-    pristineScene.current = undefined;
++    if (!draftGuard.shouldSave(scene)) return;
+     writeAutosave(activeProjectSlug, scene);
+-  }, [scene, activeProjectSlug]);
++  }, [scene, activeProjectSlug, draftGuard]);
+ 
+   /** Says which families the scene names that no font provides (045/R6). */
+   const reportMissingFonts = useCallback((s: Scene) => {
+@@ -357,9 +361,9 @@ export function App() {
+       ...startupState().scene,
+       ...(sceneRef.current.mode ? { mode: sceneRef.current.mode } : {}),
+     };
+-    pristineScene.current = blank;
++    draftGuard.markPristine(blank);
+     loadScene(blank);
+-  }, [loadScene]);
++  }, [loadScene, draftGuard]);
+ 
+   /** Reopens the workspace's autosaved draft (042/D3). */
+   const recoverDraft = useCallback(() => {
+@@ -708,7 +712,7 @@ export function App() {
+                 if (slug && prevSlug && slug !== prevSlug) {
+                   // Workspace switched: a blank scene, like on start (042/R3)
+                   const targetScene = startupState().scene;
+-                  pristineScene.current = targetScene;
++                  draftGuard.markPristine(targetScene);
+                   if (canvasDefaults) {
+                     targetScene.width = canvasDefaults.width;
+                     targetScene.height = canvasDefaults.height;
+@@ -721,13 +725,15 @@ export function App() {
+                 }
+ 
+                 if (canvasDefaults) {
+-                  applyScene({
++                  const sized = {
+                     ...sceneRef.current,
+                     width: canvasDefaults.width,
+                     height: canvasDefaults.height,
+                     fps: canvasDefaults.fps,
+                     duration: canvasDefaults.duration,
+-                  });
++                  };
++                  draftGuard.carry(sceneRef.current, sized);
++                  applyScene(sized);
+                 }
+               }}
+               onFontsChanged={refreshFonts}
+diff --git a/src/editor/autosave.ts b/src/editor/autosave.ts
+index cb5c51c..9736750 100644
+--- a/src/editor/autosave.ts
++++ b/src/editor/autosave.ts
+@@ -1,4 +1,5 @@
+ import type { Scene } from "../model/model.ts";
++import { parseScene } from "../model/schema.ts";
+ 
+ /** The part of `localStorage` autosave uses, so tests pass a plain object. */
+ export type DraftStorage = Pick<Storage, "getItem" | "setItem">;
+@@ -15,7 +16,10 @@ export function readAutosave(
+ ): Scene | undefined {
+   try {
+     const raw = storage.getItem(autosaveKey(slug));
+-    return raw ? (JSON.parse(raw) as Scene) : undefined;
++    if (!raw) return undefined;
++    // A draft from an older version may no longer be a valid scene: never open it broken.
++    const parsed = parseScene(JSON.parse(raw));
++    return parsed.ok ? parsed.value : undefined;
+   } catch {
+     return undefined; // storage blocked or a broken draft: nothing to recover
+   }
+@@ -32,3 +36,27 @@ export function writeAutosave(
+     // storage unavailable: autosave is a convenience only
+   }
+ }
++
++/**
++ * Keeps the blank scene the editor shows by itself (on start, on a project switch, on
++ * "En blanco") from being autosaved over the draft (042/D3), until the user edits it.
++ */
++export function createDraftGuard() {
++  let pristine: Scene | undefined;
++  return {
++    /** `scene` was shown by the editor, not made by the user. */
++    markPristine(scene: Scene) {
++      pristine = scene;
++    },
++    /** `next` replaces `prev` without a user edit (the project's canvas defaults). */
++    carry(prev: Scene, next: Scene) {
++      if (prev === pristine) pristine = next;
++    },
++    /** Whether `scene` is the user's work and belongs in the draft. */
++    shouldSave(scene: Scene): boolean {
++      if (scene === pristine) return false;
++      pristine = undefined;
++      return true;
++    },
++  };
++}
+diff --git a/src/editor/startup.test.ts b/src/editor/startup.test.ts
+index c63f308..9f513b0 100644
+--- a/src/editor/startup.test.ts
++++ b/src/editor/startup.test.ts
+@@ -1,6 +1,6 @@
+ import { describe, expect, it } from "vitest";
+ import { defaultScene } from "../model/model.ts";
+-import { readAutosave, writeAutosave } from "./autosave.ts";
++import { createDraftGuard, readAutosave, writeAutosave } from "./autosave.ts";
+ import { startupState } from "./startup.ts";
+ 
+ function memoryStorage() {
+@@ -35,6 +35,13 @@ describe("autosave drafts", () => {
+     expect(readAutosave("acme", storage)).toEqual(draft);
+   });
+ 
++  it("does not open a stored draft that is no longer a valid scene", () => {
++    const storage = memoryStorage();
++    storage.setItem("lienzo-scene:acme", JSON.stringify({ width: "x" }));
++
++    expect(readAutosave("acme", storage)).toBeUndefined();
++  });
++
+   it("does not show one project's draft in another project", () => {
+     const storage = memoryStorage();
+ 
+@@ -43,3 +50,32 @@ describe("autosave drafts", () => {
+     expect(readAutosave("otro", storage)).toBeUndefined();
+   });
+ });
++
++describe("createDraftGuard", () => {
++  it("does not save the blank scene the editor shows on start", () => {
++    const guard = createDraftGuard();
++    const blank = defaultScene();
++    guard.markPristine(blank);
++
++    expect(guard.shouldSave(blank)).toBe(false);
++  });
++
++  it("does not save the start scene resized to the project's canvas defaults", () => {
++    const guard = createDraftGuard();
++    const blank = defaultScene();
++    const resized = { ...blank, width: 1080, height: 1920 };
++    guard.markPristine(blank);
++
++    guard.carry(blank, resized);
++
++    expect(guard.shouldSave(resized)).toBe(false);
++  });
++
++  it("saves the scene once the user edits it", () => {
++    const guard = createDraftGuard();
++    const blank = defaultScene();
++    guard.markPristine(blank);
++
++    expect(guard.shouldSave({ ...blank, duration: 6 })).toBe(true);
++  });
++});

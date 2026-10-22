@@ -24,8 +24,10 @@ export function safeAssetPath(segments: readonly string[]): string | undefined {
 /** The part of an asset reference after `/assets/` (or the whole reference), split on `/`. */
 export function assetSegments(ref: string): string[] {
   const normalized = ref.trim().replace(/\\/g, "/").split(/[?#]/)[0] ?? "";
-  const at = normalized.indexOf("/assets/");
-  const tail = at >= 0 ? normalized.slice(at + "/assets/".length) : normalized;
+  const match = /(?:^|\/)assets\//.exec(normalized);
+  const tail = match
+    ? normalized.slice(match.index + match[0].length)
+    : normalized;
   return tail.split("/");
 }
 

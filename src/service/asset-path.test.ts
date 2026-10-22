@@ -28,6 +28,12 @@ describe("assetSegments", () => {
   });
 });
 
+describe("assetSegments for a reference relative to the project", () => {
+  it("drops the leading assets/ folder", () => {
+    expect(assetSegments("assets/brand-logo.png")).toEqual(["brand-logo.png"]);
+  });
+});
+
 describe("projectAssetUrl", () => {
   it("encodes each segment but keeps the subfolder slashes", () => {
     expect(projectAssetUrl("acme", "brand/mi logo.png")).toBe(

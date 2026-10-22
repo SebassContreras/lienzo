@@ -5,6 +5,8 @@ import { join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { handleStore } from "./src/presets/json-store.ts";
+import { handleFontApi } from "./src/service/font-middleware.ts";
+import { createFontStore } from "./src/service/font-store.ts";
 import { handleProjectApi } from "./src/service/project-middleware.ts";
 import { createProjectStore } from "./src/service/project-store.ts";
 
@@ -161,7 +163,30 @@ function projectStorePlugin(): Plugin {
   };
 }
 
+/** Serves user fonts under `/api/fonts` (045/D2). */
+function fontStorePlugin(): Plugin {
+  const store = createFontStore(import.meta.dirname);
+  return {
+    name: "font-store",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url?.startsWith("/api/fonts")) return next();
+        handleFontApi(store, req, res).catch((error: unknown) => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: String(error) }));
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
   envPrefix: ["VITE_", "OPENROUTER_"],
-  plugins: [react(), jsonStore(), assetStore(), projectStorePlugin()],
+  plugins: [
+    react(),
+    jsonStore(),
+    assetStore(),
+    projectStorePlugin(),
+    fontStorePlugin(),
+  ],
 });

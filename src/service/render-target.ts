@@ -8,6 +8,8 @@ const GIF_MAX_FPS = 25;
 
 export type ResolveAndRenderOptions = Omit<ExportOptions, "fps"> & {
   fps?: number;
+  /** The project whose fonts the render uses (045/D3). */
+  project?: string;
 };
 
 export interface ResolvedRenderResult {
@@ -33,9 +35,11 @@ export async function resolveAndRenderScene(
     options.fps ??
     (options.format === "gif" ? Math.min(scene.fps, GIF_MAX_FPS) : scene.fps);
 
-  const rendered = await ctx.renderer.render(scene, {
-    ...options,
-    fps: effectiveFps,
-  });
+  const { project, ...exportOptions } = options;
+  const rendered = await ctx.renderer.render(
+    scene,
+    { ...exportOptions, fps: effectiveFps },
+    project,
+  );
   return { scene, rendered };
 }

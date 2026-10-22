@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { ResolvedFont } from "../model/font-files.ts";
 import {
   type Element,
   isStaticMode,
@@ -39,6 +40,7 @@ export function ElementInspector({
   canvas,
   time,
   staticMode,
+  fonts,
 }: {
   el: Element;
   onChange: (el: Element) => void;
@@ -55,6 +57,8 @@ export function ElementInspector({
   time?: number;
   /** When true, hides animation sections and keyframe controls (033). */
   staticMode?: boolean;
+  /** The active project's fonts, for the font picker (045/D4). */
+  fonts?: readonly ResolvedFont[];
 }) {
   const [presetName, setPresetName] = useState("");
   const change = <T extends Element>(fn: (draft: T) => void) => {
@@ -100,7 +104,15 @@ export function ElementInspector({
       <FieldEditor
         el={el}
         change={change}
-        ctx={{ nameOf, canvas, onUngroup, onEditParticle, time, staticMode }}
+        ctx={{
+          nameOf,
+          canvas,
+          onUngroup,
+          onEditParticle,
+          time,
+          staticMode,
+          fonts,
+        }}
       />
       {onSavePreset && (
         <Section title="Guardar como preset">

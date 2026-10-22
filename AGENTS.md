@@ -30,7 +30,10 @@ What exists today:
 - The default workspace template is `projects/mi-proyecto/`, which is the only project tracked in Git
 - Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
 - Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10)
-- Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12)
+- Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
+  (global) and `projects/<slug>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
+  loaded with `FontFace` by `src/engine/fonts.ts` in the editor and the `?render` route;
+  Google Fonts only through `src/service/google-fonts.ts` (`font_install`) (A12@2, spec 045)
 - pnpm only (A13); Biome + Vitest (A14); CI runs lint, typecheck, test (A15)
 - UI text in Spanish; code, comments and docs in English (A16)
 - Conventional Commits (A17); MIT-compatible deps only (A18)

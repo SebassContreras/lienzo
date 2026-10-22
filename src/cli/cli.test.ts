@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { cp, mkdir, mkdtemp } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -159,6 +159,17 @@ describe("lienzo CLI", () => {
     await ok(["scene_build", "--json", '{"compact":{"elements":[]}}']);
     await ok(["scene_export", "--scene", "demo", "--format", "gif"]);
     await ok(["element_remove", "--scene", "demo", "--id", id]);
+    await ok(["font_list"]);
+    // Google Fonts is the network boundary: a recorded css2 answer and fake files.
+    const css = await readFile(
+      "src/test/fixtures/google-css2-roboto.css",
+      "utf8",
+    );
+    ctx.fetch = (async (url: string) =>
+      new Response(
+        url.startsWith("https://fonts.googleapis.com/") ? css : "woff2",
+      )) as typeof fetch;
+    await ok(["font_install", "--family", "Roboto"]);
     expect([...called].sort()).toEqual(
       registry.tools.map((t) => t.name).sort(),
     );

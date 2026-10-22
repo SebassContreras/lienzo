@@ -14,12 +14,12 @@ const WEIGHTS = [300, 400, 500, 600, 700, 800, 900].map(
   (w) => [w, String(w)] as const,
 );
 
-/** Any font name opens; the list offers the bundled ones. */
+/** Any font name opens; the inspector's picker lists the project's fonts (045/D4). */
 export function font(value: string) {
   return select(
     FONTS.map((f) => [f as string, f] as const),
     value,
-    { label: "Fuente", schema: z.string() },
+    { label: "Fuente", schema: z.string(), widget: "font" },
   );
 }
 

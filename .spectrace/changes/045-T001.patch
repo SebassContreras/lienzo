@@ -1,0 +1,61 @@
+diff --git a/.gitignore b/.gitignore
+index d9356a1..31f6968 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -22,3 +22,8 @@ projects/*
+ !projects/.gitkeep
+ !projects/mi-proyecto/
+ !projects/mi-proyecto/**
++
++# User fonts (045): global fonts/ and every project's fonts/, never committed
++fonts/*
++!fonts/.gitkeep
++projects/mi-proyecto/fonts/
+diff --git a/fonts/.gitkeep b/fonts/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/src/model/font-files.ts b/src/model/font-files.ts
+new file mode 100644
+index 0000000..821fcf0
+--- /dev/null
++++ b/src/model/font-files.ts
+@@ -0,0 +1,39 @@
++/**
++ * User font files (045/D1): the family and weight live in the file name,
++ * `Family-Weight.ext` split on the last `-` (`Open Sans-700.woff2`), weight 400 when the
++ * name has no numeric suffix. No manifest to keep in sync.
++ */
++export const FONT_EXTENSIONS = ["ttf", "otf", "woff", "woff2"] as const;
++export type FontExtension = (typeof FONT_EXTENSIONS)[number];
++
++export type FontFile = { family: string; weight: number; file: string };
++
++export function isFontExtension(ext: string): ext is FontExtension {
++  return (FONT_EXTENSIONS as readonly string[]).includes(ext.toLowerCase());
++}
++
++export function parseFontFile(file: string): FontFile | undefined {
++  const dot = file.lastIndexOf(".");
++  if (dot <= 0 || !isFontExtension(file.slice(dot + 1))) return undefined;
++  const stem = file.slice(0, dot);
++  const dash = stem.lastIndexOf("-");
++  const suffix = dash > 0 ? stem.slice(dash + 1) : "";
++  if (/^\d{3}$/.test(suffix)) {
++    return { family: stem.slice(0, dash).trim(), weight: Number(suffix), file };
++  }
++  return { family: stem.trim(), weight: 400, file };
++}
++
++/** The file name a font is stored under; the inverse of `parseFontFile`. */
++export function fontFileName(
++  family: string,
++  weight: number,
++  ext: FontExtension,
++): string {
++  return `${family.trim()}-${weight}.${ext}`;
++}
++
++/** Family names a user may give: letters, digits, spaces, `_` and `-`. */
++export function isFontFamilyName(family: string): boolean {
++  return /^[\p{L}\p{N}][\p{L}\p{N} _-]{0,63}$/u.test(family.trim());
++}

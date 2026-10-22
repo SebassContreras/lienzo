@@ -676,7 +676,7 @@ code {
 .scene-card .scene-open {
   padding: 4px;
 }
-.scene-card canvas {
+.scene-thumb {
   display: block;
   border-radius: 4px;
 }
@@ -882,15 +882,16 @@ code {
   flex: 1 1 0;
   min-width: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 2px;
+  gap: 2px;
+  padding: 5px 1px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -1058,4 +1059,55 @@ code {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* Fuentes tab of the brand manager (045) */
+.brand-fonts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.brand-fonts-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+.brand-fonts-scope {
+  display: flex;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.brand-fonts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.brand-fonts-row input:not([type]) {
+  flex: 1;
+  min-width: 120px;
+}
+.brand-fonts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.brand-fonts-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+.brand-fonts-list small {
+  color: var(--muted);
+}
+.brand-fonts-weight {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
 }

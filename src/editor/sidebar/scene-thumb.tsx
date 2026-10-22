@@ -48,6 +48,7 @@ export function SceneThumb({ scene }: { scene: Scene }) {
   return (
     <canvas
       ref={ref}
+      className="scene-thumb"
       width={THUMB_W * dpr}
       height={THUMB_H * dpr}
       style={{ width: THUMB_W, height: THUMB_H }}
