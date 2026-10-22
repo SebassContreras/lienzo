@@ -94,7 +94,6 @@ src/service/     tool registry, ctx, Node store, headless renderer (010); tools/
                  per tool (007)
 src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008)
 src/types/       type declarations for packages that ship none
-src/demo.ts      the "how MCP works" demo scene
 presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
 presets/animations/  animation presets (JSON)
 projects/        project workspaces (e.g. projects/mi-proyecto/ containing scenes/, assets/, presets/, exports/)

@@ -1,0 +1,30 @@
+diff --git a/src/service/project-boundary.test.ts b/src/service/project-boundary.test.ts
+index 4b5b4c0..9391f80 100644
+--- a/src/service/project-boundary.test.ts
++++ b/src/service/project-boundary.test.ts
+@@ -71,4 +71,25 @@ describe("040 project-boundary and scope resolution", () => {
+ 
+     await rm(tmp, { recursive: true, force: true });
+   });
++
++  it("accepts an asset reference that points into a subfolder of assets/", async () => {
++    const tmp = join(process.cwd(), "tmp-test-nested-asset");
++    await rm(tmp, { recursive: true, force: true });
++    await mkdir(join(tmp, "projects", "proj-a", "assets", "brand"), {
++      recursive: true,
++    });
++    await writeFile(
++      join(tmp, "projects", "proj-a", "assets", "brand", "profile.jpg"),
++      "image-data",
++    );
++    const ctx = createCtx(tmp, fakeRenderer());
++
++    const check = await ctx.projects.checkAsset(
++      "proj-a",
++      "/api/projects/proj-a/assets/brand/profile.jpg",
++    );
++
++    expect(check.ok).toBe(true);
++    await rm(tmp, { recursive: true, force: true });
++  });
+ });

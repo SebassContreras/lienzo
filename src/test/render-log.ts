@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
-import { demoScene } from "../demo.ts";
 import type { Ctx } from "../engine/paint.ts";
 import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
+import { demoScene } from "./fixtures/sample-scene.ts";
 import { RecordingCtx } from "./recording-ctx.ts";
 
 /** Frames compared for each scene: the start, mid-entry, mid-loop and near the end. */

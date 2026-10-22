@@ -1,6 +1,5 @@
 import { migrateAnim } from "../components/fields/index.ts";
 import { KINDS as REGISTERED } from "../components/index.ts";
-import { demoScene } from "../demo.ts";
 import {
   type Anim,
   type AnimKind,
@@ -13,6 +12,7 @@ import {
 import type { PresetRecipe } from "../model/preset.ts";
 import { BUILT_IN_RECIPES } from "../presets/recipes.ts";
 import { resolveElement } from "../presets/resolve.ts";
+import { demoScene } from "./fixtures/sample-scene.ts";
 
 const KINDS: ElementKind[] = [
   "rect",

@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -122,6 +122,51 @@ describe("project-middleware asset endpoints", () => {
     expect(getStatus()).toBe(200);
     expect(getHeaders()["content-type"]).toBe("image/png");
     expect(getBuffer()).toEqual(pngData);
+  });
+
+  it("serves an asset stored in a subfolder of assets/", async () => {
+    const jpg = Buffer.from("jpeg-bytes");
+    await mkdir(join(store.resolvePath("acme", "assets"), "brand"), {
+      recursive: true,
+    });
+    await writeFile(
+      join(store.resolvePath("acme", "assets"), "brand", "profile.jpg"),
+      jpg,
+    );
+
+    const { res, getStatus, getHeaders, getBuffer } = createMockRes();
+    await handleProjectApi(
+      store,
+      createMockReq({ url: "/api/projects/acme/assets/brand/profile.jpg" }),
+      res,
+    );
+
+    expect(getStatus()).toBe(200);
+    expect(getHeaders()["content-type"]).toBe("image/jpeg");
+    expect(getBuffer()).toEqual(jpg);
+  });
+
+  it("refuses an asset path that climbs out of assets/", async () => {
+    const { res, getStatus } = createMockRes();
+
+    await handleProjectApi(
+      store,
+      createMockReq({ url: "/api/projects/acme/assets/..%2Fproject.json" }),
+      res,
+    );
+
+    expect(getStatus()).toBe(404);
+  });
+
+  it("lists assets in subfolders by their path relative to assets/", async () => {
+    const assets = store.resolvePath("acme", "assets");
+    await mkdir(join(assets, "broll", "deep"), { recursive: true });
+    await writeFile(join(assets, "logo.png"), "x");
+    await writeFile(join(assets, "broll", "deep", "clip.jpg"), "x");
+
+    const details = await store.get("acme");
+
+    expect(details?.assets).toEqual(["broll/deep/clip.jpg", "logo.png"]);
   });
 
   it("handles project-scoped presets via /api/projects/:slug/presets", async () => {

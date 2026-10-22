@@ -1,0 +1,127 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 45812fe..3b00ece 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -55,6 +55,7 @@ import {
+ } from "../presets/store.ts";
+ import { type AlignAction, alignElements } from "./align.ts";
+ import { AnimLibrary } from "./anim-library.tsx";
++import { writeAutosave } from "./autosave.ts";
+ import {
+   type BackgroundItem,
+   BackgroundLibrary,
+@@ -136,20 +137,6 @@ function duplicateElements(scene: Scene, ids: string[]): Element[] {
+   );
+ }
+ 
+-function autosaveKey(slug = "mi-proyecto"): string {
+-  return `lienzo-scene:${slug}`;
+-}
+-
+-function loadInitialScene(slug = "mi-proyecto"): Scene {
+-  try {
+-    const raw = localStorage.getItem(autosaveKey(slug));
+-    if (raw) return JSON.parse(raw) as Scene;
+-  } catch {
+-    // no stored scene or storage blocked: start from the demo
+-  }
+-  return demoScene();
+-}
+-
+ /** Every kind its descriptor offers in the library, in registry order. */
+ const BASIC_KINDS = COMPONENTS.filter((d) => d.basic);
+ const BASICS: LibraryItem[] = BASIC_KINDS.map((d) => ({
+@@ -170,15 +157,19 @@ const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(
+ );
+ 
+ export function App() {
+-  const [scene, setSceneState] = useState<Scene>(loadInitialScene);
++  // Every start is blank and paused (042/D1, D2); the last draft stays in storage until
++  // the user recovers it from the Escenas tab.
++  const [scene, setSceneState] = useState<Scene>(defaultScene);
+   const sceneRef = useRef(scene);
++  /** The blank scene shown on start or switch: not autosaved, so it never hides the draft. */
++  const pristineScene = useRef<Scene | undefined>(scene);
+   const [selection, setSelection] = useState<string[]>([]);
+-  const clock = useRef<Clock>({ t: 0, playing: true });
+-  const [playing, setPlaying] = useState(true);
++  const clock = useRef<Clock>({ t: 0, playing: false });
++  const [playing, setPlaying] = useState(false);
+   /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
+   const [playhead, setPlayhead] = useState(0);
+   const [status, setStatus] = useState("");
+-  const [sceneName, setSceneName] = useState("mi-publicacion");
++  const [sceneName, setSceneName] = useState("Mi proyecto");
+   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
+   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
+   const [backgroundFocus, setBackgroundFocus] = useState(0);
+@@ -208,14 +199,9 @@ export function App() {
+   );
+ 
+   useEffect(() => {
+-    try {
+-      localStorage.setItem(
+-        autosaveKey(activeProjectSlug),
+-        JSON.stringify(scene),
+-      );
+-    } catch {
+-      // storage unavailable: autosave is a convenience only
+-    }
++    if (scene === pristineScene.current) return;
++    pristineScene.current = undefined;
++    writeAutosave(activeProjectSlug, scene);
+   }, [scene, activeProjectSlug]);
+ 
+   const [projectPresetsVersion, setProjectPresetsVersion] = useState(0);
+@@ -699,8 +685,9 @@ export function App() {
+                 setActivePalette(palette);
+ 
+                 if (slug && prevSlug && slug !== prevSlug) {
+-                  // Workspace switched: load scene for target workspace
+-                  const targetScene = loadInitialScene(slug);
++                  // Workspace switched: a blank scene, like on start (042/R3)
++                  const targetScene = defaultScene();
++                  pristineScene.current = targetScene;
+                   if (canvasDefaults) {
+                     targetScene.width = canvasDefaults.width;
+                     targetScene.height = canvasDefaults.height;
+diff --git a/src/editor/autosave.ts b/src/editor/autosave.ts
+new file mode 100644
+index 0000000..cb5c51c
+--- /dev/null
++++ b/src/editor/autosave.ts
+@@ -0,0 +1,34 @@
++import type { Scene } from "../model/model.ts";
++
++/** The part of `localStorage` autosave uses, so tests pass a plain object. */
++export type DraftStorage = Pick<Storage, "getItem" | "setItem">;
++
++/** One autosaved draft per project workspace (041/D2). */
++export function autosaveKey(slug = "mi-proyecto"): string {
++  return `lienzo-scene:${slug}`;
++}
++
++/** The workspace's last autosaved scene, read only when the user asks for it (042/D3). */
++export function readAutosave(
++  slug: string | undefined,
++  storage: DraftStorage = localStorage,
++): Scene | undefined {
++  try {
++    const raw = storage.getItem(autosaveKey(slug));
++    return raw ? (JSON.parse(raw) as Scene) : undefined;
++  } catch {
++    return undefined; // storage blocked or a broken draft: nothing to recover
++  }
++}
++
++export function writeAutosave(
++  slug: string | undefined,
++  scene: Scene,
++  storage: DraftStorage = localStorage,
++): void {
++  try {
++    storage.setItem(autosaveKey(slug), JSON.stringify(scene));
++  } catch {
++    // storage unavailable: autosave is a convenience only
++  }
++}

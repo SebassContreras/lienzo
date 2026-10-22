@@ -1,0 +1,72 @@
+diff --git a/src/service/asset-path.ts b/src/service/asset-path.ts
+new file mode 100644
+index 0000000..67f6d31
+--- /dev/null
++++ b/src/service/asset-path.ts
+@@ -0,0 +1,30 @@
++/**
++ * The one check for asset paths inside a project's `assets/` (044/D2): every segment is a
++ * plain name (letters, digits, `_`, `-`, `.`, not starting with a dot), so `..`, empty and
++ * absolute segments never pass. Returns the POSIX path relative to `assets/`, or undefined.
++ */
++const SEGMENT = /^[\w][\w.-]*$/;
++
++export function safeAssetPath(segments: readonly string[]): string | undefined {
++  if (segments.length === 0) return undefined;
++  const decoded: string[] = [];
++  for (const segment of segments) {
++    let name: string;
++    try {
++      name = decodeURIComponent(segment);
++    } catch {
++      return undefined;
++    }
++    if (!SEGMENT.test(name)) return undefined;
++    decoded.push(name);
++  }
++  return decoded.join("/");
++}
++
++/** The part of an asset reference after `/assets/` (or the whole reference), split on `/`. */
++export function assetSegments(ref: string): string[] {
++  const normalized = ref.trim().replace(/\\/g, "/").split(/[?#]/)[0] ?? "";
++  const at = normalized.lastIndexOf("/assets/");
++  const tail = at >= 0 ? normalized.slice(at + "/assets/".length) : normalized;
++  return tail.split("/");
++}
+diff --git a/src/service/project-middleware.ts b/src/service/project-middleware.ts
+index 0bb707b..7e6db1e 100644
+--- a/src/service/project-middleware.ts
++++ b/src/service/project-middleware.ts
+@@ -7,6 +7,7 @@ import {
+   MAX_ASSET_BYTES,
+   normalizeExtension,
+ } from "./asset-helpers.ts";
++import { safeAssetPath } from "./asset-path.ts";
+ import type { ProjectStore } from "./project-store.ts";
+ 
+ export type ProjectApiReply = { status: number; body: unknown };
+@@ -172,17 +173,17 @@ export async function handleProjectApi(
+         return;
+       }
+ 
+-      // GET /api/projects/<slug>/assets/<filename> -> serve project asset
+-      if (segments.length === 3 && method === "GET") {
+-        const filename = segments[2];
+-        const ext = normalizeExtension(filename.split(".").pop() ?? "");
+-        if (!/^[\w-]+\.\w+$/.test(filename) || !ASSET_TYPES[ext]) {
++      // GET /api/projects/<slug>/assets/<path...> -> serve project asset, subfolders too (044/D2)
++      if (segments.length >= 3 && method === "GET") {
++        const assetPath = safeAssetPath(segments.slice(2));
++        const ext = normalizeExtension(assetPath?.split(".").pop() ?? "");
++        if (!assetPath || !ASSET_TYPES[ext]) {
+           res.statusCode = 404;
+           res.end("Not Found");
+           return;
+         }
+ 
+-        const filePath = join(store.resolvePath(slug, "assets"), filename);
++        const filePath = join(store.resolvePath(slug, "assets"), assetPath);
+         try {
+           const data = await readFile(filePath);
+           res.setHeader("content-type", ASSET_TYPES[ext]);

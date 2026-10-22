@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { demoScene } from "../demo.ts";
 import { recipeFromBackground, recipeFromElement } from "../presets/diff.ts";
 import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+import { demoScene } from "../test/fixtures/sample-scene.ts";
 import {
   defaultBackground,
   defaultGroup,

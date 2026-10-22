@@ -7,6 +7,7 @@ import {
   MAX_ASSET_BYTES,
   normalizeExtension,
 } from "./asset-helpers.ts";
+import { safeAssetPath } from "./asset-path.ts";
 import type { ProjectStore } from "./project-store.ts";
 
 export type ProjectApiReply = { status: number; body: unknown };
@@ -172,17 +173,17 @@ export async function handleProjectApi(
         return;
       }
 
-      // GET /api/projects/<slug>/assets/<filename> -> serve project asset
-      if (segments.length === 3 && method === "GET") {
-        const filename = segments[2];
-        const ext = normalizeExtension(filename.split(".").pop() ?? "");
-        if (!/^[\w-]+\.\w+$/.test(filename) || !ASSET_TYPES[ext]) {
+      // GET /api/projects/<slug>/assets/<path...> -> serve project asset, subfolders too (044/D2)
+      if (segments.length >= 3 && method === "GET") {
+        const assetPath = safeAssetPath(segments.slice(2));
+        const ext = normalizeExtension(assetPath?.split(".").pop() ?? "");
+        if (!assetPath || !ASSET_TYPES[ext]) {
           res.statusCode = 404;
           res.end("Not Found");
           return;
         }
 
-        const filePath = join(store.resolvePath(slug, "assets"), filename);
+        const filePath = join(store.resolvePath(slug, "assets"), assetPath);
         try {
           const data = await readFile(filePath);
           res.setHeader("content-type", ASSET_TYPES[ext]);

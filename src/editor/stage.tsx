@@ -1,5 +1,5 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
-import { createElement } from "../components/index.ts";
+import { imageSize } from "../engine/assets.ts";
 import { WebAudioPlayer } from "../engine/audio/audio-player.ts";
 import {
   type Box,
@@ -22,7 +22,8 @@ import {
 } from "../engine/lines.ts";
 import { drawScene } from "../engine/render.ts";
 import { applyTracks, commitAt } from "../engine/tracks.ts";
-import type { Element, ImageEl, LineEl, Scene } from "../model/model.ts";
+import type { Element, LineEl, Scene } from "../model/model.ts";
+import { imageElementFor } from "./asset-drop.ts";
 import { type Snap, snapBox, unionBox } from "./snap.ts";
 
 export type Clock = { t: number; playing: boolean };
@@ -682,21 +683,22 @@ export function Stage({
           const assetJson = e.dataTransfer.getData(ASSET_MIME);
           if (!assetJson) return;
           e.preventDefault();
+          let asset: { path: string; filename: string };
           try {
-            const { path, filename } = JSON.parse(assetJson) as {
-              path: string;
-              filename: string;
-            };
-            const pos = toScene(e);
-            const imageEl = createElement("image") as ImageEl;
-            imageEl.src = path;
-            imageEl.name = filename;
-            imageEl.x = Math.round(pos.x - imageEl.w / 2);
-            imageEl.y = Math.round(pos.y - imageEl.h / 2);
-            onDropElement(imageEl, pos);
+            asset = JSON.parse(assetJson);
           } catch {
-            // ignore bad payload
+            return; // ignore bad payload
           }
+          const pos = toScene(e);
+          // Keep the image's aspect ratio; if it cannot be decoded, the default box (044/D4).
+          imageSize(asset.path)
+            .catch(() => undefined)
+            .then((size) =>
+              onDropElement(
+                imageElementFor(asset.path, asset.filename, pos, size),
+                pos,
+              ),
+            );
         }
       }}
     >

@@ -46,7 +46,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 039 | codebase-fixes-and-optimization | done        | 007, 009, 010, 011, 027, 028, 032 | —      | 39 |
 | 040 | project-centric-storage | done        | 031, 038, 039 | —     | 40 |
 | 041 | workspace-assets-presets-fixes | done        | 040 | —     | 41 |
-| 042 | blank-startup | todo        | 041 | build | 42 |
+| 042 | blank-startup | done        | 041 | —     | 42 |
 | 043 | scenes-sidebar-tab | todo        | 041, 042 | build | 43 |
-| 044 | nested-asset-drag | todo        | 041 | build | 44 |
+| 044 | nested-asset-drag | done        | 041 | —     | 44 |
 | 045 | external-fonts | todo        | 038, 040 | build | 45 |

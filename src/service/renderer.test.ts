@@ -4,7 +4,7 @@
  * Skipped where no Chrome, Edge or Playwright Chromium is installed.
  */
 import { execFile, spawn } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -44,7 +44,7 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
     ctx = createCtx(root);
     editor = await openApp(APP_ROOT, "");
     demo = (await inPage(
-      `(await import("/src/demo.ts")).demoScene()`,
+      `(await import("/src/test/fixtures/sample-scene.ts")).demoScene()`,
     )) as Scene;
     const r = await registry.call(
       "scene_create",
@@ -144,12 +144,34 @@ describe.skipIf(!browser)(
   "the renderer does not outlive its process (010/D4)",
   { timeout: 120_000 },
   () => {
+    // The CLI runs on the repo; the example scene lives in a throwaway, git-ignored project.
+    const project = "tmp-renderer-exit";
+    const projectDir = join(APP_ROOT, "projects", project);
+    beforeAll(async () => {
+      await mkdir(join(projectDir, "scenes"), { recursive: true });
+      await writeFile(
+        join(projectDir, "project.json"),
+        JSON.stringify({
+          name: "Temporal",
+          slug: project,
+          createdAt: "2026-10-22T00:00:00.000Z",
+        }),
+      );
+      await cp(
+        join(APP_ROOT, "src", "test", "fixtures", "ejemplo-keyframes.json"),
+        join(projectDir, "scenes", "ejemplo-keyframes.json"),
+      );
+    });
+    afterAll(() => rm(projectDir, { recursive: true, force: true }));
+
     it("exits after an export, and after a failed one", async () => {
       const dir = await mkdtemp(join(tmpdir(), "lienzo-exit-"));
       const scene = [
         "scene_export",
         "--scene",
         "ejemplo-keyframes",
+        "--project",
+        project,
         "--format",
         "png",
       ];
@@ -199,7 +221,7 @@ describe.skipIf(!browser)(
         method: "tools/call",
         params: {
           name: "scene_preview",
-          arguments: { scene: "ejemplo-keyframes" },
+          arguments: { scene: "ejemplo-keyframes", project },
         },
       });
       await answered;

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "../components/index.ts";
-import { demoScene } from "../demo.ts";
 import { type Box, boxOf } from "../engine/geometry.ts";
 import type { Scene } from "../model/model.ts";
+import { demoScene } from "../test/fixtures/sample-scene.ts";
 import { type AlignAction, alignElements } from "./align.ts";
 
 const rect = (id: string, x: number, y: number, w: number) => ({

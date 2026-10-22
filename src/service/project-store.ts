@@ -10,7 +10,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import {
   type ParseProjectResult,
   type ProjectConfig,
@@ -18,6 +18,7 @@ import {
   ProjectSlugSchema,
   parseProjectManifest,
 } from "../model/project.ts";
+import { assetSegments, safeAssetPath } from "./asset-path.ts";
 
 export type ProjectSummary = {
   slug: string;
@@ -143,8 +144,27 @@ export function createProjectStore(root: string): ProjectStore {
         return (await readdir(d)).filter((f) => !f.startsWith("."));
       };
 
+      // Assets may sit in subfolders (044/D1): every file, by its POSIX path relative to assets/.
+      const listAssets = async () => {
+        const d = join(base, "assets");
+        if (!(await exists(d))) return [];
+        const entries = await readdir(d, {
+          recursive: true,
+          withFileTypes: true,
+        });
+        return entries
+          .filter((e) => e.isFile())
+          .map((e) =>
+            relative(d, join(e.parentPath, e.name)).replace(/\\/g, "/"),
+          )
+          .filter(
+            (path) => !path.split("/").some((part) => part.startsWith(".")),
+          )
+          .sort();
+      };
+
       const [assets, presets, scenes] = await Promise.all([
-        listDir("assets"),
+        listAssets(),
         listDir("presets"),
         listDir("scenes"),
       ]);
@@ -283,10 +303,11 @@ export function createProjectStore(root: string): ProjectStore {
         };
       }
 
-      const base = projectPath(slug);
-      const filename = normalized.split("/").pop() ?? normalized;
-      const assetFile = join(base, "assets", filename);
-      if (await exists(assetFile)) {
+      // The whole path under assets/, subfolders included (044/D5).
+      const assetPath = safeAssetPath(assetSegments(normalized));
+      const assetFile =
+        assetPath && join(projectPath(slug), "assets", assetPath);
+      if (assetFile && (await exists(assetFile))) {
         return { ok: true };
       }
       return {

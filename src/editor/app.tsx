@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COMPONENTS, createElement } from "../components/index.ts";
-import { demoScene } from "../demo.ts";
 import { centerOn, indexById, type Pt, translate } from "../engine/geometry.ts";
 import {
   detachOutside,
@@ -55,6 +54,7 @@ import {
 } from "../presets/store.ts";
 import { type AlignAction, alignElements } from "./align.ts";
 import { AnimLibrary } from "./anim-library.tsx";
+import { writeAutosave } from "./autosave.ts";
 import {
   type BackgroundItem,
   BackgroundLibrary,
@@ -83,6 +83,7 @@ import { ProjectSelector } from "./project-selector.tsx";
 import { ProjectAssetsTab } from "./sidebar/project-assets-tab.tsx";
 import { ProjectPresetsTab } from "./sidebar/project-presets-tab.tsx";
 import { type Clock, Stage } from "./stage.tsx";
+import { startupState } from "./startup.ts";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
 
 /**
@@ -136,20 +137,6 @@ function duplicateElements(scene: Scene, ids: string[]): Element[] {
   );
 }
 
-function autosaveKey(slug = "mi-proyecto"): string {
-  return `lienzo-scene:${slug}`;
-}
-
-function loadInitialScene(slug = "mi-proyecto"): Scene {
-  try {
-    const raw = localStorage.getItem(autosaveKey(slug));
-    if (raw) return JSON.parse(raw) as Scene;
-  } catch {
-    // no stored scene or storage blocked: start from the demo
-  }
-  return demoScene();
-}
-
 /** Every kind its descriptor offers in the library, in registry order. */
 const BASIC_KINDS = COMPONENTS.filter((d) => d.basic);
 const BASICS: LibraryItem[] = BASIC_KINDS.map((d) => ({
@@ -170,15 +157,19 @@ const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(
 );
 
 export function App() {
-  const [scene, setSceneState] = useState<Scene>(loadInitialScene);
+  // Every start is blank and paused (042/D1, D2); the last draft stays in storage until
+  // the user recovers it from the Escenas tab.
+  const [scene, setSceneState] = useState<Scene>(() => startupState().scene);
   const sceneRef = useRef(scene);
+  /** The blank scene shown on start or switch: not autosaved, so it never hides the draft. */
+  const pristineScene = useRef<Scene | undefined>(scene);
   const [selection, setSelection] = useState<string[]>([]);
-  const clock = useRef<Clock>({ t: 0, playing: true });
-  const [playing, setPlaying] = useState(true);
+  const clock = useRef<Clock>({ t: 0, playing: startupState().playing });
+  const [playing, setPlaying] = useState<boolean>(startupState().playing);
   /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
   const [playhead, setPlayhead] = useState(0);
   const [status, setStatus] = useState("");
-  const [sceneName, setSceneName] = useState("mi-publicacion");
+  const [sceneName, setSceneName] = useState(() => startupState().name);
   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
   const [backgroundFocus, setBackgroundFocus] = useState(0);
@@ -208,14 +199,9 @@ export function App() {
   );
 
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        autosaveKey(activeProjectSlug),
-        JSON.stringify(scene),
-      );
-    } catch {
-      // storage unavailable: autosave is a convenience only
-    }
+    if (scene === pristineScene.current) return;
+    pristineScene.current = undefined;
+    writeAutosave(activeProjectSlug, scene);
   }, [scene, activeProjectSlug]);
 
   const [projectPresetsVersion, setProjectPresetsVersion] = useState(0);
@@ -656,13 +642,6 @@ export function App() {
             </button>
             <button
               type="button"
-              title="Cargar la demo de MCP"
-              onClick={() => loadScene(demoScene())}
-            >
-              Demo
-            </button>
-            <button
-              type="button"
               title="Editar el fondo de la publicación"
               onClick={() => {
                 setSelection([]);
@@ -699,8 +678,9 @@ export function App() {
                 setActivePalette(palette);
 
                 if (slug && prevSlug && slug !== prevSlug) {
-                  // Workspace switched: load scene for target workspace
-                  const targetScene = loadInitialScene(slug);
+                  // Workspace switched: a blank scene, like on start (042/R3)
+                  const targetScene = startupState().scene;
+                  pristineScene.current = targetScene;
                   if (canvasDefaults) {
                     targetScene.width = canvasDefaults.width;
                     targetScene.height = canvasDefaults.height;

@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { projectAssetUrl, safeAssetPath } from "../../service/asset-path.ts";
 import { ASSET_MIME } from "../stage.tsx";
 
 export type ProjectAssetsTabProps = {
@@ -179,8 +180,10 @@ export function ProjectAssetsTab({
           }}
         >
           {assets.map((asset) => {
-            const assetUrl = `/api/projects/${encodeURIComponent(projectSlug)}/assets/${encodeURIComponent(asset)}`;
-            const isImg = isImageFile(asset);
+            const assetUrl = projectAssetUrl(projectSlug, asset);
+            // Names the asset route will not serve (spaces, accents) show, but cannot be dragged (044/D2).
+            const servable = safeAssetPath(asset.split("/")) !== undefined;
+            const isImg = isImageFile(asset) && servable;
 
             return (
               // biome-ignore lint/a11y/noStaticElementInteractions: a drag source for the canvas; dragging has no keyboard equivalent here (known gap, out of this lint fix)
@@ -194,7 +197,13 @@ export function ProjectAssetsTab({
                   );
                   e.dataTransfer.effectAllowed = "copy";
                 }}
-                title={isImg ? `Arrastra ${asset} al lienzo` : asset}
+                title={
+                  isImg
+                    ? `Arrastra ${asset} al lienzo`
+                    : servable
+                      ? asset
+                      : `${asset}: renómbralo sin espacios ni acentos para usarlo`
+                }
                 style={{
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.1)",
@@ -224,6 +233,7 @@ export function ProjectAssetsTab({
                     <img
                       src={assetUrl}
                       alt={asset}
+                      draggable={false}
                       style={{
                         maxWidth: "100%",
                         maxHeight: "100%",

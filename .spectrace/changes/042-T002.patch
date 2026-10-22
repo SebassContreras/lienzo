@@ -1,0 +1,58 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index a66a269..1682df3 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -83,6 +83,7 @@ import { ProjectSelector } from "./project-selector.tsx";
+ import { ProjectAssetsTab } from "./sidebar/project-assets-tab.tsx";
+ import { ProjectPresetsTab } from "./sidebar/project-presets-tab.tsx";
+ import { type Clock, Stage } from "./stage.tsx";
++import { startupState } from "./startup.ts";
+ import { TracksPanel } from "./timeline/tracks-panel.tsx";
+ 
+ /**
+@@ -158,17 +159,17 @@ const BUILT_IN_BACKGROUND_ITEMS = backgroundItems(
+ export function App() {
+   // Every start is blank and paused (042/D1, D2); the last draft stays in storage until
+   // the user recovers it from the Escenas tab.
+-  const [scene, setSceneState] = useState<Scene>(defaultScene);
++  const [scene, setSceneState] = useState<Scene>(() => startupState().scene);
+   const sceneRef = useRef(scene);
+   /** The blank scene shown on start or switch: not autosaved, so it never hides the draft. */
+   const pristineScene = useRef<Scene | undefined>(scene);
+   const [selection, setSelection] = useState<string[]>([]);
+-  const clock = useRef<Clock>({ t: 0, playing: false });
+-  const [playing, setPlaying] = useState(false);
++  const clock = useRef<Clock>({ t: 0, playing: startupState().playing });
++  const [playing, setPlaying] = useState<boolean>(startupState().playing);
+   /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
+   const [playhead, setPlayhead] = useState(0);
+   const [status, setStatus] = useState("");
+-  const [sceneName, setSceneName] = useState("Mi proyecto");
++  const [sceneName, setSceneName] = useState(() => startupState().name);
+   const [userPresets, setUserPresets] = useState<LibraryItem[]>([]);
+   const [userBackgrounds, setUserBackgrounds] = useState<BackgroundItem[]>([]);
+   const [backgroundFocus, setBackgroundFocus] = useState(0);
+@@ -678,7 +679,7 @@ export function App() {
+ 
+                 if (slug && prevSlug && slug !== prevSlug) {
+                   // Workspace switched: a blank scene, like on start (042/R3)
+-                  const targetScene = defaultScene();
++                  const targetScene = startupState().scene;
+                   pristineScene.current = targetScene;
+                   if (canvasDefaults) {
+                     targetScene.width = canvasDefaults.width;
+diff --git a/src/editor/startup.ts b/src/editor/startup.ts
+new file mode 100644
+index 0000000..99f3176
+--- /dev/null
++++ b/src/editor/startup.ts
+@@ -0,0 +1,9 @@
++import { defaultScene, type Scene } from "../model/model.ts";
++
++/**
++ * What the editor shows when it opens or switches project (042): a blank scene, paused at
++ * t = 0, named after the default project. The autosaved draft is not read here (042/D3).
++ */
++export function startupState(): { scene: Scene; playing: false; name: string } {
++  return { scene: defaultScene(), playing: false, name: "Mi proyecto" };
++}

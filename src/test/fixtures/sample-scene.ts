@@ -1,4 +1,4 @@
-import { migrateAnim } from "./components/fields/index.ts";
+import { migrateAnim } from "../../components/fields/index.ts";
 import {
   defaultLine,
   defaultRect,
@@ -8,9 +8,9 @@ import {
   type LineEl,
   type RectEl,
   type Scene,
-} from "./model/model.ts";
-import { BUILT_IN_RECIPES } from "./presets/recipes.ts";
-import { resolveElement } from "./presets/resolve.ts";
+} from "../../model/model.ts";
+import { BUILT_IN_RECIPES } from "../../presets/recipes.ts";
+import { resolveElement } from "../../presets/resolve.ts";
 
 function fromPreset(name: string): Element {
   const recipe = BUILT_IN_RECIPES.find((r) => r.name === name);
