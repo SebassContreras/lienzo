@@ -73,7 +73,7 @@ function shiftDelays(anim: AnimSlots, dt: number): AnimSlots {
 }
 
 /** The earliest moment `el` animates: its first keyframe or its entry or exit start. */
-export function animStart(el: Element): number {
+function animStart(el: Element): number {
   const anim = activeSlots(el);
   const times = [
     ...Object.values(el.tracks ?? {}).flatMap((keys) => keys.map((k) => k.t)),

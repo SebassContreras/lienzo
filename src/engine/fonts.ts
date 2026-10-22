@@ -50,7 +50,7 @@ export async function loadFonts(project?: string): Promise<ResolvedFont[]> {
 }
 
 /** Every font family a scene's elements name (any `font` field, at any depth). */
-export function sceneFontFamilies(scene: Scene): string[] {
+function sceneFontFamilies(scene: Scene): string[] {
   const found = new Set<string>();
   const walk = (value: unknown): void => {
     if (Array.isArray(value)) {

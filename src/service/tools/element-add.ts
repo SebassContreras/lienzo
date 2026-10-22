@@ -7,6 +7,7 @@ import {
 } from "../../model/model.ts";
 import { resolveElement } from "../../presets/resolve.ts";
 import { COORDINATES, checkKind, patched } from "../elements.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, findPreset, SceneResult } from "../scenes.ts";
 
@@ -22,7 +23,7 @@ export const elementAdd = defineTool({
   input: z
     .object({
       scene: z.string().min(1),
-      project: z.string().optional(),
+      project: PROJECT,
       preset: z.string().min(1).optional(),
       kind: z.string().min(1).optional(),
       at: z.object({ x: z.number(), y: z.number() }).optional(),
@@ -34,11 +35,7 @@ export const elementAdd = defineTool({
     }),
   output: SceneResult.extend({ id: z.string() }),
   async run({ scene, project, preset, kind, at, set }, ctx) {
-    const { resolveProjectScope } = await import("../project-scope.ts");
-    const { slug: projectSlug, effectiveCtx } = await resolveProjectScope(
-      ctx,
-      project,
-    );
+    const effectiveCtx = await inProject(ctx, project);
 
     const notices: string[] = [];
     if (set) {
@@ -46,7 +43,10 @@ export const elementAdd = defineTool({
       for (const key of assetKeys) {
         const val = set[key];
         if (typeof val === "string" && val.length > 0) {
-          const check = await ctx.projects.checkAsset(projectSlug, val);
+          const check = await ctx.projects.checkAsset(
+            effectiveCtx.project,
+            val,
+          );
           if (!check.ok && check.warning) {
             notices.push(check.warning);
           }

@@ -10,7 +10,7 @@ import { BrandAssetManager } from "../brand/brand-asset-manager.tsx";
 import { BrandFontManager } from "../brand/brand-font-manager.tsx";
 import { BrandPaletteEditor } from "../brand/brand-palette-editor.tsx";
 
-export type BrandManagerMode = "create" | "edit";
+type BrandManagerMode = "create" | "edit";
 
 export type BrandManagerDialogProps = {
   isOpen: boolean;

@@ -1,4 +1,8 @@
-import { resolveLocalTtsBaseUrl } from "./config.ts";
+import {
+  resolveLocalTtsBaseUrl,
+  resolveLocalTtsModel,
+  resolveLocalTtsVoice,
+} from "./config.ts";
 import type {
   SynthesizeSpeechRequest,
   SynthesizeSpeechResult,
@@ -94,8 +98,8 @@ export class LocalTtsAdapter implements TtsService {
     }
 
     const endpoint = resolveLocalTtsBaseUrl(request.baseUrl || this.baseUrl);
-    const model = request.model || "kokoro";
-    const voice = request.voice || "af_heart";
+    const model = resolveLocalTtsModel(request.model);
+    const voice = resolveLocalTtsVoice(request.voice);
     const responseFormat = request.format || "mp3";
     const speed = request.speed ?? 1.0;
 

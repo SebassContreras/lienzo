@@ -10,7 +10,7 @@ import { parseScene } from "../model/schema.ts";
 import { expandAnimPresets } from "../presets/anim-presets.ts";
 import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
-import type { Ctx } from "./ctx.ts";
+import type { Ctx, ProjectCtx } from "./ctx.ts";
 import { fail } from "./registry.ts";
 import type { PresetSource } from "./store.ts";
 
@@ -23,7 +23,7 @@ export function checkScene(data: unknown, prefix = ""): Scene {
 }
 
 /** The stored scene `name`, checked. */
-export async function openScene(ctx: Ctx, name: string): Promise<Scene> {
+export async function openScene(ctx: ProjectCtx, name: string): Promise<Scene> {
   const data = await ctx.store.readScene(name);
   if (data === undefined)
     fail("not_found", `No existe la escena «${name}»`, "scene");
@@ -91,7 +91,7 @@ export type SceneResult = z.infer<typeof SceneResult>;
 
 /** Writes `data` as scene `name` once it is valid; nothing is written otherwise (R4). */
 export async function saveScene(
-  ctx: Ctx,
+  ctx: ProjectCtx,
   name: string,
   data: unknown,
 ): Promise<SceneResult> {
@@ -101,7 +101,7 @@ export async function saveScene(
 
 /** Opens scene `name`, applies `edit` (pure) and saves the result under the same name. */
 export async function editScene(
-  ctx: Ctx,
+  ctx: ProjectCtx,
   name: string,
   edit: (scene: Scene) => Scene,
 ): Promise<SceneResult> {

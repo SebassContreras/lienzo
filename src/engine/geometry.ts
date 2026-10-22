@@ -91,7 +91,7 @@ function lineBox(el: LineEl): Box {
 
 export const center = (b: Box): Pt => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
-export function inBox(b: Box, p: Pt, pad = 0): boolean {
+function inBox(b: Box, p: Pt, pad = 0): boolean {
   return (
     p.x >= b.x - pad &&
     p.x <= b.x + b.w + pad &&

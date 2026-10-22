@@ -12,7 +12,7 @@ import {
   STORAGE_KEY_OPENROUTER_API_KEY,
 } from "./config.ts";
 
-export const STORAGE_KEY_TTS_PREFERENCES = "lienzo_tts_ui_preferences";
+const STORAGE_KEY_TTS_PREFERENCES = "lienzo_tts_ui_preferences";
 
 export interface TtsUiPreferences {
   provider?: "openrouter" | "local" | "kokoro" | "custom";

@@ -15,7 +15,7 @@ export type BlendMode =
   | "difference"
   | "exclusion";
 
-export const BLEND_MODES: readonly (readonly [BlendMode, string])[] = [
+const BLEND_MODES: readonly (readonly [BlendMode, string])[] = [
   ["normal", "Normal"],
   ["multiply", "Multiplicar"],
   ["screen", "Trama"],
@@ -36,7 +36,7 @@ export type EffectsDefaults = {
   mask?: string;
 };
 
-export const defaultEffects = (): EffectsDefaults => ({
+const defaultEffects = (): EffectsDefaults => ({
   blur: 0,
   blend: "normal",
   mask: "",

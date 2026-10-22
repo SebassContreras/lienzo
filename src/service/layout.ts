@@ -46,7 +46,7 @@ export type PlacedElement = {
  * Returns elements placed in canvas space at time `t`.
  * Groups are expanded so their children are positioned relative to the canvas.
  */
-export function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
+function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
   // First, map of all elements animated at time t for line resolution
   const animatedById = new Map<string, Element>();
 
@@ -274,7 +274,7 @@ function checkTextContrast(
 /**
  * Default inspection times: loop start (0), middle, and end (scene.duration).
  */
-export function defaultInspectionTimes(duration: number): number[] {
+function defaultInspectionTimes(duration: number): number[] {
   if (duration <= 0) return [0];
   const half = duration / 2;
   return Array.from(new Set([0, half, duration])).sort((a, b) => a - b);

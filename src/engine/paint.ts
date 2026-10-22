@@ -6,7 +6,7 @@ import type { Box, Pt } from "./geometry.ts";
 export type Ctx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
 /** The red, green and blue (0–255) of a `#rgb` or `#rrggbb` color. */
-export function hexRgb(hex: string): [number, number, number] {
+function hexRgb(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
   const full =
     h.length === 3

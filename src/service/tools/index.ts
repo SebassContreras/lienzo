@@ -30,7 +30,7 @@ import { sceneList } from "./scene-list.ts";
 import { scenePreview } from "./scene-preview.ts";
 import { sceneValidate } from "./scene-validate.ts";
 
-export const TOOLS: readonly Tool[] = [
+const TOOLS: readonly Tool[] = [
   componentList,
   presetList,
   presetGet,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultScene } from "../../model/model.ts";
-import { resolveOpenRouterApiKey } from "./config.ts";
+import { resolveOpenRouterApiKey, TTS_PROXY_PATH } from "./config.ts";
 import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
 import { attachSpeechToScene } from "./scene-audio.ts";
 import { alignScriptToCues, splitIntoSentences } from "./speech-alignment.ts";
@@ -19,21 +19,10 @@ describe("OpenRouter configuration and key resolution (R1, D1)", () => {
   it("returns empty string when no key is found", () => {
     const original = process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
-    const meta = (import.meta as unknown as { env?: Record<string, string> })
-      ?.env;
-    const origMeta = meta?.OPENROUTER_API_KEY;
-    const origViteMeta = meta?.VITE_OPENROUTER_API_KEY;
-    if (meta) {
-      delete meta.OPENROUTER_API_KEY;
-      delete meta.VITE_OPENROUTER_API_KEY;
-    }
     try {
       expect(resolveOpenRouterApiKey("")).toBe("");
     } finally {
       if (original) process.env.OPENROUTER_API_KEY = original;
-      if (meta && origMeta !== undefined) meta.OPENROUTER_API_KEY = origMeta;
-      if (meta && origViteMeta !== undefined)
-        meta.VITE_OPENROUTER_API_KEY = origViteMeta;
     }
   });
 });
@@ -50,14 +39,6 @@ describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
   it("throws error when API key is missing", async () => {
     const origEnv = process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
-    const meta = (import.meta as unknown as { env?: Record<string, string> })
-      ?.env;
-    const origMeta = meta?.OPENROUTER_API_KEY;
-    const origViteMeta = meta?.VITE_OPENROUTER_API_KEY;
-    if (meta) {
-      delete meta.OPENROUTER_API_KEY;
-      delete meta.VITE_OPENROUTER_API_KEY;
-    }
     try {
       const adapter = new OpenRouterTtsAdapter("", "https://example.com");
       await expect(
@@ -65,9 +46,31 @@ describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
       ).rejects.toThrow(/Clave de API/);
     } finally {
       if (origEnv) process.env.OPENROUTER_API_KEY = origEnv;
-      if (meta && origMeta !== undefined) meta.OPENROUTER_API_KEY = origMeta;
-      if (meta && origViteMeta !== undefined)
-        meta.VITE_OPENROUTER_API_KEY = origViteMeta;
+    }
+  });
+
+  it("goes through the dev-server proxy without a key or Authorization (046/R4)", async () => {
+    const origEnv = process.env.OPENROUTER_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
+    let seen: { url: string; headers: Record<string, string> } | undefined;
+    const fakeFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+      seen = {
+        url: String(url),
+        headers: init?.headers as Record<string, string>,
+      };
+      return new Response(new Uint8Array([1]), { status: 200 });
+    };
+    try {
+      const adapter = new OpenRouterTtsAdapter(
+        undefined,
+        TTS_PROXY_PATH,
+        fakeFetch as unknown as typeof fetch,
+      );
+      await adapter.synthesizeSpeech({ text: "Hola", voice: "alloy" });
+      expect(seen?.url).toBe(TTS_PROXY_PATH);
+      expect(seen?.headers.Authorization).toBeUndefined();
+    } finally {
+      if (origEnv) process.env.OPENROUTER_API_KEY = origEnv;
     }
   });
 

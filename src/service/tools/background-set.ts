@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Background } from "../../model/model.ts";
 import { deepMerge, resolveBackground } from "../../presets/resolve.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, findPreset, SceneResult } from "../scenes.ts";
 
@@ -13,6 +14,7 @@ export const backgroundSet = defineTool({
   input: z
     .object({
       scene: z.string().min(1),
+      project: PROJECT,
       preset: z.string().min(1).optional(),
       values: z.record(z.string(), z.unknown()).optional(),
     })
@@ -21,14 +23,17 @@ export const backgroundSet = defineTool({
       path: ["preset"],
     }),
   output: SceneResult,
-  async run({ scene, preset, values }, ctx) {
+  async run({ scene, project, preset, values }, ctx) {
+    const projectCtx = await inProject(ctx, project);
     let base: Background | undefined;
     if (preset !== undefined) {
-      const r = resolveBackground((await findPreset(ctx, preset)).recipe);
+      const r = resolveBackground(
+        (await findPreset(projectCtx, preset)).recipe,
+      );
       if ("error" in r) fail("invalid_preset", r.error, "preset");
       base = r.background;
     }
-    return editScene(ctx, scene, (s) => {
+    return editScene(projectCtx, scene, (s) => {
       const background = structuredClone(base ?? s.background);
       if (values)
         deepMerge(background as unknown as Record<string, unknown>, values);

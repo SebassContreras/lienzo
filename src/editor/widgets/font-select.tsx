@@ -13,7 +13,7 @@ export type FontGroup = { label: string; families: string[] };
  * The font picker's groups (045/D4): one family per entry, by origin; a current value no
  * font provides is kept as its own group so the select still shows it.
  */
-export function fontGroups(
+function fontGroups(
   fonts: readonly ResolvedFont[],
   current: string,
 ): FontGroup[] {

@@ -1,6 +1,6 @@
 import type { ExportOptions } from "../export/export.ts";
 import type { Scene } from "../model/model.ts";
-import type { Ctx } from "./ctx.ts";
+import type { ProjectCtx } from "./ctx.ts";
 import type { Rendered } from "./renderer.ts";
 import { openScene } from "./scenes.ts";
 
@@ -8,8 +8,6 @@ const GIF_MAX_FPS = 25;
 
 export type ResolveAndRenderOptions = Omit<ExportOptions, "fps"> & {
   fps?: number;
-  /** The project whose fonts the render uses (045/D3). */
-  project?: string;
 };
 
 export interface ResolvedRenderResult {
@@ -18,11 +16,12 @@ export interface ResolvedRenderResult {
 }
 
 /**
- * Resolves a scene from name or direct Scene object and renders it via ctx.renderer.
+ * Resolves a scene from name or direct Scene object and renders it via ctx.renderer, with
+ * the fonts of `ctx.project` (045/D3).
  * Shared helper for scene_export, scene_preview, and offscreen headless renders (039/R4, D4).
  */
 export async function resolveAndRenderScene(
-  ctx: Ctx,
+  ctx: ProjectCtx,
   sceneInput: string | Scene,
   options: ResolveAndRenderOptions,
 ): Promise<ResolvedRenderResult> {
@@ -35,11 +34,10 @@ export async function resolveAndRenderScene(
     options.fps ??
     (options.format === "gif" ? Math.min(scene.fps, GIF_MAX_FPS) : scene.fps);
 
-  const { project, ...exportOptions } = options;
   const rendered = await ctx.renderer.render(
     scene,
-    { ...exportOptions, fps: effectiveFps },
-    project,
+    { ...options, fps: effectiveFps },
+    ctx.project,
   );
   return { scene, rendered };
 }

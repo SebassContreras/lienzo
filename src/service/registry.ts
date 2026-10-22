@@ -9,9 +9,7 @@ import type { Ctx } from "./ctx.ts";
 /** What a failed call reports: `path` names the failing input or scene path ("" for none). */
 export type ToolError = { code: string; message: string; path: string };
 
-export type ToolResult<O> =
-  | { ok: true; value: O }
-  | { ok: false; error: ToolError };
+type ToolResult<O> = { ok: true; value: O } | { ok: false; error: ToolError };
 
 export type Tool<
   I extends z.ZodType = z.ZodType,
@@ -50,7 +48,7 @@ export function defineTool<I extends z.ZodType, O extends z.ZodType>(
  * Runs `tool` on `input`: the input is parsed first, a `ToolFailure` becomes an error result,
  * and the output is parsed so callers only ever see what the schema promises.
  */
-export async function callTool(
+async function callTool(
   tool: Tool,
   input: unknown,
   ctx: Ctx,

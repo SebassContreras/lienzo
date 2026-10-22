@@ -79,7 +79,7 @@ export async function imageSize(
 
 let decodeAudioContext: AudioContext | null = null;
 
-export function getSharedDecodeAudioContext(): AudioContext | null {
+function getSharedDecodeAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!decodeAudioContext) {
     const AudioContextClass =

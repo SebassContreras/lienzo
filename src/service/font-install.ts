@@ -39,7 +39,7 @@ export type NewFont = {
 };
 
 /** Why a new font is refused, or undefined when it is fine. */
-export function fontProblem(font: NewFont, bytes: number): string | undefined {
+function fontProblem(font: NewFont, bytes: number): string | undefined {
   if (!isFontFamilyName(font.family)) {
     return "Nombre de familia no válido (letras, números, espacios, _ y -)";
   }

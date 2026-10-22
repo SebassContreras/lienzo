@@ -2,7 +2,7 @@ import { color, num, obj, type Parent, select } from "./field.ts";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 
-export const STROKE_STYLES = [
+const STROKE_STYLES = [
   ["solid", "Continuo"],
   ["dashed", "Guiones"],
   ["dotted", "Puntos"],

@@ -1,0 +1,196 @@
+diff --git a/.env.example b/.env.example
+index 53a49a5..cb86995 100644
+--- a/.env.example
++++ b/.env.example
+@@ -8,8 +8,9 @@
+ # 1. Clave de API de OpenRouter (ÚNICA para Node/CLI y Editor Web)
+ # ------------------------------------------------------------------------------
+ # Obtenla en https://openrouter.ai/keys
+-# Gracias a la configuración de Lienzo, esta clave funciona tanto en el CLI/MCP
+-# como automáticamente en el Editor Web (Vite).
++# Solo se lee en Node (CLI/MCP y servidor de `pnpm dev`). El Editor Web llama a
++# OpenRouter a través del proxy del servidor (/api/tts/speech), que añade la clave:
++# nunca llega al navegador ni al bundle de `pnpm build`.
+ OPENROUTER_API_KEY="sk-or-v1-tu-clave-aqui"
+ 
+ # ------------------------------------------------------------------------------
+@@ -48,7 +49,7 @@ TTS_PROVIDER="local"
+ # Arranca el servidor Kokoro con:  python server.py   (repositorio "kokoro")
+ TTS_LOCAL_URL="http://localhost:8880/v1/audio/speech"
+ 
+-# Voz y modelo por defecto para el proveedor local (voces en español).
++# Voz y modelo por defecto para el proveedor local (por defecto ef_dora / kokoro-es).
+ #   - Español: ef_dora (femenina), em_alex (masculina), em_santa (masculina)
+ #   - Inglés US: af_heart, af_bella, am_adam, am_onyx, ...
+ #   - Inglés UK: bf_emma, bm_george, ...
+diff --git a/AGENTS.md b/AGENTS.md
+index fe862c3..1303a5a 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -47,7 +47,14 @@ What exists today:
+   offsets on `relative` fields; applying always copies; `animPreset` on an element is
+   provenance only, and a scene naming one is expanded on load; pure logic in
+   `src/presets/anim-presets.ts` (A26, spec 019)
+-- Tools: one registry in `src/service/` (007); `pnpm lienzo <tool>` (`src/cli/`, 008) runs
++- Descriptors also drive compact JSON (`src/model/compact.ts`, A23, spec 011); 3D = three.js
++  in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
++- Tools: one registry in `src/service/` (007); logic lives only in tools, CLI and MCP are thin
++  adapters (A20); names are `snake_case` noun_verb (`scene_export`). Every tool that reads or
++  writes a scene, an asset or an export takes a required `project` and runs on
++  `projects/<slug>/` (`inProject` in `src/service/project-scope.ts`, 046); only a
++  `ProjectCtx` reaches scenes, so the compiler rejects scene access without a project.
++  `pnpm lienzo <tool>` (`src/cli/`, 008) runs
+   any of them under `tsx` — top-level scalar fields as flags, the rest in `--json` (or
+   `--json -` from stdin), result JSON on stdout, errors JSON on stderr with exit 1. Code
+   the descriptors import must load in plain Node: no Vite-only imports (`?url`, `?raw`,
+@@ -61,15 +68,12 @@ What exists today:
+   (`src/export/render-page.ts`), which calls the editor's own `exportScene`. Started on the
+   first render, reused within a process, closed by `ctx.dispose()` — the CLI disposes after
+   every command, the MCP server when stdin ends. Tests pass `fakeRenderer()` unless they
+-  need a real browser (`renderer.test.ts`, skipped when none is installed)
+-
+-Planned (decided, not built yet — specs 011, 016, 017, 020–025):
+-
+-- Descriptors also drive compact JSON and tools (A23, specs 011, 007);
+-  3D = three.js in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
+-- CLI and MCP are thin adapters over one tool registry in `src/service/`; logic lives only
+-  in tools (A20); tool names are `snake_case` noun_verb (`scene_export`); off-editor rendering = headless Chromium via Playwright (A21); MCP SDK
+-  over stdio, CLI via `tsx` (A22) — specs 007–010, built
++  need a real browser (`renderer.test.ts`, skipped when none is installed). `scene_export`
++  writes only inside `projects/<slug>/exports/`
++- Speech (TTS): adapters in `src/service/tts/` (OpenRouter, local Kokoro-compatible server);
++  env variables (`.env.example`) are read in Node only. The editor reaches OpenRouter through
++  the dev server's `/api/tts/speech` (`src/service/tts-proxy.ts`), which adds the key, so no
++  `OPENROUTER_*` value reaches the browser or `dist/` (046)
+ 
+ ## Layout
+ 
+@@ -82,20 +86,25 @@ src/engine/      drawScene, animate, keyframe tracks, painting helpers, animatio
+                  geometry, particle field
+ src/components/  index.ts = the registry; descriptor.ts = the descriptor type; fields/ = field
+                  builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);
+-                 <kind>/descriptor.ts + <kind>/draw.ts per element kind (rect, ellipse, icon,
+-                 image, group, text, line, particles)
++                 <kind>/descriptor.ts + <kind>/draw.ts per element kind (the kinds are the
++                 ones registered in index.ts)
+ src/editor/      React UI: app shell, stage, library, background library, animation library
+                  (anim-library.tsx), inspector (the
+                  element inspector is generated: layout.ts + field-editor.tsx; keyframe
+-                 buttons in keyframe-controls.tsx; timeline/ = the keyframe tracks panel)
++                 buttons in keyframe-controls.tsx; timeline/ = the keyframe tracks panel;
++                 sidebar/ = the project tabs: Escenas, assets, presets)
+ src/export/      PNG / GIF / MP4
+ src/traits/      reusable style pieces, one file per trait
+ src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
+-                 store.ts), categories and filter, JSON import/export helpers, scenes dialog,
++                 store.ts), categories and filter, JSON import/export helpers,
+                  animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
+-src/service/     tool registry, ctx, Node store, headless renderer (010); tools/ = one file
+-                 per tool (007)
+-src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008)
++src/service/     tool registry, ctx, Node store, project scope, headless renderer (010), dev
++                 server middlewares (projects, fonts, TTS proxy); tools/ = one file per tool
++                 (007); tts/ = speech adapters
++src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008); build.ts
++                 bundles dist/cli.js
++src/mcp/         `pnpm lienzo mcp`: the stdio MCP server over the registry (009)
++src/test/        golden render tests, fixtures and test helpers
+ src/types/       type declarations for packages that ship none
+ presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
+ presets/animations/  animation presets (JSON)
+@@ -106,7 +115,8 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
+ 
+ - **Project Boundary & Isolation (Strict Boundary)**: All scenes, generated speech audio, images,
+   and exports MUST be saved within the target project (`projects/<slug>/`). Never write scenes,
+-  assets or exports to the repository root. If no project is provided, default to `mi-proyecto`.
++  assets or exports to the repository root. Every scene, asset and export tool requires
++  `project`; there is no default project (`project_list` lists the slugs).
+   NEVER borrow or mix assets between different projects; foreign asset references are strictly prohibited.
+ - To add a component: add a descriptor folder `src/components/<kind>/` with `descriptor.ts`
+   (fields built from `src/components/fields/`, composing the shared groups; sections; the
+@@ -123,9 +133,9 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
+   are deterministic.
+ - Minimal testing (KISS / YAGNI): test pure domain logic, mathematical timing, transformations,
+   and contract boundaries. Do not write redundant micro-tests for every Zod field or heavy E2E tests
+-  when pure unit tests suffice; keep daily execution under a few seconds. Do not run micro-tests
++  when pure unit tests suffice; keep the full suite fast (about 30 s today) and run single files while working. Do not run micro-tests
+   repeatedly on intermediate tasks when a dedicated test task exists at the end of the spec.
+-- Fast execution & verification: use `pnpm verify` (fast single-pass TypeScript check) to confirm
++- Fast execution & verification: use `pnpm typecheck` (single-pass TypeScript check) to confirm
+   correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
+   only check/format the specific files or folders touched to preserve token budget and speed.
+ - Use pnpm, never npm or yarn.
+diff --git a/README.md b/README.md
+index 908ac39..b12b93b 100644
+--- a/README.md
++++ b/README.md
+@@ -38,8 +38,8 @@ the canvas, edit them live, and export PNG, GIF or MP4.
+   background settings: color or gradient, dots, spotlight. The "Fondos" library section
+   applies a background preset (undoable); "Guardar fondo como preset" saves yours.
+ - **Scenes & Workspaces:** scenes are JSON files residing inside project workspaces (`projects/<slug>/scenes/`).
+-  The scenes dialog shows each saved scene with a thumbnail to open, rename, duplicate, export or delete it,
+-  and imports scenes from `.json` files.
++  The "Escenas" sidebar tab shows each saved scene of the active project with a thumbnail to
++  open, rename, duplicate, export or delete it, and imports scenes from `.json` files.
+ - **Validation:** an imported preset or scene is checked before anything is written; an
+   invalid file is rejected with the exact path that is wrong (e.g. `elements.1.fill.color`).
+ - **Files:** presets and project workspaces (`projects/<slug>/` containing scenes, local assets and exports)
+@@ -90,21 +90,21 @@ In OpenCode (`opencode.json`) or other MCP clients, configure the server with ex
+ }
+ ```
+ 
+-Or when running the compiled distribution bundle:
++Or with the compiled bundle (`pnpm build:cli` writes `dist/cli.js`):
+ 
+ ```json
+ {
+   "mcpServers": {
+     "lienzo": {
+       "command": "node",
+-      "args": ["dist/mcp.mjs"],
++      "args": ["dist/cli.js", "mcp"],
+       "cwd": "/path/to/lienzo"
+     }
+   }
+ }
+ ```
+ 
+-Tools read and write the files of this repo (`scenes/`, `presets/`), so always set `cwd` to the Lienzo root directory. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
++Tools read and write the files of this repo (`projects/<slug>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (a slug from `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
+ 
+ ## Compact Scenes (Spec 011)
+ 
+@@ -153,6 +153,7 @@ pnpm lienzo scene_build --json '{
+       }
+     ]
+   },
++  "project": "mi-proyecto",
+   "save": "anuncio-lienzo"
+ }'
+ ```
+diff --git a/src/service/tools/scene-create.ts b/src/service/tools/scene-create.ts
+index b44cbd4..4fb69a3 100644
+--- a/src/service/tools/scene-create.ts
++++ b/src/service/tools/scene-create.ts
+@@ -8,7 +8,7 @@ import { SceneResult, saveScene } from "../scenes.ts";
+ export const sceneCreate = defineTool({
+   name: "scene_create",
+   description:
+-    "Create a scene in scenes/. Fields given in `scene` (width, height, duration, fps, " +
++    "Create a scene in the project's scenes/. Fields given in `scene` (width, height, duration, fps, " +
+     "background, elements, mode) replace the defaults: an empty 1080x1080, 4 s, 30 fps scene. " +
+     "`mode` can be 'static' (graphic post/image) or 'video' (animated video, default). " +
+     "Elements may name an animation preset in `animPreset`; it is copied in. Fails if the " +
+diff --git a/src/service/tools/scene-list.ts b/src/service/tools/scene-list.ts
+index cdfea6b..19e2daf 100644
+--- a/src/service/tools/scene-list.ts
++++ b/src/service/tools/scene-list.ts
+@@ -6,7 +6,7 @@ import { defineTool } from "../registry.ts";
+ export const sceneList = defineTool({
+   name: "scene_list",
+   description:
+-    "List the saved scenes in scenes/ with their size, duration and element count; " +
++    "List the saved scenes in the project's scenes/ with their size, duration and element count; " +
+     "`valid` is false for a file the editor would refuse.",
+   input: z.object({
+     project: PROJECT,

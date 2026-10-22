@@ -13,11 +13,8 @@ import {
 import type { RectEl } from "../components/rect/descriptor.ts";
 import { newId } from "./id.ts";
 
-export type { EllipseEl } from "../components/ellipse/descriptor.ts";
 export type { AnimKind, StrokeStyle } from "../components/fields/index.ts";
-export { ANIM_LABELS } from "../components/fields/index.ts";
 export type { GroupEl } from "../components/group/descriptor.ts";
-export type { IconEl } from "../components/icon/descriptor.ts";
 export type { ImageEl } from "../components/image/descriptor.ts";
 export type {
   Anchor,
@@ -34,9 +31,6 @@ export type Element = RegisteredElement;
 export type ElementKind = RegisteredKind;
 
 export type Anim = RectEl["anim"];
-export type Glow = RectEl["borderGlow"];
-export type Shadow = RectEl["shadow"];
-export type Fill = RectEl["fill"];
 
 export type Background = {
   color: string;
@@ -70,7 +64,6 @@ export type AudioTrackItem = {
 
 import type { SceneMode } from "./mode.ts";
 
-export type { SceneMode } from "./mode.ts";
 export { isStaticMode } from "./mode.ts";
 
 export type Scene = {
@@ -100,7 +93,6 @@ export { newId };
 
 export const defaultRect = () => createElement("rect");
 export const defaultEllipse = () => createElement("ellipse");
-export const defaultIcon = () => createElement("icon");
 export const defaultImage = () => createElement("image");
 export const defaultGroup = () => createElement("group");
 export const defaultText = () => createElement("text");

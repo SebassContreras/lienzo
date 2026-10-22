@@ -1,0 +1,82 @@
+diff --git a/src/service/tts/config.ts b/src/service/tts/config.ts
+index 8c355af..a3e018d 100644
+--- a/src/service/tts/config.ts
++++ b/src/service/tts/config.ts
+@@ -106,7 +106,7 @@ export function resolveOpenRouterApiKey(explicitKey?: string): string {
+ 
+ /**
+  * Resolves the active TTS provider.
+- * Falls back to TTS_PROVIDER or KOKORO_PROVIDER env vars, then "openrouter".
++ * Falls back to the TTS_PROVIDER env var, then "openrouter".
+  */
+ export function resolveTtsProvider(explicitProvider?: string): TtsProviderType {
+   if (explicitProvider && explicitProvider.trim().length > 0) {
+@@ -117,8 +117,7 @@ export function resolveTtsProvider(explicitProvider?: string): TtsProviderType {
+     return "openrouter";
+   }
+ 
+-  const envProvider =
+-    getEnvVariable("TTS_PROVIDER") || getEnvVariable("KOKORO_PROVIDER");
++  const envProvider = getEnvVariable("TTS_PROVIDER");
+   if (envProvider) {
+     const norm = envProvider.trim().toLowerCase();
+     if (norm === "local" || norm === "kokoro" || norm === "custom") {
+@@ -139,14 +138,30 @@ export function resolveLocalTtsBaseUrl(explicitBaseUrl?: string): string {
+   }
+ 
+   const envUrl =
+-    getEnvVariable("TTS_LOCAL_URL") ||
+-    getEnvVariable("KOKORO_TTS_URL") ||
+-    getEnvVariable("LOCAL_TTS_URL");
++    getEnvVariable("TTS_LOCAL_URL") || getEnvVariable("KOKORO_TTS_URL");
+   if (envUrl) return envUrl;
+ 
+   return DEFAULT_LOCAL_TTS_URL;
+ }
+ 
++/** The local provider's model: explicit, else KOKORO_TTS_MODEL, else "kokoro-es" (046/D5). */
++export function resolveLocalTtsModel(explicitModel?: string): string {
++  return (
++    explicitModel?.trim() ||
++    getEnvVariable("KOKORO_TTS_MODEL") ||
++    DEFAULT_LOCAL_TTS_MODEL
++  );
++}
++
++/** The local provider's voice: explicit, else KOKORO_TTS_VOICE, else "ef_dora" (046/D5). */
++export function resolveLocalTtsVoice(explicitVoice?: string): string {
++  return (
++    explicitVoice?.trim() ||
++    getEnvVariable("KOKORO_TTS_VOICE") ||
++    DEFAULT_LOCAL_TTS_VOICE
++  );
++}
++
+ /**
+  * Resolves the OpenRouter speech API base URL.
+  * Falls back to OPENROUTER_API_BASE_URL env var, then default OPENROUTER_API_URL.
+diff --git a/src/service/tts/local-adapter.ts b/src/service/tts/local-adapter.ts
+index 1b90bf3..55a5278 100644
+--- a/src/service/tts/local-adapter.ts
++++ b/src/service/tts/local-adapter.ts
+@@ -1,4 +1,8 @@
+-import { resolveLocalTtsBaseUrl } from "./config.ts";
++import {
++  resolveLocalTtsBaseUrl,
++  resolveLocalTtsModel,
++  resolveLocalTtsVoice,
++} from "./config.ts";
+ import type {
+   SynthesizeSpeechRequest,
+   SynthesizeSpeechResult,
+@@ -94,8 +98,8 @@ export class LocalTtsAdapter implements TtsService {
+     }
+ 
+     const endpoint = resolveLocalTtsBaseUrl(request.baseUrl || this.baseUrl);
+-    const model = request.model || "kokoro";
+-    const voice = request.voice || "af_heart";
++    const model = resolveLocalTtsModel(request.model);
++    const voice = resolveLocalTtsVoice(request.voice);
+     const responseFormat = request.format || "mp3";
+     const speed = request.speed ?? 1.0;
+ 

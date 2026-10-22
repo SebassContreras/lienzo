@@ -1,14 +1,15 @@
 import { z } from "zod";
 import { parseScene } from "../../model/schema.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
 
 export const sceneList = defineTool({
   name: "scene_list",
   description:
-    "List the saved scenes in scenes/ with their size, duration and element count; " +
+    "List the saved scenes in the project's scenes/ with their size, duration and element count; " +
     "`valid` is false for a file the editor would refuse.",
   input: z.object({
-    project: z.string().optional(),
+    project: PROJECT,
   }),
   output: z.array(
     z.object({
@@ -21,8 +22,7 @@ export const sceneList = defineTool({
     }),
   ),
   async run({ project }, ctx) {
-    const { resolveProjectScope } = await import("../project-scope.ts");
-    const { effectiveCtx } = await resolveProjectScope(ctx, project);
+    const effectiveCtx = await inProject(ctx, project);
     return (await effectiveCtx.store.scenes()).map(({ name, data }) => {
       const parsed = parseScene(data);
       if (!parsed.ok) return { name, valid: false };

@@ -49,9 +49,9 @@ export type ElementOf<K extends string, F extends Fields> = {
 } & ValueOf<F>;
 
 /** Which animation preset an element's animation was copied from, and where it started. */
-export type AnimPresetRef = { name: string; start: number };
+type AnimPresetRef = { name: string; start: number };
 
-export type Section = { title: string; open?: boolean };
+type Section = { title: string; open?: boolean };
 
 export type Descriptor<E extends { kind: string } = Element> = {
   kind: E["kind"];
@@ -75,7 +75,7 @@ export type Descriptor<E extends { kind: string } = Element> = {
 };
 
 /** Number and color field paths, the ones keyframes can drive (whole numbers step). */
-export function interpolatable(fields: Fields, prefix = ""): string[] {
+function interpolatable(fields: Fields, prefix = ""): string[] {
   return dataFields(fields).flatMap(([key, f]: [string, DataField]) => {
     const path = prefix + key;
     if (f.type === "object") return interpolatable(f.fields, `${path}.`);

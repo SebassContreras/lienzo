@@ -10,7 +10,7 @@ export type ElementEffects = {
  * Maps our BlendMode to Canvas 2D GlobalCompositeOperation.
  * "normal" maps to "source-over".
  */
-export function compositeOperationOf(
+function compositeOperationOf(
   mode: BlendMode | undefined,
 ): GlobalCompositeOperation {
   if (!mode || mode === "normal") return "source-over";

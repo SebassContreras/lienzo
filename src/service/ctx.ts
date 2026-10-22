@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { createFontStore, type FontStore } from "./font-store.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
 import { createRenderer, type Renderer } from "./renderer.ts";
-import { createStore, type Store } from "./store.ts";
+import { createStore, type PresetStore, type Store } from "./store.ts";
 
 /** The repo, where the app the renderer serves lives (A21). */
 const APP_ROOT = join(import.meta.dirname, "..", "..");
@@ -16,7 +16,7 @@ import type { TtsService } from "./tts/types.ts";
  */
 export type Ctx = {
   root: string;
-  store: Store;
+  store: PresetStore;
   projects: ProjectStore;
   /** User fonts on disk (045/D5). */
   fonts: FontStore;
@@ -27,6 +27,9 @@ export type Ctx = {
   /** Releases what the ctx started (the renderer's browser and dev server, 010/D4). */
   dispose(): Promise<void>;
 };
+
+/** A ctx scoped to one project (046/D1): the only kind that reaches scenes. */
+export type ProjectCtx = Ctx & { store: Store; project: string };
 
 export function createCtx(
   root: string,

@@ -31,7 +31,7 @@ export const SHAPES = [
   ["model", "Modelo (.glb)"],
 ] as const;
 
-export type Shape = (typeof SHAPES)[number][0];
+type Shape = (typeof SHAPES)[number][0];
 
 export type Primitive = Exclude<Shape, "text" | "model">;
 
@@ -88,7 +88,7 @@ export function textGeometry(
 }
 
 /** An outline as three.js shapes, y flipped up. */
-export function shapesOf(outline: readonly OutlineCommand[]) {
+function shapesOf(outline: readonly OutlineCommand[]) {
   const path = new ShapePath();
   for (const c of outline) {
     if (c.type === "M") path.moveTo(c.x, -c.y);

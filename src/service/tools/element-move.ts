@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
 import { editScene, elementIndex, SceneResult } from "../scenes.ts";
 
@@ -19,12 +20,13 @@ export const elementMove = defineTool({
     "`forward` or `backward`, or to an index (0 = bottom).",
   input: z.object({
     scene: z.string().min(1),
+    project: PROJECT,
     id: z.string().min(1),
     to: z.union([z.enum(STEPS), z.number().int().min(0)]),
   }),
   output: SceneResult,
-  run: ({ scene, id, to }, ctx) =>
-    editScene(ctx, scene, (s) => {
+  run: async ({ scene, project, id, to }, ctx) =>
+    editScene(await inProject(ctx, project), scene, (s) => {
       const i = elementIndex(s, id);
       const elements = s.elements.filter((_, j) => j !== i);
       elements.splice(

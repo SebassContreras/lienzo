@@ -63,7 +63,7 @@ export type TextField = Common & {
   multiline?: boolean;
 };
 
-export type Option = readonly [value: string | number, label: string];
+type Option = readonly [value: string | number, label: string];
 
 export type SelectField = Common & {
   type: "select";
@@ -107,7 +107,7 @@ export type DataField =
   | CustomField
   | ObjectField;
 
-export type Field = DataField | WidgetField;
+type Field = DataField | WidgetField;
 
 export type Fields = Record<string, Field>;
 

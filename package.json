@@ -17,7 +17,6 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",
-    "verify": "tsc --noEmit -p tsconfig.json",
     "lienzo": "tsx src/cli/main.ts"
   },
   "bin": {

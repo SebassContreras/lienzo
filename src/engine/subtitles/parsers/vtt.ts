@@ -1,9 +1,9 @@
-import type { SubtitleCue, SubtitleParser, SubtitleWord } from "../types.ts";
+import type { SubtitleCue, SubtitleWord } from "../types.ts";
 
 /**
  * Parses a WebVTT timestamp format: MM:SS.mmm or HH:MM:SS.mmm into fractional seconds.
  */
-export function parseVttTimestamp(timestamp: string): number {
+function parseVttTimestamp(timestamp: string): number {
   const clean = timestamp.trim();
   const parts = clean.split(":");
   if (parts.length === 3) {
@@ -61,7 +61,7 @@ export function extractVttWords(
   // Refine word end boundaries based on the next word's start
   for (let i = 0; i < words.length - 1; i++) {
     const nextStart = words[i + 1]?.start;
-    if (nextStart !== undefined && nextStart > words[i]!.start) {
+    if (nextStart !== undefined && nextStart > words[i]?.start) {
       words[i]!.end = nextStart;
     }
   }
@@ -138,7 +138,3 @@ export function parseVtt(content: string): SubtitleCue[] {
 
   return cues;
 }
-
-export const vttParser: SubtitleParser = {
-  parse: parseVtt,
-};

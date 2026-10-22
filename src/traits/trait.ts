@@ -1,11 +1,11 @@
 import type { Background, Element, ShapeEl } from "../model/model.ts";
 
 /** A trait parameter is a plain JSON value so recipes can set it. */
-export type ParamValue = string | number | boolean;
+type ParamValue = string | number | boolean;
 export type TraitParams = Record<string, ParamValue>;
 
 /** What each kind of trait target is, by the name recipes use for it. */
-export type TraitTargets = { [E in Element as E["kind"]]: E } & {
+type TraitTargets = { [E in Element as E["kind"]]: E } & {
   background: Background;
 };
 export type TraitTarget = keyof TraitTargets;

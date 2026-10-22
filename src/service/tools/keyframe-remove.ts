@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { keyframeAt, withoutKeyframe } from "../../engine/tracks.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, elementIndex, SceneResult } from "../scenes.ts";
 
@@ -9,13 +10,14 @@ export const keyframeRemove = defineTool({
     "Remove an element's keyframe on `path` at time `t`; a track left empty is removed.",
   input: z.object({
     scene: z.string().min(1),
+    project: PROJECT,
     id: z.string().min(1),
     path: z.string().min(1),
     t: z.number().min(0),
   }),
   output: SceneResult,
-  run: ({ scene, id, path, t }, ctx) =>
-    editScene(ctx, scene, (s) => {
+  run: async ({ scene, project, id, path, t }, ctx) =>
+    editScene(await inProject(ctx, project), scene, (s) => {
       const i = elementIndex(s, id);
       const el = s.elements[i] as (typeof s.elements)[number];
       const { [path]: keys = [], ...rest } = el.tracks ?? {};

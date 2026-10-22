@@ -4,7 +4,7 @@ import { color, num, obj, select, text } from "./field.ts";
 
 export type Align = "left" | "center" | "right";
 
-export const ALIGNS = [
+const ALIGNS = [
   ["left", "Izquierda"],
   ["center", "Centro"],
   ["right", "Derecha"],

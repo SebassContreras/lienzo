@@ -9,7 +9,7 @@ export const litness = (active: number, i: number): number =>
   Math.min(1, Math.max(0, active - i));
 
 /** The centre of each of `n` steps along the element's axis. */
-export function stepCentres(el: StepsEl, n: number): Pt[] {
+function stepCentres(el: StepsEl, n: number): Pt[] {
   const r = el.dot / 2;
   const across = el.layout === "horizontal";
   const len = (across ? el.w : el.h) - el.dot;

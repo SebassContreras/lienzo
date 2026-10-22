@@ -11,7 +11,6 @@ import {
   resolveDefaultTtsVoice,
   resolveOpenRouterApiKey,
   resolveOpenRouterBaseUrl,
-  resolveTtsRuntimeConfig,
 } from "./config.ts";
 import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
 import {
@@ -66,19 +65,6 @@ describe("Runtime environment loading and resolution (R1, R2, D1)", () => {
     expect(resolveDefaultTtsVoice()).toBe("rachel");
 
     expect(resolveDefaultTtsVoice("custom-voice")).toBe("custom-voice");
-  });
-
-  it("resolveTtsRuntimeConfig aggregates all resolved configuration", () => {
-    process.env.OPENROUTER_API_KEY = "sk-config-key";
-    process.env.OPENROUTER_API_BASE_URL = "https://my-proxy.com";
-    process.env.OPENROUTER_TTS_MODEL = "openai/tts-1-hd";
-    process.env.OPENROUTER_TTS_VOICE = "shimmer";
-
-    const config = resolveTtsRuntimeConfig();
-    expect(config.apiKey).toBe("sk-config-key");
-    expect(config.baseUrl).toBe("https://my-proxy.com");
-    expect(config.defaultModel).toBe("openai/tts-1-hd");
-    expect(config.defaultVoice).toBe("shimmer");
   });
 });
 
@@ -202,11 +188,20 @@ describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => 
         readScene: async () => defaultScene(),
         writeScene: async () => "test-scene",
       },
+      projects: {
+        get: async () => ({}),
+        projectStore: async () => ({
+          animPresets: async () => [],
+          readScene: async () => defaultScene(),
+          writeScene: async () => "test-scene",
+        }),
+      },
     };
 
     const result = await tool.run(
       {
         scene: "test-scene",
+        project: "test",
         script: "Hello world script",
         speed: 1.0,
         volume: 1.0,
@@ -252,11 +247,20 @@ describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => 
         readScene: async () => defaultScene(),
         writeScene: async () => "test-scene",
       },
+      projects: {
+        get: async () => ({}),
+        projectStore: async () => ({
+          animPresets: async () => [],
+          readScene: async () => defaultScene(),
+          writeScene: async () => "test-scene",
+        }),
+      },
     };
 
     await tool.run(
       {
         scene: "test-scene",
+        project: "test",
         script: "Explicit script",
         model: "explicit-model",
         voice: "explicit-voice",

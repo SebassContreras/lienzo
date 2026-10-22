@@ -6,7 +6,7 @@ import { getSceneAudioTracks } from "./audio-tracks.ts";
  * Interface for audio playback.
  * Follows Service Layer / Dependency Inversion (SRP, swappable for testing).
  */
-export interface IAudioPlayer {
+interface IAudioPlayer {
   sync(
     t: number,
     playing: boolean,

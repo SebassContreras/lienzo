@@ -1,4 +1,8 @@
-import { resolveOpenRouterApiKey, resolveOpenRouterBaseUrl } from "./config.ts";
+import {
+  resolveOpenRouterApiKey,
+  resolveOpenRouterBaseUrl,
+  TTS_PROXY_PATH,
+} from "./config.ts";
 import {
   POPULAR_TTS_MODELS,
   type SynthesizeSpeechRequest,
@@ -28,7 +32,9 @@ export class OpenRouterTtsAdapter implements TtsService {
     const apiKey = resolveOpenRouterApiKey(
       request.apiKey || this.defaultApiKey,
     );
-    if (!apiKey) {
+    const endpoint = resolveOpenRouterBaseUrl(request.baseUrl || this.baseUrl);
+    // The dev server's proxy adds the key itself (046/D4).
+    if (!apiKey && endpoint !== TTS_PROXY_PATH) {
       throw new Error(
         "Clave de API de OpenRouter no configurada. Configura OPENROUTER_API_KEY o proporciónala en la petición.",
       );
@@ -37,8 +43,6 @@ export class OpenRouterTtsAdapter implements TtsService {
     if (!request.text || request.text.trim().length === 0) {
       throw new Error("El texto a sintetizar no puede estar vacío.");
     }
-
-    const endpoint = resolveOpenRouterBaseUrl(request.baseUrl || this.baseUrl);
 
     const model = request.model || "openai/tts-1";
     const voice = request.voice || "alloy";
@@ -56,7 +60,7 @@ export class OpenRouterTtsAdapter implements TtsService {
     const response = await this.fetchFn(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
         "Content-Type": "application/json",
         "HTTP-Referer": "https://lienzo.editor",
         "X-Title": "Lienzo Video Editor",

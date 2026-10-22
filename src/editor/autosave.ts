@@ -5,7 +5,7 @@ import { parseScene } from "../model/schema.ts";
 export type DraftStorage = Pick<Storage, "getItem" | "setItem">;
 
 /** One autosaved draft per project workspace (041/D2). */
-export function autosaveKey(slug = "mi-proyecto"): string {
+function autosaveKey(slug = "mi-proyecto"): string {
   return `lienzo-scene:${slug}`;
 }
 

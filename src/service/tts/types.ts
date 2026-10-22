@@ -3,7 +3,7 @@
  * Follows Principle 3 (Service Layer + Anti-Corruption / Dependency Inversion).
  */
 
-export interface TtsVoice {
+interface TtsVoice {
   id: string;
   name: string;
   language?: string;

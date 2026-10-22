@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
 import { openScene } from "../scenes.ts";
 
@@ -8,12 +9,11 @@ export const sceneGet = defineTool({
     "Get a saved scene as JSON (size, timing, background, elements).",
   input: z.object({
     scene: z.string().min(1),
-    project: z.string().optional(),
+    project: PROJECT,
   }),
   output: z.record(z.string(), z.unknown()),
   async run({ scene, project }, ctx) {
-    const { resolveProjectScope } = await import("../project-scope.ts");
-    const { effectiveCtx } = await resolveProjectScope(ctx, project);
+    const effectiveCtx = await inProject(ctx, project);
     return openScene(effectiveCtx, scene);
   },
 });

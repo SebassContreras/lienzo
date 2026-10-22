@@ -65,12 +65,7 @@ export type DirName = keyof typeof DIRS;
  * slot's direction), given its easing, amount and side. Pure, so any slot can play it
  * (013/D6).
  */
-export type KindFn = (
-  p: number,
-  ease: EasingFn,
-  amount: number,
-  dir: Dir,
-) => Delta;
+type KindFn = (p: number, ease: EasingFn, amount: number, dir: Dir) => Delta;
 
 export type KindDef = {
   /** Its name in the inspector. */

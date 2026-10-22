@@ -21,7 +21,7 @@ export function idsWithin(el: Element): string[] {
 }
 
 /** The smallest box around the elements, lines measured where they are drawn. */
-export function boundsOf(elements: Element[], byId: Map<string, Element>): Box {
+function boundsOf(elements: Element[], byId: Map<string, Element>): Box {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;

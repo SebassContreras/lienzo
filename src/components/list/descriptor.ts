@@ -15,7 +15,7 @@ import { drawList } from "./draw.ts";
 const L = { section: "Lista" };
 const T = { section: "Texto" };
 
-export type Bullet = "dot" | "number" | "check" | "dash";
+type Bullet = "dot" | "number" | "check" | "dash";
 
 /**
  * A bullet list, one item per line of `items`. `reveal` (0–1) shows the items one after

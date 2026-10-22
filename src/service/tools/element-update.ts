@@ -2,6 +2,7 @@ import { z } from "zod";
 import { centerOn } from "../../engine/geometry.ts";
 import type { Element } from "../../model/model.ts";
 import { COORDINATES, patched } from "../elements.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
 import { editScene, elementIndex, SceneResult } from "../scenes.ts";
 
@@ -15,13 +16,14 @@ export const elementUpdate = defineTool({
     COORDINATES,
   input: z.object({
     scene: z.string().min(1),
+    project: PROJECT,
     id: z.string().min(1),
     patch: z.record(z.string(), z.unknown()),
     at: z.object({ x: z.number(), y: z.number() }).optional(),
   }),
   output: SceneResult,
-  run: ({ scene, id, patch, at }, ctx) =>
-    editScene(ctx, scene, (s) => {
+  run: async ({ scene, project, id, patch, at }, ctx) =>
+    editScene(await inProject(ctx, project), scene, (s) => {
       const i = elementIndex(s, id);
       return {
         ...s,

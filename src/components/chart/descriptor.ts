@@ -18,7 +18,7 @@ const D = { section: "Gráfico" };
 const C = { section: "Color" };
 const T = { section: "Texto" };
 
-export type ChartType = "bar" | "line" | "pie" | "donut";
+type ChartType = "bar" | "line" | "pie" | "donut";
 
 const round = (p: Record<string, unknown>) =>
   p.type === "pie" || p.type === "donut";

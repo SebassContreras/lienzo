@@ -58,7 +58,7 @@ const ViewSchema: z.ZodType<ViewBox> = z.object({
 const ARROW = "M10 40 H60 V20 L90 50 L60 80 V60 H10 Z";
 
 /** A box's animations plus drawing the stroke on. */
-export const PATH_ANIMS: AnimOffer = {
+const PATH_ANIMS: AnimOffer = {
   motions: [...BOX_ANIMS.motions, "draw"],
   loops: LOOP_KINDS,
 };

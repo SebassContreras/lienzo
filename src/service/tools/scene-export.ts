@@ -1,7 +1,8 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { z } from "zod";
-import { defineTool } from "../registry.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
+import { defineTool, fail } from "../registry.ts";
 import { resolveAndRenderScene } from "../render-target.ts";
 
 const EXTENSIONS: Record<string, string> = {
@@ -16,12 +17,13 @@ export const sceneExport = defineTool({
   description:
     "Export a saved scene as a PNG (one frame at time `t`, default 0), a GIF or an MP4 " +
     "(the whole loop) and return the written file. MP4 falls back to WebM, with a notice, " +
-    "when the browser cannot encode H.264. `out` is the file path (default " +
-    "exports/<scene>.<ext>, relative to the repo); its extension follows the real format. " +
+    "when the browser cannot encode H.264. `out` is the file path inside the project's " +
+    "exports/ (default <scene>.<ext>); a path outside it fails; its extension follows the " +
+    "real format. " +
     "`scale` sizes it relative to the scene (default 1). Starts a headless browser on first use.",
   input: z.object({
     scene: z.string().min(1),
-    project: z.string().optional(),
+    project: PROJECT,
     format: z.enum(["png", "gif", "mp4"]),
     t: z.number().min(0).optional(),
     scale: z.number().min(0.1).max(2).optional(),
@@ -35,11 +37,7 @@ export const sceneExport = defineTool({
     notices: z.array(z.string()),
   }),
   async run({ scene: name, project, format, t = 0, scale = 1, fps, out }, ctx) {
-    const { resolveProjectScope } = await import("../project-scope.ts");
-    const { slug: projectSlug, effectiveCtx } = await resolveProjectScope(
-      ctx,
-      project,
-    );
+    const effectiveCtx = await inProject(ctx, project);
 
     const { scene, rendered } = await resolveAndRenderScene(
       effectiveCtx,
@@ -49,7 +47,6 @@ export const sceneExport = defineTool({
         scale,
         fps,
         time: t,
-        project: projectSlug,
       },
     );
     const ext = EXTENSIONS[rendered.type] ?? format;
@@ -65,11 +62,24 @@ export const sceneExport = defineTool({
         "H.264 no está disponible en este navegador; se exportó WebM",
       );
     }
-    const defaultOut = `projects/${projectSlug}/exports/${name}.${ext}`;
-    const target = resolve(ctx.root, out ?? defaultOut).replace(
+    // 046/D2: an export never leaves projects/<slug>/exports/.
+    const exportsDir = join(
+      ctx.root,
+      "projects",
+      effectiveCtx.project,
+      "exports",
+    );
+    const target = resolve(exportsDir, out ?? `${name}.${ext}`).replace(
       /\.\w+$/,
       `.${ext}`,
     );
+    const inside = relative(exportsDir, target);
+    if (!inside || inside.startsWith("..") || isAbsolute(inside))
+      fail(
+        "out_of_project",
+        `«${out}» queda fuera de projects/${effectiveCtx.project}/exports/`,
+        "out",
+      );
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, rendered.bytes);
     return {

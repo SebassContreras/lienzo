@@ -11,7 +11,7 @@ export type TraitUse =
   | ({ use: string } & Record<string, string | number | boolean>);
 
 /** What a recipe builds: an element of some kind, or a scene background. */
-export type PresetKind = ElementKind | "background";
+type PresetKind = ElementKind | "background";
 
 /**
  * A preset as stored in JSON: which kind of element (or background) it builds, the traits applied in order

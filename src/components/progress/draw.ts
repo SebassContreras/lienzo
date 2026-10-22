@@ -9,7 +9,7 @@ import {
 import type { ProgressEl } from "./descriptor.ts";
 
 /** `value` as a fraction of the whole, within 0–1. */
-export const fractionOf = (value: number): number =>
+const fractionOf = (value: number): number =>
   Math.min(1, Math.max(0, value / 100));
 
 export function drawProgress(ctx: Ctx, el: ProgressEl, st: AnimState): void {

@@ -9,10 +9,10 @@ import type { Box } from "../engine/geometry.ts";
 export const SNAP_PX = 5;
 
 /** A dashed line at `at` on `axis` ("x" is a vertical line), running from `from` to `to`. */
-export type Guide = { axis: "x" | "y"; at: number; from: number; to: number };
+type Guide = { axis: "x" | "y"; at: number; from: number; to: number };
 
 /** One of two equal gaps: a span on `axis` drawn across at `at` (R3). */
-export type GapMark = { axis: "x" | "y"; from: number; to: number; at: number };
+type GapMark = { axis: "x" | "y"; from: number; to: number; at: number };
 
 export type Snap = { dx: number; dy: number; guides: Guide[]; gaps: GapMark[] };
 

@@ -42,13 +42,14 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
     });
     await mkdir(join(root, "presets", "animations"), { recursive: true });
     ctx = createCtx(root);
+    await registry.call("project_create", { slug: "p", name: "P" }, ctx);
     editor = await openApp(APP_ROOT, "");
     demo = (await inPage(
       `(await import("/src/test/fixtures/sample-scene.ts")).demoScene()`,
     )) as Scene;
     const r = await registry.call(
       "scene_create",
-      { name: "demo", scene: demo },
+      { name: "demo", project: "p", scene: demo },
       ctx,
     );
     expect(r.ok).toBe(true);
@@ -71,7 +72,7 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
   async function exported(input: Record<string, unknown>) {
     const r = await registry.call(
       "scene_export",
-      { scene: "demo", ...input },
+      { scene: "demo", project: "p", ...input },
       ctx,
     );
     if (!r.ok) throw new Error(JSON.stringify(r.error));
@@ -98,7 +99,7 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
   it("previews a PNG as image data (R2)", async () => {
     const r = await registry.call(
       "scene_preview",
-      { scene: "demo", t: 1 },
+      { scene: "demo", project: "p", t: 1 },
       ctx,
     );
     if (!r.ok) throw new Error(JSON.stringify(r.error));
@@ -165,7 +166,6 @@ describe.skipIf(!browser)(
     afterAll(() => rm(projectDir, { recursive: true, force: true }));
 
     it("exits after an export, and after a failed one", async () => {
-      const dir = await mkdtemp(join(tmpdir(), "lienzo-exit-"));
       const scene = [
         "scene_export",
         "--scene",
@@ -175,12 +175,10 @@ describe.skipIf(!browser)(
         "--format",
         "png",
       ];
-      expect(await lienzo([...scene, "--out", join(dir, "ok.png")])).toBe(0);
+      expect(await lienzo([...scene, "--out", "ok.png"])).toBe(0);
       // `out` under a file: the render succeeds, then writing fails.
-      await writeFile(join(dir, "file"), "");
-      expect(
-        await lienzo([...scene, "--out", join(dir, "file", "x.png")]),
-      ).toBe(1);
+      await writeFile(join(projectDir, "exports", "file"), "");
+      expect(await lienzo([...scene, "--out", "file/x.png"])).toBe(1);
     });
 
     it("the MCP server exits once the client closes stdin, after a preview", async () => {

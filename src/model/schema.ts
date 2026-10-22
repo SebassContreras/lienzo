@@ -13,7 +13,7 @@ export { ElementSchema };
 
 const color = z.string();
 
-export const BackgroundSchema = z.object({
+const BackgroundSchema = z.object({
   color,
   color2: color,
   gradient: z.boolean(),
@@ -25,14 +25,14 @@ export const BackgroundSchema = z.object({
   spotlightColor: color,
 });
 
-export const SceneAudioSchema = z.object({
+const SceneAudioSchema = z.object({
   assetId: z.string().min(1),
   volume: z.number().min(0).max(1).optional(),
   startOffset: z.number().min(0).optional(),
   trimOffset: z.number().min(0).optional(),
 });
 
-export const AudioTrackItemSchema = z.object({
+const AudioTrackItemSchema = z.object({
   id: z.string().min(1),
   assetId: z.string().min(1),
   name: z.string().optional(),
@@ -65,7 +65,7 @@ const traitUse = z.union([
  * A recipe's shape; `set` (group children in their compact form included) is left loose
  * here and checked by resolving the recipe, which must succeed.
  */
-export const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
+const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
   .object({
     name: z.string().min(1),
     category: z.string().optional(),

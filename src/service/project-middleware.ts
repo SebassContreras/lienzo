@@ -10,8 +10,6 @@ import {
 import { safeAssetPath } from "./asset-path.ts";
 import type { ProjectStore } from "./project-store.ts";
 
-export type ProjectApiReply = { status: number; body: unknown };
-
 export async function handleProjectApi(
   store: ProjectStore,
   req: IncomingMessage,

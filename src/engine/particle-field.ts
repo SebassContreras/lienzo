@@ -32,7 +32,7 @@ const MAX_CACHED = 64;
  * inside the box shrunk by `drift`, amplitudes up to `drift`, phases, and whole-number
  * frequencies from 1 to `speed` so every path closes exactly once per loop (A6).
  */
-export function orbitsOf(
+function orbitsOf(
   el: Pick<ParticlesEl, "seed" | "count" | "w" | "h" | "drift" | "speed">,
 ): Orbit[] {
   const count = Math.max(0, Math.min(300, Math.floor(el.count)));

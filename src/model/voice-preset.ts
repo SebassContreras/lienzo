@@ -20,7 +20,7 @@ export interface VoicePreset {
   adjustDuration?: boolean;
 }
 
-export const VoicePresetSchema: z.ZodType<VoicePreset> = z.object({
+const VoicePresetSchema: z.ZodType<VoicePreset> = z.object({
   name: z.string().min(1),
   category: z.string().default("Voces"),
   provider: z.string().default("openrouter"),

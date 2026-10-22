@@ -5,7 +5,7 @@ import {
 } from "../../model/project.ts";
 import { defineTool, fail } from "../registry.ts";
 
-export const ProjectDetailsSchema = z.object({
+const ProjectDetailsSchema = z.object({
   manifest: ProjectManifestSchema,
   assets: z.array(z.string()),
   presets: z.array(z.string()),

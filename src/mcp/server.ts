@@ -24,7 +24,7 @@ import type { Registry, Tool } from "../service/registry.ts";
 const VERSION = "0.1.0";
 
 /** A registry tool as MCP lists it: same name and description, its input as JSON Schema. */
-export function mcpToolOf(tool: Tool): McpTool {
+function mcpToolOf(tool: Tool): McpTool {
   const { $schema: _, ...schema } = z.toJSONSchema(tool.input, { io: "input" });
   return {
     name: tool.name,
@@ -34,7 +34,7 @@ export function mcpToolOf(tool: Tool): McpTool {
 }
 
 /** A tool's value as MCP content: an `ImageResult` is an image (010/D3), anything else JSON text. */
-export function contentOf(value: unknown): CallToolResult["content"] {
+function contentOf(value: unknown): CallToolResult["content"] {
   const image = ImageResult.safeParse(value);
   return image.success
     ? [{ type: "image", ...image.data.image }]

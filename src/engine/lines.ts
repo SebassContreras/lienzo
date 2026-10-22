@@ -219,7 +219,7 @@ export function elbowPoints(r: ResolvedLine): Pt[] {
 }
 
 /** Point `t` (0–1) of the curved route: a cubic leaving each end along its axis. */
-export function cubicAt(r: ResolvedLine, t: number): Pt {
+function cubicAt(r: ResolvedLine, t: number): Pt {
   const k = Math.max(30, Math.hypot(r.b.x - r.a.x, r.b.y - r.a.y) * 0.4);
   const c1 = { x: r.a.x + r.da.x * k, y: r.a.y + r.da.y * k };
   const c2 = { x: r.b.x + r.db.x * k, y: r.b.y + r.db.y * k };

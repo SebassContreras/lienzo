@@ -27,7 +27,7 @@ export function withClip(ctx: Ctx, path: Path2D, draw: () => void): void {
 /**
  * Returns the un-transformed Path2D outline of an element (in its untransformed coordinates).
  */
-export function outlineOf(el: Element): Path2D {
+function outlineOf(el: Element): Path2D {
   const path = new Path2D();
   switch (el.kind) {
     case "rect": {

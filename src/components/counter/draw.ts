@@ -7,11 +7,7 @@ import type { CounterEl, Separator } from "./descriptor.ts";
  * `n` with `decimals` places and thousands split by `sep`; the decimal mark is whichever of
  * "," and "." is not the separator.
  */
-export function formatNumber(
-  n: number,
-  decimals: number,
-  sep: Separator,
-): string {
+function formatNumber(n: number, decimals: number, sep: Separator): string {
   const d = Math.max(0, Math.round(decimals));
   const [int = "0", frac] = Math.abs(n).toFixed(d).split(".");
   const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
@@ -21,7 +17,7 @@ export function formatNumber(
 }
 
 /** The text the counter shows at its current `progress`. */
-export function counterText(el: CounterEl): string {
+function counterText(el: CounterEl): string {
   const k = Math.min(1, Math.max(0, el.progress));
   const n = el.from + (el.to - el.from) * k;
   return el.prefix + formatNumber(n, el.decimals, el.separator) + el.suffix;

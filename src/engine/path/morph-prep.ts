@@ -69,7 +69,7 @@ export function polylineLength(pts: Points, closed: boolean): number {
  * `count` points evenly spaced by arc length along `pts`. A closed ring's last point is not
  * its first again; an open one keeps both ends.
  */
-export function resample(pts: Points, count: number, closed: boolean): Points {
+function resample(pts: Points, count: number, closed: boolean): Points {
   const n = pts.length / 2;
   const loop = closed ? [...pts, pts[0] as number, pts[1] as number] : pts;
   const total = polylineLength(pts, closed);

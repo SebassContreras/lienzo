@@ -11,7 +11,7 @@ import { type ExportOptions, exportScene } from "./export.ts";
 /** What the page hands back: the encoded file as base64 and its MIME type. */
 export type RenderedFile = { base64: string; type: string };
 
-export type LienzoExport = (
+type LienzoExport = (
   scene: Scene,
   options: ExportOptions,
   /** The project whose fonts the scene uses (045/D3). */

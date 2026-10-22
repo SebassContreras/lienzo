@@ -9,7 +9,7 @@ const RENAME_STATUS = {
 };
 
 /**
- * The JSON store behind `/api/presets` and `/api/scenes`, one file per item in `dir`:
+ * The JSON store behind `/api/presets` and `/api/animations`, one file per item in `dir`:
  * GET                     -> [{ name, data }]
  * POST   ?name=x          -> writes <slug>.json
  * DELETE ?name=x          -> removes <slug>.json

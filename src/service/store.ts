@@ -3,28 +3,28 @@
  * middleware (`json-fs.ts`), so what the tools write opens in the editor and vice versa.
  */
 import { join } from "node:path";
-import {
-  type JsonItem,
-  listJson,
-  readJson,
-  writeJson,
-} from "../presets/json-fs.ts";
+import { type JsonItem, listJson } from "../presets/json-fs.ts";
 import { loadBuiltIns } from "./built-in.ts";
 
 export type PresetSource = "built-in" | "user";
 
 /** A preset file as stored, unchecked: `file` is its name without `.json`. */
-export type StoredPreset = {
+type StoredPreset = {
   file: string;
   source: PresetSource;
   data: unknown;
 };
 
-export type Store = {
+/** The presets every tool can read; scenes live only in a project (046/D1). */
+export type PresetStore = {
   /** Built-in presets, then the user's (`presets/*.json`). */
   presets(): Promise<StoredPreset[]>;
   /** Animation presets in `presets/animations/`, unchecked. */
   animPresets(): Promise<JsonItem[]>;
+};
+
+/** A project's store: its presets and its `scenes/`. */
+export type Store = PresetStore & {
   scenes(): Promise<JsonItem[]>;
   /** The scene stored as `name`, or undefined. */
   readScene(name: string): Promise<unknown | undefined>;
@@ -32,9 +32,8 @@ export type Store = {
   writeScene(name: string, scene: unknown): Promise<string>;
 };
 
-export function createStore(root: string): Store {
+export function createStore(root: string): PresetStore {
   const presets = join(root, "presets");
-  const defaultProjectScenes = join(root, "projects", "mi-proyecto", "scenes");
   const tag = (source: PresetSource) => (items: JsonItem[]) =>
     items.map((i) => ({ file: i.name, source, data: i.data }));
   return {
@@ -43,8 +42,5 @@ export function createStore(root: string): Store {
       ...tag("user")(await listJson(presets)),
     ],
     animPresets: () => listJson(join(presets, "animations")),
-    scenes: () => listJson(defaultProjectScenes),
-    readScene: (name) => readJson(defaultProjectScenes, name),
-    writeScene: (name, scene) => writeJson(defaultProjectScenes, name, scene),
   };
 }

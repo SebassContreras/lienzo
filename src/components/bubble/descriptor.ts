@@ -15,7 +15,7 @@ import {
 } from "../fields/index.ts";
 import { drawBubble } from "./draw.ts";
 
-export type Side = "left" | "right";
+type Side = "left" | "right";
 
 const M = { section: "Mensaje" };
 const A = { section: "Autor" };

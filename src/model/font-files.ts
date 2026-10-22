@@ -3,7 +3,7 @@
  * `Family-Weight.ext` split on the last `-` (`Open Sans-700.woff2`), weight 400 when the
  * name has no numeric suffix. No manifest to keep in sync.
  */
-export const FONT_EXTENSIONS = ["ttf", "otf", "woff", "woff2"] as const;
+const FONT_EXTENSIONS = ["ttf", "otf", "woff", "woff2"] as const;
 export type FontExtension = (typeof FONT_EXTENSIONS)[number];
 
 export type FontFile = { family: string; weight: number; file: string };
@@ -48,7 +48,7 @@ export type ResolvedFont = {
 };
 
 /** Where the font API serves a user font file. */
-export function fontUrl(file: string, project?: string): string {
+function fontUrl(file: string, project?: string): string {
   const name = encodeURIComponent(file);
   return project
     ? `/api/fonts/project/${encodeURIComponent(project)}/${name}`

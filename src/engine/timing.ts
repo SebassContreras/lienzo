@@ -5,8 +5,8 @@
  */
 import type { EasingFn } from "./easing.ts";
 
-export type Direction = "normal" | "reverse" | "alternate";
-export type Fill = "none" | "forwards" | "backwards" | "both";
+type Direction = "normal" | "reverse" | "alternate";
+type Fill = "none" | "forwards" | "backwards" | "both";
 
 export type Timing = {
   /** Seconds before the first iteration starts. */

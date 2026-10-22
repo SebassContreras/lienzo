@@ -2,6 +2,7 @@ import { z } from "zod";
 import { EasingSchema } from "../../engine/easing.ts";
 import { withKeyframe } from "../../engine/tracks.ts";
 import { checkKeyframe } from "../elements.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, elementIndex, SceneResult } from "../scenes.ts";
 
@@ -14,6 +15,7 @@ export const keyframeSet = defineTool({
     "replaced. `easing` (default `auto`) shapes the segment to the next keyframe.",
   input: z.object({
     scene: z.string().min(1),
+    project: PROJECT,
     id: z.string().min(1),
     path: z.string().min(1),
     t: z.number().min(0),
@@ -21,8 +23,8 @@ export const keyframeSet = defineTool({
     easing: EasingSchema.optional(),
   }),
   output: SceneResult,
-  run: ({ scene, id, path, t, value, easing }, ctx) =>
-    editScene(ctx, scene, (s) => {
+  run: async ({ scene, project, id, path, t, value, easing }, ctx) =>
+    editScene(await inProject(ctx, project), scene, (s) => {
       const i = elementIndex(s, id);
       const el = s.elements[i] as (typeof s.elements)[number];
       checkKeyframe(el.kind, path, value);

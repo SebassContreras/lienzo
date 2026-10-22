@@ -11,7 +11,7 @@ import type { DrawContext } from "../descriptor.ts";
 import type { BubbleEl } from "./descriptor.ts";
 
 /** The author's initials: the first letter of up to two words. */
-export const initialsOf = (name: string): string =>
+const initialsOf = (name: string): string =>
   name
     .split(/\s+/)
     .filter(Boolean)
@@ -20,7 +20,7 @@ export const initialsOf = (name: string): string =>
     .join("");
 
 /** How high each typing dot is lifted at `phase` (whole cycles per loop), 0–1. */
-export function dotLift(phase: number, i: number): number {
+function dotLift(phase: number, i: number): number {
   return Math.max(0, Math.sin(2 * Math.PI * phase - i * 0.9));
 }
 

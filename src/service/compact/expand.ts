@@ -25,7 +25,7 @@ import { resolveLineConnections } from "./connections.ts";
 import { resolveAtPlacement, resolveFitCanvas } from "./layout.ts";
 import { normalizeTracks } from "./tracks.ts";
 
-export type PresetResolver = (
+type PresetResolver = (
   name: string,
 ) => Promise<PresetRecipe | undefined> | (PresetRecipe | undefined);
 
@@ -35,7 +35,7 @@ export type ExpandOptions = {
 };
 
 /** Parses size specification (e.g. "1080x1080", "1920x1080", "story", or [w, h]) */
-export function resolveSceneDimensions(size?: string | [number, number]): {
+function resolveSceneDimensions(size?: string | [number, number]): {
   width: number;
   height: number;
 } {
@@ -66,7 +66,7 @@ export function resolveSceneDimensions(size?: string | [number, number]): {
 }
 
 /** Resolves background from preset name or partial object */
-export async function resolveSceneBackground(
+async function resolveSceneBackground(
   bgInput: unknown,
   findPreset?: PresetResolver,
 ): Promise<Background> {
@@ -95,7 +95,7 @@ export async function resolveSceneBackground(
 }
 
 /** Normalizes anim shorthand: if a string or single kind is given, maps it to { in/loop: ... } */
-export function normalizeAnim(rawAnim: unknown): unknown {
+function normalizeAnim(rawAnim: unknown): unknown {
   if (typeof rawAnim === "string") {
     const kind = rawAnim.toLowerCase();
     const LOOP_CANDIDATES = [
@@ -134,7 +134,7 @@ export function normalizeAnim(rawAnim: unknown): unknown {
 }
 
 /** Builds an element from preset or kind, applying deepMerge and children expansion */
-export async function buildElement(
+async function buildElement(
   raw: CompactElement,
   findPreset?: PresetResolver,
 ): Promise<Element> {

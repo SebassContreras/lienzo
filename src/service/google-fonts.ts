@@ -32,10 +32,7 @@ export function parseGoogleCss(css: string): GoogleFace[] {
 }
 
 /** The css2 URL for `family` in `weights`. */
-export function googleCssUrl(
-  family: string,
-  weights: readonly number[],
-): string {
+function googleCssUrl(family: string, weights: readonly number[]): string {
   const name = family.trim().replace(/ +/g, "+");
   const list = [...new Set(weights)].sort((a, b) => a - b).join(";");
   return `${CSS_API}?family=${name}:wght@${list}&display=swap`;

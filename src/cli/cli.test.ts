@@ -90,13 +90,19 @@ describe("lienzo CLI", () => {
     await ok(["component_list"]);
     await ok(["preset_list"]);
     await ok(["preset_validate", "--json", JSON.stringify({ recipe })]);
-    await ok(["scene_create", "--json", "-"], '{"name":"demo"}');
-    await ok(["scene_create", "--json", "@demo.json"]);
-    await ok(["scene_list"]);
-    await ok(["scene_get", "--scene", "demo"]);
-    await ok(["scene_validate", "--json", '{"scene":{}}']);
+    await ok(["project_create", "--slug", "p", "--name", "P"]);
+    await ok(
+      ["scene_create", "--project", "p", "--json", "-"],
+      '{"name":"demo"}',
+    );
+    await ok(["scene_create", "--project", "p", "--json", "@demo.json"]);
+    await ok(["scene_list", "--project", "p"]);
+    await ok(["scene_get", "--project", "p", "--scene", "demo"]);
+    await ok(["scene_validate", "--project", "p", "--json", '{"scene":{}}']);
     const { id } = await ok([
       "element_add",
+      "--project",
+      "p",
       "--scene",
       "demo",
       "--kind",
@@ -106,6 +112,8 @@ describe("lienzo CLI", () => {
     ]);
     await ok([
       "element_update",
+      "--project",
+      "p",
       "--scene",
       "demo",
       "--id",
@@ -113,12 +121,48 @@ describe("lienzo CLI", () => {
       "--json",
       '{"patch":{"x":5}}',
     ]);
-    await ok(["element_add", "--scene", "demo", "--kind", "ellipse"]);
-    await ok(["element_move", "--scene", "demo", "--id", id, "--to", "1"]);
-    await ok(["element_move", "--scene", "demo", "--id", id, "--to", "back"]);
-    await ok(["background_set", "--json", '{"scene":"demo","values":{}}']);
+    await ok([
+      "element_add",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--kind",
+      "ellipse",
+    ]);
+    await ok([
+      "element_move",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--id",
+      id,
+      "--to",
+      "1",
+    ]);
+    await ok([
+      "element_move",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--id",
+      id,
+      "--to",
+      "back",
+    ]);
+    await ok([
+      "background_set",
+      "--project",
+      "p",
+      "--json",
+      '{"scene":"demo","values":{}}',
+    ]);
     await ok([
       "keyframe_set",
+      "--project",
+      "p",
       "--scene",
       "demo",
       "--id",
@@ -132,6 +176,8 @@ describe("lienzo CLI", () => {
     ]);
     await ok([
       "keyframe_remove",
+      "--project",
+      "p",
       "--scene",
       "demo",
       "--id",
@@ -147,6 +193,8 @@ describe("lienzo CLI", () => {
     await ok(["project_delete", "--slug", "test-proj"]);
     await ok([
       "scene_generate_speech",
+      "--project",
+      "p",
       "--scene",
       "demo",
       "--script",
@@ -154,11 +202,41 @@ describe("lienzo CLI", () => {
       "--provider",
       "local",
     ]);
-    await ok(["scene_preview", "--scene", "demo", "--t", "1"]);
-    await ok(["scene_inspect_layout", "--name", "demo"]);
-    await ok(["scene_build", "--json", '{"compact":{"elements":[]}}']);
-    await ok(["scene_export", "--scene", "demo", "--format", "gif"]);
-    await ok(["element_remove", "--scene", "demo", "--id", id]);
+    await ok([
+      "scene_preview",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--t",
+      "1",
+    ]);
+    await ok(["scene_inspect_layout", "--project", "p", "--name", "demo"]);
+    await ok([
+      "scene_build",
+      "--project",
+      "p",
+      "--json",
+      '{"compact":{"elements":[]}}',
+    ]);
+    await ok([
+      "scene_export",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--format",
+      "gif",
+    ]);
+    await ok([
+      "element_remove",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--id",
+      id,
+    ]);
     await ok(["font_list"]);
     // Google Fonts is the network boundary: a recorded css2 answer and fake files.
     const css = await readFile(

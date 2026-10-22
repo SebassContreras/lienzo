@@ -5,35 +5,24 @@
  * Resolves configuration following precedence:
  * 1. Explicit override passed in options (e.g. CLI flag, tool argument, dialog input)
  * 2. Process environment variables (`process.env.OPENROUTER_*`) loaded via native `process.loadEnvFile`
- * 3. Client-side Vite environment variables (`import.meta.env.VITE_OPENROUTER_*`)
- * 4. Browser localStorage (for API key in editor)
- * 5. Hardcoded default fallbacks
+ * 3. Browser localStorage (for API key in editor)
+ * 4. Hardcoded default fallbacks
+ *
+ * The environment is read in Node only: no `OPENROUTER_*` value reaches browser code; the
+ * editor reaches OpenRouter through the dev server's proxy (`TTS_PROXY_PATH`, 046/D4).
  */
 
 export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/audio/speech";
+/** The dev server's speech endpoint that adds the server's API key (046/D4). */
+export const TTS_PROXY_PATH = "/api/tts/speech";
 export const DEFAULT_LOCAL_TTS_URL = "http://localhost:8880/v1/audio/speech";
 export const STORAGE_KEY_OPENROUTER_API_KEY = "lienzo_openrouter_api_key";
 export const DEFAULT_TTS_MODEL = "openai/tts-1";
 export const DEFAULT_TTS_VOICE = "alloy";
-export const DEFAULT_LOCAL_TTS_MODEL = "kokoro-es";
-export const DEFAULT_LOCAL_TTS_VOICE = "ef_dora";
+const DEFAULT_LOCAL_TTS_MODEL = "kokoro-es";
+const DEFAULT_LOCAL_TTS_VOICE = "ef_dora";
 
 export type TtsProviderType = "openrouter" | "local" | "kokoro" | "custom";
-
-export interface TtsSettings {
-  provider?: TtsProviderType;
-  apiKey?: string;
-  baseUrl?: string;
-  defaultModel?: string;
-  defaultVoice?: string;
-}
-
-export interface TtsRuntimeConfig {
-  apiKey: string;
-  baseUrl: string;
-  defaultModel: string;
-  defaultVoice: string;
-}
 
 /**
  * Safely loads environment variables from a .env file using native Node.js
@@ -64,33 +53,11 @@ export function loadEnvSafely(envPath?: string): void {
 // Automatically load default .env if running in Node
 loadEnvSafely();
 
-/**
- * Reads an environment variable checking process.env (Node) then import.meta.env (Vite).
- */
-export function getEnvVariable(name: string): string | undefined {
-  // 1. Check Node process.env
-  if (typeof process !== "undefined" && process.env?.[name]) {
-    const val = process.env[name]?.trim();
-    if (val && val.length > 0) return val;
-  }
-
-  // 2. Check Vite / browser import.meta.env (with or without VITE_ prefix)
-  try {
-    const metaEnv = (import.meta as unknown as { env?: Record<string, string> })
-      ?.env;
-    if (metaEnv) {
-      const direct = metaEnv[name]?.trim();
-      if (direct && direct.length > 0) return direct;
-
-      const viteName = `VITE_${name}`;
-      const viteVal = metaEnv[viteName]?.trim();
-      if (viteVal && viteVal.length > 0) return viteVal;
-    }
-  } catch {
-    // In environments where import.meta is not accessible
-  }
-
-  return undefined;
+/** An environment variable, trimmed, from `process.env` (Node only; undefined in a browser). */
+function getEnvVariable(name: string): string | undefined {
+  if (typeof process === "undefined") return undefined;
+  const val = process.env?.[name]?.trim();
+  return val ? val : undefined;
 }
 
 /**
@@ -101,7 +68,7 @@ export function resolveOpenRouterApiKey(explicitKey?: string): string {
     return explicitKey.trim();
   }
 
-  // Environment check (OPENROUTER_API_KEY or VITE_OPENROUTER_API_KEY)
+  // Environment check (Node only)
   const envKey = getEnvVariable("OPENROUTER_API_KEY");
   if (envKey) return envKey;
 
@@ -124,7 +91,7 @@ export function resolveOpenRouterApiKey(explicitKey?: string): string {
 
 /**
  * Resolves the active TTS provider.
- * Falls back to TTS_PROVIDER or KOKORO_PROVIDER env vars, then "openrouter".
+ * Falls back to the TTS_PROVIDER env var, then "openrouter".
  */
 export function resolveTtsProvider(explicitProvider?: string): TtsProviderType {
   if (explicitProvider && explicitProvider.trim().length > 0) {
@@ -135,8 +102,7 @@ export function resolveTtsProvider(explicitProvider?: string): TtsProviderType {
     return "openrouter";
   }
 
-  const envProvider =
-    getEnvVariable("TTS_PROVIDER") || getEnvVariable("KOKORO_PROVIDER");
+  const envProvider = getEnvVariable("TTS_PROVIDER");
   if (envProvider) {
     const norm = envProvider.trim().toLowerCase();
     if (norm === "local" || norm === "kokoro" || norm === "custom") {
@@ -157,12 +123,28 @@ export function resolveLocalTtsBaseUrl(explicitBaseUrl?: string): string {
   }
 
   const envUrl =
-    getEnvVariable("TTS_LOCAL_URL") ||
-    getEnvVariable("KOKORO_TTS_URL") ||
-    getEnvVariable("LOCAL_TTS_URL");
+    getEnvVariable("TTS_LOCAL_URL") || getEnvVariable("KOKORO_TTS_URL");
   if (envUrl) return envUrl;
 
   return DEFAULT_LOCAL_TTS_URL;
+}
+
+/** The local provider's model: explicit, else KOKORO_TTS_MODEL, else "kokoro-es" (046/D5). */
+export function resolveLocalTtsModel(explicitModel?: string): string {
+  return (
+    explicitModel?.trim() ||
+    getEnvVariable("KOKORO_TTS_MODEL") ||
+    DEFAULT_LOCAL_TTS_MODEL
+  );
+}
+
+/** The local provider's voice: explicit, else KOKORO_TTS_VOICE, else "ef_dora" (046/D5). */
+export function resolveLocalTtsVoice(explicitVoice?: string): string {
+  return (
+    explicitVoice?.trim() ||
+    getEnvVariable("KOKORO_TTS_VOICE") ||
+    DEFAULT_LOCAL_TTS_VOICE
+  );
 }
 
 /**
@@ -208,38 +190,4 @@ export function resolveDefaultTtsVoice(explicitVoice?: string): string {
   if (envVoice) return envVoice;
 
   return DEFAULT_TTS_VOICE;
-}
-
-/**
- * Aggregates complete runtime configuration for TTS services.
- */
-export function resolveTtsRuntimeConfig(
-  overrides?: Partial<TtsSettings>,
-): TtsRuntimeConfig {
-  return {
-    apiKey: resolveOpenRouterApiKey(overrides?.apiKey),
-    baseUrl: resolveOpenRouterBaseUrl(overrides?.baseUrl),
-    defaultModel: resolveDefaultTtsModel(overrides?.defaultModel),
-    defaultVoice: resolveDefaultTtsVoice(overrides?.defaultVoice),
-  };
-}
-
-/**
- * Saves OpenRouter API key to localStorage (for editor client settings).
- */
-export function persistOpenRouterApiKey(apiKey: string): void {
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
-      if (apiKey.trim().length > 0) {
-        window.localStorage.setItem(
-          STORAGE_KEY_OPENROUTER_API_KEY,
-          apiKey.trim(),
-        );
-      } else {
-        window.localStorage.removeItem(STORAGE_KEY_OPENROUTER_API_KEY);
-      }
-    } catch {
-      // Ignore storage errors in browser sandbox
-    }
-  }
 }

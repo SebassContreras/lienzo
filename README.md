@@ -38,8 +38,8 @@ the canvas, edit them live, and export PNG, GIF or MP4.
   background settings: color or gradient, dots, spotlight. The "Fondos" library section
   applies a background preset (undoable); "Guardar fondo como preset" saves yours.
 - **Scenes & Workspaces:** scenes are JSON files residing inside project workspaces (`projects/<slug>/scenes/`).
-  The scenes dialog shows each saved scene with a thumbnail to open, rename, duplicate, export or delete it,
-  and imports scenes from `.json` files.
+  The "Escenas" sidebar tab shows each saved scene of the active project with a thumbnail to
+  open, rename, duplicate, export or delete it, and imports scenes from `.json` files.
 - **Validation:** an imported preset or scene is checked before anything is written; an
   invalid file is rejected with the exact path that is wrong (e.g. `elements.1.fill.color`).
 - **Files:** presets and project workspaces (`projects/<slug>/` containing scenes, local assets and exports)
@@ -90,21 +90,21 @@ In OpenCode (`opencode.json`) or other MCP clients, configure the server with ex
 }
 ```
 
-Or when running the compiled distribution bundle:
+Or with the compiled bundle (`pnpm build:cli` writes `dist/cli.js`):
 
 ```json
 {
   "mcpServers": {
     "lienzo": {
       "command": "node",
-      "args": ["dist/mcp.mjs"],
+      "args": ["dist/cli.js", "mcp"],
       "cwd": "/path/to/lienzo"
     }
   }
 }
 ```
 
-Tools read and write the files of this repo (`scenes/`, `presets/`), so always set `cwd` to the Lienzo root directory. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
+Tools read and write the files of this repo (`projects/<slug>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (a slug from `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
 
 ## Compact Scenes (Spec 011)
 
@@ -153,6 +153,7 @@ pnpm lienzo scene_build --json '{
       }
     ]
   },
+  "project": "mi-proyecto",
   "save": "anuncio-lienzo"
 }'
 ```

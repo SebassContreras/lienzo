@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, SceneResult } from "../scenes.ts";
 import { saveAudioAsset } from "../tts/asset-store.ts";
@@ -30,7 +31,7 @@ export function createSceneGenerateSpeechTool(
       "and attach the resulting audio and synchronized subtitle cues to a scene.",
     input: z.object({
       scene: z.string().min(1),
-      project: z.string().optional(),
+      project: PROJECT,
       script: z.string().min(1),
       provider: z.enum(["openrouter", "local", "kokoro", "custom"]).optional(),
       voice: z.string().optional(),
@@ -116,21 +117,17 @@ export function createSceneGenerateSpeechTool(
               Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
             );
 
-      // 4. Resolve project scope (defaults to mi-proyecto)
-      const { resolveProjectScope } = await import("../project-scope.ts");
-      const { slug: projectSlug, effectiveCtx } = await resolveProjectScope(
-        ctx,
-        input.project,
-      );
+      // 4. Resolve the project scope (046/D1)
+      const effectiveCtx = await inProject(ctx, input.project);
 
-      // 5. Save audio buffer into projects/<projectSlug>/assets/
+      // 5. Save audio buffer into projects/<slug>/assets/
       let assetId: string;
       try {
         assetId = await saveAudioAsset(
           ctx.root,
           speechResult.audioBuffer,
           speechResult.format,
-          projectSlug,
+          effectiveCtx.project,
         );
       } catch (err) {
         return fail(

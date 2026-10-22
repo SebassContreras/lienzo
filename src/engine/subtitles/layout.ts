@@ -1,6 +1,6 @@
 import type { SubtitleCue, SubtitleWord } from "./types.ts";
 
-export interface PositionedWord {
+interface PositionedWord {
   word: string;
   x: number;
   y: number;
@@ -9,7 +9,7 @@ export interface PositionedWord {
   timing?: SubtitleWord;
 }
 
-export interface SubtitleLine {
+interface SubtitleLine {
   words: PositionedWord[];
   text: string;
   width: number;

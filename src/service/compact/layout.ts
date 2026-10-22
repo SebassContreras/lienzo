@@ -17,7 +17,7 @@ export function resolveFitCanvas(
   mutable.h = scene.height;
 }
 
-export function resolveAnchorPosition(
+function resolveAnchorPosition(
   anchor: AnchorName,
   box: { w: number; h: number },
   scene: Pick<Scene, "width" | "height">,

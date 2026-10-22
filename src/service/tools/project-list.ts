@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { defineTool } from "../registry.ts";
 
-export const ProjectSummarySchema = z.object({
+const ProjectSummarySchema = z.object({
   slug: z.string(),
   name: z.string(),
   description: z.string().optional(),

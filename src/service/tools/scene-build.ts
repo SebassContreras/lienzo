@@ -3,6 +3,7 @@ import { CompactSceneSchema } from "../../model/compact.ts";
 import { SceneSchema } from "../../model/schema.ts";
 import { slugify } from "../../presets/slug.ts";
 import { expandScene } from "../compact/expand.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { checkScene, findPreset, SceneResult, saveScene } from "../scenes.ts";
 
@@ -14,7 +15,7 @@ export const sceneBuild = defineTool({
     "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true.",
   input: z.object({
     compact: CompactSceneSchema,
-    project: z.string().optional(),
+    project: PROJECT,
     save: z.string().optional(),
     overwrite: z.boolean().optional(),
   }),
@@ -23,8 +24,7 @@ export const sceneBuild = defineTool({
     saved: SceneResult.optional(),
   }),
   async run({ compact, project, save, overwrite }, ctx) {
-    const { resolveProjectScope } = await import("../project-scope.ts");
-    const { effectiveCtx } = await resolveProjectScope(ctx, project);
+    const effectiveCtx = await inProject(ctx, project);
 
     let expanded: ReturnType<typeof checkScene>;
     try {

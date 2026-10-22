@@ -29,10 +29,20 @@ beforeEach(async () => {
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   ctx = createCtx(root, fakeRenderer());
+  await registry.call(
+    "project_create",
+    { slug: PROJECT, name: "Mi proyecto" },
+    ctx,
+  );
 });
 
+/** Every call names the test project (046/R1); tools without `project` ignore it. */
+const PROJECT = "mi-proyecto";
+
 async function call(name: string, input: unknown) {
-  return registry.call(name, input, ctx);
+  const scoped =
+    input && typeof input === "object" ? { project: PROJECT, ...input } : input;
+  return registry.call(name, scoped, ctx);
 }
 
 async function ok(name: string, input: unknown) {
@@ -325,22 +335,32 @@ describe("animation presets (D6, R7)", () => {
 });
 
 describe("scene_export (010/R1)", () => {
-  it("writes exports/<scene>.<ext>, or `out` relative to the root", async () => {
+  it("writes inside the project's exports/ and rejects an `out` outside it (046/R2)", async () => {
+    const exports = join(ctx.root, "projects", "mi-proyecto", "exports");
     await ok("scene_create", { name: "demo" });
     const png = await ok("scene_export", { scene: "demo", format: "png" });
-    expect(png.file).toBe(
-      join(ctx.root, "projects", "mi-proyecto", "exports", "demo.png"),
-    );
+    expect(png.file).toBe(join(exports, "demo.png"));
     expect(png.notices).toEqual([]);
     const gif = await ok("scene_export", {
       scene: "demo",
       format: "gif",
       out: "out/post.gif",
     });
-    expect(gif.file).toBe(join(ctx.root, "out", "post.gif"));
+    expect(gif.file).toBe(join(exports, "out", "post.gif"));
     await expect(readFile(gif.file as string)).resolves.toHaveLength(
       gif.bytes as number,
     );
+    for (const out of ["../escape.png", "../../../root.png", ctx.root]) {
+      const r = await call("scene_export", {
+        scene: "demo",
+        format: "png",
+        out,
+      });
+      expect(r.ok ? undefined : r.error).toMatchObject({
+        code: "out_of_project",
+        path: "out",
+      });
+    }
   });
 
   it("falls back to WebM, and says so, when H.264 is unavailable", async () => {
@@ -351,8 +371,73 @@ describe("scene_export (010/R1)", () => {
       format: "mp4",
       out: "clip.mp4",
     });
-    expect(r.file).toBe(join(ctx.root, "clip.webm"));
+    expect(r.file).toBe(
+      join(ctx.root, "projects", "mi-proyecto", "exports", "clip.webm"),
+    );
     expect(r.type).toBe("video/webm");
     expect(r.notices).toHaveLength(1);
+  });
+});
+
+describe("project scope (046/R1)", () => {
+  const SCENE_TOOLS = [
+    "scene_list",
+    "scene_get",
+    "scene_create",
+    "scene_build",
+    "scene_validate",
+    "scene_preview",
+    "scene_export",
+    "scene_inspect_layout",
+    "scene_generate_speech",
+    "element_add",
+    "element_update",
+    "element_remove",
+    "element_move",
+    "background_set",
+    "keyframe_set",
+    "keyframe_remove",
+  ];
+
+  it("every tool that touches scenes requires `project`", async () => {
+    for (const name of SCENE_TOOLS) {
+      const r = await registry.call(name, {}, ctx);
+      expect(r.ok ? undefined : r.error.message, name).toContain("project");
+    }
+    const unscoped = registry.tools
+      .filter((t) => !SCENE_TOOLS.includes(t.name))
+      .filter(
+        (t) => "project" in (t.input as unknown as { shape: object }).shape,
+      )
+      .map((t) => t.name);
+    expect(unscoped.sort()).toEqual(["font_install", "font_list"]);
+  });
+
+  it("edits only the named project's scene, even when another has the same name", async () => {
+    await ok("project_create", { slug: "otro", name: "Otro" });
+    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { name: "demo", project: "otro" });
+    const { id } = await ok("element_add", {
+      scene: "demo",
+      project: "otro",
+      kind: "rect",
+    });
+    await ok("element_update", {
+      scene: "demo",
+      project: "otro",
+      id,
+      patch: { x: 7 },
+    });
+    expect(
+      (await ok("scene_get", { scene: "demo", project: "otro" })).elements,
+    ).toHaveLength(1);
+    expect((await onDisk("demo")).elements).toHaveLength(0);
+    const missing = await call("scene_get", {
+      scene: "demo",
+      project: "nadie",
+    });
+    expect(missing.ok ? undefined : missing.error.code).toBe(
+      "project_not_found",
+    );
   });
 });

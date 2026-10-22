@@ -3,19 +3,17 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createCtx } from "./ctx.ts";
 import { fakeRenderer } from "./fake-renderer.ts";
-import { DEFAULT_PROJECT_SLUG, resolveProjectScope } from "./project-scope.ts";
+import { inProject } from "./project-scope.ts";
 
 describe("040 project-boundary and scope resolution", () => {
-  it("resolves DEFAULT_PROJECT_SLUG when no project is provided", async () => {
+  it("scopes a ctx to an existing project and has no default project", async () => {
     const tmp = join(process.cwd(), "tmp-test-project-boundary");
     await rm(tmp, { recursive: true, force: true });
-    await mkdir(join(tmp, "projects", DEFAULT_PROJECT_SLUG, "scenes"), {
-      recursive: true,
-    });
+    await mkdir(join(tmp, "projects", "proj-a", "scenes"), { recursive: true });
     await writeFile(
-      join(tmp, "projects", DEFAULT_PROJECT_SLUG, "project.json"),
+      join(tmp, "projects", "proj-a", "project.json"),
       JSON.stringify({
-        name: "Mi Proyecto",
+        name: "A",
         palette: {
           primary: "#000",
           custom: [],
@@ -26,15 +24,18 @@ describe("040 project-boundary and scope resolution", () => {
         },
         canvas: { width: 1080, height: 1080, fps: 30, duration: 4 },
         fonts: [],
-        slug: DEFAULT_PROJECT_SLUG,
+        slug: "proj-a",
         createdAt: new Date().toISOString(),
       }),
     );
 
     const ctx = createCtx(tmp, fakeRenderer());
-    const scope = await resolveProjectScope(ctx);
-    expect(scope.slug).toBe("mi-proyecto");
-    expect(scope.store).toBeDefined();
+    const scoped = await inProject(ctx, "proj-a");
+    expect(scoped.project).toBe("proj-a");
+    expect(await scoped.store.scenes()).toEqual([]);
+    await expect(inProject(ctx, "mi-proyecto")).rejects.toThrow(
+      "No existe el proyecto",
+    );
 
     await rm(tmp, { recursive: true, force: true });
   });

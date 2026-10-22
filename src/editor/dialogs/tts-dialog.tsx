@@ -5,6 +5,7 @@ import type { VoicePreset } from "../../model/voice-preset.ts";
 import { uploadAsset } from "../../presets/store.ts";
 import {
   resolveOpenRouterApiKey,
+  TTS_PROXY_PATH,
   type TtsProviderType,
 } from "../../service/tts/config.ts";
 import { createTtsService } from "../../service/tts/factory.ts";
@@ -63,6 +64,8 @@ export function TtsDialog({
     createTtsService({
       provider,
       apiKey: apiKey.trim() || undefined,
+      // Without a typed key, OpenRouter goes through the dev server's proxy (046/D4).
+      baseUrl: apiKey.trim() ? undefined : TTS_PROXY_PATH,
     });
 
   // Load preferences from localStorage on mount (D3, R5)
@@ -235,11 +238,9 @@ export function TtsDialog({
 
     const isLocal =
       provider === "local" || provider === "kokoro" || provider === "custom";
-    const resolvedKey = isLocal ? undefined : resolveOpenRouterApiKey(apiKey);
-    if (!isLocal && !resolvedKey) {
-      setErrorMsg("Se requiere una API Key de OpenRouter.");
-      return;
-    }
+    const resolvedKey = isLocal
+      ? undefined
+      : resolveOpenRouterApiKey(apiKey) || undefined;
 
     if (!selectedModel.trim()) {
       setErrorMsg("Especifica un modelo de voz.");

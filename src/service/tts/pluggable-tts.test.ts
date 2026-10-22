@@ -19,6 +19,9 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
     delete process.env.KOKORO_PROVIDER;
     delete process.env.TTS_LOCAL_URL;
     delete process.env.KOKORO_TTS_URL;
+    delete process.env.LOCAL_TTS_URL;
+    delete process.env.KOKORO_TTS_VOICE;
+    delete process.env.KOKORO_TTS_MODEL;
     delete process.env.OPENROUTER_API_KEY;
   });
 
@@ -34,13 +37,35 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       expect(resolveTtsProvider("openrouter")).toBe("openrouter");
     });
 
-    it("resolves provider from environment variable TTS_PROVIDER or KOKORO_PROVIDER", () => {
+    it("resolves provider from TTS_PROVIDER and ignores undocumented aliases (046/R5)", () => {
       process.env.TTS_PROVIDER = "local";
       expect(resolveTtsProvider()).toBe("local");
 
       delete process.env.TTS_PROVIDER;
       process.env.KOKORO_PROVIDER = "kokoro";
-      expect(resolveTtsProvider()).toBe("kokoro");
+      process.env.LOCAL_TTS_URL = "http://alias:1/speech";
+      expect(resolveTtsProvider()).toBe("openrouter");
+      expect(resolveLocalTtsBaseUrl()).toBe(DEFAULT_LOCAL_TTS_URL);
+      delete process.env.KOKORO_PROVIDER;
+    });
+
+    it("takes the local voice and model from KOKORO_TTS_VOICE/MODEL (046/R5)", async () => {
+      let body: Record<string, unknown> = {};
+      const fakeFetch = async (_: RequestInfo | URL, init?: RequestInit) => {
+        body = JSON.parse(String(init?.body));
+        return new Response(new Uint8Array([0]), { status: 200 });
+      };
+      const adapter = new LocalTtsAdapter(
+        undefined,
+        fakeFetch as unknown as typeof fetch,
+      );
+      await adapter.synthesizeSpeech({ text: "Hola", voice: "" });
+      expect(body).toMatchObject({ model: "kokoro-es", voice: "ef_dora" });
+
+      process.env.KOKORO_TTS_VOICE = "em_alex";
+      process.env.KOKORO_TTS_MODEL = "kokoro";
+      await adapter.synthesizeSpeech({ text: "Hola", voice: "" });
+      expect(body).toMatchObject({ model: "kokoro", voice: "em_alex" });
     });
 
     it("resolves local base URL with fallback to default or environment override", () => {
@@ -166,11 +191,20 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
           readScene: async () => defaultScene(),
           writeScene: async () => "test-scene",
         },
+        projects: {
+          get: async () => ({}),
+          projectStore: async () => ({
+            animPresets: async () => [],
+            readScene: async () => defaultScene(),
+            writeScene: async () => "test-scene",
+          }),
+        },
       };
 
       const res = await tool.run(
         {
           scene: "test-scene",
+          project: "test",
           script: "Prueba de narración local",
           provider: "local",
           model: "kokoro",
@@ -218,11 +252,20 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
           readScene: async () => defaultScene(),
           writeScene: async () => "test-scene",
         },
+        projects: {
+          get: async () => ({}),
+          projectStore: async () => ({
+            animPresets: async () => [],
+            readScene: async () => defaultScene(),
+            writeScene: async () => "test-scene",
+          }),
+        },
       };
 
       const result = await tool.run(
         {
           scene: "test-scene",
+          project: "test",
           script: "Hello from Ctx",
           speed: 1.0,
           volume: 1.0,

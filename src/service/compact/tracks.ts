@@ -5,7 +5,7 @@
 import type { Easing } from "../../engine/easing.ts";
 import type { Keyframe, Tracks } from "../../model/track.ts";
 
-export type CompactKeyframeTuple = readonly [
+type CompactKeyframeTuple = readonly [
   t: number,
   value: number | string,
   easing?: Easing,
@@ -15,7 +15,7 @@ export type CompactKeyframeInput =
   | CompactKeyframeTuple
   | { t: number; value: number | string; easing?: Easing };
 
-export function normalizeKeyframe(k: CompactKeyframeInput): Keyframe {
+function normalizeKeyframe(k: CompactKeyframeInput): Keyframe {
   if (Array.isArray(k)) {
     const [t, value, easing] = k;
     return {

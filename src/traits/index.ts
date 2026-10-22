@@ -21,7 +21,6 @@ export {
   applierFor,
   type Trait,
   type TraitParams,
-  type TraitTarget,
 } from "./trait.ts";
 
 const ALL: Trait[] = [

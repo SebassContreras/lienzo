@@ -29,7 +29,7 @@ const AnimSlotsSchema = z.object({
   out: slots.out.schema.optional(),
 }) as unknown as z.ZodType<AnimSlots>;
 
-export const AnimPresetSchema: z.ZodType<AnimPreset> = z.object({
+const AnimPresetSchema: z.ZodType<AnimPreset> = z.object({
   name: z.string().min(1),
   category: z.string().optional(),
   anim: AnimSlotsSchema.optional(),

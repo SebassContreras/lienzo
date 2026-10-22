@@ -8,7 +8,7 @@ import type { PathShape, ViewBox } from "./descriptor.ts";
 import { shapeName } from "./draw.ts";
 
 /** The box around every point of `ds`; a flat or empty one gets a size of 1. */
-export function boundsOf(ds: readonly string[]): ViewBox {
+function boundsOf(ds: readonly string[]): ViewBox {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;

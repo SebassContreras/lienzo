@@ -34,7 +34,7 @@ const words = (name: string) =>
     .toLowerCase();
 
 /** Filters icon names by every word typed, in any order. */
-export function filterIcons(query: string, names = ICON_NAMES): string[] {
+function filterIcons(query: string, names = ICON_NAMES): string[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return names;
   return names.filter((name) => {

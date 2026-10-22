@@ -11,13 +11,6 @@ import {
 } from "../components/fields/index.ts";
 import { EASING_NAMES, type Easing } from "../engine/easing.ts";
 
-/** Short keyframe: [t, value, easing?] */
-export type ShortKeyframe = readonly [
-  t: number,
-  value: number | string,
-  easing?: Easing,
-];
-
 const ShortKeyframeTupleSchema = z.tuple([
   z.number().min(0),
   z.union([z.number(), z.string()]),
@@ -30,7 +23,7 @@ const CanonicalKeyframeSchema = z.object({
   easing: z.enum(["auto", ...EASING_NAMES] as [Easing, ...Easing[]]).optional(),
 });
 
-export const CompactKeyframeSchema = z.union([
+const CompactKeyframeSchema = z.union([
   ShortKeyframeTupleSchema,
   CanonicalKeyframeSchema,
 ]);
@@ -41,12 +34,12 @@ export const CompactTracksSchema = z.record(
 );
 
 /** Short animation: kind name as a string, or an object with slots. */
-export const CompactAnimSchema = z.union([
+const CompactAnimSchema = z.union([
   z.string().min(1),
   z.record(z.string(), z.unknown()),
 ]);
 
-export const AnchorNameSchema = z.enum([
+const AnchorNameSchema = z.enum([
   "top-left",
   "top",
   "top-right",
@@ -60,7 +53,7 @@ export const AnchorNameSchema = z.enum([
 
 export type AnchorName = z.infer<typeof AnchorNameSchema>;
 
-export const AtPlacementSchema = z.union([
+const AtPlacementSchema = z.union([
   AnchorNameSchema,
   z.object({
     anchor: AnchorNameSchema,
@@ -70,10 +63,10 @@ export const AtPlacementSchema = z.union([
 
 export type AtPlacement = z.infer<typeof AtPlacementSchema>;
 
-export const FitPlacementSchema = z.literal("canvas");
+const FitPlacementSchema = z.literal("canvas");
 
 /** Partial background schema or preset name. */
-export const CompactBackgroundSchema = z.union([
+const CompactBackgroundSchema = z.union([
   z.string().min(1),
   z.object({
     color: z.string().optional(),
@@ -101,7 +94,7 @@ function makeCompactFieldSchema(field: DataField): z.ZodType {
 }
 
 /** Builds the compact schema shape for a set of descriptor fields. */
-export function compactShapeOf(fields: Fields): Record<string, z.ZodType> {
+function compactShapeOf(fields: Fields): Record<string, z.ZodType> {
   const shape: Record<string, z.ZodType> = {};
   for (const [k, field] of dataFields(fields)) {
     if (k === "anim") {
@@ -126,7 +119,7 @@ export function registerCompactElementKinds(
   compactElementUnion = undefined;
 }
 
-export function buildCompactElementUnion(): z.ZodType<unknown> {
+function buildCompactElementUnion(): z.ZodType<unknown> {
   const baseSpecialFields = {
     id: z.string().optional(),
     name: z.string().optional(),

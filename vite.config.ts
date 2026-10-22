@@ -9,14 +9,14 @@ import { handleFontApi } from "./src/service/font-middleware.ts";
 import { createFontStore } from "./src/service/font-store.ts";
 import { handleProjectApi } from "./src/service/project-middleware.ts";
 import { createProjectStore } from "./src/service/project-store.ts";
+import { TTS_PROXY_PATH } from "./src/service/tts/config.ts";
+import { handleTtsProxy } from "./src/service/tts-proxy.ts";
 
-/** Serves `presets/`, `presets/animations/` and `scenes/` at the repo root through `handleStore`. */
+/** Serves `presets/` and `presets/animations/` through `handleStore`. */
 function jsonStore(): Plugin {
   const dirs: Record<string, string> = {
     presets: "presets",
     animations: "presets/animations",
-    voices: "presets/voices",
-    scenes: "projects/mi-proyecto/scenes",
   };
 
   async function handle(
@@ -180,13 +180,29 @@ function fontStorePlugin(): Plugin {
   };
 }
 
+/** OpenRouter speech with the server's key, so it never reaches the browser (046/D4). */
+function ttsProxyPlugin(): Plugin {
+  return {
+    name: "tts-proxy",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url !== TTS_PROXY_PATH) return next();
+        handleTtsProxy(req, res).catch((error: unknown) => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: { message: String(error) } }));
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  envPrefix: ["VITE_", "OPENROUTER_"],
   plugins: [
     react(),
     jsonStore(),
     assetStore(),
     projectStorePlugin(),
     fontStorePlugin(),
+    ttsProxyPlugin(),
   ],
 });

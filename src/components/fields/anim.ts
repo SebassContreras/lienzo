@@ -31,26 +31,15 @@ export const ANIM_KINDS = [
 
 export type AnimKind = (typeof ANIM_KINDS)[number];
 
-export const ANIM_LABELS: Record<AnimKind, string> = {
-  none: "Ninguna",
-  float: "Flotar",
-  pulse: "Pulso (escala)",
-  breathe: "Brillo que respira",
-  "fade-in": "Aparecer",
-  "pop-in": "Pop",
-  "slide-up": "Subir",
-  draw: "Dibujarse",
-};
-
 /** What an entry or exit does; an exit plays its kind in reverse. */
-export const MOTION_KINDS = ["none", ...MOTION_IDS] as const;
+const MOTION_KINDS = ["none", ...MOTION_IDS] as const;
 export type MotionKind = "none" | MotionId;
 
 export const LOOP_KINDS = ["none", ...LOOP_IDS] as const;
 export type LoopKind = "none" | LoopId;
 
 /** The entry kind each pre-slot entry animation became. */
-export const MOTION_OF: Partial<Record<AnimKind, MotionKind>> = {
+const MOTION_OF: Partial<Record<AnimKind, MotionKind>> = {
   "fade-in": "fade",
   "pop-in": "pop",
   "slide-up": "slide",
@@ -110,7 +99,7 @@ const DIR_OPTIONS = [
 
 const DIR_NAMES = DIR_OPTIONS.map(([d]) => d) as [DirName, ...DirName[]];
 
-export const ENTRY_SEC = 0.8;
+const ENTRY_SEC = 0.8;
 
 const EASING_OPTIONS = [
   ["auto", "Automática"],

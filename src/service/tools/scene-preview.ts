@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ImageResult } from "../image.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
 import { resolveAndRenderScene } from "../render-target.ts";
 
@@ -11,20 +12,18 @@ export const scenePreview = defineTool({
     "browser on first use.",
   input: z.object({
     scene: z.string().min(1),
-    project: z.string().optional(),
+    project: PROJECT,
     t: z.number().min(0).optional(),
     scale: z.number().min(0.1).max(2).optional(),
   }),
   output: ImageResult,
   async run({ scene: name, project, t = 0, scale = 0.5 }, ctx) {
-    const { resolveProjectScope } = await import("../project-scope.ts");
-    const { slug, effectiveCtx } = await resolveProjectScope(ctx, project);
+    const effectiveCtx = await inProject(ctx, project);
 
     const { rendered } = await resolveAndRenderScene(effectiveCtx, name, {
       format: "png",
       scale,
       time: t,
-      project: slug,
     });
     return {
       image: {

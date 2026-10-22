@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { inspectLayout, layoutBoxes } from "../layout.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { checkScene, openScene } from "../scenes.ts";
 
@@ -39,31 +40,26 @@ export const sceneInspectLayout = defineTool({
   input: z.object({
     scene: z.unknown().optional(),
     name: z.string().optional(),
+    project: PROJECT,
     times: z.array(z.number().min(0)).optional(),
   }),
   output: z.object({
     diagnostics: z.array(DiagnosticSchema),
     boxes: z.array(BoxSchema),
   }),
-  async run({ scene: sceneInput, name, times }, ctx) {
-    let scene = sceneInput
-      ? checkScene(sceneInput)
-      : name
-        ? await openScene(ctx, name)
-        : undefined;
-
-    if (!scene) {
-      if (typeof sceneInput === "string") {
-        scene = await openScene(ctx, sceneInput);
-      } else {
-        fail(
-          "invalid_input",
-          "Debe proporcionar una escena ('scene') o el nombre de una escena guardada ('name')",
-          "scene",
-        );
-      }
-    }
-
+  async run({ scene: sceneInput, name, project, times }, ctx) {
+    const projectCtx = await inProject(ctx, project);
+    const saved = typeof sceneInput === "string" ? sceneInput : name;
+    const scene =
+      sceneInput !== undefined && typeof sceneInput !== "string"
+        ? checkScene(sceneInput)
+        : saved
+          ? await openScene(projectCtx, saved)
+          : fail(
+              "invalid_input",
+              "Debe proporcionar una escena ('scene') o el nombre de una escena guardada ('name')",
+              "scene",
+            );
     return {
       diagnostics: inspectLayout(scene, times),
       boxes: layoutBoxes(scene, times),

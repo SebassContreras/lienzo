@@ -16,7 +16,7 @@ import {
 } from "../fields/index.ts";
 import { drawProgress } from "./draw.ts";
 
-export type ProgressStyle = "bar" | "ring";
+type ProgressStyle = "bar" | "ring";
 
 const P = { section: "Progreso" };
 const ring = (p: Parent) => p.style === "ring";

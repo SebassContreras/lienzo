@@ -6,7 +6,7 @@ import { frac } from "../../engine/anim.ts";
 
 const RAD = Math.PI / 180;
 
-export type Vec3 = [number, number, number];
+type Vec3 = [number, number, number];
 
 export type Pose = {
   rotation: Vec3;

@@ -18,7 +18,7 @@ const S = { section: "Pasos" };
 const C = { section: "Color" };
 const T = { section: "Texto" };
 
-export type StepsLayout = "horizontal" | "vertical";
+type StepsLayout = "horizontal" | "vertical";
 
 /**
  * Numbered steps along a line, one per line of `labels`. Steps up to `active` are lit; it is

@@ -25,14 +25,14 @@ export type BackdropColorResult =
 /**
  * Checks if an element kind is impossible to reduce to a flat/gradient color backdrop.
  */
-export function isUnverifiableKind(kind: string): boolean {
+function isUnverifiableKind(kind: string): boolean {
   return kind === "image" || kind === "particles" || kind === "three";
 }
 
 /**
  * Extracts the base scene background as one or two RGBA colors.
  */
-export function sceneBackgroundColors(bg: Background): {
+function sceneBackgroundColors(bg: Background): {
   color1: Rgba;
   color2: Rgba;
   isGradient: boolean;
@@ -49,7 +49,7 @@ export function sceneBackgroundColors(bg: Background): {
 /**
  * Evaluates the effective fill of an element (as RGBA, or gradient stops).
  */
-export function getElementFills(el: Record<string, unknown>): {
+function getElementFills(el: Record<string, unknown>): {
   fills: Rgba[];
   hasFill: boolean;
 } {
