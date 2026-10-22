@@ -7,7 +7,7 @@
     - *Pro*: Full backwards compatibility with all existing saved scenes and presets; schema validation prevents invalid values.
     - *Con*: Undefined in older scene JSON files.
     - *Mitigation*: Pure helper `isStaticMode(scene)` treats `undefined` or any non-`'static'` value as `'video'`.
-- D2@1 (implements R2): Add a mode toggle switch/selector ("Diseño / Imagen" vs "Video / Animación") in the top navigation bar (`src/editor/app.tsx`) and in scene creation dialogs (`src/presets/scene-files.tsx`).
+- D2@1 (implements R2): Add a mode toggle switch/selector ("Diseño / Imagen" vs "Video / Animación") in the top navigation bar (`src/editor/app.tsx`) and in the saved-scenes list (since 043: `src/editor/sidebar/project-scenes-tab.tsx`).
   - _Trade-off_:
     - *Pro*: Users can switch context instantaneously at any moment or choose intent upfront when creating new scenes.
     - *Con*: Switching a video scene containing keyframes to static mode might confuse users about whether data is lost.
