@@ -11,6 +11,7 @@ import { elementRemove } from "./element-remove.ts";
 import { elementUpdate } from "./element-update.ts";
 import { fontInstall } from "./font-install.ts";
 import { fontList } from "./font-list.ts";
+import { imageTrim } from "./image-trim.ts";
 import { keyframeRemove } from "./keyframe-remove.ts";
 import { keyframeSet } from "./keyframe-set.ts";
 import { presetGet } from "./preset-get.ts";
@@ -51,6 +52,7 @@ const TOOLS: readonly Tool[] = [
   elementUpdate,
   elementRemove,
   elementMove,
+  imageTrim,
   backgroundSet,
   keyframeSet,
   keyframeRemove,

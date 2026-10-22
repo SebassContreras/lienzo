@@ -1,0 +1,159 @@
+diff --git a/src/components/image/descriptor.ts b/src/components/image/descriptor.ts
+index efcb101..cb7741c 100644
+--- a/src/components/image/descriptor.ts
++++ b/src/components/image/descriptor.ts
+@@ -10,6 +10,7 @@ import {
+   position,
+   shadow,
+   softShadow,
++  widget,
+ } from "../fields/index.ts";
+ import { drawImage } from "./draw.ts";
+ 
+@@ -60,7 +61,8 @@ const fields = {
+       if (v) el.h = el.w / el.aspect;
+     },
+   }),
+-  crop: custom("image-crop", FULL_CROP, CropSchema.default(FULL_CROP), {
++  cropTools: widget("image-crop", { section: "Imagen" }),
++  crop: custom("crop", FULL_CROP, CropSchema.default(FULL_CROP), {
+     label: "Recorte",
+     section: "Imagen",
+     inspector: false,
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+index eaf459f..913dde2 100644
+--- a/src/editor/field-editor.tsx
++++ b/src/editor/field-editor.tsx
+@@ -51,6 +51,8 @@ export type EditorContext = {
+   onUngroup?: () => void;
+   /** Puts a particles element's template back on the canvas to be edited. */
+   onEditParticle?: () => void;
++  /** Opens the crop handles of the selected image on the stage (048/D6). */
++  onCropMode?: () => void;
+   onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
+   /** The playhead (s): fields show their value there and keyframes are set there (015). */
+   time?: number;
+@@ -250,6 +252,7 @@ import type { SubtitleCue } from "../engine/subtitles/types.ts";
+ import type { ResolvedFont } from "../model/font-files.ts";
+ import { CuesEditor } from "./widgets/cues-editor.tsx";
+ import { FontSelect } from "./widgets/font-select.tsx";
++import { ImageCropTools } from "./widgets/image-crop.tsx";
+ 
+ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+   "cues-editor": ({ value, change, ctx }) => (
+@@ -311,6 +314,13 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+       )
+     );
+   },
++  "image-crop": ({ el, change, ctx }) => (
++    <ImageCropTools
++      el={el as ImageEl}
++      onChange={(next) => change((d) => Object.assign(d, next))}
++      onCropMode={ctx.onCropMode}
++    />
++  ),
+   ungroup: ({ ctx }) =>
+     ctx.onUngroup && (
+       <button type="button" onClick={ctx.onUngroup}>
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index cdec3f3..4582d69 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -36,6 +36,7 @@ export function ElementInspector({
+   onSavePreset,
+   onUngroup,
+   onEditParticle,
++  onCropMode,
+   nameOf,
+   canvas,
+   time,
+@@ -50,6 +51,7 @@ export function ElementInspector({
+   onSavePreset?: (name: string) => void;
+   onUngroup?: () => void;
+   onEditParticle?: () => void;
++  onCropMode?: () => void;
+   nameOf: (id: string) => string;
+   /** Scene size, for "Ajustar al lienzo". */
+   canvas?: { width: number; height: number; duration?: number };
+@@ -109,6 +111,7 @@ export function ElementInspector({
+           canvas,
+           onUngroup,
+           onEditParticle,
++          onCropMode,
+           time,
+           staticMode,
+           fonts,
+diff --git a/src/editor/widgets/image-crop.tsx b/src/editor/widgets/image-crop.tsx
+new file mode 100644
+index 0000000..24a5d9f
+--- /dev/null
++++ b/src/editor/widgets/image-crop.tsx
+@@ -0,0 +1,68 @@
++import { Crop as CropIcon, Maximize, Scissors } from "lucide-react";
++import { useState } from "react";
++import { FULL_CROP, type ImageEl } from "../../components/image/descriptor.ts";
++import { alphaBounds, applyCrop } from "../../engine/image-trim.ts";
++import { imagePixels } from "../image-pixels.ts";
++
++const isFull = (el: ImageEl) =>
++  el.crop.x === 0 && el.crop.y === 0 && el.crop.w === 1 && el.crop.h === 1;
++
++/**
++ * Trim, manual crop and remove crop for the selected image (048/D5). `onChange` receives the
++ * cropped element; `onCropMode` opens the crop handles on the stage.
++ */
++export function ImageCropTools({
++  el,
++  onChange,
++  onCropMode,
++}: {
++  el: ImageEl;
++  onChange: (el: ImageEl) => void;
++  onCropMode?: () => void;
++}) {
++  const [busy, setBusy] = useState(false);
++  const [message, setMessage] = useState("");
++
++  const trim = () => {
++    setBusy(true);
++    setMessage("");
++    imagePixels(el.src)
++      .then(({ data, width, height }) => {
++        const bounds = alphaBounds(data, width, height);
++        if (bounds) onChange(applyCrop(el, bounds));
++        else setMessage("La imagen es transparente: no hay nada que recortar.");
++      })
++      .catch(() => setMessage("No se pudo leer la imagen."))
++      .finally(() => setBusy(false));
++  };
++
++  if (!el.src) return null;
++  return (
++    <>
++      <div className="icon-row">
++        <button type="button" disabled={busy} onClick={trim}>
++          <Scissors size={15} />{" "}
++          {busy ? "Recortando…" : "Recortar transparencia"}
++        </button>
++        {onCropMode && (
++          <button
++            type="button"
++            title="También con doble clic sobre la imagen"
++            onClick={onCropMode}
++          >
++            <CropIcon size={15} /> Recortar manualmente
++          </button>
++        )}
++        {!isFull(el) && (
++          <button
++            type="button"
++            onClick={() => onChange(applyCrop(el, FULL_CROP))}
++          >
++            <Maximize size={15} /> Quitar recorte
++          </button>
++        )}
++      </div>
++      {message && <div className="hint">{message}</div>}
++    </>
++  );
++}

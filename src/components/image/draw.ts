@@ -36,7 +36,20 @@ export function drawImage(ctx: Ctx, el: ImageEl, st: AnimState): void {
     ctx.globalAlpha *= el.opacity;
     ctx.clip(path);
     if (image) {
-      ctx.drawImage(image, el.x, el.y, el.w, el.h);
+      // the crop is the source rectangle, in the picture's natural pixels (048/D1)
+      const { width, height } = naturalSize(image);
+      const { crop } = el;
+      ctx.drawImage(
+        image,
+        crop.x * width,
+        crop.y * height,
+        crop.w * width,
+        crop.h * height,
+        el.x,
+        el.y,
+        el.w,
+        el.h,
+      );
     } else {
       drawPlaceholder(ctx, el);
     }
@@ -50,6 +63,17 @@ export function drawImage(ctx: Ctx, el: ImageEl, st: AnimState): void {
       ctx.restore();
     }
   });
+}
+
+/** Natural pixel size of a decoded picture: an `<img>` or a bitmap. */
+function naturalSize(image: CanvasImageSource): {
+  width: number;
+  height: number;
+} {
+  if ("naturalWidth" in image)
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  const { width, height } = image as { width: number; height: number };
+  return { width, height };
 }
 
 /** Shown before a file is chosen (or while it loads): a soft box with a mountain glyph. */

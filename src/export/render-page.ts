@@ -4,7 +4,10 @@
  * comes from the caller, already checked by the service, so the page and the tools always
  * render the same scene; the output is the editor's own `exportScene` (A3, R3).
  */
+import type { Crop } from "../components/image/descriptor.ts";
 import { loadFonts } from "../engine/fonts.ts";
+import { imagePixels } from "../engine/image-pixels.ts";
+import { alphaBounds } from "../engine/image-trim.ts";
 import type { Scene } from "../model/model.ts";
 import { type ExportOptions, exportScene } from "./export.ts";
 
@@ -18,9 +21,13 @@ type LienzoExport = (
   project?: string,
 ) => Promise<RenderedFile>;
 
+/** The visible-pixel rectangle of a picture, for the image probe (049/D2). */
+type LienzoOpaqueBounds = (src: string) => Promise<Crop | undefined>;
+
 declare global {
   interface Window {
     lienzoExport?: LienzoExport;
+    lienzoOpaqueBounds?: LienzoOpaqueBounds;
   }
 }
 
@@ -39,6 +46,11 @@ export function mountRenderPage(): void {
     await loadFonts(project);
     const blob = await exportScene(scene, options, () => {});
     return { base64: await toBase64(blob), type: blob.type };
+  };
+  // the editor's own decoder and bounds, so both trims match (049/D2)
+  window.lienzoOpaqueBounds = async (src) => {
+    const { data, width, height } = await imagePixels(src);
+    return alphaBounds(data, width, height);
   };
   document.title = "Lienzo — render";
 }

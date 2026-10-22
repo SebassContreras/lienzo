@@ -1,0 +1,250 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 3d0951a..897c471 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -172,6 +172,12 @@ export function App() {
+   }
+   const draftGuard = guardRef.current;
+   const [selection, setSelection] = useState<string[]>([]);
++  /** The image in crop mode (048/D6); only while it is the one selected element. */
++  const [croppingId, setCropping] = useState<string | undefined>();
++  const cropping =
++    selection.length === 1 && selection[0] === croppingId
++      ? croppingId
++      : undefined;
+   const clock = useRef<Clock>({ t: 0, playing: startupState().playing });
+   const [playing, setPlaying] = useState<boolean>(startupState().playing);
+   /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
+@@ -979,10 +985,14 @@ export function App() {
+             checkpoint={checkpoint}
+             stopClock={() => seek()}
+             onDropElement={addElement}
++            cropping={cropping}
++            setCropping={setCropping}
+             hint={
+-              selection.length > 0
+-                ? undefined
+-                : "Clic en un área vacía para editar el fondo"
++              cropping
++                ? "Arrastra los lados para recortar · Esc para terminar"
++                : selection.length > 0
++                  ? undefined
++                  : "Clic en un área vacía para editar el fondo"
+             }
+           />
+           {!isStatic && (
+@@ -1058,6 +1068,11 @@ export function App() {
+               onSavePreset={(name) => savePreset(selected, name)}
+               onUngroup={ungroupSelected}
+               onEditParticle={editParticle}
++              onCropMode={
++                selected.kind === "image"
++                  ? () => setCropping(selected.id)
++                  : undefined
++              }
+               canvas={scene}
+               time={playhead}
+               staticMode={isStatic}
+diff --git a/src/editor/stage.tsx b/src/editor/stage.tsx
+index f8a123c..f4feb42 100644
+--- a/src/editor/stage.tsx
++++ b/src/editor/stage.tsx
+@@ -22,8 +22,9 @@ import {
+ } from "../engine/lines.ts";
+ import { drawScene } from "../engine/render.ts";
+ import { applyTracks, commitAt } from "../engine/tracks.ts";
+-import type { Element, LineEl, Scene } from "../model/model.ts";
++import type { Element, ImageEl, LineEl, Scene } from "../model/model.ts";
+ import { imageElementFor } from "./asset-drop.ts";
++import { type CropEdge, dragCropEdge } from "./crop-drag.ts";
+ import { type Snap, snapBox, unionBox } from "./snap.ts";
+ 
+ export type Clock = { t: number; playing: boolean };
+@@ -44,7 +45,8 @@ type Drag =
+   | { mode: "resize"; handle: Handle; start: Pt; orig: Element }
+   | { mode: "end"; which: "a" | "b"; orig: LineEl }
+   | { mode: "bend"; orig: LineEl }
+-  | { mode: "box"; start: Pt; end: Pt; base: string[] };
++  | { mode: "box"; start: Pt; end: Pt; base: string[] }
++  | { mode: "crop"; edge: CropEdge; start: Pt; orig: ImageEl };
+ 
+ /** The rectangle spanned by two corners. */
+ const spanBox = (a: Pt, b: Pt): Box => ({
+@@ -99,6 +101,31 @@ function handleAt(
+   return (Object.keys(c) as (keyof typeof c)[]).find((k) => near(c[k]));
+ }
+ 
++/** Middle of each side of an image's box: the crop handles (048/D6). */
++function cropHandles(el: ImageEl): Record<CropEdge, Pt> {
++  const b = boxOf(el);
++  return {
++    n: { x: b.x + b.w / 2, y: b.y },
++    s: { x: b.x + b.w / 2, y: b.y + b.h },
++    w: { x: b.x, y: b.y + b.h / 2 },
++    e: { x: b.x + b.w, y: b.y + b.h / 2 },
++  };
++}
++
++function cropEdgeAt(el: ImageEl, p: Pt, tol: number): CropEdge | undefined {
++  const h = cropHandles(el);
++  return (Object.keys(h) as CropEdge[]).find(
++    (k) => Math.hypot(p.x - h[k].x, p.y - h[k].y) <= tol,
++  );
++}
++
++const CROP_CURSORS: Record<CropEdge, string> = {
++  n: "ns-resize",
++  s: "ns-resize",
++  e: "ew-resize",
++  w: "ew-resize",
++};
++
+ const CURSORS: Record<Handle, string> = {
+   nw: "nwse-resize",
+   se: "nwse-resize",
+@@ -199,7 +226,7 @@ function drawSnap(
+ }
+ 
+ function applyDrag(
+-  drag: Exclude<Drag, { mode: "move" } | { mode: "box" }>,
++  drag: Exclude<Drag, { mode: "move" } | { mode: "box" } | { mode: "crop" }>,
+   p: Pt,
+   scene: Scene,
+   setAttachTarget: (id: string | undefined) => void,
+@@ -297,6 +324,7 @@ function drawOverlay(
+   band: Box | undefined,
+   snap: Snap | undefined,
+   zoom: number,
++  cropping: string | undefined,
+ ): void {
+   const px = 1 / zoom;
+   const byId = indexById(scene);
+@@ -405,6 +433,17 @@ function drawOverlay(
+         dot({ x: 0, y: 0 }, "#fde68a", true);
+         ctx.restore();
+       }
++    } else if (sel.kind === "image" && sel.id === cropping) {
++      // crop mode: the whole picture dashed, the shown part solid, a handle per side
++      const { crop } = sel;
++      const sx = sel.w / crop.w;
++      const sy = sel.h / crop.h;
++      ctx.setLineDash([4 * px, 4 * px]);
++      ctx.strokeStyle = "rgba(253, 230, 138, 0.8)";
++      ctx.strokeRect(sel.x - crop.x * sx, sel.y - crop.y * sy, sx, sy);
++      ctx.setLineDash([]);
++      outline(sel, ACCENT, 0);
++      for (const q of Object.values(cropHandles(sel))) dot(q, "#fde68a", true);
+     } else {
+       outline(sel, ACCENT, 0);
+       for (const q of Object.values(corners(sel))) dot(q, "#ffffff", true);
+@@ -424,6 +463,8 @@ export function Stage({
+   stopClock,
+   onDropElement,
+   hint,
++  cropping,
++  setCropping,
+ }: {
+   scene: Scene;
+   sceneRef: MutableRefObject<Scene>;
+@@ -438,6 +479,9 @@ export function Stage({
+   onDropElement: (el: Element, at: Pt) => void;
+   /** A short tip shown over the bottom of the stage. */
+   hint?: string;
++  /** The image whose crop handles are shown (048/D6), if any. */
++  cropping?: string;
++  setCropping: (id: string | undefined) => void;
+ }) {
+   const wrapRef = useRef<HTMLDivElement>(null);
+   const canvasRef = useRef<HTMLCanvasElement>(null);
+@@ -448,6 +492,18 @@ export function Stage({
+   const snapRef = useRef<Snap | undefined>(undefined);
+   const selectionRef = useRef(selection);
+   selectionRef.current = selection;
++  const croppingRef = useRef(cropping);
++  croppingRef.current = cropping;
++
++  // Esc leaves crop mode
++  useEffect(() => {
++    if (!cropping) return;
++    const onKey = (e: KeyboardEvent) => {
++      if (e.key === "Escape") setCropping(undefined);
++    };
++    window.addEventListener("keydown", onKey);
++    return () => window.removeEventListener("keydown", onKey);
++  }, [cropping, setCropping]);
+ 
+   const zoom = Math.max(
+     0.05,
+@@ -510,6 +566,7 @@ export function Stage({
+           d?.mode === "box" ? spanBox(d.start, d.end) : undefined,
+           snapRef.current,
+           z,
++          croppingRef.current,
+         );
+       }
+       frame = requestAnimationFrame(tick);
+@@ -552,6 +609,19 @@ export function Stage({
+     const tol = 9 / zoom;
+     const s = shown();
+     const sel = single();
++    if (cropping) {
++      const edge =
++        sel?.kind === "image" && sel.id === cropping && !sel.locked
++          ? cropEdgeAt(sel, p, tol)
++          : undefined;
++      if (sel?.kind === "image" && edge) {
++        checkpoint();
++        drag.current = { mode: "crop", edge, start: p, orig: sel };
++        return;
++      }
++      // a click outside the cropped image leaves crop mode
++      if (hitTest(s, p, tol)?.id !== cropping) setCropping(undefined);
++    }
+     if (sel && !sel.locked && !e.shiftKey) {
+       const h = handleAt(s, sel, p, tol);
+       if (h) {
+@@ -607,13 +677,28 @@ export function Stage({
+     const canvas = e.currentTarget;
+     if (!drag.current) {
+       const sel = single();
+-      const h = sel ? handleAt(s, sel, p, tol) : undefined;
++      const edge =
++        sel?.kind === "image" && sel.id === cropping
++          ? cropEdgeAt(sel, p, tol)
++          : undefined;
++      const h = sel && !edge ? handleAt(s, sel, p, tol) : undefined;
+       const hit = hitTest(s, p, tol);
+       hover.current = hit?.id;
+-      canvas.style.cursor = h ? CURSORS[h] : hit ? "move" : "default";
++      canvas.style.cursor = edge
++        ? CROP_CURSORS[edge]
++        : h
++          ? CURSORS[h]
++          : hit
++            ? "move"
++            : "default";
+       return;
+     }
+     const d = drag.current;
++    if (d.mode === "crop") {
++      const axis = d.edge === "e" || d.edge === "w" ? "x" : "y";
++      replace(dragCropEdge(d.orig, d.edge, p[axis] - d.start[axis]));
++      return;
++    }
+     if (d.mode === "box") {
+       d.end = p;
+       const touched = idsInBox(s, spanBox(d.start, d.end));
+@@ -710,6 +795,13 @@ export function Stage({
+         onPointerDown={onPointerDown}
+         onPointerMove={onPointerMove}
+         onPointerUp={onPointerUp}
++        onDoubleClick={(e) => {
++          // double-click on an image opens its crop handles (048/D6)
++          const hit = hitTest(shown(), toScene(e), 9 / zoom);
++          if (hit?.kind !== "image" || hit.locked) return;
++          setSelection([hit.id]);
++          setCropping(hit.id);
++        }}
+         onPointerLeave={() => {
+           hover.current = undefined;
+         }}

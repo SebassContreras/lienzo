@@ -114,6 +114,10 @@ const image = z.object({
   src: z.string(),
   aspect: z.number(),
   keepAspect: z.boolean(),
+  // added by 048, the whole picture when missing
+  crop: z
+    .object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() })
+    .default({ x: 0, y: 0, w: 1, h: 1 }),
   radius: z.number(),
   opacity: z.number(),
   border: z.object({ width: z.number(), color, opacity: z.number() }),

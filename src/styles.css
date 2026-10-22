@@ -609,6 +609,13 @@ code {
   color: var(--accent);
 }
 
+/* trim, manual crop and remove crop, one per line (048/D5) */
+.crop-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .file-pick {
   display: inline-flex;
   align-items: center;

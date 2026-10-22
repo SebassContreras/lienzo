@@ -106,6 +106,8 @@ Or with the compiled bundle (`pnpm build:cli` writes `dist/cli.js`):
 
 Tools read and write the files of this repo (`projects/<slug>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (a slug from `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
 
+To remove the transparent margin of a PNG, call `image_trim` on an image element, or pass `trim: true` to `element_add`; the asset file is not changed, only the element's `crop`. In the editor, the same trim is the **Recortar transparencia** button of an image, and double-clicking an image opens its manual crop handles.
+
 ## Compact Scenes (Spec 011)
 
 Lienzo supports writing posts in a concise, human- and LLM-friendly format. The compact format

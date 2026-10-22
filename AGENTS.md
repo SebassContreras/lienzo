@@ -42,6 +42,9 @@ What exists today:
 - Keyframes: `el.tracks` (optional) by field path or channel (`@rotate`, `@scale`); all
   evaluating and editing goes through `src/engine/tracks.ts`, applied by `animate` before
   the preset animation (spec 015)
+- Image crop: non-destructive `crop` on image elements (fractions of the picture); trimming and
+  cropping go through `alphaBounds`/`applyCrop` in `src/engine/image-trim.ts`, shared by the
+  inspector, the stage crop mode and the `image_trim` tool (specs 048, 049)
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
   offsets on `relative` fields; applying always copies; `animPreset` on an element is

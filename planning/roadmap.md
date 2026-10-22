@@ -52,5 +52,5 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 045 | external-fonts | done        | 038, 040 | —     | 45 |
 | 046 | audit-cleanup | done        | 040, 045 | —     | 46 |
 | 047 | image-aspect-and-lint | done        | 044 | —     | 47 |
-| 048 | image-trim | todo        | 044, 047 | build | 48 |
-| 049 | image-trim-service | todo        | 048 | build | 49 |
+| 048 | image-trim | done        | 044, 047 | —     | 48 |
+| 049 | image-trim-service | done        | 048 | —     | 49 |

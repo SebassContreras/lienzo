@@ -1,0 +1,61 @@
+diff --git a/src/editor/stage.tsx b/src/editor/stage.tsx
+index f4feb42..49a74d0 100644
+--- a/src/editor/stage.tsx
++++ b/src/editor/stage.tsx
+@@ -495,14 +495,18 @@ export function Stage({
+   const croppingRef = useRef(cropping);
+   croppingRef.current = cropping;
+ 
+-  // Esc leaves crop mode
++  // Esc leaves crop mode and keeps the image selected: caught first, so the editor's own
++  // Esc (deselect) does not run
+   useEffect(() => {
+     if (!cropping) return;
+     const onKey = (e: KeyboardEvent) => {
+-      if (e.key === "Escape") setCropping(undefined);
++      if (e.key !== "Escape") return;
++      e.stopImmediatePropagation();
++      setCropping(undefined);
+     };
+-    window.addEventListener("keydown", onKey);
+-    return () => window.removeEventListener("keydown", onKey);
++    window.addEventListener("keydown", onKey, { capture: true });
++    return () =>
++      window.removeEventListener("keydown", onKey, { capture: true });
+   }, [cropping, setCropping]);
+ 
+   const zoom = Math.max(
+diff --git a/src/editor/widgets/image-crop.tsx b/src/editor/widgets/image-crop.tsx
+index 6f6c862..f63ffbb 100644
+--- a/src/editor/widgets/image-crop.tsx
++++ b/src/editor/widgets/image-crop.tsx
+@@ -39,7 +39,7 @@ export function ImageCropTools({
+   if (!el.src) return null;
+   return (
+     <>
+-      <div className="icon-row">
++      <div className="crop-tools">
+         <button type="button" disabled={busy} onClick={trim}>
+           <Scissors size={15} />{" "}
+           {busy ? "Recortando…" : "Recortar transparencia"}
+diff --git a/src/styles.css b/src/styles.css
+index 5b374e8..5743dc7 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -609,6 +609,16 @@ code {
+   color: var(--accent);
+ }
+ 
++/* trim, manual crop and remove crop, one per line (048/D5) */
++.crop-tools {
++  display: flex;
++  flex-direction: column;
++  gap: 4px;
++}
++.crop-tools button {
++  justify-content: center;
++}
++
+ .file-pick {
+   display: inline-flex;
+   align-items: center;

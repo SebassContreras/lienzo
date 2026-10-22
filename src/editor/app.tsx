@@ -172,6 +172,12 @@ export function App() {
   }
   const draftGuard = guardRef.current;
   const [selection, setSelection] = useState<string[]>([]);
+  /** The image in crop mode (048/D6); only while it is the one selected element. */
+  const [croppingId, setCropping] = useState<string | undefined>();
+  const cropping =
+    selection.length === 1 && selection[0] === croppingId
+      ? croppingId
+      : undefined;
   const clock = useRef<Clock>({ t: 0, playing: startupState().playing });
   const [playing, setPlaying] = useState<boolean>(startupState().playing);
   /** Where the clock was last stopped: the time the inspector and keyframes work at (015). */
@@ -979,10 +985,14 @@ export function App() {
             checkpoint={checkpoint}
             stopClock={() => seek()}
             onDropElement={addElement}
+            cropping={cropping}
+            setCropping={setCropping}
             hint={
-              selection.length > 0
-                ? undefined
-                : "Clic en un área vacía para editar el fondo"
+              cropping
+                ? "Arrastra los lados para recortar · Esc para terminar"
+                : selection.length > 0
+                  ? undefined
+                  : "Clic en un área vacía para editar el fondo"
             }
           />
           {!isStatic && (
@@ -1058,6 +1068,11 @@ export function App() {
               onSavePreset={(name) => savePreset(selected, name)}
               onUngroup={ungroupSelected}
               onEditParticle={editParticle}
+              onCropMode={
+                selected.kind === "image"
+                  ? () => setCropping(selected.id)
+                  : undefined
+              }
               canvas={scene}
               time={playhead}
               staticMode={isStatic}

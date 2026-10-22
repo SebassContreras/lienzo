@@ -51,6 +51,8 @@ export type EditorContext = {
   onUngroup?: () => void;
   /** Puts a particles element's template back on the canvas to be edited. */
   onEditParticle?: () => void;
+  /** Opens the crop handles of the selected image on the stage (048/D6). */
+  onCropMode?: () => void;
   onUpload?: (file: File) => Promise<{ src: string; aspect: number }>;
   /** The playhead (s): fields show their value there and keyframes are set there (015). */
   time?: number;
@@ -250,6 +252,7 @@ import type { SubtitleCue } from "../engine/subtitles/types.ts";
 import type { ResolvedFont } from "../model/font-files.ts";
 import { CuesEditor } from "./widgets/cues-editor.tsx";
 import { FontSelect } from "./widgets/font-select.tsx";
+import { ImageCropTools } from "./widgets/image-crop.tsx";
 
 const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
   "cues-editor": ({ value, change, ctx }) => (
@@ -311,6 +314,13 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
       )
     );
   },
+  "image-crop": ({ el, change, ctx }) => (
+    <ImageCropTools
+      el={el as ImageEl}
+      onChange={(next) => change((d) => Object.assign(d, next))}
+      onCropMode={ctx.onCropMode}
+    />
+  ),
   ungroup: ({ ctx }) =>
     ctx.onUngroup && (
       <button type="button" onClick={ctx.onUngroup}>

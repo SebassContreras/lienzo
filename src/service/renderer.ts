@@ -100,19 +100,39 @@ async function openRenderRoute(appRoot: string): Promise<AppSession> {
   }
 }
 
+/**
+ * The `?render` page of the app at `appRoot`, opened on the first `page()` and reused; a
+ * failed start is retried on the next call. Shared by the renderer and the image probe.
+ */
+export function lazyRenderPage(appRoot: string): {
+  page(): Promise<Page>;
+  dispose(): Promise<void>;
+} {
+  let session: Promise<AppSession> | undefined;
+  return {
+    async page() {
+      session ??= openRenderRoute(appRoot).catch((error: unknown) => {
+        session = undefined;
+        throw error;
+      });
+      return (await session).page;
+    },
+    async dispose() {
+      const current = session;
+      session = undefined;
+      if (!current) return;
+      const s = await current.catch(() => undefined);
+      if (s) await closeApp(s);
+    },
+  };
+}
+
 /** A renderer over the app at `appRoot` (the repo, not the scenes' root). */
 export function createRenderer(appRoot: string): Renderer {
-  let session: Promise<AppSession> | undefined;
-  const open = () => {
-    session ??= openRenderRoute(appRoot).catch((error: unknown) => {
-      session = undefined; // a failed start is retried on the next render
-      throw error;
-    });
-    return session;
-  };
+  const app = lazyRenderPage(appRoot);
   return {
     async render(scene, options, project) {
-      const { page } = await open();
+      const page = await app.page();
       const file: RenderedFile = await page.evaluate(
         ([s, o, p]) => {
           if (!window.lienzoExport) throw new Error("render route not loaded");
@@ -122,12 +142,6 @@ export function createRenderer(appRoot: string): Renderer {
       );
       return { bytes: Buffer.from(file.base64, "base64"), type: file.type };
     },
-    async dispose() {
-      const current = session;
-      session = undefined;
-      if (!current) return;
-      const s = await current.catch(() => undefined);
-      if (s) await closeApp(s);
-    },
+    dispose: app.dispose,
   };
 }

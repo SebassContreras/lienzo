@@ -10,10 +10,23 @@ import {
   position,
   shadow,
   softShadow,
+  widget,
 } from "../fields/index.ts";
 import { drawImage } from "./draw.ts";
 
 type Sized = { w: number; h: number; aspect: number; keepAspect: boolean };
+
+/** The shown part of the picture, in fractions (0–1) of its natural size (048/D1). */
+const CropSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+  w: z.number().gt(0).max(1),
+  h: z.number().gt(0).max(1),
+});
+export type Crop = z.infer<typeof CropSchema>;
+
+/** The whole picture: what scenes saved before 048 get. */
+export const FULL_CROP: Crop = { x: 0, y: 0, w: 1, h: 1 };
 
 const size = { section: "Forma", min: 10, max: 2000 };
 
@@ -47,6 +60,12 @@ const fields = {
       el.keepAspect = v;
       if (v) el.h = el.w / el.aspect;
     },
+  }),
+  cropTools: widget("image-crop", { section: "Imagen" }),
+  crop: custom("crop", FULL_CROP, CropSchema.default(FULL_CROP), {
+    label: "Recorte",
+    section: "Imagen",
+    inspector: false,
   }),
   radius: num(16, { label: "Esquinas", section: "Forma", max: 300 }),
   opacity: num(1, { label: "Opacidad", section: "Forma", max: 1, step: 0.01 }),

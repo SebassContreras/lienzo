@@ -36,6 +36,7 @@ export function ElementInspector({
   onSavePreset,
   onUngroup,
   onEditParticle,
+  onCropMode,
   nameOf,
   canvas,
   time,
@@ -50,6 +51,7 @@ export function ElementInspector({
   onSavePreset?: (name: string) => void;
   onUngroup?: () => void;
   onEditParticle?: () => void;
+  onCropMode?: () => void;
   nameOf: (id: string) => string;
   /** Scene size, for "Ajustar al lienzo". */
   canvas?: { width: number; height: number; duration?: number };
@@ -109,6 +111,7 @@ export function ElementInspector({
           canvas,
           onUngroup,
           onEditParticle,
+          onCropMode,
           time,
           staticMode,
           fonts,

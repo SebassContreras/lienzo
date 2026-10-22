@@ -120,8 +120,8 @@ const NOT_IN_INSPECTOR: Record<string, string[]> = {
   "*": ["x", "y"],
   // square: the size control sets both sides
   icon: ["h"],
-  // read from the uploaded file
-  image: ["aspect"],
+  // read from the uploaded file; the crop is set by the trim buttons and the crop mode
+  image: ["aspect", "crop"],
   // the content and its space follow from grouping
   group: ["cw", "ch", "children"],
   // resized on the stage, or with "Ajustar al lienzo"

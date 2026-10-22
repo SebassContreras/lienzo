@@ -237,6 +237,24 @@ describe("lienzo CLI", () => {
       "--id",
       id,
     ]);
+    // decoding the picture is the browser boundary (049/D1): a fake probe
+    ctx.images = {
+      opaqueBounds: async () => ({ x: 0.25, y: 0.25, w: 0.5, h: 0.5 }),
+      dispose: async () => {},
+    };
+    const image = (await ok(
+      ["element_add", "--project", "p", "--json", "-"],
+      '{"scene":"demo","kind":"image","set":{"src":"assets/logo.png"}}',
+    )) as { id: string };
+    await ok([
+      "image_trim",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--id",
+      image.id,
+    ]);
     await ok(["font_list"]);
     // Google Fonts is the network boundary: a recorded css2 answer and fake files.
     const css = await readFile(

@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { createFontStore, type FontStore } from "./font-store.ts";
+import { createBrowserImageProbe, type ImageProbe } from "./image-probe.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
 import { createRenderer, type Renderer } from "./renderer.ts";
 import { createStore, type PresetStore, type Store } from "./store.ts";
@@ -23,8 +24,10 @@ export type Ctx = {
   /** The network, for the Google Fonts adapter (045/D6); tests pass a fake. */
   fetch: typeof fetch;
   renderer: Renderer;
+  /** Decodes pictures for `image_trim` (049/D1); tests pass a fake. */
+  images: ImageProbe;
   tts?: TtsService;
-  /** Releases what the ctx started (the renderer's browser and dev server, 010/D4). */
+  /** Releases what the ctx started: the renderer's and the probe's browsers (010/D4, 049/D2). */
   dispose(): Promise<void>;
 };
 
@@ -35,6 +38,7 @@ export function createCtx(
   root: string,
   renderer: Renderer = createRenderer(APP_ROOT),
   tts?: TtsService,
+  images: ImageProbe = createBrowserImageProbe(APP_ROOT),
 ): Ctx {
   return {
     root,
@@ -43,7 +47,10 @@ export function createCtx(
     fonts: createFontStore(root),
     fetch: globalThis.fetch,
     renderer,
+    images,
     tts,
-    dispose: () => renderer.dispose(),
+    dispose: async () => {
+      await Promise.all([renderer.dispose(), images.dispose()]);
+    },
   };
 }

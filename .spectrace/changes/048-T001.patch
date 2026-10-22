@@ -1,0 +1,109 @@
+diff --git a/src/components/image/descriptor.ts b/src/components/image/descriptor.ts
+index 25c9642..efcb101 100644
+--- a/src/components/image/descriptor.ts
++++ b/src/components/image/descriptor.ts
+@@ -15,6 +15,18 @@ import { drawImage } from "./draw.ts";
+ 
+ type Sized = { w: number; h: number; aspect: number; keepAspect: boolean };
+ 
++/** The shown part of the picture, in fractions (0–1) of its natural size (048/D1). */
++export const CropSchema = z.object({
++  x: z.number().min(0).max(1),
++  y: z.number().min(0).max(1),
++  w: z.number().gt(0).max(1),
++  h: z.number().gt(0).max(1),
++});
++export type Crop = z.infer<typeof CropSchema>;
++
++/** The whole picture: what scenes saved before 048 get. */
++export const FULL_CROP: Crop = { x: 0, y: 0, w: 1, h: 1 };
++
+ const size = { section: "Forma", min: 10, max: 2000 };
+ 
+ /** A picture file stored in `assets/`, drawn into its box. */
+@@ -48,6 +60,11 @@ const fields = {
+       if (v) el.h = el.w / el.aspect;
+     },
+   }),
++  crop: custom("image-crop", FULL_CROP, CropSchema.default(FULL_CROP), {
++    label: "Recorte",
++    section: "Imagen",
++    inspector: false,
++  }),
+   radius: num(16, { label: "Esquinas", section: "Forma", max: 300 }),
+   opacity: num(1, { label: "Opacidad", section: "Forma", max: 1, step: 0.01 }),
+   border: plainBorder({ width: 0, color: "#ffffff", opacity: 0.3 }, "Borde"),
+diff --git a/src/components/image/draw.ts b/src/components/image/draw.ts
+index e7cc60b..9d9124f 100644
+--- a/src/components/image/draw.ts
++++ b/src/components/image/draw.ts
+@@ -36,7 +36,20 @@ export function drawImage(ctx: Ctx, el: ImageEl, st: AnimState): void {
+     ctx.globalAlpha *= el.opacity;
+     ctx.clip(path);
+     if (image) {
+-      ctx.drawImage(image, el.x, el.y, el.w, el.h);
++      // the crop is the source rectangle, in the picture's natural pixels (048/D1)
++      const { width, height } = naturalSize(image);
++      const { crop } = el;
++      ctx.drawImage(
++        image,
++        crop.x * width,
++        crop.y * height,
++        crop.w * width,
++        crop.h * height,
++        el.x,
++        el.y,
++        el.w,
++        el.h,
++      );
+     } else {
+       drawPlaceholder(ctx, el);
+     }
+@@ -52,6 +65,17 @@ export function drawImage(ctx: Ctx, el: ImageEl, st: AnimState): void {
+   });
+ }
+ 
++/** Natural pixel size of a decoded picture: an `<img>` or a bitmap. */
++function naturalSize(image: CanvasImageSource): {
++  width: number;
++  height: number;
++} {
++  if ("naturalWidth" in image)
++    return { width: image.naturalWidth, height: image.naturalHeight };
++  const { width, height } = image as { width: number; height: number };
++  return { width, height };
++}
++
+ /** Shown before a file is chosen (or while it loads): a soft box with a mountain glyph. */
+ function drawPlaceholder(ctx: Ctx, el: ImageEl): void {
+   ctx.fillStyle = "rgba(148, 163, 184, 0.15)";
+diff --git a/src/test/legacy-schema.ts b/src/test/legacy-schema.ts
+index 0978b1d..f33b5f4 100644
+--- a/src/test/legacy-schema.ts
++++ b/src/test/legacy-schema.ts
+@@ -114,6 +114,10 @@ const image = z.object({
+   src: z.string(),
+   aspect: z.number(),
+   keepAspect: z.boolean(),
++  // added by 048, the whole picture when missing
++  crop: z
++    .object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() })
++    .default({ x: 0, y: 0, w: 1, h: 1 }),
+   radius: z.number(),
+   opacity: z.number(),
+   border: z.object({ width: z.number(), color, opacity: z.number() }),
+diff --git a/src/test/registry.test.ts b/src/test/registry.test.ts
+index 55682a5..eff884a 100644
+--- a/src/test/registry.test.ts
++++ b/src/test/registry.test.ts
+@@ -120,8 +120,8 @@ const NOT_IN_INSPECTOR: Record<string, string[]> = {
+   "*": ["x", "y"],
+   // square: the size control sets both sides
+   icon: ["h"],
+-  // read from the uploaded file
+-  image: ["aspect"],
++  // read from the uploaded file; the crop is set by the trim buttons and the crop mode
++  image: ["aspect", "crop"],
+   // the content and its space follow from grouping
+   group: ["cw", "ch", "children"],
+   // resized on the stage, or with "Ajustar al lienzo"
