@@ -323,7 +323,7 @@ export function TtsDialog({
         <Mic size={16} /> Voz IA
       </button>
 
-      <dialog ref={dialog} className="scenes-dialog tts-dialog">
+      <dialog ref={dialog} className="panel-dialog tts-dialog">
         <div className="title">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Mic size={20} />

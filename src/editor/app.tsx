@@ -1,5 +1,5 @@
 import {
-  FilePlus2,
+  Film,
   FolderArchive,
   Image as ImageIcon,
   Layers,
@@ -24,7 +24,6 @@ import { ExportControls } from "../export/export-controls.tsx";
 import {
   cloneElement,
   cloneElements,
-  defaultScene,
   type Element,
   isStaticMode,
   type Scene,
@@ -43,7 +42,6 @@ import {
   readJsonFile,
 } from "../presets/json-files.ts";
 import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
-import { SceneFiles } from "../presets/scene-files.tsx";
 import {
   deleteStored,
   loadAnimPresetFiles,
@@ -54,7 +52,7 @@ import {
 } from "../presets/store.ts";
 import { type AlignAction, alignElements } from "./align.ts";
 import { AnimLibrary } from "./anim-library.tsx";
-import { writeAutosave } from "./autosave.ts";
+import { readAutosave, writeAutosave } from "./autosave.ts";
 import {
   type BackgroundItem,
   BackgroundLibrary,
@@ -82,6 +80,7 @@ import { ProjectContext } from "./project-context.ts";
 import { ProjectSelector } from "./project-selector.tsx";
 import { ProjectAssetsTab } from "./sidebar/project-assets-tab.tsx";
 import { ProjectPresetsTab } from "./sidebar/project-presets-tab.tsx";
+import { ProjectScenesTab } from "./sidebar/project-scenes-tab.tsx";
 import { type Clock, Stage } from "./stage.tsx";
 import { startupState } from "./startup.ts";
 import { TracksPanel } from "./timeline/tracks-panel.tsx";
@@ -175,7 +174,7 @@ export function App() {
   const [backgroundFocus, setBackgroundFocus] = useState(0);
   const [presetFilter, setPresetFilter] = useState("");
   const [sidebarTab, setSidebarTab] = useState<
-    "library" | "layers" | "assets" | "presets"
+    "library" | "layers" | "assets" | "presets" | "scenes"
   >("library");
   const [activeProjectSlug, setActiveProjectSlug] = useState<
     string | undefined
@@ -321,6 +320,27 @@ export function App() {
     },
     [applyScene],
   );
+
+  /** A blank scene keeping the current mode; not autosaved, so the draft survives (043/D2). */
+  const openBlankScene = useCallback(() => {
+    const blank: Scene = {
+      ...startupState().scene,
+      ...(sceneRef.current.mode ? { mode: sceneRef.current.mode } : {}),
+    };
+    pristineScene.current = blank;
+    loadScene(blank);
+  }, [loadScene]);
+
+  /** Reopens the workspace's autosaved draft (042/D3). */
+  const recoverDraft = useCallback(() => {
+    const draft = readAutosave(activeProjectSlug);
+    if (!draft) {
+      setStatus("No hay borrador guardado en este proyecto");
+      return;
+    }
+    loadScene(draft);
+    setStatus("Borrador recuperado");
+  }, [activeProjectSlug, loadScene]);
 
   const addElement = useCallback(
     (template: Element, at?: Pt) => {
@@ -628,20 +648,6 @@ export function App() {
           <div className="group">
             <button
               type="button"
-              title="Escena en blanco"
-              onClick={() =>
-                loadScene({
-                  ...defaultScene(),
-                  ...(sceneRef.current.mode
-                    ? { mode: sceneRef.current.mode }
-                    : {}),
-                })
-              }
-            >
-              <FilePlus2 size={16} />
-            </button>
-            <button
-              type="button"
               title="Editar el fondo de la publicación"
               onClick={() => {
                 setSelection([]);
@@ -650,14 +656,6 @@ export function App() {
             >
               <PaintBucket size={16} /> Fondo
             </button>
-            <SceneFiles
-              scene={scene}
-              name={sceneName}
-              setName={setSceneName}
-              onOpen={loadScene}
-              setStatus={setStatus}
-              projectSlug={activeProjectSlug}
-            />
             <ProjectModeSelector
               mode={scene.mode}
               onChangeMode={(newMode) => {
@@ -760,6 +758,14 @@ export function App() {
             >
               <FolderArchive size={14} /> Presets
             </button>
+            <button
+              type="button"
+              className={`sidebar-tab ${sidebarTab === "scenes" ? "active" : ""}`}
+              onClick={() => setSidebarTab("scenes")}
+              title="Escenas del proyecto"
+            >
+              <Film size={14} /> Escenas
+            </button>
           </div>
 
           {sidebarTab === "layers" ? (
@@ -772,6 +778,17 @@ export function App() {
           ) : sidebarTab === "assets" ? (
             <ProjectAssetsTab
               projectSlug={activeProjectSlug}
+              setStatus={setStatus}
+            />
+          ) : sidebarTab === "scenes" ? (
+            <ProjectScenesTab
+              projectSlug={activeProjectSlug}
+              scene={scene}
+              name={sceneName}
+              setName={setSceneName}
+              onOpen={loadScene}
+              onBlank={openBlankScene}
+              onRecoverDraft={recoverDraft}
               setStatus={setStatus}
             />
           ) : sidebarTab === "presets" ? (

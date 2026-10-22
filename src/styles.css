@@ -94,9 +94,6 @@ textarea {
   align-items: center;
   gap: 6px;
 }
-.scene-name {
-  width: 140px;
-}
 .open {
   display: inline-flex;
   align-items: center;
@@ -630,7 +627,8 @@ code {
   color: #fca5a5;
 }
 
-.scenes-dialog {
+/* A modal panel dialog (TTS). */
+.panel-dialog {
   width: min(760px, calc(100vw - 32px));
   max-height: calc(100vh - 64px);
   padding: 16px;
@@ -639,23 +637,34 @@ code {
   background: var(--panel);
   color: inherit;
 }
-.scenes-dialog::backdrop {
+.panel-dialog::backdrop {
   background: rgba(0, 0, 0, 0.6);
 }
-.scenes-dialog > header {
+
+.scenes-tab {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 8px;
 }
-.scenes-dialog h2 {
-  margin: 0;
-  font-size: 15px;
+.scenes-tab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.scenes-grid {
+.scenes-tab-save {
+  display: flex;
+  gap: 6px;
+}
+.scenes-tab-save .scene-name {
+  flex: 1;
+  min-width: 0;
+}
+.scenes-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 8px;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
 }
 .scene-card {
   display: flex;
@@ -667,7 +676,7 @@ code {
 .scene-card .scene-open {
   padding: 4px;
 }
-.scenes-dialog .scene-card canvas {
+.scene-card canvas {
   display: block;
   border-radius: 4px;
 }
@@ -677,8 +686,8 @@ code {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  width: 168px;
-  height: 128px;
+  width: 120px;
+  height: 90px;
   padding: 6px;
   border-radius: 4px;
   background: #1f1315;
@@ -688,10 +697,25 @@ code {
   overflow: hidden;
 }
 .scene-card .scene-title {
-  max-width: 168px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 128px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.scene-mode {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+  background: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+}
+.scene-mode.static {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
 }
 
 .file-button {
@@ -707,10 +731,6 @@ code {
 }
 .library .file-button {
   margin-bottom: 8px;
-}
-.scenes-dialog > header .file-button {
-  margin-left: auto;
-  margin-right: 8px;
 }
 
 .field.anim-picker > button {
@@ -849,7 +869,7 @@ code {
   width: 100%;
 }
 
-/* Sidebar navigation tabs (Biblioteca, Capas, Recursos, Presets) */
+/* Sidebar navigation tabs (Biblioteca, Capas, Recursos, Presets, Escenas) */
 .sidebar-tabs {
   display: flex;
   border-bottom: 1px solid var(--line);

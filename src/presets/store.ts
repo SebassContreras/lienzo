@@ -83,27 +83,39 @@ export async function saveProjectPreset(
 }
 
 /** Removes a project preset by file name. */
-export async function deleteProjectPreset(
-  file: string,
+/** Deletes a stored preset or scene of a project workspace. */
+export async function deleteProjectItem(
+  kind: "presets" | "scenes",
+  name: string,
   projectSlug = "mi-proyecto",
 ): Promise<void> {
   await call(
-    `/api/projects/${encodeURIComponent(projectSlug)}/presets?name=${encodeURIComponent(file)}`,
+    `/api/projects/${encodeURIComponent(projectSlug)}/${kind}?name=${encodeURIComponent(name)}`,
     "DELETE",
   );
 }
 
-/** Renames a project preset. */
-export async function renameProjectPreset(
+/** Renames a stored preset or scene of a project workspace. */
+export async function renameProjectItem(
+  kind: "presets" | "scenes",
   from: string,
   to: string,
   projectSlug = "mi-proyecto",
 ): Promise<void> {
   await call(
-    `/api/projects/${encodeURIComponent(projectSlug)}/presets/rename?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    `/api/projects/${encodeURIComponent(projectSlug)}/${kind}/rename?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
     "POST",
   );
 }
+
+export const deleteProjectPreset = (file: string, projectSlug?: string) =>
+  deleteProjectItem("presets", file, projectSlug);
+
+export const renameProjectPreset = (
+  from: string,
+  to: string,
+  projectSlug?: string,
+) => renameProjectItem("presets", from, to, projectSlug);
 
 /** Animation presets in `presets/animations/`; files that fail the schema are left out. */
 export async function loadAnimPresetFiles(): Promise<
