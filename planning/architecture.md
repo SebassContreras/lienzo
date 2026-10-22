@@ -21,7 +21,7 @@ exactly what I wanted").
 - A9@1: React 19 + Vite for the editor UI — why: used by the validated prototype.
 - A10@1: GIF export with gifenc; MP4 export with Mediabunny on WebCodecs (H.264, falling back to WebM/VP9 when the browser cannot encode H.264); PNG through `OffscreenCanvas.convertToBlob` — why: all run in the browser with no server; gifenc MIT, Mediabunny MPL-2.0 used unmodified.
 - A11@1: Icons from lucide-react (UI) and lucide (canvas icon component) — why: one icon set; ISC.
-- A12@1: Fonts are bundled with `@fontsource/*` packages, not loaded from a CDN — why: works offline; no third-party service.
+- A12@2: Fonts are bundled with `@fontsource/*` packages; user fonts are files on disk (git-ignored `fonts/` globally, `projects/<slug>/fonts/` per project) and the only network use is an explicit, user-triggered Google Fonts download saved to those folders — never loaded from a CDN at run time — why: works offline; the user chooses when a third-party service is used.
 
 ## Conventions
 

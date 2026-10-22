@@ -8,3 +8,4 @@ names (not images, so not draggable), and the asset GET route only serves flat f
 - R2@1: Every image asset (png, jpg, jpeg, webp, svg) in the tab can be dragged onto the canvas and becomes an `image` element at the drop point that renders the file.
 - R3@1: Dropping keeps the image's aspect ratio (natural size fitted to the default image box).
 - R4@1: Asset paths with `..` or absolute segments are rejected.
+- R5@1: A nested asset reference (`/api/projects/<slug>/assets/brand/profile.jpg`) passes the project's asset validation, so scenes that use it save and export.

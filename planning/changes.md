@@ -48,3 +48,8 @@ Why: MCP tool names allow only `[a-zA-Z0-9_-]` (MCP specification); dotted names
 Why: clarify testing scope to prevent test bloat; prioritize pure engine logic, timing math and schema boundaries over redundant E2E/micro-tests so daily development remains fast. Meaning unchanged.
 - REWORDED A14@1
 
+
+## 2026-10-22 — user fonts on disk (045)
+Why: users need their own fonts per project and globally, and a way to fetch Google Fonts from the app; A12@1 allowed only bundled fonts.
+- MODIFIED A12@1 → A12@2
+- Tasks: 001/T004 re-pointed to A12@2 (the bundled fonts it loads still hold); 045 tasks cover the user fonts

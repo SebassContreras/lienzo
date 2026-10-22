@@ -11,8 +11,9 @@
       changes: src/components/line.ts (+153 -0), src/components/rect.ts (+107 -0), src/components/text.ts (+43 -0), src/engine/render.ts (+10 -1)
       └─ reviewed 2026-10-08: A5@2 moves each draw function into `src/components/<kind>/draw.ts` (012); the drawing code it wrote still holds
 - [x] T004 [agent] [status:done] Build the editor: stage, library, inspector, app shell, timeline
-      covers: D6@1, D7@1, A11@1, A12@1, A16@1
+      covers: D6@1, D7@1, A11@1, A12@2, A16@1
       changes: src/editor/app.tsx (+396 -0), src/editor/inspector.tsx (+1251 -0), src/editor/library.tsx (+118 -0), src/editor/stage.tsx (+436 -0), src/main.tsx (+28 -1), src/styles.css (+305 -0)
+      └─ reviewed 2026-10-22: A12@2 adds user fonts on disk (045); the bundled `@fontsource` loading it wrote still holds
 - [x] T005 [agent] [status:done] Export to PNG, GIF and MP4
       covers: D8@1, A10@1
       changes: src/editor/app.tsx (+10 -1), src/export/export-controls.tsx (+71 -0), src/export/export.ts (+133 -0)

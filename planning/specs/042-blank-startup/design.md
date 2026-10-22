@@ -13,3 +13,9 @@
 - `src/editor/app.tsx`: blank initial scene, paused clock, `readAutosave` helper.
 - `src/demo.ts` → `src/test/fixtures/sample-scene.ts`; `projects/mi-proyecto/scenes/ejemplo-keyframes.json` → `src/test/fixtures/`
 - `src/editor/workspace-fixes.test.ts`: startup is empty and paused.
+
+## Trade-offs
+
+- Blank start (D1, D3). Pros: predictable, nothing plays or appears that the user did not open. Cons: a user may think the last draft was lost. Mitigation: the autosave is still written and "Recuperar borrador" (043/D2) reopens it.
+- Paused start (D2). Pros: no CPU spent animating an empty canvas. Cons: one extra click to preview. Mitigation: play stays on the usual shortcut and button.
+- Demo out of the app (D4). Pros: no unknown content in the default project. Cons: tests used it as a rich fixture. Mitigation: it moves to `src/test/fixtures/`, which app code never imports.
