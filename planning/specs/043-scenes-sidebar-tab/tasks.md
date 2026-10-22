@@ -1,6 +1,6 @@
 - [ ] T001 [agent] [status:todo] `ProjectScenesTab` with list, thumbnails and scene actions
       covers: D1@1
-- [ ] T002 [agent] [status:todo] Blank / recover draft / demo actions in the tab
+- [ ] T002 [agent] [status:todo] Blank / recover draft actions in the tab
       covers: D2@1
 - [ ] T003 [agent] [status:todo] Add the "Escenas" sidebar tab
       covers: D4@1
