@@ -26,8 +26,9 @@
       covers: R2@1, R4@1
       kind: test
       changes: src/editor/crop-drag.test.ts (+68 -0), src/engine/image-trim.test.ts (+3 -1)
-- [ ] T009 [human] [status:todo] Try trim, manual crop and remove crop in the editor, then export and compare
+- [x] T009 [human] [status:done] Try trim, manual crop and remove crop in the editor, then export and compare
       covers: R1@1, R2@1, R3@1, R4@1
+      changes: none
 - [x] T010 [agent] [status:done] Fix from the browser check: crop buttons stacked so none is cut off; Esc in crop mode keeps the image selected
       covers: D5@1, D6@1
       changes: src/editor/stage.tsx (+8 -4), src/editor/widgets/image-crop.tsx (+1 -1), src/styles.css (+10 -0)
