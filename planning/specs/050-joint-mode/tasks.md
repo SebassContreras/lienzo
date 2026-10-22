@@ -31,3 +31,6 @@
       changes: src/editor/joint/incoming.test.ts (+34 -0), src/editor/joint/use-joint-mode.test.ts (+149 -0)
 - [ ] T010 [human] [status:todo] With `pnpm dev` open and the MCP agent on the same project, turn on "Modo conjunto", ask the agent for a post, watch it build, correct something by hand and give another instruction
       covers: R1@1, R2@1, R3@1, R4@1, R5@1
+- [x] T011 [agent] [status:done] Fix: the agent's-turn banner took a grid row and filled the stage; make it a small floating pill over the canvas
+      covers: D6@1
+      changes: projects/mi-proyecto/scenes/test-conjunto.json (+282 -0), src/editor/app.tsx (+5 -1), src/styles.css (+18 -6)

@@ -1,0 +1,282 @@
+{
+  "width": 1080,
+  "height": 1080,
+  "duration": 4,
+  "fps": 30,
+  "background": {
+    "color": "#0B0F19",
+    "color2": "#030712",
+    "gradient": true,
+    "angle": 120,
+    "dots": true,
+    "dotColor": "#1e3a8a",
+    "dotGap": 36,
+    "spotlight": 0.35,
+    "spotlightColor": "#1d4ed8"
+  },
+  "elements": [
+    {
+      "id": "23ca11p7",
+      "kind": "rect",
+      "name": "Rectángulo",
+      "x": 140,
+      "y": 240,
+      "w": 800,
+      "h": 600,
+      "radius": 24,
+      "fill": {
+        "color": "#13254a",
+        "gradient": true,
+        "color2": "#0b1630",
+        "angle": 90,
+        "opacity": 0.9
+      },
+      "border": {
+        "width": 2,
+        "color": "#3b82f6",
+        "opacity": 0.8,
+        "style": "solid",
+        "flow": 0
+      },
+      "borderGlow": {
+        "enabled": true,
+        "color": "#3b82f6",
+        "blur": 18,
+        "strength": 1
+      },
+      "bgGlow": {
+        "enabled": false,
+        "color": "#2563eb",
+        "blur": 24,
+        "strength": 1
+      },
+      "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "opacity": 0.5,
+        "blur": 40,
+        "x": 0,
+        "y": 16
+      },
+      "label": {
+        "text": "",
+        "font": "Inter",
+        "size": 28,
+        "weight": 600,
+        "color": "#ffffff",
+        "align": "center",
+        "padding": 24
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      }
+    },
+    {
+      "id": "7xrw5srb",
+      "kind": "text",
+      "name": "Texto",
+      "x": 200,
+      "y": 330,
+      "text": "Modo conjunto",
+      "font": "Inter",
+      "size": 96,
+      "weight": 800,
+      "italic": false,
+      "color": "#fde68a",
+      "gradient": false,
+      "color2": "#60a5fa",
+      "align": "left",
+      "lineHeight": 1.15,
+      "letterSpacing": 0,
+      "opacity": 1,
+      "glow": {
+        "enabled": false,
+        "color": "#60a5fa",
+        "blur": 24,
+        "strength": 1
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      }
+    },
+    {
+      "id": "mqqegf34",
+      "kind": "text",
+      "name": "Texto",
+      "x": 200,
+      "y": 480,
+      "text": "El agente construye, tú corriges",
+      "font": "Inter",
+      "size": 56,
+      "weight": 500,
+      "italic": false,
+      "color": "#93c5fd",
+      "gradient": false,
+      "color2": "#60a5fa",
+      "align": "left",
+      "lineHeight": 1.15,
+      "letterSpacing": 0,
+      "opacity": 1,
+      "glow": {
+        "enabled": false,
+        "color": "#60a5fa",
+        "blur": 24,
+        "strength": 1
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      }
+    },
+    {
+      "id": "91oi1t2i",
+      "kind": "ellipse",
+      "name": "Elipse",
+      "x": 760,
+      "y": 660,
+      "w": 120,
+      "h": 120,
+      "fill": {
+        "color": "#facc15",
+        "gradient": false,
+        "color2": "#0b1630",
+        "angle": 90,
+        "opacity": 0.9
+      },
+      "border": {
+        "width": 2,
+        "color": "#3b82f6",
+        "opacity": 0.8,
+        "style": "solid",
+        "flow": 0
+      },
+      "borderGlow": {
+        "enabled": true,
+        "color": "#3b82f6",
+        "blur": 18,
+        "strength": 1
+      },
+      "bgGlow": {
+        "enabled": false,
+        "color": "#2563eb",
+        "blur": 24,
+        "strength": 1
+      },
+      "shadow": {
+        "enabled": true,
+        "color": "#000000",
+        "opacity": 0.5,
+        "blur": 40,
+        "x": 0,
+        "y": 16
+      },
+      "label": {
+        "text": "",
+        "font": "Inter",
+        "size": 28,
+        "weight": 600,
+        "color": "#ffffff",
+        "align": "center",
+        "padding": 24
+      },
+      "anim": {
+        "in": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 0,
+          "duration": 0.8,
+          "easing": "auto"
+        },
+        "loop": {
+          "kind": "none",
+          "amount": 12,
+          "cycles": 1,
+          "delay": 0,
+          "iterations": "infinite",
+          "direction": "normal",
+          "easing": "auto"
+        },
+        "out": {
+          "kind": "none",
+          "amount": 12,
+          "from": "down",
+          "delay": 3,
+          "duration": 0.8,
+          "easing": "auto"
+        }
+      }
+    }
+  ]
+}

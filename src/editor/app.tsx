@@ -1036,7 +1036,11 @@ export function App() {
           {joint.locked && (
             <div className="joint-banner" role="status">
               El agente está editando…
-              <button type="button" onClick={joint.takeControl}>
+              <button
+                type="button"
+                className="joint-take"
+                onClick={joint.takeControl}
+              >
                 Tomar el control
               </button>
             </div>
