@@ -6,7 +6,7 @@ import {
   type ElementKind,
 } from "../../model/model.ts";
 import { resolveElement } from "../../presets/resolve.ts";
-import { checkKind, patched } from "../elements.ts";
+import { COORDINATES, checkKind, patched } from "../elements.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, findPreset, SceneResult } from "../scenes.ts";
 
@@ -17,7 +17,8 @@ export const elementAdd = defineTool({
     "component kind's defaults (see component_list). `set` deep-merges field values " +
     "(tracks and animPreset included); `at` centres it on a point, else it is centred on " +
     "the scene unless `set` gives its position. " +
-    "Returns the new element's id.",
+    "Returns the new element's id. " +
+    COORDINATES,
   input: z
     .object({
       scene: z.string().min(1),
@@ -71,6 +72,10 @@ export const elementAdd = defineTool({
       const out = p ? centerOn(added, p.x, p.y) : added;
       return { ...s, elements: [...s.elements, out] };
     });
-    return { ...result, notices: [...result.notices, ...notices], id: added.id };
+    return {
+      ...result,
+      notices: [...result.notices, ...notices],
+      id: added.id,
+    };
   },
 });

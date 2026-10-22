@@ -11,7 +11,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 004 | preset-traits | done        | 001 | —     | 2 |
 | 005 | particles | done        | 001, 004, 006 | —     | 6 |
 | 006 | background-presets | done        | 004 | —     | 5 |
-| 007 | service-layer | done | 003, 004, 005, 012, 015 | —     | 16 |
+| 007 | service-layer | done        | 003, 004, 005, 012, 015 | —     | 16 |
 | 008 | cli | done        | 007 | —     | 17 |
 | 009 | mcp-server | done        | 007, 008 | —     | 18 |
 | 010 | headless-export | done        | 007, 008, 009 | —     | 19 |

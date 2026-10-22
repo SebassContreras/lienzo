@@ -2,7 +2,7 @@
 
 ## Approach
 
-- D1@1 (implements R2): `inspectLayout(scene, times)` in `src/service/layout.ts` is pure: for each time it runs `animate` and `boxOf` (the same pure layers `drawScene` uses, A3/A24) and reports `{ code, elementId, t, message }`; no rendering, so it runs without a browser.
+- D1@2 (implements R2): `inspectLayout(scene, times)` in `src/service/layout.ts` is pure: for each time it runs `animate` and `boxOf` (the same pure layers `drawScene` uses, A3/A24) and reports `{ code, elementId, t, message }`; a pure `layoutBoxes(scene, times)` beside it returns `{ id, t, x, y, w, h }` per top-level element from the same placed elements; no rendering, so it runs without a browser.
 - D2@1 (implements R3): `src/service/tools/scene-inspect-layout.ts` wraps it as a tool; input is a scene or a saved scene name plus optional times.
 
 - D3@1 (implements R6, R11): `src/engine/color.ts` is pure: parsing, alpha compositing, WCAG relative luminance and contrast ratio, and the lightness search for a suggested colour (in OKLCH, so the hue is kept).
@@ -14,3 +14,18 @@
 
 `src/service/layout.ts`, `src/service/contrast.ts`, `src/engine/color.ts`, the `scene_inspect_layout` tool.
 
+
+## Trade-offs
+
+- **Boxes from a separate pure `layoutBoxes`, not inside `inspectLayout`'s return.**
+  - *Pros:* `inspectLayout` keeps its shape and callers; one function, one job (SRP); both share `placedElementsAt`, so no duplicated geometry.
+  - *Cons:* the tool animates the scene twice per time.
+  - *Mitigation:* `animate` is pure and cheap; scenes hold tens of elements, so the cost is negligible.
+- **Only top-level boxes, only at the requested times.**
+  - *Pros:* small output; what an agent places is top-level.
+  - *Cons:* children of a group are not listed.
+  - *Mitigation:* the group's box covers them; diagnostics still check children.
+- **Text boxes are measured outside the browser.**
+  - *Pros:* no browser needed.
+  - *Cons:* Node's measurement can differ by a few pixels from the browser's.
+  - *Mitigation:* `scene_preview` shows the real render.

@@ -1,0 +1,34 @@
+diff --git a/src/service/tools/element-update.ts b/src/service/tools/element-update.ts
+index fa7cfd1..a787c31 100644
+--- a/src/service/tools/element-update.ts
++++ b/src/service/tools/element-update.ts
+@@ -1,4 +1,6 @@
+ import { z } from "zod";
++import { centerOn } from "../../engine/geometry.ts";
++import type { Element } from "../../model/model.ts";
+ import { patched } from "../elements.ts";
+ import { defineTool } from "../registry.ts";
+ import { editScene, elementIndex, SceneResult } from "../scenes.ts";
+@@ -13,16 +15,20 @@ export const elementUpdate = defineTool({
+     scene: z.string().min(1),
+     id: z.string().min(1),
+     patch: z.record(z.string(), z.unknown()),
++    at: z.object({ x: z.number(), y: z.number() }).optional(),
+   }),
+   output: SceneResult,
+-  run: ({ scene, id, patch }, ctx) =>
++  run: ({ scene, id, patch, at }, ctx) =>
+     editScene(ctx, scene, (s) => {
+       const i = elementIndex(s, id);
+       return {
+         ...s,
+         elements: s.elements.map((el, j) =>
+-          j === i ? patched(el, patch) : el,
++          j === i ? recentred(patched(el, patch), at) : el,
+         ),
+       };
+     }),
+ });
++
++const recentred = (el: Element, at?: { x: number; y: number }) =>
++  at ? centerOn(el, at.x, at.y) : el;

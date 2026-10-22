@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { inspectLayout } from "../layout.ts";
+import { inspectLayout, layoutBoxes } from "../layout.ts";
 import { defineTool, fail } from "../registry.ts";
 import { checkScene, openScene } from "../scenes.ts";
 
@@ -15,6 +15,15 @@ const DiagnosticSchema = z.object({
   suggestion: z.string().optional(),
 });
 
+const BoxSchema = z.object({
+  id: z.string(),
+  t: z.number(),
+  x: z.number(),
+  y: z.number(),
+  w: z.number(),
+  h: z.number(),
+});
+
 function stringSchema() {
   return z.string();
 }
@@ -24,7 +33,9 @@ export const sceneInspectLayout = defineTool({
   description:
     "Analyse layout and spatial diagnostics of a scene (text overlaps, elements " +
     "outside canvas bounds, line attachments to missing IDs, and contrast issues) at given " +
-    "times (default: start, middle and end of loop). Input can be a scene object or saved scene name.",
+    "times (default: start, middle and end of loop). Input can be a scene object or saved scene name. " +
+    "Also returns `boxes`: the drawn box (top-left `x, y`, `w`, `h`) of every top-level " +
+    "element at each time, to verify placement (e.g. centred when x + w/2 = width/2).",
   input: z.object({
     scene: z.unknown().optional(),
     name: z.string().optional(),
@@ -32,6 +43,7 @@ export const sceneInspectLayout = defineTool({
   }),
   output: z.object({
     diagnostics: z.array(DiagnosticSchema),
+    boxes: z.array(BoxSchema),
   }),
   async run({ scene: sceneInput, name, times }, ctx) {
     let scene = sceneInput
@@ -52,7 +64,9 @@ export const sceneInspectLayout = defineTool({
       }
     }
 
-    const diagnostics = inspectLayout(scene, times);
-    return { diagnostics };
+    return {
+      diagnostics: inspectLayout(scene, times),
+      boxes: layoutBoxes(scene, times),
+    };
   },
 });

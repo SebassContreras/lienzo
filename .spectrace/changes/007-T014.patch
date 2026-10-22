@@ -1,0 +1,94 @@
+diff --git a/src/service/elements.ts b/src/service/elements.ts
+index 1be6105..c22f282 100644
+--- a/src/service/elements.ts
++++ b/src/service/elements.ts
+@@ -44,3 +44,9 @@ export function checkKeyframe(kind: string, path: string, value: unknown) {
+       "value",
+     );
+ }
++
++/** How element positions read, told to every agent placing elements. */
++export const COORDINATES =
++  "Coordinates: an element's `x, y` is the top-left corner of its box, never its centre; " +
++  'a text\'s `align` aligns its lines inside its own box, so `x: 540` with `align: "center"` ' +
++  "starts the text at 540. To centre something use `at`, which centres the measured box on a point.";
+diff --git a/src/service/tools/component-list.ts b/src/service/tools/component-list.ts
+index f4498b7..a0d21a1 100644
+--- a/src/service/tools/component-list.ts
++++ b/src/service/tools/component-list.ts
+@@ -1,13 +1,15 @@
+ import { z } from "zod";
+ import { trackPaths } from "../../components/descriptor.ts";
+ import { COMPONENTS } from "../../components/index.ts";
++import { COORDINATES } from "../elements.ts";
+ import { defineTool } from "../registry.ts";
+ 
+ export const componentList = defineTool({
+   name: "component_list",
+   description:
+     "List every component kind element_add accepts, with its Spanish label and the paths " +
+-    "keyframe_set can animate on it.",
++    "keyframe_set can animate on it. " +
++    COORDINATES,
+   input: z.object({}),
+   output: z.array(
+     z.object({
+diff --git a/src/service/tools/element-add.ts b/src/service/tools/element-add.ts
+index b2bb797..3d818dd 100644
+--- a/src/service/tools/element-add.ts
++++ b/src/service/tools/element-add.ts
+@@ -6,7 +6,7 @@ import {
+   type ElementKind,
+ } from "../../model/model.ts";
+ import { resolveElement } from "../../presets/resolve.ts";
+-import { checkKind, patched } from "../elements.ts";
++import { COORDINATES, checkKind, patched } from "../elements.ts";
+ import { defineTool, fail } from "../registry.ts";
+ import { editScene, findPreset, SceneResult } from "../scenes.ts";
+ 
+@@ -17,7 +17,8 @@ export const elementAdd = defineTool({
+     "component kind's defaults (see component_list). `set` deep-merges field values " +
+     "(tracks and animPreset included); `at` centres it on a point, else it is centred on " +
+     "the scene unless `set` gives its position. " +
+-    "Returns the new element's id.",
++    "Returns the new element's id. " +
++    COORDINATES,
+   input: z
+     .object({
+       scene: z.string().min(1),
+@@ -71,6 +72,10 @@ export const elementAdd = defineTool({
+       const out = p ? centerOn(added, p.x, p.y) : added;
+       return { ...s, elements: [...s.elements, out] };
+     });
+-    return { ...result, notices: [...result.notices, ...notices], id: added.id };
++    return {
++      ...result,
++      notices: [...result.notices, ...notices],
++      id: added.id,
++    };
+   },
+ });
+diff --git a/src/service/tools/element-update.ts b/src/service/tools/element-update.ts
+index a787c31..1832915 100644
+--- a/src/service/tools/element-update.ts
++++ b/src/service/tools/element-update.ts
+@@ -1,7 +1,7 @@
+ import { z } from "zod";
+ import { centerOn } from "../../engine/geometry.ts";
+ import type { Element } from "../../model/model.ts";
+-import { patched } from "../elements.ts";
++import { COORDINATES, patched } from "../elements.ts";
+ import { defineTool } from "../registry.ts";
+ import { editScene, elementIndex, SceneResult } from "../scenes.ts";
+ 
+@@ -10,7 +10,9 @@ export const elementUpdate = defineTool({
+   description:
+     "Change an element with a partial patch, deep-merged: objects merge key by key, " +
+     "anything else (arrays, tracks' keyframe lists) is replaced. id and kind never change. " +
+-    "The result is checked against the kind's fields.",
++    "The result is checked against the kind's fields. `at` re-centres the patched element " +
++    "on a point and wins over an `x`/`y` in the patch. " +
++    COORDINATES,
+   input: z.object({
+     scene: z.string().min(1),
+     id: z.string().min(1),

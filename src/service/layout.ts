@@ -351,3 +351,20 @@ export function inspectLayout(
 
   return diagnostics;
 }
+
+export type LayoutBox = Box & { id: string; t: number };
+
+/**
+ * The drawn box of every top-level element at each time, so an agent can
+ * verify where its elements landed (023/D1).
+ */
+export function layoutBoxes(
+  scene: Scene,
+  times: number[] = defaultInspectionTimes(scene.duration),
+): LayoutBox[] {
+  return times.flatMap((t) =>
+    placedElementsAt(scene, t)
+      .filter((item) => !item.parentGroup)
+      .map(({ el, box }) => ({ id: el.id, t, ...box })),
+  );
+}

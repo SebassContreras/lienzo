@@ -44,3 +44,9 @@ export function checkKeyframe(kind: string, path: string, value: unknown) {
       "value",
     );
 }
+
+/** How element positions read, told to every agent placing elements. */
+export const COORDINATES =
+  "Coordinates: an element's `x, y` is the top-left corner of its box, never its centre; " +
+  'a text\'s `align` aligns its lines inside its own box, so `x: 540` with `align: "center"` ' +
+  "starts the text at 540. To centre something use `at`, which centres the measured box on a point.";

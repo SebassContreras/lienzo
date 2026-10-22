@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { defineComponent } from "../components/descriptor.ts";
 import { ellipse } from "../components/ellipse/descriptor.ts";
 import { registerComponent } from "../components/index.ts";
+import { boxOf, center } from "../engine/geometry.ts";
 import { applyTracks } from "../engine/tracks.ts";
 import type { Element, Scene } from "../model/model.ts";
 import { parseScene } from "../model/schema.ts";
@@ -117,6 +118,39 @@ describe("service tools", () => {
     expect(list).toEqual([
       expect.objectContaining({ name: "demo", valid: true }),
     ]);
+  });
+
+  it("re-centres an updated text's box on the point given as `at` (R3)", async () => {
+    await ok("scene_create", { name: "demo" });
+    const { id } = await ok("element_add", {
+      scene: "demo",
+      kind: "text",
+      set: { x: 540, y: 100, align: "center" },
+    });
+
+    await ok("element_update", {
+      scene: "demo",
+      id,
+      patch: { text: "Un título más largo" },
+      at: { x: 540, y: 300 },
+    });
+
+    const el = (await onDisk("demo")).elements[0] as Element;
+    expect(center(boxOf(el))).toEqual({ x: 540, y: 300 });
+  });
+
+  it("keeps an updated element's position when no `at` is given (R3)", async () => {
+    await ok("scene_create", { name: "demo" });
+    const { id } = await ok("element_add", {
+      scene: "demo",
+      kind: "rect",
+      set: { x: 20, y: 30 },
+    });
+
+    await ok("element_update", { scene: "demo", id, patch: { w: 50 } });
+
+    const el = (await onDisk("demo")).elements[0] as Element;
+    expect(boxOf(el)).toMatchObject({ x: 20, y: 30, w: 50 });
   });
 
   it("writes nothing when an edit would make the scene invalid (R4)", async () => {
@@ -242,6 +276,22 @@ describe("animation presets (D6, R7)", () => {
         }),
       ]),
     );
+  });
+
+  it("returns every top-level element's box beside the diagnostics (023/R2)", async () => {
+    await ok("scene_create", { name: "boxes" });
+    const { id } = await ok("element_add", {
+      scene: "boxes",
+      kind: "rect",
+      set: { x: 10, y: 20, w: 30, h: 40 },
+    });
+
+    const result = await ok("scene_inspect_layout", {
+      name: "boxes",
+      times: [0],
+    });
+
+    expect(result.boxes).toEqual([{ id, t: 0, x: 10, y: 20, w: 30, h: 40 }]);
   });
 
   it("builds a scene from compact format with scene_build and saves it (011/T006)", async () => {

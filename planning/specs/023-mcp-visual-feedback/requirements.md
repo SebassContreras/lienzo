@@ -14,7 +14,7 @@ correctness before finalizing a post.
 ## Requirements
 
 - ~~R1@1: A `scene_preview` tool in `src/service/tools/` renders a given scene JSON into a lightweight PNG snapshot (data URL / base64 or temporary asset path) without requiring a full export workflow.~~ retired 2026-10-10 → 010/R2
-- R2@2: A `scene_inspect_layout` tool analyses the element boxes at given times (by default the start, middle and end of the loop) and returns diagnostics naming the element and the time: overlapping text, elements outside the canvas, and line ends attached to ids that do not exist.
+- R2@3: A `scene_inspect_layout` tool analyses the element boxes at given times (by default the start, middle and end of the loop) and returns diagnostics naming the element and the time: overlapping text, elements outside the canvas, and line ends attached to ids that do not exist; it also returns the box (`id`, `t`, `x`, `y`, `w`, `h`) of every top-level element at each time, so an agent can verify placement.
 - R3@2: `scene_inspect_layout` is a registry tool (A20), so the MCP server (009) and the CLI (008) expose it with no change; agents see the picture through 010's `scene_preview`.
 - ~~R4@1: Execution utilizes the headless renderer (010) or fast offscreen canvas fallback to guarantee parity with the editor preview (A3).~~ retired 2026-10-10
 

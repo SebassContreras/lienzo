@@ -6,7 +6,7 @@ import {
   defaultText,
 } from "../model/model.ts";
 import { installCanvasFakes } from "../test/recording-ctx.ts";
-import { inspectLayout } from "./layout.ts";
+import { inspectLayout, layoutBoxes } from "./layout.ts";
 import { registry } from "./tools/index.ts";
 
 installCanvasFakes();
@@ -130,5 +130,46 @@ describe("pure inspectLayout (023/T006, R2, R3)", () => {
     const tool = registry.get("scene_inspect_layout");
     expect(tool).toBeDefined();
     expect(tool?.name).toBe("scene_inspect_layout");
+  });
+});
+
+describe("pure layoutBoxes (023/T009, R2)", () => {
+  const sliding = {
+    ...defaultRect(),
+    id: "flyer",
+    x: 20,
+    y: 20,
+    w: 100,
+    h: 100,
+    anim: {
+      ...defaultRect().anim,
+      in: {
+        kind: "slide" as const,
+        delay: 0,
+        duration: 1,
+        amount: 400,
+        from: "left" as const,
+        easing: "linear" as const,
+      },
+    },
+  };
+
+  it("returns a centred element's box with its centre on the canvas centre", () => {
+    const scene = { ...defaultScene(), width: 1080, height: 1080 };
+    scene.elements = [
+      { ...defaultRect(), id: "jar", x: 290, y: 340, w: 500, h: 400 },
+    ];
+
+    const [box] = layoutBoxes(scene, [0]);
+
+    expect(box).toEqual({ id: "jar", t: 0, x: 290, y: 340, w: 500, h: 400 });
+  });
+
+  it("returns a different box at each time for an element entering from outside", () => {
+    const scene = { ...defaultScene(), duration: 2, elements: [sliding] };
+
+    const boxes = layoutBoxes(scene, [0, 2]);
+
+    expect(boxes.map((b) => b.x)).toEqual([-380, 20]);
   });
 });
