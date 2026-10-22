@@ -39,7 +39,8 @@ export function attachSpeechToScene(
 
   let newDuration = scene.duration;
   if (adjustSceneDuration && audioDuration > 0) {
-    const requiredDuration = Math.round((startOffset + audioDuration + 0.2) * 10) / 10;
+    const requiredDuration =
+      Math.round((startOffset + audioDuration + 0.2) * 10) / 10;
     newDuration = Math.max(scene.duration, requiredDuration);
   }
 
@@ -49,11 +50,13 @@ export function attachSpeechToScene(
     startOffset,
   };
 
-  let updatedElements = [...scene.elements];
+  const updatedElements = [...scene.elements];
 
   // If cues are provided, update existing subtitles element or create a new one
   if (cues && cues.length > 0) {
-    const existingIndex = updatedElements.findIndex((el) => el.kind === "subtitles");
+    const existingIndex = updatedElements.findIndex(
+      (el) => el.kind === "subtitles",
+    );
 
     if (existingIndex >= 0) {
       const existing = updatedElements[existingIndex] as SubtitlesEl;

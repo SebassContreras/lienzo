@@ -4,7 +4,8 @@ import { defineTool, fail } from "../registry.ts";
 
 export const projectDelete = defineTool({
   name: "project_delete",
-  description: "Delete an existing project workspace cleanly from projects/<slug>/.",
+  description:
+    "Delete an existing project workspace cleanly from projects/<slug>/.",
   input: z.object({
     slug: ProjectSlugSchema,
   }),
@@ -20,10 +21,17 @@ export const projectDelete = defineTool({
       }
       return { ok: true, slug };
     } catch (error) {
-      if (error instanceof Error && error.message.includes("No existe el proyecto")) {
+      if (
+        error instanceof Error &&
+        error.message.includes("No existe el proyecto")
+      ) {
         fail("not_found", error.message, "slug");
       }
-      fail("delete_failed", String(error instanceof Error ? error.message : error), "slug");
+      fail(
+        "delete_failed",
+        String(error instanceof Error ? error.message : error),
+        "slug",
+      );
     }
   },
 });

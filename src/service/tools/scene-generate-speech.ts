@@ -6,10 +6,8 @@ import {
   resolveDefaultTtsModel,
   resolveDefaultTtsVoice,
   resolveOpenRouterApiKey,
-  resolveOpenRouterBaseUrl,
 } from "../tts/config.ts";
 import { createTtsService } from "../tts/factory.ts";
-import { OpenRouterTtsAdapter } from "../tts/openrouter-adapter.ts";
 import { attachSpeechToScene } from "../tts/scene-audio.ts";
 import { alignScriptToCues } from "../tts/speech-alignment.ts";
 import type { TtsService } from "../tts/types.ts";

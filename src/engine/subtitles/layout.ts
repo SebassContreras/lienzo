@@ -22,9 +22,7 @@ export interface SubtitleLayout {
   totalHeight: number;
 }
 
-export interface MeasureTextFn {
-  (text: string): number;
-}
+export type MeasureTextFn = (text: string) => number;
 
 /**
  * Computes wrapped lines and word positions for a subtitle cue within maxWidth.
@@ -67,9 +65,13 @@ export function layoutSubtitleCue(
     // Reserve clearance padding for when a word is active and scaled up (039/R3, D3)
     const extraPadding = wordWidth * scaleExpansion;
     const effectiveSpacing = spaceWidth + extraPadding;
-    const addedWidth = currentLineWords.length > 0 ? effectiveSpacing + wordWidth : wordWidth;
+    const addedWidth =
+      currentLineWords.length > 0 ? effectiveSpacing + wordWidth : wordWidth;
 
-    if (currentLineWords.length > 0 && currentLineWidth + addedWidth > maxWidth) {
+    if (
+      currentLineWords.length > 0 &&
+      currentLineWidth + addedWidth > maxWidth
+    ) {
       // Flush current line
       lines.push({
         words: currentLineWords,
@@ -81,7 +83,8 @@ export function layoutSubtitleCue(
       currentLineWidth = 0;
     }
 
-    const wordX = currentLineWords.length > 0 ? currentLineWidth + effectiveSpacing : 0;
+    const wordX =
+      currentLineWords.length > 0 ? currentLineWidth + effectiveSpacing : 0;
     currentLineWords.push({
       word: item.text,
       x: wordX,

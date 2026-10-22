@@ -110,4 +110,3 @@ describe("scene audio schema validation", () => {
     }
   });
 });
-

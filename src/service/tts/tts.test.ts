@@ -111,7 +111,8 @@ describe("Pure Speech Alignment (R5, D4)", () => {
   });
 
   it("generates proportional subtitle cues with word breakdowns", () => {
-    const script = "Primera frase corta. Segunda frase un poco más extendida y completa.";
+    const script =
+      "Primera frase corta. Segunda frase un poco más extendida y completa.";
     const cues = alignScriptToCues(script, {
       totalDuration: 6.0,
       startOffset: 0.5,
@@ -151,7 +152,9 @@ describe("Scene Audio Attachment and Duration Adjustment (R4, D3)", () => {
     // Verify subtitles element added
     const sub = updated.elements.find((e) => e.kind === "subtitles");
     expect(sub).toBeDefined();
-    expect((sub as unknown as { cues: unknown[] }).cues.length).toBe(cues.length);
+    expect((sub as unknown as { cues: unknown[] }).cues.length).toBe(
+      cues.length,
+    );
   });
 
   it("does not shrink scene duration if scene is already longer than speech", () => {

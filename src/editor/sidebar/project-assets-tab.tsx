@@ -1,5 +1,11 @@
-import { AlertCircle, FileType, Image as ImageIcon, Loader2, Upload } from "lucide-react";
-import { type ChangeEvent, type DragEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FileType, Loader2, Upload } from "lucide-react";
+import {
+  type ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { ASSET_MIME } from "../stage.tsx";
 
 export type ProjectAssetsTabProps = {
@@ -9,7 +15,10 @@ export type ProjectAssetsTabProps = {
 
 const isImageFile = (name: string) => /\.(png|jpg|jpeg|webp|svg)$/i.test(name);
 
-export function ProjectAssetsTab({ projectSlug = "mi-proyecto", setStatus }: ProjectAssetsTabProps) {
+export function ProjectAssetsTab({
+  projectSlug = "mi-proyecto",
+  setStatus,
+}: ProjectAssetsTabProps) {
   const [assets, setAssets] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -22,7 +31,9 @@ export function ProjectAssetsTab({ projectSlug = "mi-proyecto", setStatus }: Pro
     }
     try {
       setLoading(true);
-      const res = await fetch(`/api/projects/${encodeURIComponent(projectSlug)}`);
+      const res = await fetch(
+        `/api/projects/${encodeURIComponent(projectSlug)}`,
+      );
       if (res.ok) {
         const details = await res.json();
         setAssets(details.assets ?? []);
@@ -75,9 +86,29 @@ export function ProjectAssetsTab({ projectSlug = "mi-proyecto", setStatus }: Pro
   };
 
   return (
-    <div className="project-assets-tab" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "10px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
+    <div
+      className="project-assets-tab"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        padding: "10px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
           Recursos de «{projectSlug}»
         </span>
         <button
@@ -86,12 +117,28 @@ export function ProjectAssetsTab({ projectSlug = "mi-proyecto", setStatus }: Pro
           title="Subir archivo al proyecto"
           disabled={uploading}
           onClick={() => fileInputRef.current?.click()}
-          style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px", fontSize: "11px", cursor: "pointer" }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            padding: "4px 8px",
+            fontSize: "11px",
+            cursor: "pointer",
+          }}
         >
-          {uploading ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
+          {uploading ? (
+            <Loader2 size={12} className="spin" />
+          ) : (
+            <Upload size={12} />
+          )}
           <span>Subir</span>
         </button>
-        <input ref={fileInputRef} type="file" hidden onChange={handleFileChange} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          hidden
+          onChange={handleFileChange}
+        />
       </div>
 
       <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
@@ -99,11 +146,26 @@ export function ProjectAssetsTab({ projectSlug = "mi-proyecto", setStatus }: Pro
       </div>
 
       {loading ? (
-        <div style={{ padding: "20px 0", textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "12px" }}>
+        <div
+          style={{
+            padding: "20px 0",
+            textAlign: "center",
+            color: "rgba(255,255,255,0.4)",
+            fontSize: "12px",
+          }}
+        >
           Cargando recursos…
         </div>
       ) : assets.length === 0 ? (
-        <div style={{ padding: "20px 0", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "12px", fontStyle: "italic" }}>
+        <div
+          style={{
+            padding: "20px 0",
+            textAlign: "center",
+            color: "rgba(255,255,255,0.3)",
+            fontSize: "12px",
+            fontStyle: "italic",
+          }}
+        >
           No hay recursos subidos aún en este proyecto.
         </div>
       ) : (
@@ -121,6 +183,7 @@ export function ProjectAssetsTab({ projectSlug = "mi-proyecto", setStatus }: Pro
             const isImg = isImageFile(asset);
 
             return (
+              // biome-ignore lint/a11y/noStaticElementInteractions: a drag source for the canvas; dragging has no keyboard equivalent here (known gap, out of this lint fix)
               <div
                 key={asset}
                 draggable={isImg}

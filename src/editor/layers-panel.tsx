@@ -24,6 +24,9 @@ import {
 import type { Element, GroupEl, Scene } from "../model/model.ts";
 import { IconSvg } from "./icon-picker.tsx";
 
+/** A row is selected by click or by Enter/Space; both carry the modifier keys. */
+type RowEvent = React.MouseEvent | React.KeyboardEvent;
+
 export function LayersPanel({
   scene,
   selection,
@@ -36,7 +39,9 @@ export function LayersPanel({
   onChangeScene: (scene: Scene) => void;
 }) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set(),
+  );
 
   const visualElements = visualLayerOrder(scene.elements);
 
@@ -49,7 +54,7 @@ export function LayersPanel({
     });
   };
 
-  const handleRowClick = (e: React.MouseEvent, id: string) => {
+  const handleRowClick = (e: RowEvent, id: string) => {
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
       if (selection.includes(id)) {
         onSelect(selection.filter((item) => item !== id));
@@ -92,8 +97,14 @@ export function LayersPanel({
       setDraggedIndex(null);
       return;
     }
-    const fromArrayIdx = visualIndexToArrayIndex(draggedIndex, scene.elements.length);
-    const toArrayIdx = visualIndexToArrayIndex(targetVisualIdx, scene.elements.length);
+    const fromArrayIdx = visualIndexToArrayIndex(
+      draggedIndex,
+      scene.elements.length,
+    );
+    const toArrayIdx = visualIndexToArrayIndex(
+      targetVisualIdx,
+      scene.elements.length,
+    );
     const updated = reorderElements(scene.elements, fromArrayIdx, toArrayIdx);
     setDraggedIndex(null);
     onChangeScene({ ...scene, elements: updated });
@@ -166,7 +177,7 @@ function LayerItem({
   isSelected: boolean;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: (e: RowEvent) => void;
   onToggleVisibility: () => void;
   onToggleLock: () => void;
   onMove: (dir: LayerDirection) => void;
@@ -174,7 +185,7 @@ function LayerItem({
   onDragOver?: (e: DragEvent<HTMLDivElement>) => void;
   onDrop?: (e: DragEvent<HTMLDivElement>) => void;
   selection: string[];
-  onChildSelect: (e: React.MouseEvent, id: string) => void;
+  onChildSelect: (e: RowEvent, id: string) => void;
   onChildVisibility: (id: string) => void;
   onChildLock: (id: string) => void;
   onChildMove: (id: string, dir: LayerDirection) => void;
@@ -197,6 +208,15 @@ function LayerItem({
         onDragOver={onDragOver}
         onDrop={onDrop}
         onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick(e);
+          }
+        }}
+        role="treeitem"
+        tabIndex={0}
+        aria-selected={isSelected}
         title={element.name}
       >
         {isGroup && (
@@ -209,17 +229,29 @@ function LayerItem({
             }}
             title={isCollapsed ? "Expandir grupo" : "Colapsar grupo"}
           >
-            {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+            {isCollapsed ? (
+              <ChevronRight size={13} />
+            ) : (
+              <ChevronDown size={13} />
+            )}
           </button>
         )}
         <div className="layer-icon" aria-hidden="true">
           {isGroup ? (
-            isCollapsed ? <Folder size={14} /> : <FolderOpen size={14} />
+            isCollapsed ? (
+              <Folder size={14} />
+            ) : (
+              <FolderOpen size={14} />
+            )
           ) : (
             <IconSvg name={iconName} size={14} />
           )}
         </div>
-        <span className="layer-name">{element.name || desc?.label || element.kind}</span>
+        <span className="layer-name">
+          {element.name || desc?.label || element.kind}
+        </span>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: only stops the row's click; the buttons inside are the controls */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: same as above, nothing here is clickable by itself */}
         <div className="layer-actions" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"

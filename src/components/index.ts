@@ -26,8 +26,8 @@ import { type ProgressEl, progress } from "./progress/descriptor.ts";
 import { type RectEl, rect } from "./rect/descriptor.ts";
 import { type StarEl, star } from "./star/descriptor.ts";
 import { type StepsEl, steps } from "./steps/descriptor.ts";
-import { type TableEl, table } from "./table/descriptor.ts";
 import { type SubtitlesEl, subtitles } from "./subtitles/descriptor.ts";
+import { type TableEl, table } from "./table/descriptor.ts";
 import { type TextEl, text } from "./text/descriptor.ts";
 import { type ThreeEl, three } from "./three/descriptor.ts";
 

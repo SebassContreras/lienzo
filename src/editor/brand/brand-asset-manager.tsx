@@ -121,7 +121,17 @@ export function BrandAssetManager({
       </div>
 
       {/* Upload Zone */}
+      {/* biome-ignore lint/a11y/useSemanticElements: the zone holds the file input, which a <button> cannot contain */}
       <div
+        role="button"
+        tabIndex={disabled || isUploading ? -1 : 0}
+        aria-disabled={disabled || isUploading}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            if (!disabled && !isUploading) fileInputRef.current?.click();
+          }
+        }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}

@@ -402,6 +402,7 @@ export function BrandManagerDialog({
                 >
                   <div>
                     <label
+                      htmlFor="brand-field-0"
                       style={{
                         display: "block",
                         fontSize: "12px",
@@ -413,6 +414,7 @@ export function BrandManagerDialog({
                       <span style={{ color: "#ef4444" }}>*</span>
                     </label>
                     <input
+                      id="brand-field-0"
                       type="text"
                       required
                       value={name}
@@ -432,6 +434,7 @@ export function BrandManagerDialog({
 
                   <div>
                     <label
+                      htmlFor="brand-field-1"
                       style={{
                         display: "block",
                         fontSize: "12px",
@@ -443,6 +446,7 @@ export function BrandManagerDialog({
                       <span style={{ color: "#ef4444" }}>*</span>
                     </label>
                     <input
+                      id="brand-field-1"
                       type="text"
                       required
                       disabled={mode === "edit"}
@@ -478,6 +482,7 @@ export function BrandManagerDialog({
 
                   <div>
                     <label
+                      htmlFor="brand-field-2"
                       style={{
                         display: "block",
                         fontSize: "12px",
@@ -488,6 +493,7 @@ export function BrandManagerDialog({
                       Descripción (Opcional)
                     </label>
                     <textarea
+                      id="brand-field-2"
                       rows={2}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -538,6 +544,7 @@ export function BrandManagerDialog({
                   >
                     <div>
                       <label
+                        htmlFor="brand-field-3"
                         style={{
                           display: "block",
                           fontSize: "12px",
@@ -548,6 +555,7 @@ export function BrandManagerDialog({
                         Ancho (px)
                       </label>
                       <input
+                        id="brand-field-3"
                         type="number"
                         min={100}
                         max={4096}
@@ -571,6 +579,7 @@ export function BrandManagerDialog({
                     </div>
                     <div>
                       <label
+                        htmlFor="brand-field-4"
                         style={{
                           display: "block",
                           fontSize: "12px",
@@ -581,6 +590,7 @@ export function BrandManagerDialog({
                         Alto (px)
                       </label>
                       <input
+                        id="brand-field-4"
                         type="number"
                         min={100}
                         max={4096}
@@ -604,6 +614,7 @@ export function BrandManagerDialog({
                     </div>
                     <div>
                       <label
+                        htmlFor="brand-field-5"
                         style={{
                           display: "block",
                           fontSize: "12px",
@@ -614,6 +625,7 @@ export function BrandManagerDialog({
                         Fotogramas por Segundo (FPS)
                       </label>
                       <input
+                        id="brand-field-5"
                         type="number"
                         min={10}
                         max={60}
@@ -637,6 +649,7 @@ export function BrandManagerDialog({
                     </div>
                     <div>
                       <label
+                        htmlFor="brand-field-6"
                         style={{
                           display: "block",
                           fontSize: "12px",
@@ -647,6 +660,7 @@ export function BrandManagerDialog({
                         Duración Inicial (segundos)
                       </label>
                       <input
+                        id="brand-field-6"
                         type="number"
                         min={1}
                         max={300}

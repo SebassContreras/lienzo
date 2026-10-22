@@ -127,7 +127,10 @@ export function BrandPaletteEditor({
                   alignItems: "center",
                 }}
               >
-                <label style={{ fontSize: "12px", fontWeight: 500 }}>
+                <label
+                  htmlFor={`brand-color-${key}`}
+                  style={{ fontSize: "12px", fontWeight: 500 }}
+                >
                   {label}{" "}
                   {required && <span style={{ color: "#ef4444" }}>*</span>}
                 </label>
@@ -156,6 +159,7 @@ export function BrandPaletteEditor({
                   }}
                 />
                 <input
+                  id={`brand-color-${key}`}
                   type="text"
                   disabled={disabled}
                   value={currentColor}
@@ -232,6 +236,7 @@ export function BrandPaletteEditor({
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {value.custom.map((c, idx) => (
               <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: custom colours have no id and may repeat; the position is their identity
                 key={idx}
                 style={{
                   display: "inline-flex",

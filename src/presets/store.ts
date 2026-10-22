@@ -61,9 +61,9 @@ export async function saveUserPreset(
 export async function loadProjectPresetFiles(
   projectSlug = "mi-proyecto",
 ): Promise<{ file: string; recipe: PresetRecipe }[]> {
-  const items = await getJson<{ name: string; data: PresetRecipe | LegacyPreset }[]>(
-    `/api/projects/${encodeURIComponent(projectSlug)}/presets`,
-  );
+  const items = await getJson<
+    { name: string; data: PresetRecipe | LegacyPreset }[]
+  >(`/api/projects/${encodeURIComponent(projectSlug)}/presets`);
   return items.map((item) => ({
     file: item.name,
     recipe: asRecipe(item.data),

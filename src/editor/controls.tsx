@@ -80,7 +80,9 @@ export function Color({
         palette.surface,
         palette.text,
         ...(palette.custom ?? []),
-      ].filter((c): c is string => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c))
+      ].filter(
+        (c): c is string => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c),
+      )
     : [];
 
   return (
@@ -96,14 +98,24 @@ export function Color({
           className="hex"
           value={value}
           onChange={(e) => {
-            if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value);
+            if (/^#[0-9a-f]{6}$/i.test(e.target.value))
+              onChange(e.target.value);
           }}
         />
       </label>
       {swatches.length > 0 && (
-        <div className="color-swatches" style={{ display: "flex", gap: "4px", padding: "2px 0 6px 0", flexWrap: "wrap" }}>
+        <div
+          className="color-swatches"
+          style={{
+            display: "flex",
+            gap: "4px",
+            padding: "2px 0 6px 0",
+            flexWrap: "wrap",
+          }}
+        >
           {swatches.map((color, idx) => (
             <button
+              // biome-ignore lint/suspicious/noArrayIndexKey: swatches may repeat a colour; colour plus position is unique
               key={`${color}-${idx}`}
               type="button"
               title={`Color de marca: ${color}`}
@@ -112,7 +124,10 @@ export function Color({
                 height: "16px",
                 borderRadius: "3px",
                 backgroundColor: color,
-                border: color.toLowerCase() === value.toLowerCase() ? "2px solid #fff" : "1px solid rgba(255,255,255,0.2)",
+                border:
+                  color.toLowerCase() === value.toLowerCase()
+                    ? "2px solid #fff"
+                    : "1px solid rgba(255,255,255,0.2)",
                 cursor: "pointer",
                 padding: 0,
               }}

@@ -58,7 +58,11 @@ export function ExportControls({
         aria-label="Formato"
         value={format}
         onChange={(e) => setFormat(e.target.value as ExportFormat)}
-        title={isStatic ? "En modo diseño estático solo se exporta imagen (PNG)" : "Formato de exportación"}
+        title={
+          isStatic
+            ? "En modo diseño estático solo se exporta imagen (PNG)"
+            : "Formato de exportación"
+        }
       >
         <option value="png">PNG (imagen)</option>
         <option value="gif" disabled={isStatic}>

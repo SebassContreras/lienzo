@@ -10,7 +10,10 @@ import { dirname, join, resolve } from "node:path";
 export function findAppRoot(fromDir: string = import.meta.dirname): string {
   let curr = resolve(fromDir);
   while (true) {
-    if (existsSync(join(curr, "presets", "built-in")) || existsSync(join(curr, "package.json"))) {
+    if (
+      existsSync(join(curr, "presets", "built-in")) ||
+      existsSync(join(curr, "package.json"))
+    ) {
       return curr;
     }
     const parent = dirname(curr);

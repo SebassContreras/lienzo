@@ -15,4 +15,5 @@ export const subtitleCueSchema = z.object({
   words: z.array(subtitleWordSchema).optional(),
 });
 
-export const subtitleCuesSchema: z.ZodType<SubtitleCue[]> = z.array(subtitleCueSchema);
+export const subtitleCuesSchema: z.ZodType<SubtitleCue[]> =
+  z.array(subtitleCueSchema);

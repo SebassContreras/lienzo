@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { ProjectManifestSchema, ProjectSlugSchema } from "../../model/project.ts";
+import {
+  ProjectManifestSchema,
+  ProjectSlugSchema,
+} from "../../model/project.ts";
 import { defineTool, fail } from "../registry.ts";
 
 export const ProjectDetailsSchema = z.object({
@@ -26,10 +29,17 @@ export const projectInspect = defineTool({
       }
       return details;
     } catch (error) {
-      if (error instanceof Error && error.message.includes("No existe el proyecto")) {
+      if (
+        error instanceof Error &&
+        error.message.includes("No existe el proyecto")
+      ) {
         fail("not_found", error.message, "slug");
       }
-      fail("inspect_failed", String(error instanceof Error ? error.message : error), "slug");
+      fail(
+        "inspect_failed",
+        String(error instanceof Error ? error.message : error),
+        "slug",
+      );
     }
   },
 });

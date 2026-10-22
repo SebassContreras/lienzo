@@ -135,4 +135,3 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
     expect(parsed.success).toBe(true);
   });
 });
-

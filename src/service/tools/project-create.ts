@@ -64,7 +64,11 @@ export const projectCreate = defineTool({
 
       return await ctx.projects.create(slug, config);
     } catch (error) {
-      fail("project_create_failed", String(error instanceof Error ? error.message : error), "slug");
+      fail(
+        "project_create_failed",
+        String(error instanceof Error ? error.message : error),
+        "slug",
+      );
     }
   },
 });

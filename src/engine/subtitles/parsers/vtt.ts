@@ -36,7 +36,9 @@ export function extractVttWords(
   }
 
   // Parse token stream of words and timestamps
-  const tokens = text.split(/(<(?:\d{2}:)?\d{2}:\d{2}\.\d{3}>)/g).filter((t) => t.length > 0);
+  const tokens = text
+    .split(/(<(?:\d{2}:)?\d{2}:\d{2}\.\d{3}>)/g)
+    .filter((t) => t.length > 0);
   const words: SubtitleWord[] = [];
   let currentStart = cueStart;
 
@@ -64,7 +66,10 @@ export function extractVttWords(
     }
   }
 
-  const cleanText = text.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  const cleanText = text
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return {
     cleanText,
     words: words.length > 0 ? words : undefined,
@@ -75,7 +80,10 @@ export function extractVttWords(
  * Pure WebVTT subtitle format parser with karaoke / word-level timing support.
  */
 export function parseVtt(content: string): SubtitleCue[] {
-  const normalized = content.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const normalized = content
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
   const blocks = normalized.split(/\n\s*\n/);
   const cues: SubtitleCue[] = [];
 
@@ -87,7 +95,11 @@ export function parseVtt(content: string): SubtitleCue[] {
     if (lines.length === 0) continue;
 
     // Skip WEBVTT header and NOTE / STYLE blocks
-    if (lines[0]?.startsWith("WEBVTT") || lines[0]?.startsWith("NOTE") || lines[0]?.startsWith("STYLE")) {
+    if (
+      lines[0]?.startsWith("WEBVTT") ||
+      lines[0]?.startsWith("NOTE") ||
+      lines[0]?.startsWith("STYLE")
+    ) {
       continue;
     }
 
@@ -114,7 +126,8 @@ export function parseVtt(content: string): SubtitleCue[] {
 
     if (cleanText.length > 0 && !Number.isNaN(start) && !Number.isNaN(end)) {
       cues.push({
-        id: lines[0] && timeLineIndex === 1 ? lines[0] : `cue-${cues.length + 1}`,
+        id:
+          lines[0] && timeLineIndex === 1 ? lines[0] : `cue-${cues.length + 1}`,
         start,
         end,
         text: cleanText,

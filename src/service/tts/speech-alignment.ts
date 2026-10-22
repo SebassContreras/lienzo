@@ -1,4 +1,7 @@
-import type { SubtitleCue, SubtitleWord } from "../../engine/subtitles/types.ts";
+import type {
+  SubtitleCue,
+  SubtitleWord,
+} from "../../engine/subtitles/types.ts";
 
 /**
  * Splits text into sentence/phrase chunks appropriate for subtitle cues.
@@ -21,10 +24,7 @@ export function splitIntoSentences(text: string): string[] {
       let current: string[] = [];
       for (const w of words) {
         current.push(w);
-        if (
-          (w.endsWith(",") || current.length >= 8) &&
-          current.length >= 4
-        ) {
+        if ((w.endsWith(",") || current.length >= 8) && current.length >= 4) {
           sentences.push(current.join(" "));
           current = [];
         }

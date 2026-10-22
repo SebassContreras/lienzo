@@ -1,5 +1,5 @@
 import { Briefcase, Plus, Settings } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ColorPalette, ProjectCanvasDefaults } from "../model/project.ts";
 import type { ProjectSummary } from "../service/project-store.ts";
 import { BrandManagerDialog } from "./dialogs/brand-manager-dialog.tsx";
@@ -39,6 +39,10 @@ export function ProjectSelector({
     }
   }, []);
 
+  // Latest callback without re-running the effect when the parent passes a new one.
+  const onSelectRef = useRef(onSelectProject);
+  onSelectRef.current = onSelectProject;
+
   useEffect(() => {
     fetchProjects();
     if (activeSlug) {
@@ -46,7 +50,7 @@ export function ProjectSelector({
         .then((r) => (r.ok ? r.json() : null))
         .then((details) => {
           if (details?.manifest) {
-            onSelectProject(
+            onSelectRef.current(
               activeSlug,
               details.manifest.palette,
               details.manifest.canvas,

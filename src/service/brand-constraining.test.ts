@@ -1,8 +1,8 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createCtx, type Ctx } from "./ctx.ts";
+import { type Ctx, createCtx } from "./ctx.ts";
 import { fakeRenderer } from "./fake-renderer.ts";
 import { registry } from "./tools/index.ts";
 

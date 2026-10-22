@@ -4,7 +4,10 @@ import type { SubtitleCue, SubtitleWord } from "./types.ts";
  * Finds the currently active subtitle cue at time `t` (in seconds).
  * Returns undefined if no cue is active at time `t`.
  */
-export function getActiveCue(cues: SubtitleCue[], t: number): SubtitleCue | undefined {
+export function getActiveCue(
+  cues: SubtitleCue[],
+  t: number,
+): SubtitleCue | undefined {
   if (!cues || cues.length === 0) return undefined;
   for (const cue of cues) {
     if (t >= cue.start && t <= cue.end) {

@@ -126,9 +126,7 @@ export function resolveOpenRouterApiKey(explicitKey?: string): string {
  * Resolves the active TTS provider.
  * Falls back to TTS_PROVIDER or KOKORO_PROVIDER env vars, then "openrouter".
  */
-export function resolveTtsProvider(
-  explicitProvider?: string,
-): TtsProviderType {
+export function resolveTtsProvider(explicitProvider?: string): TtsProviderType {
   if (explicitProvider && explicitProvider.trim().length > 0) {
     const norm = explicitProvider.trim().toLowerCase();
     if (norm === "local" || norm === "kokoro" || norm === "custom") {
@@ -137,7 +135,8 @@ export function resolveTtsProvider(
     return "openrouter";
   }
 
-  const envProvider = getEnvVariable("TTS_PROVIDER") || getEnvVariable("KOKORO_PROVIDER");
+  const envProvider =
+    getEnvVariable("TTS_PROVIDER") || getEnvVariable("KOKORO_PROVIDER");
   if (envProvider) {
     const norm = envProvider.trim().toLowerCase();
     if (norm === "local" || norm === "kokoro" || norm === "custom") {

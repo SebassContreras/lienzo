@@ -146,7 +146,11 @@ describe("project-middleware asset endpoints", () => {
       method: "GET",
       url: "/api/projects/acme/presets",
     });
-    const { res: listRes, getStatus: getListStatus, getBody: getListBody } = createMockRes();
+    const {
+      res: listRes,
+      getStatus: getListStatus,
+      getBody: getListBody,
+    } = createMockRes();
     await handleProjectApi(store, listReq, listRes);
     expect(getListStatus()).toBe(200);
     const presets = JSON.parse(getListBody());

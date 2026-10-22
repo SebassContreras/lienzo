@@ -109,7 +109,11 @@ export function SceneFiles({
         title="Guardar escena como JSON"
         onClick={() =>
           saveScene(name, scene, effectiveProjectSlug)
-            .then(() => setStatus(`Escena «${name}» guardada en ${effectiveProjectSlug}/scenes/`))
+            .then(() =>
+              setStatus(
+                `Escena «${name}» guardada en ${effectiveProjectSlug}/scenes/`,
+              ),
+            )
             .catch((error: unknown) => setStatus(`Error: ${error}`))
         }
       >
@@ -177,7 +181,14 @@ export function SceneFiles({
                   {s.error.split("\n")[0]}
                 </div>
               )}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "4px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "4px",
+                }}
+              >
                 <span className="scene-title">{s.name}</span>
                 {"scene" in s && (
                   <span
@@ -185,7 +196,10 @@ export function SceneFiles({
                       fontSize: "10px",
                       padding: "1px 4px",
                       borderRadius: "3px",
-                      backgroundColor: s.scene.mode === "static" ? "rgba(16, 185, 129, 0.2)" : "rgba(37, 99, 235, 0.2)",
+                      backgroundColor:
+                        s.scene.mode === "static"
+                          ? "rgba(16, 185, 129, 0.2)"
+                          : "rgba(37, 99, 235, 0.2)",
                       color: s.scene.mode === "static" ? "#10b981" : "#60a5fa",
                       fontWeight: 500,
                     }}

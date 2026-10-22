@@ -2,14 +2,21 @@
  * Storage adapter and interface for Project Workspaces (031/R2, 031/R3, 031/D2).
  * Isolates filesystem operations under `projects/<slug>/` behind an injectable interface.
  */
-import { access, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { join } from "node:path";
 import {
   type ParseProjectResult,
-  parseProjectManifest,
   type ProjectConfig,
   type ProjectManifest,
   ProjectSlugSchema,
+  parseProjectManifest,
 } from "../model/project.ts";
 
 export type ProjectSummary = {
@@ -38,13 +45,19 @@ export type ProjectStore = {
   create(slug: string, config: ProjectConfig): Promise<ProjectManifest>;
 
   /** Update an existing project's manifest (project.json). */
-  update(slug: string, config: Partial<ProjectConfig>): Promise<ProjectManifest>;
+  update(
+    slug: string,
+    config: Partial<ProjectConfig>,
+  ): Promise<ProjectManifest>;
 
   /** Delete a project workspace directory cleanly. */
   delete(slug: string): Promise<boolean>;
 
   /** Resolve the absolute filesystem path to a project subfolder (assets, presets, scenes). */
-  resolvePath(slug: string, subfolder?: "assets" | "presets" | "scenes"): string;
+  resolvePath(
+    slug: string,
+    subfolder?: "assets" | "presets" | "scenes",
+  ): string;
 
   /** Create a Store scoped to a project workspace (projects/<slug>/) with fallback to global built-ins. */
   projectStore(slug: string): Promise<import("./store.ts").Store>;
@@ -53,7 +66,10 @@ export type ProjectStore = {
    * Validates whether an asset file reference belongs to the project's local assets.
    * Returns a warning notice if the asset is missing from the project.
    */
-  checkAsset(slug: string, assetRef: string): Promise<{ ok: boolean; warning?: string }>;
+  checkAsset(
+    slug: string,
+    assetRef: string,
+  ): Promise<{ ok: boolean; warning?: string }>;
 };
 
 async function exists(path: string): Promise<boolean> {
@@ -69,7 +85,8 @@ export function createProjectStore(root: string): ProjectStore {
   const projectsDir = join(root, "projects");
 
   const projectPath = (slug: string) => join(projectsDir, slug);
-  const manifestPath = (slug: string) => join(projectPath(slug), "project.json");
+  const manifestPath = (slug: string) =>
+    join(projectPath(slug), "project.json");
 
   return {
     resolvePath(slug: string, subfolder?: "assets" | "presets" | "scenes") {
@@ -140,7 +157,10 @@ export function createProjectStore(root: string): ProjectStore {
       };
     },
 
-    async create(slug: string, config: ProjectConfig): Promise<ProjectManifest> {
+    async create(
+      slug: string,
+      config: ProjectConfig,
+    ): Promise<ProjectManifest> {
       ProjectSlugSchema.parse(slug);
       const base = projectPath(slug);
 
@@ -161,11 +181,18 @@ export function createProjectStore(root: string): ProjectStore {
       await mkdir(join(base, "presets"), { recursive: true });
       await mkdir(join(base, "scenes"), { recursive: true });
 
-      await writeFile(manifestPath(slug), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+      await writeFile(
+        manifestPath(slug),
+        `${JSON.stringify(manifest, null, 2)}\n`,
+        "utf8",
+      );
       return manifest;
     },
 
-    async update(slug: string, config: Partial<ProjectConfig>): Promise<ProjectManifest> {
+    async update(
+      slug: string,
+      config: Partial<ProjectConfig>,
+    ): Promise<ProjectManifest> {
       ProjectSlugSchema.parse(slug);
       const current = await this.get(slug);
       if (!current) {
@@ -179,7 +206,11 @@ export function createProjectStore(root: string): ProjectStore {
         updatedAt: new Date().toISOString(),
       };
 
-      await writeFile(manifestPath(slug), `${JSON.stringify(updated, null, 2)}\n`, "utf8");
+      await writeFile(
+        manifestPath(slug),
+        `${JSON.stringify(updated, null, 2)}\n`,
+        "utf8",
+      );
       return updated;
     },
 
@@ -234,12 +265,17 @@ export function createProjectStore(root: string): ProjectStore {
       };
     },
 
-    async checkAsset(slug: string, assetRef: string): Promise<{ ok: boolean; warning?: string }> {
+    async checkAsset(
+      slug: string,
+      assetRef: string,
+    ): Promise<{ ok: boolean; warning?: string }> {
       ProjectSlugSchema.parse(slug);
       const normalized = assetRef.trim().replace(/\\/g, "/");
 
       // Reject foreign project references: e.g. /projects/other/assets/* or /api/projects/other/assets/*
-      const foreignMatch = normalized.match(/(?:^|\/)(?:api\/)?projects\/([^/]+)\/assets\//);
+      const foreignMatch = normalized.match(
+        /(?:^|\/)(?:api\/)?projects\/([^/]+)\/assets\//,
+      );
       if (foreignMatch && foreignMatch[1] !== slug) {
         return {
           ok: false,

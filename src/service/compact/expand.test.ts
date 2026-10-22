@@ -398,4 +398,3 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(rect.anim?.out?.kind).toBe("none");
   });
 });
-

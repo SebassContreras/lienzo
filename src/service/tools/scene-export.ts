@@ -4,9 +4,6 @@ import { z } from "zod";
 import { defineTool } from "../registry.ts";
 import { resolveAndRenderScene } from "../render-target.ts";
 
-/** GIFs above this frame rate only grow; the editor caps them the same way. */
-const GIF_MAX_FPS = 25;
-
 const EXTENSIONS: Record<string, string> = {
   "image/png": "png",
   "image/gif": "gif",
@@ -44,20 +41,28 @@ export const sceneExport = defineTool({
       project,
     );
 
-    const { scene, rendered } = await resolveAndRenderScene(effectiveCtx, name, {
-      format,
-      scale,
-      fps,
-      time: t,
-    });
+    const { scene, rendered } = await resolveAndRenderScene(
+      effectiveCtx,
+      name,
+      {
+        format,
+        scale,
+        fps,
+        time: t,
+      },
+    );
     const ext = EXTENSIONS[rendered.type] ?? format;
     const isStatic = scene.mode === "static";
     const notices: string[] = [];
     if (isStatic && (format === "mp4" || format === "gif")) {
-      notices.push("La escena está configurada en modo 'static'; se recomienda exportar como 'png'.");
+      notices.push(
+        "La escena está configurada en modo 'static'; se recomienda exportar como 'png'.",
+      );
     }
     if (format === "mp4" && ext !== "mp4") {
-      notices.push("H.264 no está disponible en este navegador; se exportó WebM");
+      notices.push(
+        "H.264 no está disponible en este navegador; se exportó WebM",
+      );
     }
     const defaultOut = `projects/${projectSlug}/exports/${name}.${ext}`;
     const target = resolve(ctx.root, out ?? defaultOut).replace(

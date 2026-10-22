@@ -70,7 +70,8 @@ export function paginateCueForTime(
 
   if (activeIndex === -1) {
     // If playhead is after all words or before, clamp
-    activeIndex = t > (words[words.length - 1]?.end ?? 0) ? words.length - 1 : 0;
+    activeIndex =
+      t > (words[words.length - 1]?.end ?? 0) ? words.length - 1 : 0;
   }
 
   // Group into pages of chunkSize

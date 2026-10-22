@@ -94,7 +94,10 @@ export async function handleProjectApi(
 
       // Adapt URL pathname so handleStore parses action/name params naturally
       const subUrl = new URL(url.toString());
-      subUrl.pathname = subUrl.pathname.replace(/^\/api\/projects\/[^/]+\/scenes/, "/api/scenes");
+      subUrl.pathname = subUrl.pathname.replace(
+        /^\/api\/projects\/[^/]+\/scenes/,
+        "/api/scenes",
+      );
 
       const reply = await handleStore(
         projectScenesDir,
@@ -114,7 +117,10 @@ export async function handleProjectApi(
 
       // Adapt URL pathname so handleStore parses action/name params naturally
       const subUrl = new URL(url.toString());
-      subUrl.pathname = subUrl.pathname.replace(/^\/api\/projects\/[^/]+\/presets/, "/api/presets");
+      subUrl.pathname = subUrl.pathname.replace(
+        /^\/api\/projects\/[^/]+\/presets/,
+        "/api/presets",
+      );
 
       const reply = await handleStore(
         projectPresetsDir,

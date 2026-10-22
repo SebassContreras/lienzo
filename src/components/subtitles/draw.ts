@@ -1,6 +1,9 @@
 import type { AnimState } from "../../engine/anim.ts";
 import { type Ctx, withTransform } from "../../engine/paint.ts";
-import { getActiveCue, isWordActive } from "../../engine/subtitles/cue-timing.ts";
+import {
+  getActiveCue,
+  isWordActive,
+} from "../../engine/subtitles/cue-timing.ts";
 import { layoutSubtitleCue } from "../../engine/subtitles/layout.ts";
 import { paginateCueForTime } from "../../engine/subtitles/word-window.ts";
 import type { DrawContext } from "../descriptor.ts";
@@ -29,9 +32,7 @@ export function drawSubtitles(
   const lineHeightPx = el.size * el.lineHeight;
 
   // Compute maximum lines that fit inside bounding box height, minus padding
-  const availableHeight = el.background
-    ? el.h - el.paddingY * 2
-    : el.h;
+  const availableHeight = el.background ? el.h - el.paddingY * 2 : el.h;
   const maxFitLines = Math.max(1, Math.floor(availableHeight / lineHeightPx));
 
   // Constrain width to container el.w (or el.maxWidth if smaller)

@@ -47,7 +47,9 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       expect(resolveLocalTtsBaseUrl()).toBe(DEFAULT_LOCAL_TTS_URL);
 
       process.env.TTS_LOCAL_URL = "http://localhost:5000/v1/audio/speech";
-      expect(resolveLocalTtsBaseUrl()).toBe("http://localhost:5000/v1/audio/speech");
+      expect(resolveLocalTtsBaseUrl()).toBe(
+        "http://localhost:5000/v1/audio/speech",
+      );
 
       expect(resolveLocalTtsBaseUrl("http://custom:9999/speech")).toBe(
         "http://custom:9999/speech",
@@ -69,7 +71,10 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       let capturedBody: Record<string, unknown> | null = null;
       let capturedHeaders: Record<string, string> = {};
 
-      const fakeFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const fakeFetch = async (
+        input: RequestInfo | URL,
+        init?: RequestInit,
+      ) => {
         capturedUrl = String(input);
         capturedHeaders = (init?.headers as Record<string, string>) || {};
         capturedBody = JSON.parse(String(init?.body));
@@ -81,7 +86,10 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
         });
       };
 
-      const adapter = new LocalTtsAdapter(undefined, fakeFetch as unknown as typeof fetch);
+      const adapter = new LocalTtsAdapter(
+        undefined,
+        fakeFetch as unknown as typeof fetch,
+      );
       const result = await adapter.synthesizeSpeech({
         text: "Hola desde síntesis local",
         voice: "af_heart",

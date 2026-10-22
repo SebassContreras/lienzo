@@ -20,9 +20,12 @@ export function ProjectModeSelector({
   const isStatic = mode === "static";
 
   return (
-    <div
+    <fieldset
       className="project-mode-selector"
       style={{
+        border: 0,
+        margin: 0,
+        minWidth: 0,
         display: "inline-flex",
         alignItems: "center",
         backgroundColor: "var(--bg-subtle, rgba(255, 255, 255, 0.08))",
@@ -30,7 +33,6 @@ export function ProjectModeSelector({
         padding: "2px",
         gap: "2px",
       }}
-      role="group"
       aria-label="Modo de proyecto"
     >
       <button
@@ -47,7 +49,9 @@ export function ProjectModeSelector({
           borderRadius: "4px",
           border: "none",
           cursor: disabled ? "not-allowed" : "pointer",
-          backgroundColor: isStatic ? "var(--bg-active, #2563eb)" : "transparent",
+          backgroundColor: isStatic
+            ? "var(--bg-active, #2563eb)"
+            : "transparent",
           color: isStatic ? "#ffffff" : "var(--text-muted, #94a3b8)",
           fontWeight: isStatic ? 600 : 400,
           transition: "background-color 0.15s ease, color 0.15s ease",
@@ -72,7 +76,9 @@ export function ProjectModeSelector({
           borderRadius: "4px",
           border: "none",
           cursor: disabled ? "not-allowed" : "pointer",
-          backgroundColor: !isStatic ? "var(--bg-active, #2563eb)" : "transparent",
+          backgroundColor: !isStatic
+            ? "var(--bg-active, #2563eb)"
+            : "transparent",
           color: !isStatic ? "#ffffff" : "var(--text-muted, #94a3b8)",
           fontWeight: !isStatic ? 600 : 400,
           transition: "background-color 0.15s ease, color 0.15s ease",
@@ -82,6 +88,6 @@ export function ProjectModeSelector({
         <Film size={14} />
         <span>Video</span>
       </button>
-    </div>
+    </fieldset>
   );
 }

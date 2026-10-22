@@ -1,9 +1,9 @@
 import { resolveLocalTtsBaseUrl } from "./config.ts";
-import {
-  type SynthesizeSpeechRequest,
-  type SynthesizeSpeechResult,
-  type TtsModel,
-  type TtsService,
+import type {
+  SynthesizeSpeechRequest,
+  SynthesizeSpeechResult,
+  TtsModel,
+  TtsService,
 } from "./types.ts";
 
 /**

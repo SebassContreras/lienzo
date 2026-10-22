@@ -31,9 +31,7 @@ export async function resolveAndRenderScene(
 
   const effectiveFps =
     options.fps ??
-    (options.format === "gif"
-      ? Math.min(scene.fps, GIF_MAX_FPS)
-      : scene.fps);
+    (options.format === "gif" ? Math.min(scene.fps, GIF_MAX_FPS) : scene.fps);
 
   const rendered = await ctx.renderer.render(scene, {
     ...options,

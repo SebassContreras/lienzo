@@ -10,7 +10,10 @@ export const PROJECT_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const ProjectSlugSchema = z
   .string()
   .min(1, "El identificador del proyecto no puede estar vacío")
-  .max(64, "El identificador del proyecto es demasiado largo (máx. 64 caracteres)")
+  .max(
+    64,
+    "El identificador del proyecto es demasiado largo (máx. 64 caracteres)",
+  )
   .regex(
     PROJECT_SLUG_REGEX,
     "El identificador debe contener solo letras minúsculas, números y guiones",
@@ -50,7 +53,10 @@ export type ProjectCanvasDefaults = z.infer<typeof ProjectCanvasDefaultsSchema>;
 export const ProjectConfigSchema = z.object({
   name: z.string().min(1, "El nombre del proyecto es obligatorio"),
   description: z.string().optional(),
-  palette: ColorPaletteSchema.default(() => ({ primary: "#3b82f6", custom: [] })),
+  palette: ColorPaletteSchema.default(() => ({
+    primary: "#3b82f6",
+    custom: [],
+  })),
   fonts: BrandFontSchema.array().default(() => []),
   canvas: ProjectCanvasDefaultsSchema.default(() => ({
     width: 1080,

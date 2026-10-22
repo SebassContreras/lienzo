@@ -4,13 +4,13 @@
  * exit code 1.
  */
 import { readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { text } from "node:stream/consumers";
 import { serveStdio } from "../mcp/server.ts";
 import { type Ctx, createCtx } from "../service/ctx.ts";
 import type { Registry } from "../service/registry.ts";
-import { registry } from "../service/tools/index.ts";
 import { findAppRoot } from "../service/root.ts";
+import { registry } from "../service/tools/index.ts";
 import { inputOf, type ReadSource, UsageError } from "./args.ts";
 import { registryHelp, toolHelp } from "./help.ts";
 

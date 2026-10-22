@@ -50,7 +50,10 @@ export const sceneBuild = defineTool({
 
     let saved: z.infer<typeof SceneResult> | undefined;
     if (save) {
-      if (!overwrite && (await effectiveCtx.store.readScene(save)) !== undefined) {
+      if (
+        !overwrite &&
+        (await effectiveCtx.store.readScene(save)) !== undefined
+      ) {
         fail("exists", `Ya existe la escena «${slugify(save)}»`, "save");
       }
       saved = await saveScene(effectiveCtx, save, expanded);

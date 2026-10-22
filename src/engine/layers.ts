@@ -12,7 +12,11 @@ export type LayerDirection = "up" | "down" | "top" | "bottom";
  * Reorders elements by moving an element from `fromIndex` to `toIndex`.
  * Pure and non-mutating. Clamps indices within bounds.
  */
-export function reorderElements<T>(list: readonly T[], fromIndex: number, toIndex: number): T[] {
+export function reorderElements<T>(
+  list: readonly T[],
+  fromIndex: number,
+  toIndex: number,
+): T[] {
   if (
     fromIndex < 0 ||
     fromIndex >= list.length ||
@@ -46,7 +50,8 @@ export function moveElementLayer(
   const index = elements.findIndex((el) => el.id === id);
   if (index !== -1) {
     let targetIndex = index;
-    if (direction === "up") targetIndex = Math.min(elements.length - 1, index + 1);
+    if (direction === "up")
+      targetIndex = Math.min(elements.length - 1, index + 1);
     else if (direction === "down") targetIndex = Math.max(0, index - 1);
     else if (direction === "top") targetIndex = elements.length - 1;
     else if (direction === "bottom") targetIndex = 0;
@@ -62,7 +67,8 @@ export function moveElementLayer(
     const childIndex = children.findIndex((c) => c.id === id);
     if (childIndex !== -1) {
       let targetIndex = childIndex;
-      if (direction === "up") targetIndex = Math.min(children.length - 1, childIndex + 1);
+      if (direction === "up")
+        targetIndex = Math.min(children.length - 1, childIndex + 1);
       else if (direction === "down") targetIndex = Math.max(0, childIndex - 1);
       else if (direction === "top") targetIndex = children.length - 1;
       else if (direction === "bottom") targetIndex = 0;
@@ -109,7 +115,11 @@ export function toggleElementVisibility(
     if (el.kind === "group") {
       const group = el as GroupEl;
       const children = (group.children ?? []) as Element[];
-      const updatedChildren = toggleElementVisibility(children, id, forceHidden);
+      const updatedChildren = toggleElementVisibility(
+        children,
+        id,
+        forceHidden,
+      );
       if (updatedChildren !== children) {
         return {
           ...group,
@@ -167,6 +177,9 @@ export function visualLayerOrder<T>(elements: readonly T[]): T[] {
 /**
  * Maps visual layer index back to canvas array index.
  */
-export function visualIndexToArrayIndex(visualIndex: number, length: number): number {
+export function visualIndexToArrayIndex(
+  visualIndex: number,
+  length: number,
+): number {
   return length - 1 - visualIndex;
 }

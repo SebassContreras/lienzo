@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "../components/index.ts";
+import {
+  defaultScene,
+  type Element,
+  type GroupEl,
+  type RectEl,
+  type Scene,
+} from "../model/model.ts";
+import { ElementSchema, SceneSchema } from "../model/schema.ts";
 import { hitTest } from "./geometry.ts";
 import {
   moveElementLayer,
@@ -10,8 +18,6 @@ import {
   visualLayerOrder,
 } from "./layers.ts";
 import { drawElements } from "./render.ts";
-import { defaultScene, type Element, type GroupEl, type RectEl, type Scene } from "../model/model.ts";
-import { ElementSchema, SceneSchema } from "../model/schema.ts";
 
 function makeEl(id: string, name: string): RectEl {
   const el = createElement("rect");
@@ -67,7 +73,10 @@ describe("layers integration and model", () => {
     const sceneElements: Element[] = [groupEl];
     const moved = moveElementLayer(sceneElements, "1", "up");
     const updatedGroup = moved[0] as GroupEl;
-    expect((updatedGroup.children as Element[]).map((c) => c.id)).toEqual(["2", "1"]);
+    expect((updatedGroup.children as Element[]).map((c) => c.id)).toEqual([
+      "2",
+      "1",
+    ]);
   });
 
   it("toggles element visibility", () => {

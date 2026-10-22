@@ -3,7 +3,6 @@ import { drawSubtitles } from "../../components/subtitles/draw.ts";
 import { applyTracks } from "../tracks.ts";
 import { getActiveCue, isWordActive } from "./cue-timing.ts";
 import { layoutSubtitleCue } from "./layout.ts";
-import { parseSrt } from "./parsers/srt.ts";
 import { extractVttWords, parseVtt } from "./parsers/vtt.ts";
 import { scaleSubtitleTimings } from "./sync.ts";
 import type { SubtitleCue } from "./types.ts";
@@ -66,7 +65,6 @@ describe("Subtitles domain tests", () => {
 
     // Mock measureText: length of string * 10
     const measure = (s: string) => s.length * 10;
-    const spaceWidth = 10;
     // Each word is ~3-6 chars (30-60px) + space (10px).
     // maxWidth 90px forces wrapping across multiple lines
     const layout = layoutSubtitleCue(cue, 90, 30, measure, "center");
@@ -92,8 +90,12 @@ describe("Subtitles domain tests", () => {
     const unscaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.0);
     const scaled = layoutSubtitleCue(cue, 500, 30, measure, "left", 1.2);
 
-    const unscaledGap = unscaled.lines[0]!.words[1]!.x - (unscaled.lines[0]!.words[0]!.x + unscaled.lines[0]!.words[0]!.width);
-    const scaledGap = scaled.lines[0]!.words[1]!.x - (scaled.lines[0]!.words[0]!.x + scaled.lines[0]!.words[0]!.width);
+    const unscaledGap =
+      unscaled.lines[0]!.words[1]!.x -
+      (unscaled.lines[0]!.words[0]!.x + unscaled.lines[0]!.words[0]!.width);
+    const scaledGap =
+      scaled.lines[0]!.words[1]!.x -
+      (scaled.lines[0]!.words[0]!.x + scaled.lines[0]!.words[0]!.width);
 
     // Scaled gap should be wider than unscaled gap by wordWidth * (scale - 1)
     expect(scaledGap).toBeGreaterThan(unscaledGap);
