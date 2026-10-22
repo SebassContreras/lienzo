@@ -15,7 +15,8 @@ export function imageElementFor(
   el.src = src;
   el.name = name;
   if (natural && natural.width > 0 && natural.height > 0) {
-    el.h = Math.round((el.w * natural.height) / natural.width);
+    el.aspect = natural.width / natural.height;
+    el.h = Math.round(el.w / el.aspect);
   }
   el.x = Math.round(at.x - el.w / 2);
   el.y = Math.round(at.y - el.h / 2);

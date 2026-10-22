@@ -23,5 +23,7 @@ describe("imageElementFor", () => {
     );
 
     expect(el.h).toBe(Math.round(el.w / 2));
+    // resizing from a corner keeps the picture's shape, so `aspect` must match it
+    expect(el.aspect).toBe(2);
   });
 });
