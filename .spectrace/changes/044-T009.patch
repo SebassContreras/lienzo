@@ -1,0 +1,21 @@
+diff --git a/src/service/asset-path.ts b/src/service/asset-path.ts
+index a0e0dcb..c1c82c1 100644
+--- a/src/service/asset-path.ts
++++ b/src/service/asset-path.ts
+@@ -1,9 +1,12 @@
+ /**
+- * The one check for asset paths inside a project's `assets/` (044/D2): every segment is a
+- * plain name (letters, digits, `_`, `-`, `.`, not starting with a dot), so `..`, empty and
+- * absolute segments never pass. Returns the POSIX path relative to `assets/`, or undefined.
++ * The one check for asset paths inside a project's `assets/` (044/D2): every segment starts
++ * with a letter, digit or `_`, may hold letters, marks, digits, spaces and `_ . , - ( ) & ' +`,
++ * and does not end in a space or a dot (Windows would alias it), so `..`, empty and absolute
++ * segments, separators and reserved characters never pass. Returns the POSIX path relative to
++ * `assets/`, or undefined.
+  */
+-const SEGMENT = /^[\w][\w.-]*$/;
++const SEGMENT =
++  /^[\p{L}\p{N}_](?:[\p{L}\p{M}\p{N}_ .,()&'+-]*[\p{L}\p{M}\p{N}_,()&'+-])?$/u;
+ 
+ export function safeAssetPath(segments: readonly string[]): string | undefined {
+   if (segments.length === 0) return undefined;

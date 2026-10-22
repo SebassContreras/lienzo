@@ -19,6 +19,38 @@ describe("safeAssetPath", () => {
   });
 });
 
+describe("safeAssetPath with real-world names", () => {
+  it("accepts spaces, accents, parentheses and an ampersand", () => {
+    expect(
+      safeAssetPath(["Diseño gráfico", "01 - after sun & tan (2).png"]),
+    ).toBe("Diseño gráfico/01 - after sun & tan (2).png");
+  });
+
+  it("accepts a name with a combining accent", () => {
+    expect(safeAssetPath(["café.png"])).toBe("café.png");
+  });
+
+  it("rejects a segment that ends in a space", () => {
+    expect(safeAssetPath(["brand ", "logo.png"])).toBeUndefined();
+  });
+
+  it("rejects a segment that ends in a dot", () => {
+    expect(safeAssetPath(["logo.png."])).toBeUndefined();
+  });
+
+  it("rejects a segment that starts with a space", () => {
+    expect(safeAssetPath([" logo.png"])).toBeUndefined();
+  });
+
+  it("rejects an encoded backslash", () => {
+    expect(safeAssetPath(["..%5Cproject.json"])).toBeUndefined();
+  });
+
+  it("rejects a Windows-reserved character", () => {
+    expect(safeAssetPath(["a%3Ab.png"])).toBeUndefined();
+  });
+});
+
 describe("assetSegments", () => {
   it("takes the path after /assets/ of a project URL", () => {
     expect(assetSegments("/api/projects/acme/assets/brand/a.png")).toEqual([

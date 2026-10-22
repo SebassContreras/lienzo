@@ -146,6 +146,25 @@ describe("project-middleware asset endpoints", () => {
     expect(getBuffer()).toEqual(jpg);
   });
 
+  it("serves an asset whose folder and file names have spaces and punctuation", async () => {
+    const png = Buffer.from("png-bytes");
+    const folder = join(store.resolvePath("acme", "assets"), "CAPS move");
+    await mkdir(folder, { recursive: true });
+    await writeFile(join(folder, "01 - Close-up (front) & side.png"), png);
+
+    const { res, getStatus, getBuffer } = createMockRes();
+    await handleProjectApi(
+      store,
+      createMockReq({
+        url: "/api/projects/acme/assets/CAPS%20move/01%20-%20Close-up%20(front)%20%26%20side.png",
+      }),
+      res,
+    );
+
+    expect(getStatus()).toBe(200);
+    expect(getBuffer()).toEqual(png);
+  });
+
   it("refuses an asset path that climbs out of assets/", async () => {
     const { res, getStatus } = createMockRes();
 

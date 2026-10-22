@@ -1,0 +1,133 @@
+diff --git a/src/editor/sidebar/asset-folders.test.ts b/src/editor/sidebar/asset-folders.test.ts
+new file mode 100644
+index 0000000..d02c52b
+--- /dev/null
++++ b/src/editor/sidebar/asset-folders.test.ts
+@@ -0,0 +1,54 @@
++import { describe, expect, it } from "vitest";
++import { assetFileName, assetFolderView } from "./asset-folders.ts";
++
++const paths = [
++  "brand/profile.jpg",
++  "logo.png",
++  "products/CAPS move/01 - tin.png",
++  "products/CAPS move/02 - capsule.png",
++  "products/FRESH cleanser/01 - bottle.png",
++];
++
++describe("assetFolderView", () => {
++  it("shows the top-level folders with their file counts and the root files", () => {
++    expect(assetFolderView(paths, "")).toEqual({
++      folders: [
++        { name: "brand", path: "brand", count: 1 },
++        { name: "products", path: "products", count: 3 },
++      ],
++      files: ["logo.png"],
++    });
++  });
++
++  it("shows the subfolders of a nested folder by their full path", () => {
++    expect(assetFolderView(paths, "products").folders).toEqual([
++      { name: "CAPS move", path: "products/CAPS move", count: 2 },
++      { name: "FRESH cleanser", path: "products/FRESH cleanser", count: 1 },
++    ]);
++  });
++
++  it("shows only the files directly inside the open folder", () => {
++    expect(assetFolderView(paths, "products/CAPS move")).toEqual({
++      folders: [],
++      files: [
++        "products/CAPS move/01 - tin.png",
++        "products/CAPS move/02 - capsule.png",
++      ],
++    });
++  });
++
++  it("does not match a sibling folder that shares a name prefix", () => {
++    expect(assetFolderView(["brand-old/a.png"], "brand")).toEqual({
++      folders: [],
++      files: [],
++    });
++  });
++});
++
++describe("assetFileName", () => {
++  it("keeps only the last segment of a relative path", () => {
++    expect(assetFileName("products/CAPS move/01 - tin.png")).toBe(
++      "01 - tin.png",
++    );
++  });
++});
+diff --git a/src/service/asset-path.test.ts b/src/service/asset-path.test.ts
+index 7ea32ba..34ae941 100644
+--- a/src/service/asset-path.test.ts
++++ b/src/service/asset-path.test.ts
+@@ -19,6 +19,38 @@ describe("safeAssetPath", () => {
+   });
+ });
+ 
++describe("safeAssetPath with real-world names", () => {
++  it("accepts spaces, accents, parentheses and an ampersand", () => {
++    expect(
++      safeAssetPath(["Diseño gráfico", "01 - after sun & tan (2).png"]),
++    ).toBe("Diseño gráfico/01 - after sun & tan (2).png");
++  });
++
++  it("accepts a name with a combining accent", () => {
++    expect(safeAssetPath(["café.png"])).toBe("café.png");
++  });
++
++  it("rejects a segment that ends in a space", () => {
++    expect(safeAssetPath(["brand ", "logo.png"])).toBeUndefined();
++  });
++
++  it("rejects a segment that ends in a dot", () => {
++    expect(safeAssetPath(["logo.png."])).toBeUndefined();
++  });
++
++  it("rejects a segment that starts with a space", () => {
++    expect(safeAssetPath([" logo.png"])).toBeUndefined();
++  });
++
++  it("rejects an encoded backslash", () => {
++    expect(safeAssetPath(["..%5Cproject.json"])).toBeUndefined();
++  });
++
++  it("rejects a Windows-reserved character", () => {
++    expect(safeAssetPath(["a%3Ab.png"])).toBeUndefined();
++  });
++});
++
+ describe("assetSegments", () => {
+   it("takes the path after /assets/ of a project URL", () => {
+     expect(assetSegments("/api/projects/acme/assets/brand/a.png")).toEqual([
+diff --git a/src/service/project-middleware.test.ts b/src/service/project-middleware.test.ts
+index 2f3c402..f8f91de 100644
+--- a/src/service/project-middleware.test.ts
++++ b/src/service/project-middleware.test.ts
+@@ -146,6 +146,25 @@ describe("project-middleware asset endpoints", () => {
+     expect(getBuffer()).toEqual(jpg);
+   });
+ 
++  it("serves an asset whose folder and file names have spaces and punctuation", async () => {
++    const png = Buffer.from("png-bytes");
++    const folder = join(store.resolvePath("acme", "assets"), "CAPS move");
++    await mkdir(folder, { recursive: true });
++    await writeFile(join(folder, "01 - Close-up (front) & side.png"), png);
++
++    const { res, getStatus, getBuffer } = createMockRes();
++    await handleProjectApi(
++      store,
++      createMockReq({
++        url: "/api/projects/acme/assets/CAPS%20move/01%20-%20Close-up%20(front)%20%26%20side.png",
++      }),
++      res,
++    );
++
++    expect(getStatus()).toBe(200);
++    expect(getBuffer()).toEqual(png);
++  });
++
+   it("refuses an asset path that climbs out of assets/", async () => {
+     const { res, getStatus } = createMockRes();
+ 
