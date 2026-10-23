@@ -53,3 +53,8 @@ Why: clarify testing scope to prevent test bloat; prioritize pure engine logic, 
 Why: users need their own fonts per project and globally, and a way to fetch Google Fonts from the app; A12@1 allowed only bundled fonts.
 - MODIFIED A12@1 → A12@2
 - Tasks: 001/T004 re-pointed to A12@2 (the bundled fonts it loads still hold); 045 tasks cover the user fonts
+
+## 2026-10-23 — Mediabunny 1.61.6+ for MP4s that play on phones
+Why: MP4s exported in Firefox on Windows played on desktop but not on phones or WhatsApp. Firefox's H.264 encoder emits an avcC with each SPS/PPS header byte repeated (`67 67 64…`); the in-band parameter sets are correct, so desktop players cope while phones read the broken record. Mediabunny 1.61.6 detects and rebuilds it (mediabunny #559, Bugzilla 2082867). Two earlier fixes targeted the wrong cause and were reverted: forcing the software H.264 encoder (cb28a62) and requesting Annex B output (2a2443c, which Firefox ignores); both were checked only in Edge, which never shows the bug.
+- MODIFIED A10@1 → A10@2
+- Tasks: 001/T005 re-pointed to A10@2 (still valid); no cleanup tasks, the workarounds were already reverted in 8afdef6

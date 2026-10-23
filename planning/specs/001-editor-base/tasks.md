@@ -15,8 +15,10 @@
       changes: src/editor/app.tsx (+396 -0), src/editor/inspector.tsx (+1251 -0), src/editor/library.tsx (+118 -0), src/editor/stage.tsx (+436 -0), src/main.tsx (+28 -1), src/styles.css (+305 -0)
       └─ reviewed 2026-10-22: A12@2 adds user fonts on disk (045); the bundled `@fontsource` loading it wrote still holds
 - [x] T005 [agent] [status:done] Export to PNG, GIF and MP4
-      covers: D8@1, A10@1
+      covers: D8@1, A10@2
       changes: src/editor/app.tsx (+10 -1), src/export/export-controls.tsx (+71 -0), src/export/export.ts (+133 -0)
+      └─ reviewed 2026-10-23: the MP4 export it built still holds; only the Mediabunny version floor changed
+
 - [x] T006 [agent] [status:done] Presets and scenes as JSON files, built-in presets, autosave
       covers: D9@2, A7@3
       changes: src/editor/app.tsx (+73 -1), src/presets/built-in.ts (+220 -0), src/presets/scene-files.tsx (+70 -0), src/presets/slug.ts (+9 -0), src/presets/store.ts (+38 -0), src/styles.css (+2 -2), vite.config.ts (+65 -2)
