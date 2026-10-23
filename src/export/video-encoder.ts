@@ -23,7 +23,10 @@ export async function createVideoEncoder(
   options: VideoEncoderOptions = {},
 ): Promise<FrameEncoder> {
   const size = { width: canvas.width, height: canvas.height };
-  const useMp4 = await canEncodeVideo("avc", { ...size, quality: QUALITY_HIGH });
+  const useMp4 = await canEncodeVideo("avc", {
+    ...size,
+    quality: QUALITY_HIGH,
+  });
   const output = new Output({
     format: useMp4
       ? new Mp4OutputFormat({ fastStart: "in-memory" })
@@ -33,13 +36,6 @@ export async function createVideoEncoder(
   const source = new CanvasSource(canvas, {
     codec: useMp4 ? "avc" : "vp9",
     quality: QUALITY_HIGH,
-    keyFrameInterval: 2,
-    // The avcC description from Windows' Media Foundation H.264 encoder repeats
-    // each SPS/PPS header byte, so phones and WhatsApp can't decode the MP4. With
-    // Annex B output mediabunny builds the avcC itself from the in-band SPS/PPS.
-    onEncoderConfig: (config) => {
-      if (useMp4) config.avc = { format: "annexb" };
-    },
   });
   output.addVideoTrack(source, { frameRate: fps });
 
