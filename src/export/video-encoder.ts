@@ -23,9 +23,15 @@ export async function createVideoEncoder(
   options: VideoEncoderOptions = {},
 ): Promise<FrameEncoder> {
   const size = { width: canvas.width, height: canvas.height };
+  // Hardware H.264 encoders (Media Foundation on Windows) emit streams with more
+  // reference frames than the spec allows and several SPS ids; desktop players
+  // tolerate them but phones and WhatsApp reject them. The software encoder is
+  // spec-compliant.
+  const hardwareAcceleration = "prefer-software";
   const useMp4 = await canEncodeVideo("avc", {
     ...size,
     quality: QUALITY_HIGH,
+    hardwareAcceleration,
   });
   const output = new Output({
     format: useMp4
@@ -36,6 +42,8 @@ export async function createVideoEncoder(
   const source = new CanvasSource(canvas, {
     codec: useMp4 ? "avc" : "vp9",
     quality: QUALITY_HIGH,
+    hardwareAcceleration,
+    keyFrameInterval: 2,
   });
   output.addVideoTrack(source, { frameRate: fps });
 
