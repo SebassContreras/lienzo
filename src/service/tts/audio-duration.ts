@@ -1,0 +1,105 @@
+/**
+ * Measures synthesized audio from its own bytes (060/D2): MP3 by walking every MPEG audio
+ * frame (a Xing/Info count can describe only part of a merged clip), WAV from its RIFF
+ * chunks. Pure; returns undefined for anything it can't read.
+ */
+export function audioDuration(
+  bytes: Uint8Array,
+  format: string,
+): number | undefined {
+  if (format === "mp3") return mp3Duration(bytes);
+  if (format === "wav") return wavDuration(bytes);
+  return undefined;
+}
+
+/** kbps by [MPEG-1 ? 0 : 1][layer 1..3][bitrate index]. ISO 11172-3 / 13818-3. */
+const BITRATES = [
+  [
+    [],
+    [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448],
+    [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],
+    [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],
+  ],
+  [
+    [],
+    [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256],
+    [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+    [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+  ],
+];
+
+const SAMPLE_RATES = [44100, 48000, 32000];
+
+type Frame = { length: number; seconds: number };
+
+/** The frame whose header starts at `i`, or undefined when it isn't a usable one. */
+function frameAt(b: Uint8Array, i: number): Frame | undefined {
+  if (i + 4 > b.length || b[i] !== 0xff || (b[i + 1] & 0xe0) !== 0xe0) {
+    return undefined;
+  }
+  const version = (b[i + 1] >> 3) & 3; // 0 = 2.5, 1 = reserved, 2 = 2, 3 = 1
+  const layer = 4 - ((b[i + 1] >> 1) & 3); // bits 3/2/1 → layer 1/2/3
+  const bitrateIndex = b[i + 2] >> 4;
+  const rateIndex = (b[i + 2] >> 2) & 3;
+  if (version === 1 || layer === 4 || rateIndex === 3) return undefined;
+  if (bitrateIndex === 0 || bitrateIndex === 15) return undefined; // free / bad
+  const mpeg1 = version === 3;
+  const bitrate = BITRATES[mpeg1 ? 0 : 1][layer][bitrateIndex] * 1000;
+  const sampleRate =
+    SAMPLE_RATES[rateIndex] / (mpeg1 ? 1 : version === 2 ? 2 : 4);
+  const pad = (b[i + 2] >> 1) & 1;
+  const samples = layer === 1 ? 384 : layer === 3 && !mpeg1 ? 576 : 1152;
+  const length =
+    layer === 1
+      ? (Math.floor((12 * bitrate) / sampleRate) + pad) * 4
+      : Math.floor(((samples / 8) * bitrate) / sampleRate) + pad;
+  return { length, seconds: samples / sampleRate };
+}
+
+/** Size of a leading ID3v2 tag (10-byte header + syncsafe size), or 0. */
+function id3Size(b: Uint8Array): number {
+  if (b.length < 10 || b[0] !== 0x49 || b[1] !== 0x44 || b[2] !== 0x33) {
+    return 0;
+  }
+  const size = (b[6] << 21) | (b[7] << 14) | (b[8] << 7) | b[9];
+  return 10 + size + (b[5] & 0x10 ? 10 : 0);
+}
+
+function mp3Duration(b: Uint8Array): number | undefined {
+  let seconds = 0;
+  let frames = 0;
+  let i = id3Size(b);
+  while (i + 4 <= b.length) {
+    const frame = frameAt(b, i);
+    if (!frame || i + frame.length > b.length) {
+      i++; // junk or a truncated tail: resync byte by byte
+      continue;
+    }
+    seconds += frame.seconds;
+    frames++;
+    i += frame.length;
+  }
+  return frames > 0 ? seconds : undefined;
+}
+
+const ascii = (b: Uint8Array, i: number) =>
+  String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
+
+function wavDuration(b: Uint8Array): number | undefined {
+  if (b.length < 12 || ascii(b, 0) !== "RIFF" || ascii(b, 8) !== "WAVE") {
+    return undefined;
+  }
+  const view = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  let byteRate: number | undefined;
+  let i = 12;
+  while (i + 8 <= b.length) {
+    const id = ascii(b, i);
+    const size = view.getUint32(i + 4, true);
+    if (id === "fmt " && i + 16 <= b.length) {
+      byteRate = view.getUint32(i + 16, true);
+    }
+    if (id === "data") return byteRate ? size / byteRate : undefined;
+    i += 8 + size + (size % 2);
+  }
+  return undefined;
+}

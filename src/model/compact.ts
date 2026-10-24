@@ -308,6 +308,17 @@ export const CompactShotSchema = z.object({
 
 export type CompactShot = z.infer<typeof CompactShotSchema>;
 
+/** An audio track in compact form; `id` defaults to `track-<n>` (060/D3). */
+export const CompactAudioTrackSchema = z.object({
+  assetId: z.string().min(1),
+  id: z.string().min(1).optional(),
+  name: z.string().optional(),
+  volume: z.number().min(0).max(1).optional(),
+  startOffset: z.number().min(0).optional(),
+  trimOffset: z.number().min(0).optional(),
+  muted: z.boolean().optional(),
+});
+
 export const CompactSymbolSchema = z.object({
   w: z.number().positive(),
   h: z.number().positive(),
@@ -343,6 +354,7 @@ export function generateCompactJsonSchema(): Record<string, unknown> {
       .optional(),
     elements: z.array(elementUnion).default([]),
     shots: z.array(CompactShotSchema).optional(),
+    audioTracks: z.array(CompactAudioTrackSchema).optional(),
   });
   return z.toJSONSchema(staticSceneSchema) as Record<string, unknown>;
 }
@@ -363,6 +375,7 @@ export const CompactSceneSchema = z.object({
   symbols: z.record(z.string(), CompactSymbolSchema).optional(),
   elements: z.array(CompactElementSchema).default([]),
   shots: z.array(CompactShotSchema).optional(),
+  audioTracks: z.array(CompactAudioTrackSchema).optional(),
 });
 
 export type CompactScene = z.infer<typeof CompactSceneSchema>;

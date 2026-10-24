@@ -1,0 +1,33 @@
+diff --git a/src/service/tools/scene-build.ts b/src/service/tools/scene-build.ts
+index 0fd6396..6b75060 100644
+--- a/src/service/tools/scene-build.ts
++++ b/src/service/tools/scene-build.ts
+@@ -22,7 +22,10 @@ export const sceneBuild = defineTool({
+     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
+     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
+     "order) give radial and multi-stop gradients when `fill.gradient` is on. " +
+-    "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true.",
++    "`audioTracks: [{assetId, startOffset?, volume?, …}]` sets the scene's audio tracks. " +
++    "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true. " +
++    "Overwriting keeps the stored scene's audio (with a notice) unless `audioTracks` is given (`[]` clears it). " +
++    "A notice also names any text or subtitles font that is not installed (run font_install).",
+   input: z.object({
+     compact: CompactSceneSchema,
+     project: PROJECT,
+diff --git a/src/service/tools/scene-generate-speech.ts b/src/service/tools/scene-generate-speech.ts
+index ea48599..17b1444 100644
+--- a/src/service/tools/scene-generate-speech.ts
++++ b/src/service/tools/scene-generate-speech.ts
+@@ -29,7 +29,11 @@ export function createSceneGenerateSpeechTool(
+     name: "scene_generate_speech",
+     description:
+       "Generate synthetic voiceover narration from a text script using OpenRouter or local/Kokoro TTS " +
+-      "and attach the resulting audio and synchronized subtitle cues to a scene.",
++      "and attach the resulting audio and synchronized subtitle cues to a scene. By default it " +
++      "replaces `scene.audio`; with `asTrack: true` it appends a new `audioTracks` entry at " +
++      "`startOffset` (keeping `scene.audio` and other tracks) and appends its cues, so a " +
++      "voice-over with one clip per shot is one call per clip. `audioDuration` is measured " +
++      "from the MP3/WAV frames.",
+     input: z.object({
+       scene: z.string().min(1),
+       project: PROJECT,

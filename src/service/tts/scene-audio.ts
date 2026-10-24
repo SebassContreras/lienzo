@@ -1,5 +1,9 @@
 import { createElement } from "../../components/index.ts";
 import type { SubtitlesEl } from "../../components/subtitles/descriptor.ts";
+import {
+  createAudioTrack,
+  getSceneAudioTracks,
+} from "../../engine/audio/audio-tracks.ts";
 import type { SubtitleCue } from "../../engine/subtitles/types.ts";
 import type { Scene } from "../../model/model.ts";
 
@@ -16,6 +20,25 @@ export interface AttachSpeechOptions {
   adjustSceneDuration?: boolean;
   /** Optional generated subtitle cues to attach to a subtitles element. */
   cues?: SubtitleCue[];
+  /**
+   * Append the clip as a new `audioTracks` entry, keeping `scene.audio` and the other
+   * tracks, and append its cues instead of replacing them (060/D1). Default: false.
+   */
+  asTrack?: boolean;
+}
+
+/**
+ * Existing cues outside the new clip's window, plus the new ones, by start time; a
+ * re-run for the same shot replaces its cues instead of duplicating them (060/D1).
+ */
+function mergeCues(
+  existing: SubtitleCue[],
+  added: SubtitleCue[],
+  from: number,
+  to: number,
+): SubtitleCue[] {
+  const kept = existing.filter((c) => c.start < from || c.start >= to);
+  return [...kept, ...added].sort((a, b) => a.start - b.start);
 }
 
 /**
@@ -35,6 +58,7 @@ export function attachSpeechToScene(
     startOffset = 0,
     adjustSceneDuration = true,
     cues,
+    asTrack = false,
   } = options;
 
   let newDuration = scene.duration;
@@ -44,11 +68,15 @@ export function attachSpeechToScene(
     newDuration = Math.max(scene.duration, requiredDuration);
   }
 
-  const updatedAudio = {
-    assetId,
-    volume,
-    startOffset,
-  };
+  // Playback ignores `scene.audio` once `audioTracks` has entries, so a legacy single
+  // track is carried into the list by `getSceneAudioTracks` before appending.
+  const audio = asTrack ? scene.audio : { assetId, volume, startOffset };
+  const audioTracks = asTrack
+    ? [
+        ...getSceneAudioTracks(scene),
+        createAudioTrack(assetId, { name: "Voz", volume, startOffset }),
+      ]
+    : scene.audioTracks;
 
   const updatedElements = [...scene.elements];
 
@@ -62,7 +90,14 @@ export function attachSpeechToScene(
       const existing = updatedElements[existingIndex] as SubtitlesEl;
       const updatedSubtitles: SubtitlesEl = {
         ...existing,
-        cues,
+        cues: asTrack
+          ? mergeCues(
+              existing.cues ?? [],
+              cues,
+              startOffset,
+              startOffset + audioDuration,
+            )
+          : cues,
       };
       updatedElements[existingIndex] = updatedSubtitles;
     } else {
@@ -78,7 +113,8 @@ export function attachSpeechToScene(
   return {
     ...scene,
     duration: newDuration,
-    audio: updatedAudio,
+    audio,
+    audioTracks,
     elements: updatedElements,
   };
 }

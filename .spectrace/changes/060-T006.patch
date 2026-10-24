@@ -1,0 +1,153 @@
+diff --git a/src/service/font-check.ts b/src/service/font-check.ts
+new file mode 100644
+index 0000000..6ceba59
+--- /dev/null
++++ b/src/service/font-check.ts
+@@ -0,0 +1,52 @@
++import type { Element, Scene } from "../model/model.ts";
++
++/** CSS generic families: keywords, never installable fonts. */
++const GENERIC = new Set([
++  "serif",
++  "sans-serif",
++  "monospace",
++  "system-ui",
++  "cursive",
++  "fantasy",
++]);
++
++/** Every element of the scene, inside groups and symbols too. */
++function* allElements(elements: readonly Element[]): Generator<Element> {
++  for (const el of elements) {
++    yield el;
++    const children = (el as { children?: unknown }).children;
++    if (Array.isArray(children)) yield* allElements(children as Element[]);
++  }
++}
++
++/**
++ * Font families used by `text` and `subtitles` elements that aren't in `installed`, in
++ * first-seen order (060/D5). Case-insensitive, as CSS matches family names. Pure.
++ */
++export function missingFonts(
++  scene: Scene,
++  installed: readonly string[],
++): string[] {
++  const known = new Set([...installed, ...GENERIC].map((f) => f.toLowerCase()));
++  const missing = new Set<string>();
++  const roots = [
++    ...scene.elements,
++    ...Object.values(scene.symbols ?? {}).flatMap((s) => s.children),
++  ];
++  for (const el of allElements(roots)) {
++    if (el.kind !== "text" && el.kind !== "subtitles") continue;
++    if (!known.has(el.font.toLowerCase())) missing.add(el.font);
++  }
++  return [...missing];
++}
++
++/** One warning per missing family, naming the fix (060/D6). */
++export function fontNotices(
++  scene: Scene,
++  installed: readonly string[],
++): string[] {
++  return missingFonts(scene, installed).map(
++    (family) =>
++      `La fuente «${family}» no está instalada; se dibujará con otra. Usa font_install`,
++  );
++}
+diff --git a/src/service/tools/scene-build.ts b/src/service/tools/scene-build.ts
+index 47be6a8..0fd6396 100644
+--- a/src/service/tools/scene-build.ts
++++ b/src/service/tools/scene-build.ts
+@@ -4,6 +4,8 @@ import { parseScene, SceneSchema } from "../../model/schema.ts";
+ import { slugify } from "../../presets/slug.ts";
+ import { expandScene } from "../compact/expand.ts";
+ import { keepAudio } from "../compact/keep-audio.ts";
++import { fontNotices } from "../font-check.ts";
++import { availableFonts } from "../font-install.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool, fail } from "../registry.ts";
+ import { checkScene, findPreset, SceneResult, saveScene } from "../scenes.ts";
+@@ -59,6 +61,14 @@ export const sceneBuild = defineTool({
+       fail("invalid_compact_scene", msg, "compact");
+     }
+ 
++    const fonts = await availableFonts(ctx.fonts, project);
++    notices.push(
++      ...fontNotices(
++        expanded,
++        fonts.map((f) => f.family),
++      ),
++    );
++
+     let saved: z.infer<typeof SceneResult> | undefined;
+     if (save) {
+       const stored = await effectiveCtx.store.readScene(save);
+diff --git a/src/service/tools/scene-generate-speech.ts b/src/service/tools/scene-generate-speech.ts
+index b674d33..ea48599 100644
+--- a/src/service/tools/scene-generate-speech.ts
++++ b/src/service/tools/scene-generate-speech.ts
+@@ -2,8 +2,8 @@ import { z } from "zod";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool, fail } from "../registry.ts";
+ import { editScene, SceneResult } from "../scenes.ts";
+-import { audioDuration } from "../tts/audio-duration.ts";
+ import { saveAudioAsset } from "../tts/asset-store.ts";
++import { audioDuration } from "../tts/audio-duration.ts";
+ import {
+   resolveDefaultTtsModel,
+   resolveDefaultTtsVoice,
+diff --git a/src/service/tools/scene-validate.ts b/src/service/tools/scene-validate.ts
+index c7f0780..8a28c64 100644
+--- a/src/service/tools/scene-validate.ts
++++ b/src/service/tools/scene-validate.ts
+@@ -1,4 +1,7 @@
+ import { z } from "zod";
++import type { Scene } from "../../model/model.ts";
++import { fontNotices } from "../font-check.ts";
++import { availableFonts } from "../font-install.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool } from "../registry.ts";
+ import { prepareScene } from "../scenes.ts";
+@@ -8,11 +11,23 @@ export const sceneValidate = defineTool({
+   name: "scene_validate",
+   description:
+     "Check a whole scene without saving it, as the editor would open it (animation " +
+-    "presets it names must exist). Returns the first failing path.",
++    "presets it names must exist). Returns the first failing path. A valid scene can " +
++    "still carry `notices`: e.g. a text or subtitles font that is not installed in the " +
++    "project (it would draw with a fallback; run font_install).",
+   input: z.object({ scene: z.unknown(), project: PROJECT }),
+-  output: Verdict,
++  output: Verdict.extend({ notices: z.array(z.string()).optional() }),
+   run: async ({ scene, project }, ctx) => {
+     const projectCtx = await inProject(ctx, project);
+-    return verdictOf(() => prepareScene(projectCtx, scene));
++    let prepared: Scene | undefined;
++    const verdict = await verdictOf(async () => {
++      prepared = (await prepareScene(projectCtx, scene)).scene;
++    });
++    if (!prepared) return verdict;
++    const fonts = await availableFonts(ctx.fonts, project);
++    const notices = fontNotices(
++      prepared,
++      fonts.map((f) => f.family),
++    );
++    return notices.length > 0 ? { ...verdict, notices } : verdict;
+   },
+ });
+diff --git a/src/service/tts/audio-duration.ts b/src/service/tts/audio-duration.ts
+index 761bd4b..345122e 100644
+--- a/src/service/tts/audio-duration.ts
++++ b/src/service/tts/audio-duration.ts
+@@ -45,7 +45,8 @@ function frameAt(b: Uint8Array, i: number): Frame | undefined {
+   if (bitrateIndex === 0 || bitrateIndex === 15) return undefined; // free / bad
+   const mpeg1 = version === 3;
+   const bitrate = BITRATES[mpeg1 ? 0 : 1][layer][bitrateIndex] * 1000;
+-  const sampleRate = SAMPLE_RATES[rateIndex] / (mpeg1 ? 1 : version === 2 ? 2 : 4);
++  const sampleRate =
++    SAMPLE_RATES[rateIndex] / (mpeg1 ? 1 : version === 2 ? 2 : 4);
+   const pad = (b[i + 2] >> 1) & 1;
+   const samples = layer === 1 ? 384 : layer === 3 && !mpeg1 ? 576 : 1152;
+   const length =

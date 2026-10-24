@@ -3,6 +3,7 @@ import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, SceneResult } from "../scenes.ts";
 import { saveAudioAsset } from "../tts/asset-store.ts";
+import { audioDuration } from "../tts/audio-duration.ts";
 import {
   resolveDefaultTtsModel,
   resolveDefaultTtsVoice,
@@ -28,7 +29,11 @@ export function createSceneGenerateSpeechTool(
     name: "scene_generate_speech",
     description:
       "Generate synthetic voiceover narration from a text script using OpenRouter or local/Kokoro TTS " +
-      "and attach the resulting audio and synchronized subtitle cues to a scene.",
+      "and attach the resulting audio and synchronized subtitle cues to a scene. By default it " +
+      "replaces `scene.audio`; with `asTrack: true` it appends a new `audioTracks` entry at " +
+      "`startOffset` (keeping `scene.audio` and other tracks) and appends its cues, so a " +
+      "voice-over with one clip per shot is one call per clip. `audioDuration` is measured " +
+      "from the MP3/WAV frames.",
     input: z.object({
       scene: z.string().min(1),
       project: PROJECT,
@@ -43,6 +48,7 @@ export function createSceneGenerateSpeechTool(
       startOffset: z.number().min(0).default(0),
       adjustSceneDuration: z.boolean().default(true),
       subtitles: z.boolean().default(true),
+      asTrack: z.boolean().optional(),
     }),
     output: SceneResult.extend({
       assetId: z.string(),
@@ -106,16 +112,16 @@ export function createSceneGenerateSpeechTool(
         );
       }
 
-      // 3. Estimate or calculate duration
-      // An MP3 audio buffer average ~16-24 KB per second (128kbps = 16,000 bytes/sec)
-      // When durationSeconds is not directly returned by the service, estimate duration from byte size or speech length
+      // 3. Measure the audio itself; the provider's figure and a byte-rate estimate
+      // (~16 KB/s at 128 kbps) are fallbacks for formats we can't parse (060/D2)
       const estimatedDuration =
-        speechResult.durationSeconds && speechResult.durationSeconds > 0
+        audioDuration(speechResult.audioBuffer, speechResult.format) ??
+        (speechResult.durationSeconds && speechResult.durationSeconds > 0
           ? speechResult.durationSeconds
           : Math.max(
               1,
               Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
-            );
+            ));
 
       // 4. Resolve the project scope (046/D1)
       const effectiveCtx = await inProject(ctx, input.project);
@@ -154,6 +160,7 @@ export function createSceneGenerateSpeechTool(
           startOffset: input.startOffset,
           adjustSceneDuration: input.adjustSceneDuration,
           cues,
+          asTrack: input.asTrack,
         }),
       );
 

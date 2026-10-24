@@ -1195,6 +1195,43 @@
         "required": ["id", "start", "end"],
         "additionalProperties": false
       }
+    },
+    "audioTracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string"
+          },
+          "volume": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "startOffset": {
+            "type": "number",
+            "minimum": 0
+          },
+          "trimOffset": {
+            "type": "number",
+            "minimum": 0
+          },
+          "muted": {
+            "type": "boolean"
+          }
+        },
+        "required": ["assetId"],
+        "additionalProperties": false
+      }
     }
   },
   "required": ["elements"],

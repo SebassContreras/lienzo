@@ -64,4 +64,4 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 057 | path-layers-and-particles | done        | 005, 012, 024 | —      | 57 |
 | 058 | compact-effects-and-defaults | done        | 010, 011, 025 | —      | 58 |
 | 059 | shapes-clip-and-gradients | done        | 002, 012, 017 | —      | 59 |
-| 060 | voice-audio-and-font-validation | todo        | 028, 035, 045 | build        | 60 |
+| 060 | voice-audio-and-font-validation | done        | 028, 035, 045 | —            | 60 |

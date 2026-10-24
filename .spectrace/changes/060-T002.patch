@@ -1,0 +1,34 @@
+diff --git a/src/service/tools/scene-generate-speech.ts b/src/service/tools/scene-generate-speech.ts
+index f1e692b..48f49c5 100644
+--- a/src/service/tools/scene-generate-speech.ts
++++ b/src/service/tools/scene-generate-speech.ts
+@@ -2,6 +2,7 @@ import { z } from "zod";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool, fail } from "../registry.ts";
+ import { editScene, SceneResult } from "../scenes.ts";
++import { audioDuration } from "../tts/audio-duration.ts";
+ import { saveAudioAsset } from "../tts/asset-store.ts";
+ import {
+   resolveDefaultTtsModel,
+@@ -106,16 +107,16 @@ export function createSceneGenerateSpeechTool(
+         );
+       }
+ 
+-      // 3. Estimate or calculate duration
+-      // An MP3 audio buffer average ~16-24 KB per second (128kbps = 16,000 bytes/sec)
+-      // When durationSeconds is not directly returned by the service, estimate duration from byte size or speech length
++      // 3. Measure the audio itself; the provider's figure and a byte-rate estimate
++      // (~16 KB/s at 128 kbps) are fallbacks for formats we can't parse (060/D2)
+       const estimatedDuration =
+-        speechResult.durationSeconds && speechResult.durationSeconds > 0
++        audioDuration(speechResult.audioBuffer, speechResult.format) ??
++        (speechResult.durationSeconds && speechResult.durationSeconds > 0
+           ? speechResult.durationSeconds
+           : Math.max(
+               1,
+               Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
+-            );
++            ));
+ 
+       // 4. Resolve the project scope (046/D1)
+       const effectiveCtx = await inProject(ctx, input.project);

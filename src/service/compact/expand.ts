@@ -429,6 +429,13 @@ export async function expandScene(
     }));
   }
 
+  if (compact.audioTracks) {
+    scene.audioTracks = compact.audioTracks.map((track, i) => ({
+      ...track,
+      id: track.id ?? `track-${i + 1}`,
+    }));
+  }
+
   if (options.animLibrary && options.animLibrary.length > 0) {
     const expanded = expandAnimPresets(scene, options.animLibrary);
     return {

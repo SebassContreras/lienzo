@@ -356,6 +356,64 @@ describe("scene_build effects and notices (058/R1)", () => {
   });
 });
 
+describe("scene_build audio and fonts (060/R3, R4)", () => {
+  it("keeps a scene's audioTracks when overwriting it without audioTracks (issue #10)", async () => {
+    const voice = { id: "v1", assetId: "voice", startOffset: 2 };
+    await ok("scene_build", {
+      compact: { audioTracks: [voice] },
+      save: "demo",
+    });
+
+    const res = await ok("scene_build", {
+      compact: { elements: [{ kind: "rect" }] },
+      save: "demo",
+      overwrite: true,
+    });
+
+    expect((await onDisk("demo")).audioTracks).toEqual([voice]);
+    expect(res.notices).toEqual([expect.stringContaining("1 pista(s)")]);
+  });
+
+  it("warns about a text font that is not installed (issue #12)", async () => {
+    const res = await ok("scene_build", {
+      compact: { elements: [{ kind: "text", font: "Montserrat" }] },
+    });
+
+    expect(res.notices).toEqual([
+      expect.stringContaining("«Montserrat» no está instalada"),
+    ]);
+  });
+
+  it("gives no font notice for a family installed in the project", async () => {
+    await mkdir(join(ctx.root, "projects", PROJECT, "fonts"), {
+      recursive: true,
+    });
+    await writeFile(
+      join(ctx.root, "projects", PROJECT, "fonts", "Montserrat-400.ttf"),
+      "font",
+    );
+
+    const res = await ok("scene_build", {
+      compact: { elements: [{ kind: "text", font: "Montserrat" }] },
+    });
+
+    expect(res.notices).toEqual([]);
+  });
+
+  it("keeps scene_validate valid while it warns about the font", async () => {
+    const { scene } = await ok("scene_build", {
+      compact: { elements: [{ kind: "text", font: "Montserrat" }] },
+    });
+
+    const res = await ok("scene_validate", { scene });
+
+    expect(res).toEqual({
+      valid: true,
+      notices: [expect.stringContaining("«Montserrat»")],
+    });
+  });
+});
+
 describe("scene_preview out (058/R3)", () => {
   const exports = () => join(ctx.root, "projects", "mi-proyecto", "exports");
 

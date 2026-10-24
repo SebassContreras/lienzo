@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { CompactSceneSchema } from "../../model/compact.ts";
-import { SceneSchema } from "../../model/schema.ts";
+import { parseScene, SceneSchema } from "../../model/schema.ts";
 import { slugify } from "../../presets/slug.ts";
 import { expandScene } from "../compact/expand.ts";
+import { keepAudio } from "../compact/keep-audio.ts";
+import { fontNotices } from "../font-check.ts";
+import { availableFonts } from "../font-install.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { checkScene, findPreset, SceneResult, saveScene } from "../scenes.ts";
@@ -19,7 +22,10 @@ export const sceneBuild = defineTool({
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
     "order) give radial and multi-stop gradients when `fill.gradient` is on. " +
-    "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true.",
+    "`audioTracks: [{assetId, startOffset?, volume?, …}]` sets the scene's audio tracks. " +
+    "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true. " +
+    "Overwriting keeps the stored scene's audio (with a notice) unless `audioTracks` is given (`[]` clears it). " +
+    "A notice also names any text or subtitles font that is not installed (run font_install).",
   input: z.object({
     compact: CompactSceneSchema,
     project: PROJECT,
@@ -58,14 +64,28 @@ export const sceneBuild = defineTool({
       fail("invalid_compact_scene", msg, "compact");
     }
 
+    const fonts = await availableFonts(ctx.fonts, project);
+    notices.push(
+      ...fontNotices(
+        expanded,
+        fonts.map((f) => f.family),
+      ),
+    );
+
     let saved: z.infer<typeof SceneResult> | undefined;
     if (save) {
-      if (
-        !overwrite &&
-        (await effectiveCtx.store.readScene(save)) !== undefined
-      ) {
+      const stored = await effectiveCtx.store.readScene(save);
+      if (!overwrite && stored !== undefined) {
         fail("exists", `Ya existe la escena «${slugify(save)}»`, "save");
       }
+      const previous = stored === undefined ? undefined : parseScene(stored);
+      const kept = keepAudio(
+        expanded,
+        previous?.ok ? previous.value : undefined,
+        compact,
+      );
+      expanded = kept.scene;
+      if (kept.notice) notices.push(kept.notice);
       saved = await saveScene(effectiveCtx, save, expanded);
     }
 
