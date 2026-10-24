@@ -5,6 +5,7 @@ import {
   box,
   check,
   color,
+  elementOpacity,
   font,
   glow,
   noGlow,
@@ -28,6 +29,7 @@ const numbered = (p: Parent) => ring(p) && p.showNumber === true;
  */
 const fields = {
   ...box(420, 36, { section: "Progreso", min: 10, max: 1600 }),
+  opacity: elementOpacity("Progreso"),
   style: select(
     [
       ["bar", "Barra"],

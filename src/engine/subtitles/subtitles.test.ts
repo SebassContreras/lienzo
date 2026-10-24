@@ -199,6 +199,8 @@ describe("Subtitles domain tests", () => {
         scaleX: 1,
         scaleY: 1,
         rotate: 0,
+        originX: 0.5,
+        originY: 0.5,
         skewX: 0,
         skewY: 0,
         glowMul: 1,

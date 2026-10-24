@@ -6,6 +6,7 @@ import {
   BOX_ANIMS,
   border,
   box,
+  elementOpacity,
   fill,
   glow,
   label,
@@ -25,6 +26,7 @@ import { drawRect } from "./draw.ts";
 export function shapeFields(w: number, h: number) {
   return {
     ...box(w, h, { section: "Forma", min: 10, max: 1600 }),
+    opacity: elementOpacity("Forma"),
     fill: fill(
       {
         color: "#13254a",

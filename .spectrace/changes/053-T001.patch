@@ -1,0 +1,265 @@
+diff --git a/package.json b/package.json
+index 3c8bbcb..b5d2f61 100644
+--- a/package.json
++++ b/package.json
+@@ -29,6 +29,7 @@
+     "@fontsource/poppins": "^5.2.0",
+     "@fontsource/press-start-2p": "^5.2.0",
+     "@fontsource/space-grotesk": "^5.2.0",
++    "@mediabunny/aac-encoder": "^1.62.1",
+     "@modelcontextprotocol/sdk": "^1.32.1",
+     "gifenc": "^1.0.3",
+     "lucide": "^1.52.0",
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index c721ced..64ffcb0 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -26,6 +26,9 @@ importers:
+       '@fontsource/space-grotesk':
+         specifier: ^5.2.0
+         version: 5.3.0
++      '@mediabunny/aac-encoder':
++        specifier: ^1.62.1
++        version: 1.62.1(mediabunny@1.62.1)
+       '@modelcontextprotocol/sdk':
+         specifier: ^1.32.1
+         version: 1.32.1(zod@4.6.5)
+@@ -401,6 +404,11 @@ packages:
+   '@jridgewell/trace-mapping@0.3.31':
+     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+ 
++  '@mediabunny/aac-encoder@1.62.1':
++    resolution: {integrity: sha512-3fiZYAX95d+TDp2vu0sXMYputLm2+W21fZQMUWTf9awKhsRC/wko9OXj4GLLmGKMRryvI9Ocv9HzhhHVRYWopQ==}
++    peerDependencies:
++      mediabunny: ^1.0.0
++
+   '@modelcontextprotocol/sdk@1.32.1':
+     resolution: {integrity: sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==}
+     engines: {node: '>=18'}
+@@ -1769,6 +1777,10 @@ snapshots:
+       '@jridgewell/resolve-uri': 3.1.2
+       '@jridgewell/sourcemap-codec': 1.6.0
+ 
++  '@mediabunny/aac-encoder@1.62.1(mediabunny@1.62.1)':
++    dependencies:
++      mediabunny: 1.62.1
++
+   '@modelcontextprotocol/sdk@1.32.1(zod@4.6.5)':
+     dependencies:
+       '@hono/node-server': 2.1.4(hono@4.13.13)
+diff --git a/src/animations/kind.ts b/src/animations/kind.ts
+index 096b0ae..bef6e4a 100644
+--- a/src/animations/kind.ts
++++ b/src/animations/kind.ts
+@@ -10,10 +10,13 @@ export type AnimState = {
+   /** Per-axis scale, on top of `scale`. */
+   scaleX: number;
+   scaleY: number;
+-  /** Degrees, around the box centre. */
++  /** Degrees, around the pivot (`originX`, `originY`). */
+   rotate: number;
+   skewX: number;
+   skewY: number;
++  /** Transform pivot in box fractions (0–1, default 0.5) (053/D1). */
++  originX: number;
++  originY: number;
+   alpha: number;
+   glowMul: number;
+   /** 0–1, how much of a line is drawn ("draw"); 1 for every other kind. */
+@@ -37,6 +40,8 @@ export const rest = (): AnimState => ({
+   rotate: 0,
+   skewX: 0,
+   skewY: 0,
++  originX: 0.5,
++  originY: 0.5,
+   alpha: 1,
+   glowMul: 1,
+   progress: 1,
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+index e4fbcda..3e9a404 100644
+--- a/src/components/descriptor.ts
++++ b/src/components/descriptor.ts
+@@ -42,6 +42,8 @@ export type ElementOf<K extends string, F extends Fields> = {
+   animPreset?: AnimPresetRef;
+   /** Effects: blur, blend and mask (025). */
+   effects?: import("./fields/effects.ts").EffectsDefaults;
++  /** Transform pivot in box fractions (0–1, default { x: 0.5, y: 0.5 }) (053/D1). */
++  origin?: { x: number; y: number };
+   /** Hidden from canvas and rendering (034). */
+   hidden?: boolean;
+   /** Locked against selection and canvas drag edits (034). */
+diff --git a/src/engine/animate.ts b/src/engine/animate.ts
+index 6ee46ee..43fb3cb 100644
+--- a/src/engine/animate.ts
++++ b/src/engine/animate.ts
+@@ -19,11 +19,21 @@ export function animate<E extends Element>(
+   t: number,
+   scene: Scene,
+ ): Animated<E> {
+-  if (!el.tracks)
+-    return { el, transform: animState(el.anim, t, scene.duration) };
++  if (!el.tracks) {
++    const transform = animState(el.anim, t, scene.duration);
++    if (el.origin) {
++      transform.originX = el.origin.x;
++      transform.originY = el.origin.y;
++    }
++    return { el, transform };
++  }
+   const { el: now, channels } = applyTracks(el, t);
+   const transform = animState(now.anim, t, scene.duration);
+   transform.rotate += channels["@rotate"];
+   transform.scale *= channels["@scale"];
++  if (now.origin) {
++    transform.originX = now.origin.x;
++    transform.originY = now.origin.y;
++  }
+   return { el: now, transform };
+ }
+diff --git a/src/engine/clip.ts b/src/engine/clip.ts
+index 1766117..96fcce9 100644
+--- a/src/engine/clip.ts
++++ b/src/engine/clip.ts
+@@ -87,9 +87,9 @@ function outlineOf(el: Element): Path2D {
+  * Applies an element's animation transform to the context matrix without saving/restoring.
+  */
+ function applyTransform(ctx: Ctx, box: Box, st: AnimState): void {
+-  const cx = box.x + box.w / 2;
+-  const cy = box.y + box.h / 2;
+-  ctx.translate(cx + st.dx, cy + st.dy);
++  const ox = box.x + box.w * (st.originX ?? 0.5);
++  const oy = box.y + box.h * (st.originY ?? 0.5);
++  ctx.translate(ox + st.dx, oy + st.dy);
+   if (st.rotate) ctx.rotate(st.rotate * RAD);
+   if (st.skewX || st.skewY)
+     ctx.transform(
+@@ -101,7 +101,7 @@ function applyTransform(ctx: Ctx, box: Box, st: AnimState): void {
+       0,
+     );
+   ctx.scale(st.scale * st.scaleX, st.scale * st.scaleY);
+-  ctx.translate(-cx, -cy);
++  ctx.translate(-ox, -oy);
+ }
+ 
+ /**
+diff --git a/src/engine/paint.ts b/src/engine/paint.ts
+index ac81922..59140b9 100644
+--- a/src/engine/paint.ts
++++ b/src/engine/paint.ts
+@@ -97,8 +97,9 @@ export function dashFor(style: StrokeStyle, width: number): number[] {
+ const RAD = Math.PI / 180;
+ 
+ /**
+- * Runs `draw` with the animation's transform applied around the box centre, in one fixed
+- * order as CSS `transform` would read it: translate, rotate, skew, scale; then alpha.
++ * Runs `draw` with the animation's transform applied around the transform origin (`st.originX`,
++ * `st.originY` in box fractions, default 0.5 = box centre), in one fixed order as CSS `transform`
++ * would read it: translate, rotate, skew, scale; then alpha.
+  */
+ export function withTransform(
+   ctx: Ctx,
+@@ -106,11 +107,11 @@ export function withTransform(
+   st: AnimState,
+   draw: () => void,
+ ): void {
+-  const cx = box.x + box.w / 2;
+-  const cy = box.y + box.h / 2;
++  const ox = box.x + box.w * (st.originX ?? 0.5);
++  const oy = box.y + box.h * (st.originY ?? 0.5);
+   ctx.save();
+   ctx.globalAlpha *= st.alpha;
+-  ctx.translate(cx + st.dx, cy + st.dy);
++  ctx.translate(ox + st.dx, oy + st.dy);
+   if (st.rotate) ctx.rotate(st.rotate * RAD);
+   if (st.skewX || st.skewY)
+     ctx.transform(
+@@ -122,7 +123,7 @@ export function withTransform(
+       0,
+     );
+   ctx.scale(st.scale * st.scaleX, st.scale * st.scaleY);
+-  ctx.translate(-cx, -cy);
++  ctx.translate(-ox, -oy);
+   draw();
+   ctx.restore();
+ }
+diff --git a/src/engine/subtitles/subtitles.test.ts b/src/engine/subtitles/subtitles.test.ts
+index a888eb5..a9bd617 100644
+--- a/src/engine/subtitles/subtitles.test.ts
++++ b/src/engine/subtitles/subtitles.test.ts
+@@ -199,6 +199,8 @@ describe("Subtitles domain tests", () => {
+         scaleX: 1,
+         scaleY: 1,
+         rotate: 0,
++        originX: 0.5,
++        originY: 0.5,
+         skewX: 0,
+         skewY: 0,
+         glowMul: 1,
+diff --git a/src/export/video-encoder.ts b/src/export/video-encoder.ts
+index 235ab17..f6977c5 100644
+--- a/src/export/video-encoder.ts
++++ b/src/export/video-encoder.ts
+@@ -9,6 +9,7 @@ import {
+   QUALITY_HIGH,
+   WebMOutputFormat,
+ } from "mediabunny";
++import { registerAacEncoder } from "@mediabunny/aac-encoder";
+ import type { FrameEncoder } from "./frame-encoder.ts";
+ 
+ export type VideoEncoderOptions = {
+@@ -41,17 +42,17 @@ export async function createVideoEncoder(
+ 
+   let audioSource: AudioBufferSource | null = null;
+   if (options.audioBuffer) {
+-    const preferredCodec = useMp4 ? "aac" : "opus";
+-    const canUsePreferred = await canEncodeAudio(preferredCodec, {
+-      numberOfChannels: options.audioBuffer.numberOfChannels,
+-      sampleRate: options.audioBuffer.sampleRate,
+-    });
+-    // Fallback: If preferred codec is unavailable in MP4, use uncompressed PCM (pcm-s16)
+-    const audioCodec = canUsePreferred
+-      ? preferredCodec
+-      : useMp4
+-        ? "pcm-s16"
+-        : "opus";
++    const audioCodec = useMp4 ? "aac" : "opus";
++    // Firefox has no native AAC encoder; PCM in MP4 plays silent on phones/WhatsApp, so use the WASM AAC encoder
++    if (
++      useMp4 &&
++      !(await canEncodeAudio("aac", {
++        numberOfChannels: options.audioBuffer.numberOfChannels,
++        sampleRate: options.audioBuffer.sampleRate,
++      }))
++    ) {
++      registerAacEncoder();
++    }
+ 
+     audioSource = new AudioBufferSource(
+       {
+diff --git a/src/model/element-schema.ts b/src/model/element-schema.ts
+index ef87330..6ac1a1f 100644
+--- a/src/model/element-schema.ts
++++ b/src/model/element-schema.ts
+@@ -17,6 +17,14 @@ const AnimPresetRefSchema = z.preprocess(
+ 
+ const EffectsSchema = effects().schema.optional();
+ 
++/** Transform pivot in box fractions (0 to 1, default { x: 0.5, y: 0.5 }) (053/D1). */
++export const OriginSchema = z.object({
++  x: z.number().min(0).max(1),
++  y: z.number().min(0).max(1),
++});
++
++export type Origin = z.infer<typeof OriginSchema>;
++
+ let components: readonly { kind: string; fields: Fields }[] = [];
+ let union: z.ZodType<Element> | undefined;
+ 
+@@ -37,6 +45,7 @@ function elementUnion(): z.ZodType<Element> {
+       tracks: TracksSchema.optional(),
+       animPreset: AnimPresetRefSchema.optional(),
+       effects: EffectsSchema,
++      origin: OriginSchema.optional(),
+       hidden: z.boolean().optional(),
+       locked: z.boolean().optional(),
+       ...shapeOf(d.fields),

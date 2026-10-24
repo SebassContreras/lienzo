@@ -12,6 +12,7 @@ import {
   border,
   box,
   custom,
+  elementOpacity,
   fill,
   glow,
   LOOP_KINDS,
@@ -68,6 +69,7 @@ const MORPH_EASINGS = EASING_NAMES.map((n) => [n, n] as const);
 /** Any SVG path, drawn with fill and stroke into its box; it can draw itself on and morph. */
 const fields = {
   ...box(200, 200, { section: "Forma", min: 10, max: 1600 }),
+  opacity: elementOpacity("Forma"),
   /** Two or more shapes morph through `morph`; one is just drawn (024/D1). */
   shapes: custom(
     "path-shapes",

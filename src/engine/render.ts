@@ -6,6 +6,8 @@ import { withEffects } from "./effects.ts";
 import { indexById, indexElements } from "./geometry.ts";
 import { type Ctx, linearGradient, rgba } from "./paint.ts";
 
+const OWN_OPACITY_KINDS = new Set<string>(["icon", "image", "text", "line"]);
+
 /**
  * Draws one frame of a scene. Pure function of (scene, t): the editor, PNG, GIF and MP4 export
  * all call this, so what you see while editing is exactly what gets exported.
@@ -43,6 +45,13 @@ export function drawElements(
     if (maskIds.has(el.id)) continue;
 
     const now = animate(el, t, scene);
+    const elOpacity = (now.el as unknown as { opacity?: number }).opacity ?? 1;
+    if (elOpacity <= 0) continue;
+
+    if (!OWN_OPACITY_KINDS.has(el.kind) && elOpacity < 1) {
+      now.transform.alpha *= elOpacity;
+    }
+
     const fx = (
       now.el as unknown as {
         effects?: {

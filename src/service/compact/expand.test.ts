@@ -452,4 +452,104 @@ describe("expandScene pure expansion (011/T002)", () => {
     // repeat: "none" without until collapses back to a bare keyframe array
     expect(rect.tracks?.w).toEqual([{ t: 0, value: 100, easing: "auto" }]);
   });
+
+  describe("spec 053: origin and opacity compact expansion", () => {
+    it("expands origin from [x, y] tuple and { x, y } object (053/R2)", async () => {
+      const compact: CompactScene = {
+        elements: [
+          {
+            kind: "rect",
+            origin: [0.25, 0.75],
+          },
+          {
+            kind: "ellipse",
+            origin: { x: 0.1, y: 0.9 },
+          },
+        ],
+      };
+
+      const scene = await expandScene(compact);
+      expect(scene.elements[0]?.origin).toEqual({ x: 0.25, y: 0.75 });
+      expect(scene.elements[1]?.origin).toEqual({ x: 0.1, y: 0.9 });
+    });
+
+    it("expands origin from all 9 named anchors (053/R2)", async () => {
+      const anchors: [
+        import("../../model/compact.ts").AnchorName,
+        { x: number; y: number },
+      ][] = [
+        ["top-left", { x: 0, y: 0 }],
+        ["top", { x: 0.5, y: 0 }],
+        ["top-right", { x: 1, y: 0 }],
+        ["left", { x: 0, y: 0.5 }],
+        ["center", { x: 0.5, y: 0.5 }],
+        ["right", { x: 1, y: 0.5 }],
+        ["bottom-left", { x: 0, y: 1 }],
+        ["bottom", { x: 0.5, y: 1 }],
+        ["bottom-right", { x: 1, y: 1 }],
+      ];
+
+      const compact: CompactScene = {
+        elements: anchors.map(([anchor]) => ({
+          kind: "rect",
+          origin: anchor,
+        })),
+      };
+
+      const scene = await expandScene(compact);
+      anchors.forEach(([, expected], i) => {
+        expect(scene.elements[i]?.origin).toEqual(expected);
+      });
+    });
+
+    it("expands opacity and tracks.opacity on elements and groups (053/R3)", async () => {
+      const compact: CompactScene = {
+        elements: [
+          {
+            kind: "rect",
+            opacity: 0.4,
+            tracks: {
+              opacity: [
+                [0, 0],
+                [1, 1],
+              ],
+            },
+          },
+          {
+            kind: "group",
+            opacity: 0.8,
+            children: [
+              {
+                kind: "text",
+                text: "Hello",
+                opacity: 0.5,
+              },
+            ],
+          },
+        ],
+      };
+
+      const scene = await expandScene(compact);
+      const rect = scene.elements[0] as Extract<
+        import("../../model/model.ts").Element,
+        { kind: "rect" }
+      >;
+      expect(rect.opacity).toBe(0.4);
+      expect(rect.tracks?.opacity).toEqual([
+        { t: 0, value: 0, easing: "auto" },
+        { t: 1, value: 1, easing: "auto" },
+      ]);
+
+      const group = scene.elements[1] as Extract<
+        import("../../model/model.ts").Element,
+        { kind: "group" }
+      >;
+      expect(group.opacity).toBe(0.8);
+      const textChild = group.children[0] as Extract<
+        import("../../model/model.ts").Element,
+        { kind: "text" }
+      >;
+      expect(textChild.opacity).toBe(0.5);
+    });
+  });
 });

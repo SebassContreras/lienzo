@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import { num } from "./field.ts";
 
 /** Where an element sits; moved by dragging it on the stage. */
@@ -26,5 +27,23 @@ export function box(w: number, h: number, o?: BoxOpts) {
     ...position(),
     w: num(w, { label: "Ancho", ...size }),
     h: num(h, { label: "Alto", ...size }),
+  };
+}
+
+/**
+ * Common animatable opacity field (0 to 1, default `value`) with `.default(value)` on its schema
+ * so historical scenes and presets lacking top-level opacity parse cleanly.
+ */
+export function elementOpacity(section: string, value = 1) {
+  const f = num(value, {
+    label: "Opacidad",
+    section,
+    max: 1,
+    step: 0.01,
+    bounds: [0, 1],
+  });
+  return {
+    ...f,
+    schema: f.schema.default(value) as z.ZodType<number>,
   };
 }

@@ -1,0 +1,73 @@
+diff --git a/src/components/group/draw.ts b/src/components/group/draw.ts
+index 14b68f3..86f05d4 100644
+--- a/src/components/group/draw.ts
++++ b/src/components/group/draw.ts
+@@ -27,7 +27,10 @@ export function drawGroup(
+     (el.anim.in.kind !== "none" || el.anim.out.kind !== "none");
+   const own = staggered
+     ? animState(withSlots(el.anim, { in: NONE, out: NONE }), t, scene.duration)
+-    : st;
++    : { ...st };
++  if (staggered && typeof el.opacity === "number") {
++    own.alpha *= el.opacity;
++  }
+   const body = bodyBox(el);
+   withTransform(ctx, boxOf(el), own, () => {
+     if (el.frame !== "none") {
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index cf45dd4..66bf5c7 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -6,6 +6,8 @@ import { withEffects } from "./effects.ts";
+ import { indexById, indexElements } from "./geometry.ts";
+ import { type Ctx, linearGradient, rgba } from "./paint.ts";
+ 
++const OWN_OPACITY_KINDS = new Set<string>(["icon", "image", "text", "line"]);
++
+ /**
+  * Draws one frame of a scene. Pure function of (scene, t): the editor, PNG, GIF and MP4 export
+  * all call this, so what you see while editing is exactly what gets exported.
+@@ -43,6 +45,13 @@ export function drawElements(
+     if (maskIds.has(el.id)) continue;
+ 
+     const now = animate(el, t, scene);
++    const elOpacity = (now.el as unknown as { opacity?: number }).opacity ?? 1;
++    if (elOpacity <= 0) continue;
++
++    if (!OWN_OPACITY_KINDS.has(el.kind) && elOpacity < 1) {
++      now.transform.alpha *= elOpacity;
++    }
++
+     const fx = (
+       now.el as unknown as {
+         effects?: {
+diff --git a/src/service/layout.ts b/src/service/layout.ts
+index 0897e41..6461c47 100644
+--- a/src/service/layout.ts
++++ b/src/service/layout.ts
+@@ -72,7 +72,12 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
+     for (const raw of elements) {
+       const now = animate(raw, t, scene);
+       const placed = parentGroup ? placeChild(now.el, parentGroup) : now.el;
+-      const effectiveAlpha = parentAlpha * (now.transform.alpha ?? 1);
++      const elOpacity =
++        typeof (now.el as unknown as { opacity?: unknown }).opacity === "number"
++          ? (now.el as unknown as { opacity: number }).opacity
++          : 1;
++      const effectiveAlpha =
++        parentAlpha * (now.transform.alpha ?? 1) * elOpacity;
+ 
+       let effectiveBox: Box;
+       if (placed.kind === "line") {
+@@ -190,9 +195,8 @@ function checkTextContrast(
+ ): LayoutDiagnostic | undefined {
+   const textEl = item.el as TextEl;
+ 
+-  // Effective text opacity
+-  const elOpacity = typeof textEl.opacity === "number" ? textEl.opacity : 1;
+-  const effectiveAlpha = item.alpha * elOpacity;
++  // Effective text opacity (item.alpha already factors in element opacity, transform alpha, and ancestor groups)
++  const effectiveAlpha = item.alpha;
+ 
+   // If text is fully invisible (e.g. during fade-in delay or exit), contrast is not checked
+   if (effectiveAlpha <= 0.01) return undefined;

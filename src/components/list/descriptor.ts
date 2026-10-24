@@ -4,6 +4,7 @@ import {
   BOX_ANIMS,
   box,
   color,
+  elementOpacity,
   font,
   num,
   select,
@@ -57,6 +58,7 @@ const fields = {
   size: num(30, { label: "Tamaño", min: 6, max: 200, ...T }),
   weight: { ...weight(500), ...T },
   color: color("#e2e8f0", { label: "Color", ...T }),
+  opacity: elementOpacity("Texto"),
   anim: anim(BOX_ANIMS),
 };
 

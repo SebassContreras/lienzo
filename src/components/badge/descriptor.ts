@@ -7,6 +7,7 @@ import {
   check,
   color,
   custom,
+  elementOpacity,
   fill,
   font,
   glow,
@@ -23,6 +24,7 @@ const B = { section: "Insignia" };
 /** A pill holding an icon and a text; its box is as big as what it holds. */
 const fields = {
   ...position(),
+  opacity: elementOpacity("Insignia"),
   text: text("Nuevo", { label: "Texto", ...B }),
   showIcon: check(true, { label: "Con icono", ...B }),
   icon: custom("icon", "Sparkles", z.string(), {

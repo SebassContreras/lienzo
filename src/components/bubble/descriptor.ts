@@ -5,6 +5,7 @@ import {
   box,
   check,
   color,
+  elementOpacity,
   font,
   num,
   type Parent,
@@ -28,6 +29,7 @@ const typing = (p: Parent) => p.typing === true;
  */
 const fields = {
   ...box(560, 150, { section: "Mensaje", min: 60, max: 1600 }),
+  opacity: elementOpacity("Estilo"),
   text: text("¿Cómo conecto mi app a un servidor MCP?", {
     label: "Texto",
     multiline: true,

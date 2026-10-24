@@ -5,6 +5,7 @@ import {
   BOX_ANIMS,
   box,
   color,
+  elementOpacity,
   font,
   glow,
   noGlow,
@@ -34,6 +35,7 @@ const SEPARATORS = [
  */
 const fields = {
   ...box(420, 140, { section: "Número", min: 10, max: 1600 }),
+  opacity: elementOpacity("Número"),
   from: num(0, { label: "Desde", min: -1e6, max: 1e6, ...N }),
   to: num(1250, { label: "Hasta", min: -1e6, max: 1e6, ...N }),
   progress: num(1, {

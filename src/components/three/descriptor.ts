@@ -8,6 +8,7 @@ import {
   camera,
   custom,
   directionalLight,
+  elementOpacity,
   material,
   num,
   obj,
@@ -31,6 +32,7 @@ const shapeIs = (s: string) => (p: Parent) => p.shape === s;
  */
 const fields = {
   ...box(400, 400, { section: "Forma", min: 20, max: 2000 }),
+  opacity: elementOpacity("Forma"),
   shape: select(SHAPES, "cube", { label: "Forma", ...O }),
   text: text("3D", { label: "Texto", ...O, visible: shapeIs("text") }),
   /** Extrusion depth of the text, relative to its height. */

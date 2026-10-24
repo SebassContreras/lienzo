@@ -22,7 +22,11 @@ import {
   resolvePreset,
 } from "../../presets/resolve.ts";
 import { resolveLineConnections } from "./connections.ts";
-import { resolveAtPlacement, resolveFitCanvas } from "./layout.ts";
+import {
+  resolveAtPlacement,
+  resolveFitCanvas,
+  resolveOrigin,
+} from "./layout.ts";
 import { normalizeTracks } from "./tracks.ts";
 
 type PresetResolver = (
@@ -166,6 +170,7 @@ async function buildElement(
     kind: _kind,
     at,
     fit,
+    origin,
     from,
     to,
     tracks,
@@ -210,6 +215,12 @@ async function buildElement(
   if (tracks) {
     element.tracks = normalizeTracks(
       tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
+    );
+  }
+
+  if (origin !== undefined) {
+    element.origin = resolveOrigin(
+      origin as import("../../model/compact.ts").CompactOrigin,
     );
   }
 

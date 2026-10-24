@@ -87,9 +87,9 @@ function outlineOf(el: Element): Path2D {
  * Applies an element's animation transform to the context matrix without saving/restoring.
  */
 function applyTransform(ctx: Ctx, box: Box, st: AnimState): void {
-  const cx = box.x + box.w / 2;
-  const cy = box.y + box.h / 2;
-  ctx.translate(cx + st.dx, cy + st.dy);
+  const ox = box.x + box.w * (st.originX ?? 0.5);
+  const oy = box.y + box.h * (st.originY ?? 0.5);
+  ctx.translate(ox + st.dx, oy + st.dy);
   if (st.rotate) ctx.rotate(st.rotate * RAD);
   if (st.skewX || st.skewY)
     ctx.transform(
@@ -101,7 +101,7 @@ function applyTransform(ctx: Ctx, box: Box, st: AnimState): void {
       0,
     );
   ctx.scale(st.scale * st.scaleX, st.scale * st.scaleY);
-  ctx.translate(-cx, -cy);
+  ctx.translate(-ox, -oy);
 }
 
 /**

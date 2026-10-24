@@ -42,6 +42,8 @@ export type ElementOf<K extends string, F extends Fields> = {
   animPreset?: AnimPresetRef;
   /** Effects: blur, blend and mask (025). */
   effects?: import("./fields/effects.ts").EffectsDefaults;
+  /** Transform pivot in box fractions (0–1, default { x: 0.5, y: 0.5 }) (053/D1). */
+  origin?: { x: number; y: number };
   /** Hidden from canvas and rendering (034). */
   hidden?: boolean;
   /** Locked against selection and canvas drag edits (034). */

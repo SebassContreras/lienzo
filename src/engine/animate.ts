@@ -19,11 +19,21 @@ export function animate<E extends Element>(
   t: number,
   scene: Scene,
 ): Animated<E> {
-  if (!el.tracks)
-    return { el, transform: animState(el.anim, t, scene.duration) };
+  if (!el.tracks) {
+    const transform = animState(el.anim, t, scene.duration);
+    if (el.origin) {
+      transform.originX = el.origin.x;
+      transform.originY = el.origin.y;
+    }
+    return { el, transform };
+  }
   const { el: now, channels } = applyTracks(el, t);
   const transform = animState(now.anim, t, scene.duration);
   transform.rotate += channels["@rotate"];
   transform.scale *= channels["@scale"];
+  if (now.origin) {
+    transform.originX = now.origin.x;
+    transform.originY = now.origin.y;
+  }
   return { el: now, transform };
 }

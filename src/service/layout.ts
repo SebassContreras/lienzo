@@ -72,7 +72,12 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
     for (const raw of elements) {
       const now = animate(raw, t, scene);
       const placed = parentGroup ? placeChild(now.el, parentGroup) : now.el;
-      const effectiveAlpha = parentAlpha * (now.transform.alpha ?? 1);
+      const elOpacity =
+        typeof (now.el as unknown as { opacity?: unknown }).opacity === "number"
+          ? (now.el as unknown as { opacity: number }).opacity
+          : 1;
+      const effectiveAlpha =
+        parentAlpha * (now.transform.alpha ?? 1) * elOpacity;
 
       let effectiveBox: Box;
       if (placed.kind === "line") {
@@ -190,9 +195,8 @@ function checkTextContrast(
 ): LayoutDiagnostic | undefined {
   const textEl = item.el as TextEl;
 
-  // Effective text opacity
-  const elOpacity = typeof textEl.opacity === "number" ? textEl.opacity : 1;
-  const effectiveAlpha = item.alpha * elOpacity;
+  // Effective text opacity (item.alpha already factors in element opacity, transform alpha, and ancestor groups)
+  const effectiveAlpha = item.alpha;
 
   // If text is fully invisible (e.g. during fade-in delay or exit), contrast is not checked
   if (effectiveAlpha <= 0.01) return undefined;

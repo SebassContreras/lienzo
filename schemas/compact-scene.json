@@ -149,7 +149,9 @@
                         "maxItems": 2
                       }
                     },
-                    "required": ["anchor"],
+                    "required": [
+                      "anchor"
+                    ],
                     "additionalProperties": false
                   }
                 ]
@@ -157,6 +159,62 @@
               "fit": {
                 "type": "string",
                 "const": "canvas"
+              },
+              "origin": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "top-left",
+                      "top",
+                      "top-right",
+                      "left",
+                      "center",
+                      "right",
+                      "bottom-left",
+                      "bottom",
+                      "bottom-right"
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "prefixItems": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    ],
+                    "items": false,
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    },
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
               },
               "from": {
                 "type": "string"
@@ -170,92 +228,231 @@
                   "type": "string"
                 },
                 "additionalProperties": {
-                  "type": "array",
-                  "items": {
-                    "anyOf": [
-                      {
-                        "type": "array",
-                        "prefixItems": [
+                  "anyOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
                           {
-                            "type": "number",
-                            "minimum": 0
+                            "type": "array",
+                            "prefixItems": [
+                              {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              {
+                                "type": [
+                                  "number",
+                                  "string"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "auto",
+                                  "linear",
+                                  "step",
+                                  "hold",
+                                  "ease",
+                                  "ease-in",
+                                  "ease-out",
+                                  "ease-in-out",
+                                  "quad-in",
+                                  "quad-out",
+                                  "quad-in-out",
+                                  "cubic-in",
+                                  "cubic-out",
+                                  "cubic-in-out",
+                                  "back-in",
+                                  "back-out",
+                                  "back-in-out",
+                                  "bounce-in",
+                                  "bounce-out",
+                                  "bounce-in-out",
+                                  "elastic-in",
+                                  "elastic-out",
+                                  "elastic-in-out"
+                                ]
+                              }
+                            ],
+                            "items": false,
+                            "minItems": 2,
+                            "maxItems": 3
                           },
                           {
-                            "type": ["number", "string"]
-                          },
-                          {
-                            "type": "string",
-                            "enum": [
-                              "auto",
-                              "linear",
-                              "ease",
-                              "ease-in",
-                              "ease-out",
-                              "ease-in-out",
-                              "quad-in",
-                              "quad-out",
-                              "quad-in-out",
-                              "cubic-in",
-                              "cubic-out",
-                              "cubic-in-out",
-                              "back-in",
-                              "back-out",
-                              "back-in-out",
-                              "bounce-in",
-                              "bounce-out",
-                              "bounce-in-out",
-                              "elastic-in",
-                              "elastic-out",
-                              "elastic-in-out"
-                            ]
+                            "type": "object",
+                            "properties": {
+                              "t": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "value": {
+                                "type": [
+                                  "number",
+                                  "string"
+                                ]
+                              },
+                              "easing": {
+                                "type": "string",
+                                "enum": [
+                                  "auto",
+                                  "linear",
+                                  "step",
+                                  "hold",
+                                  "ease",
+                                  "ease-in",
+                                  "ease-out",
+                                  "ease-in-out",
+                                  "quad-in",
+                                  "quad-out",
+                                  "quad-in-out",
+                                  "cubic-in",
+                                  "cubic-out",
+                                  "cubic-in-out",
+                                  "back-in",
+                                  "back-out",
+                                  "back-in-out",
+                                  "bounce-in",
+                                  "bounce-out",
+                                  "bounce-in-out",
+                                  "elastic-in",
+                                  "elastic-out",
+                                  "elastic-in-out"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "t",
+                              "value"
+                            ],
+                            "additionalProperties": false
                           }
-                        ],
-                        "items": false,
-                        "minItems": 2,
-                        "maxItems": 3
-                      },
-                      {
-                        "type": "object",
-                        "properties": {
-                          "t": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "value": {
-                            "type": ["number", "string"]
-                          },
-                          "easing": {
-                            "type": "string",
-                            "enum": [
-                              "auto",
-                              "linear",
-                              "ease",
-                              "ease-in",
-                              "ease-out",
-                              "ease-in-out",
-                              "quad-in",
-                              "quad-out",
-                              "quad-in-out",
-                              "cubic-in",
-                              "cubic-out",
-                              "cubic-in-out",
-                              "back-in",
-                              "back-out",
-                              "back-in-out",
-                              "bounce-in",
-                              "bounce-out",
-                              "bounce-in-out",
-                              "elastic-in",
-                              "elastic-out",
-                              "elastic-in-out"
+                        ]
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "keys": {
+                          "type": "array",
+                          "items": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "prefixItems": [
+                                  {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  {
+                                    "type": [
+                                      "number",
+                                      "string"
+                                    ]
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "auto",
+                                      "linear",
+                                      "step",
+                                      "hold",
+                                      "ease",
+                                      "ease-in",
+                                      "ease-out",
+                                      "ease-in-out",
+                                      "quad-in",
+                                      "quad-out",
+                                      "quad-in-out",
+                                      "cubic-in",
+                                      "cubic-out",
+                                      "cubic-in-out",
+                                      "back-in",
+                                      "back-out",
+                                      "back-in-out",
+                                      "bounce-in",
+                                      "bounce-out",
+                                      "bounce-in-out",
+                                      "elastic-in",
+                                      "elastic-out",
+                                      "elastic-in-out"
+                                    ]
+                                  }
+                                ],
+                                "items": false,
+                                "minItems": 2,
+                                "maxItems": 3
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "t": {
+                                    "type": "number",
+                                    "minimum": 0
+                                  },
+                                  "value": {
+                                    "type": [
+                                      "number",
+                                      "string"
+                                    ]
+                                  },
+                                  "easing": {
+                                    "type": "string",
+                                    "enum": [
+                                      "auto",
+                                      "linear",
+                                      "step",
+                                      "hold",
+                                      "ease",
+                                      "ease-in",
+                                      "ease-out",
+                                      "ease-in-out",
+                                      "quad-in",
+                                      "quad-out",
+                                      "quad-in-out",
+                                      "cubic-in",
+                                      "cubic-out",
+                                      "cubic-in-out",
+                                      "back-in",
+                                      "back-out",
+                                      "back-in-out",
+                                      "bounce-in",
+                                      "bounce-out",
+                                      "bounce-in-out",
+                                      "elastic-in",
+                                      "elastic-out",
+                                      "elastic-in-out"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "t",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              }
                             ]
                           }
                         },
-                        "required": ["t", "value"],
-                        "additionalProperties": false
-                      }
-                    ]
-                  }
+                        "repeat": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "loop",
+                            "pingpong"
+                          ]
+                        },
+                        "until": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "keys"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
                 }
               },
               "animPreset": {
@@ -276,19 +473,25 @@
                         "minimum": 0
                       }
                     },
-                    "required": ["name"],
+                    "required": [
+                      "name"
+                    ],
                     "additionalProperties": false
                   }
                 ]
               }
             },
-            "required": ["preset"],
+            "required": [
+              "preset"
+            ],
             "additionalProperties": {}
           }
         ]
       }
     }
   },
-  "required": ["elements"],
+  "required": [
+    "elements"
+  ],
   "additionalProperties": false
 }

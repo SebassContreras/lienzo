@@ -17,6 +17,14 @@ const AnimPresetRefSchema = z.preprocess(
 
 const EffectsSchema = effects().schema.optional();
 
+/** Transform pivot in box fractions (0 to 1, default { x: 0.5, y: 0.5 }) (053/D1). */
+export const OriginSchema = z.object({
+  x: z.number().min(0).max(1),
+  y: z.number().min(0).max(1),
+});
+
+export type Origin = z.infer<typeof OriginSchema>;
+
 let components: readonly { kind: string; fields: Fields }[] = [];
 let union: z.ZodType<Element> | undefined;
 
@@ -37,6 +45,7 @@ function elementUnion(): z.ZodType<Element> {
       tracks: TracksSchema.optional(),
       animPreset: AnimPresetRefSchema.optional(),
       effects: EffectsSchema,
+      origin: OriginSchema.optional(),
       hidden: z.boolean().optional(),
       locked: z.boolean().optional(),
       ...shapeOf(d.fields),

@@ -1,0 +1,217 @@
+import { describe, expect, it } from "vitest";
+import type { GroupEl } from "../components/group/descriptor.ts";
+import { createElement, descriptorOf, KINDS } from "../components/index.ts";
+import type { RectEl } from "../components/rect/descriptor.ts";
+import { inspectorLayout, resolve } from "../editor/layout.ts";
+import { defaultElement, defaultScene, type Scene } from "../model/model.ts";
+import { installCanvasFakes, RecordingCtx } from "../test/recording-ctx.ts";
+import { animate } from "./animate.ts";
+import { drawScene } from "./render.ts";
+
+installCanvasFakes();
+
+describe("origin and opacity (053/D1, D3, D4)", () => {
+  describe("R1@1: transform origin pivot math", () => {
+    it("pivots around box centre by default (0.5, 0.5)", () => {
+      // Arrange
+      const el = defaultElement("rect") as RectEl;
+      el.x = 100;
+      el.y = 100;
+      el.w = 200;
+      el.h = 100;
+      const scene: Scene = { ...defaultScene(), duration: 5, elements: [el] };
+
+      // Act
+      const animated = animate(el, 0, scene);
+
+      // Assert
+      expect(animated.transform.originX).toBe(0.5);
+      expect(animated.transform.originY).toBe(0.5);
+    });
+
+    it("applies custom origin fractions to animated transform state", () => {
+      // Arrange
+      const el = defaultElement("rect") as RectEl;
+      el.x = 100;
+      el.y = 100;
+      el.w = 200;
+      el.h = 100;
+      el.origin = { x: 0.5, y: 1 }; // bottom-centre pivot
+      const scene: Scene = { ...defaultScene(), duration: 5, elements: [el] };
+
+      // Act
+      const animated = animate(el, 0, scene);
+
+      // Assert
+      expect(animated.transform.originX).toBe(0.5);
+      expect(animated.transform.originY).toBe(1);
+    });
+
+    it("transforms context using origin as pivot point in recording ctx", () => {
+      // Arrange
+      const el = defaultElement("rect") as RectEl;
+      el.x = 100;
+      el.y = 100;
+      el.w = 200;
+      el.h = 100;
+      el.origin = { x: 0.5, y: 1 }; // bottom-centre: ox = 100 + 200 * 0.5 = 200, oy = 100 + 100 * 1 = 200
+      el.tracks = {
+        "@rotate": {
+          keys: [{ t: 0, value: 45, easing: "linear" }],
+        },
+      };
+      const scene: Scene = { ...defaultScene(), duration: 5, elements: [el] };
+      const ctx = new RecordingCtx();
+
+      // Act
+      drawScene(ctx as never, scene, 0);
+
+      // Assert: withTransform should translate to (ox, oy), rotate, and translate back to (-ox, -oy)
+      const translateCalls = ctx.log.filter((c) => c.startsWith("translate("));
+      expect(translateCalls).toContain("translate(200,200)");
+      expect(translateCalls).toContain("translate(-200,-200)");
+    });
+  });
+
+  describe("R3@1: unified opacity field across all kinds", () => {
+    it.each(KINDS)(
+      "ensures kind «%s» defines opacity with default and section",
+      (kind) => {
+        // Arrange
+        const desc = descriptorOf(kind);
+        expect(desc).toBeDefined();
+
+        // Act
+        const el = defaultElement(kind);
+        const fields = desc.fields as Record<
+          string,
+          { default?: unknown; section?: string; schema?: unknown }
+        >;
+        const opacityField = fields.opacity;
+
+        // Assert
+        expect(opacityField).toBeDefined();
+        expect(typeof (el as unknown as { opacity?: unknown }).opacity).toBe(
+          "number",
+        );
+        if (kind === "line") {
+          expect((el as unknown as { opacity: number }).opacity).toBe(0.6);
+        } else {
+          expect((el as unknown as { opacity: number }).opacity).toBe(1);
+        }
+      },
+    );
+
+    it.each(KINDS)("shows opacity in inspector for kind «%s»", (kind) => {
+      // Arrange
+      const desc = descriptorOf(kind);
+      const el = createElement(kind);
+
+      // Act
+      const sections = inspectorLayout(desc, el, true);
+      const allLabels = sections.flatMap((s) =>
+        s.items
+          .filter((it) => it.field.type !== "widget")
+          .map((it) =>
+            resolve(
+              (it.field as { label: string | ((p: unknown) => string) }).label,
+              it.parent,
+            ),
+          ),
+      );
+
+      // Assert
+      expect(allLabels).toContain("Opacidad");
+    });
+  });
+
+  describe("R4@1: effective opacity and zero-opacity short-circuit", () => {
+    it("draws nothing when element opacity is 0", () => {
+      // Arrange
+      const el = defaultElement("rect") as RectEl;
+      (el as unknown as { opacity: number }).opacity = 0;
+      const scene: Scene = { ...defaultScene(), duration: 5, elements: [el] };
+      const ctxWithZero = new RecordingCtx();
+      const emptyScene: Scene = {
+        ...defaultScene(),
+        duration: 5,
+        elements: [],
+      };
+      const ctxEmpty = new RecordingCtx();
+
+      // Act
+      drawScene(ctxWithZero as never, scene, 0);
+      drawScene(ctxEmpty as never, emptyScene, 0);
+
+      // Assert: zero-opacity rect emits no drawing calls beyond the background
+      expect(ctxWithZero.log).toEqual(ctxEmpty.log);
+    });
+
+    it("draws nothing when group opacity is 0, skipping frame and children", () => {
+      // Arrange
+      const groupEl = defaultElement("group") as GroupEl;
+      (groupEl as unknown as { opacity: number }).opacity = 0;
+      groupEl.children = [defaultElement("rect"), defaultElement("text")];
+      const scene: Scene = {
+        ...defaultScene(),
+        duration: 5,
+        elements: [groupEl],
+      };
+      const ctxWithZeroGroup = new RecordingCtx();
+      const emptyScene: Scene = {
+        ...defaultScene(),
+        duration: 5,
+        elements: [],
+      };
+      const ctxEmpty = new RecordingCtx();
+
+      // Act
+      drawScene(ctxWithZeroGroup as never, scene, 0);
+      drawScene(ctxEmpty as never, emptyScene, 0);
+
+      // Assert
+      expect(ctxWithZeroGroup.log).toEqual(ctxEmpty.log);
+    });
+
+    it("multiplies opacity across parent group and children", () => {
+      // Arrange
+      const groupEl = defaultElement("group") as GroupEl;
+      (groupEl as unknown as { opacity: number }).opacity = 0.5;
+      const childRect = defaultElement("rect");
+      (childRect as unknown as { opacity: number }).opacity = 0.5;
+      groupEl.children = [childRect];
+      const scene: Scene = {
+        ...defaultScene(),
+        duration: 5,
+        elements: [groupEl],
+      };
+      const ctx = new RecordingCtx();
+
+      // Act
+      drawScene(ctx as never, scene, 0);
+
+      // Assert: withTransform multiplies globalAlpha
+      const alphaSets = ctx.log.filter((c) => c.startsWith("globalAlpha="));
+      // First is group alpha (0.5), next inside child withTransform is 0.5 * 0.5 = 0.25
+      expect(alphaSets).toContain("globalAlpha=(0.5)");
+      expect(alphaSets).toContain("globalAlpha=(0.25)");
+    });
+  });
+
+  describe("R5@1: pre-053 backward compatibility", () => {
+    it("renders default scene without origin or opacity with identical transform", () => {
+      // Arrange
+      const el = defaultElement("rect") as RectEl;
+      delete (el as unknown as { origin?: unknown }).origin;
+      const scene: Scene = { ...defaultScene(), duration: 5, elements: [el] };
+
+      // Act
+      const animated = animate(el, 0, scene);
+
+      // Assert
+      expect(animated.transform.originX).toBe(0.5);
+      expect(animated.transform.originY).toBe(0.5);
+      expect(animated.transform.alpha).toBe(1);
+    });
+  });
+});

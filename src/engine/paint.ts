@@ -97,8 +97,9 @@ export function dashFor(style: StrokeStyle, width: number): number[] {
 const RAD = Math.PI / 180;
 
 /**
- * Runs `draw` with the animation's transform applied around the box centre, in one fixed
- * order as CSS `transform` would read it: translate, rotate, skew, scale; then alpha.
+ * Runs `draw` with the animation's transform applied around the transform origin (`st.originX`,
+ * `st.originY` in box fractions, default 0.5 = box centre), in one fixed order as CSS `transform`
+ * would read it: translate, rotate, skew, scale; then alpha.
  */
 export function withTransform(
   ctx: Ctx,
@@ -106,11 +107,11 @@ export function withTransform(
   st: AnimState,
   draw: () => void,
 ): void {
-  const cx = box.x + box.w / 2;
-  const cy = box.y + box.h / 2;
+  const ox = box.x + box.w * (st.originX ?? 0.5);
+  const oy = box.y + box.h * (st.originY ?? 0.5);
   ctx.save();
   ctx.globalAlpha *= st.alpha;
-  ctx.translate(cx + st.dx, cy + st.dy);
+  ctx.translate(ox + st.dx, oy + st.dy);
   if (st.rotate) ctx.rotate(st.rotate * RAD);
   if (st.skewX || st.skewY)
     ctx.transform(
@@ -122,7 +123,7 @@ export function withTransform(
       0,
     );
   ctx.scale(st.scale * st.scaleX, st.scale * st.scaleY);
-  ctx.translate(-cx, -cy);
+  ctx.translate(-ox, -oy);
   draw();
   ctx.restore();
 }

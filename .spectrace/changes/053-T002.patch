@@ -1,0 +1,120 @@
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index cf6bd28..e9fddc8 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -10,6 +10,7 @@ import {
+   type Fields,
+ } from "../components/fields/index.ts";
+ import { EASING_NAMES, type Easing } from "../engine/easing.ts";
++import { OriginSchema } from "./element-schema.ts";
+ import { TrackRepeatSchema } from "./track.ts";
+ 
+ const ShortKeyframeTupleSchema = z.tuple([
+@@ -60,6 +61,14 @@ const AnchorNameSchema = z.enum([
+ 
+ export type AnchorName = z.infer<typeof AnchorNameSchema>;
+ 
++export const CompactOriginSchema = z.union([
++  AnchorNameSchema,
++  z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]),
++  OriginSchema,
++]);
++
++export type CompactOrigin = z.infer<typeof CompactOriginSchema>;
++
+ const AtPlacementSchema = z.union([
+   AnchorNameSchema,
+   z.object({
+@@ -130,6 +139,7 @@ const baseSpecialFields = {
+   preset: z.string().optional(),
+   at: AtPlacementSchema.optional(),
+   fit: FitPlacementSchema.optional(),
++  origin: CompactOriginSchema.optional(),
+   from: z.string().optional(),
+   to: z.string().optional(),
+   tracks: CompactTracksSchema.optional(),
+diff --git a/src/service/compact/expand.ts b/src/service/compact/expand.ts
+index b67b032..ac07181 100644
+--- a/src/service/compact/expand.ts
++++ b/src/service/compact/expand.ts
+@@ -22,7 +22,11 @@ import {
+   resolvePreset,
+ } from "../../presets/resolve.ts";
+ import { resolveLineConnections } from "./connections.ts";
+-import { resolveAtPlacement, resolveFitCanvas } from "./layout.ts";
++import {
++  resolveAtPlacement,
++  resolveFitCanvas,
++  resolveOrigin,
++} from "./layout.ts";
+ import { normalizeTracks } from "./tracks.ts";
+ 
+ type PresetResolver = (
+@@ -166,6 +170,7 @@ async function buildElement(
+     kind: _kind,
+     at,
+     fit,
++    origin,
+     from,
+     to,
+     tracks,
+@@ -213,6 +218,12 @@ async function buildElement(
+     );
+   }
+ 
++  if (origin !== undefined) {
++    element.origin = resolveOrigin(
++      origin as import("../../model/compact.ts").CompactOrigin,
++    );
++  }
++
+   // Preserve placement hints for the post-layout pass
+   if (at) (element as unknown as Record<string, unknown>).__at = at;
+   if (fit) (element as unknown as Record<string, unknown>).__fit = fit;
+diff --git a/src/service/compact/layout.ts b/src/service/compact/layout.ts
+index 40142ed..a52641a 100644
+--- a/src/service/compact/layout.ts
++++ b/src/service/compact/layout.ts
+@@ -3,7 +3,11 @@
+  * Resolves `at` placement and `fit: canvas` using element boxes and scene dimensions.
+  */
+ import { boxOf } from "../../engine/geometry.ts";
+-import type { AnchorName, AtPlacement } from "../../model/compact.ts";
++import type {
++  AnchorName,
++  AtPlacement,
++  CompactOrigin,
++} from "../../model/compact.ts";
+ import type { Element, Scene } from "../../model/model.ts";
+ 
+ export function resolveFitCanvas(
+@@ -82,3 +86,29 @@ export function resolveAtPlacement(
+   mutable.x = pos.x + offset[0];
+   mutable.y = pos.y + offset[1];
+ }
++
++const NAMED_ORIGINS: Record<AnchorName, { x: number; y: number }> = {
++  "top-left": { x: 0, y: 0 },
++  top: { x: 0.5, y: 0 },
++  "top-right": { x: 1, y: 0 },
++  left: { x: 0, y: 0.5 },
++  center: { x: 0.5, y: 0.5 },
++  right: { x: 1, y: 0.5 },
++  "bottom-left": { x: 0, y: 1 },
++  bottom: { x: 0.5, y: 1 },
++  "bottom-right": { x: 1, y: 1 },
++};
++
++/**
++ * Resolves compact origin representation ({ x, y }, [x, y], or named anchor)
++ * into a canonical { x: number, y: number } in [0, 1] fractions.
++ */
++export function resolveOrigin(origin: CompactOrigin): { x: number; y: number } {
++  if (typeof origin === "string") {
++    return NAMED_ORIGINS[origin] ?? { x: 0.5, y: 0.5 };
++  }
++  if (Array.isArray(origin)) {
++    return { x: origin[0], y: origin[1] };
++  }
++  return { x: origin.x, y: origin.y };
++}

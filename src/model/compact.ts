@@ -10,6 +10,7 @@ import {
   type Fields,
 } from "../components/fields/index.ts";
 import { EASING_NAMES, type Easing } from "../engine/easing.ts";
+import { OriginSchema } from "./element-schema.ts";
 import { TrackRepeatSchema } from "./track.ts";
 
 const ShortKeyframeTupleSchema = z.tuple([
@@ -59,6 +60,14 @@ const AnchorNameSchema = z.enum([
 ]);
 
 export type AnchorName = z.infer<typeof AnchorNameSchema>;
+
+export const CompactOriginSchema = z.union([
+  AnchorNameSchema,
+  z.tuple([z.number().min(0).max(1), z.number().min(0).max(1)]),
+  OriginSchema,
+]);
+
+export type CompactOrigin = z.infer<typeof CompactOriginSchema>;
 
 const AtPlacementSchema = z.union([
   AnchorNameSchema,
@@ -130,6 +139,7 @@ const baseSpecialFields = {
   preset: z.string().optional(),
   at: AtPlacementSchema.optional(),
   fit: FitPlacementSchema.optional(),
+  origin: CompactOriginSchema.optional(),
   from: z.string().optional(),
   to: z.string().optional(),
   tracks: CompactTracksSchema.optional(),

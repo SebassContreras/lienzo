@@ -3,7 +3,11 @@
  * Resolves `at` placement and `fit: canvas` using element boxes and scene dimensions.
  */
 import { boxOf } from "../../engine/geometry.ts";
-import type { AnchorName, AtPlacement } from "../../model/compact.ts";
+import type {
+  AnchorName,
+  AtPlacement,
+  CompactOrigin,
+} from "../../model/compact.ts";
 import type { Element, Scene } from "../../model/model.ts";
 
 export function resolveFitCanvas(
@@ -81,4 +85,30 @@ export function resolveAtPlacement(
   const mutable = el as unknown as Record<string, unknown>;
   mutable.x = pos.x + offset[0];
   mutable.y = pos.y + offset[1];
+}
+
+const NAMED_ORIGINS: Record<AnchorName, { x: number; y: number }> = {
+  "top-left": { x: 0, y: 0 },
+  top: { x: 0.5, y: 0 },
+  "top-right": { x: 1, y: 0 },
+  left: { x: 0, y: 0.5 },
+  center: { x: 0.5, y: 0.5 },
+  right: { x: 1, y: 0.5 },
+  "bottom-left": { x: 0, y: 1 },
+  bottom: { x: 0.5, y: 1 },
+  "bottom-right": { x: 1, y: 1 },
+};
+
+/**
+ * Resolves compact origin representation ({ x, y }, [x, y], or named anchor)
+ * into a canonical { x: number, y: number } in [0, 1] fractions.
+ */
+export function resolveOrigin(origin: CompactOrigin): { x: number; y: number } {
+  if (typeof origin === "string") {
+    return NAMED_ORIGINS[origin] ?? { x: 0.5, y: 0.5 };
+  }
+  if (Array.isArray(origin)) {
+    return { x: origin[0], y: origin[1] };
+  }
+  return { x: origin.x, y: origin.y };
 }

@@ -10,10 +10,13 @@ export type AnimState = {
   /** Per-axis scale, on top of `scale`. */
   scaleX: number;
   scaleY: number;
-  /** Degrees, around the box centre. */
+  /** Degrees, around the pivot (`originX`, `originY`). */
   rotate: number;
   skewX: number;
   skewY: number;
+  /** Transform pivot in box fractions (0–1, default 0.5) (053/D1). */
+  originX: number;
+  originY: number;
   alpha: number;
   glowMul: number;
   /** 0–1, how much of a line is drawn ("draw"); 1 for every other kind. */
@@ -37,6 +40,8 @@ export const rest = (): AnimState => ({
   rotate: 0,
   skewX: 0,
   skewY: 0,
+  originX: 0.5,
+  originY: 0.5,
   alpha: 1,
   glowMul: 1,
   progress: 1,

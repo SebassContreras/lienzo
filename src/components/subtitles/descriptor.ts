@@ -8,6 +8,7 @@ import {
   check,
   color,
   custom,
+  elementOpacity,
   font,
   num,
   weight,
@@ -50,6 +51,7 @@ const DEFAULT_CUES: SubtitleCue[] = [
 
 const fields = {
   ...box(800, 160, { section: "Subtítulos", min: 100, max: 2000 }),
+  opacity: elementOpacity("Subtítulos"),
   cues: custom("cues-editor", DEFAULT_CUES, subtitleCuesSchema, {
     label: "Cues",
     ...S,

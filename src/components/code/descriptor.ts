@@ -4,6 +4,7 @@ import {
   BOX_ANIMS,
   box,
   check,
+  elementOpacity,
   num,
   select,
   text,
@@ -43,6 +44,7 @@ const fields = {
   size: num(20, { label: "Tamaño", min: 6, max: 80, ...S }),
   radius: num(16, { label: "Esquinas", max: 60, ...S }),
   pad: num(24, { label: "Margen", max: 120, ...S }),
+  opacity: elementOpacity("Estilo"),
   anim: anim(BOX_ANIMS),
 };
 

@@ -8,6 +8,7 @@ import {
   box,
   color,
   custom,
+  elementOpacity,
   glow,
   noGlow,
   num,
@@ -101,6 +102,7 @@ export const variationSchema = variationField.schema;
  */
 const fields = {
   ...box(600, 400),
+  opacity: elementOpacity("Partículas"),
   count: num(60, {
     label: "Cantidad",
     min: 1,

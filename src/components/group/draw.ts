@@ -27,7 +27,10 @@ export function drawGroup(
     (el.anim.in.kind !== "none" || el.anim.out.kind !== "none");
   const own = staggered
     ? animState(withSlots(el.anim, { in: NONE, out: NONE }), t, scene.duration)
-    : st;
+    : { ...st };
+  if (staggered && typeof el.opacity === "number") {
+    own.alpha *= el.opacity;
+  }
   const body = bodyBox(el);
   withTransform(ctx, boxOf(el), own, () => {
     if (el.frame !== "none") {

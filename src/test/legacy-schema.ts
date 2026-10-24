@@ -50,6 +50,7 @@ const box = {
 
 const shapeFields = {
   ...box,
+  opacity: z.number().min(0).max(1).default(1),
   fill: z.object({
     color,
     color2: color,
@@ -190,6 +191,7 @@ const line = z.object({
 
 const particles = z.object({
   ...box,
+  opacity: z.number().min(0).max(1).default(1),
   kind: z.literal("particles"),
   count: z.number().int().min(1).max(300),
   seed: z.number(),
@@ -211,6 +213,7 @@ const particles = z.object({
 
 const group = z.object({
   ...box,
+  opacity: z.number().min(0).max(1).default(1),
   kind: z.literal("group"),
   cw: z.number(),
   ch: z.number(),
