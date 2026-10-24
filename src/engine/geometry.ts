@@ -8,34 +8,14 @@ import type {
   TextEl,
 } from "../model/model.ts";
 import { distToPath, resolveLine, samplePath } from "./lines.ts";
+import { measureTextWidth } from "./text-measure.ts";
 
 export type Pt = { x: number; y: number };
 export type Box = { x: number; y: number; w: number; h: number };
 
-let measureCtxCache: OffscreenCanvasRenderingContext2D | undefined;
-
-/** Created on first use so the pure geometry helpers also load outside a browser. */
-function measureCtx(): {
-  measureText: (text: string) => { width: number };
-  font: string;
-  letterSpacing: string;
-} {
-  if (typeof OffscreenCanvas !== "undefined") {
-    measureCtxCache ??= new OffscreenCanvas(1, 1).getContext(
-      "2d",
-    ) as OffscreenCanvasRenderingContext2D;
-    return measureCtxCache;
-  }
-  return {
-    measureText: (text: string) => ({ width: text.length * 10 }),
-    font: "",
-    letterSpacing: "",
-  };
-}
-
 /** The text properties layout depends on; shared by text elements and rectangle labels. */
 export type TextStyle = Pick<TextEl, "text" | "font" | "size" | "weight"> &
-  Partial<Pick<TextEl, "italic" | "letterSpacing" | "lineHeight">>;
+  Partial<Pick<TextEl, "italic" | "letterSpacing" | "lineHeight" | "w">>;
 
 export function fontString(el: TextStyle): string {
   return `${el.italic ? "italic " : ""}${el.weight} ${el.size}px "${el.font}"`;
@@ -49,17 +29,96 @@ export type TextLayout = {
   lineStep: number;
 };
 
+/**
+ * Wraps text into lines that fit within maxW, breaking at word boundaries.
+ */
+function wrapParagraph(
+  text: string,
+  _style: TextStyle,
+  maxW: number,
+  measure: (s: string) => number,
+): string[] {
+  if (text.length === 0) return [""];
+  const words = text.split(/(\s+)/); // Keep whitespace tokens intact
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i] as string;
+    if (word === "") continue;
+
+    const testLine = currentLine + word;
+    const testWidth = measure(testLine);
+
+    if (testWidth <= maxW) {
+      currentLine = testLine;
+    } else if (currentLine === "") {
+      // Word alone exceeds maxW: break it by characters
+      let chunk = "";
+      for (const ch of word) {
+        if (measure(chunk + ch) <= maxW || chunk === "") {
+          chunk += ch;
+        } else {
+          lines.push(chunk);
+          chunk = ch;
+        }
+      }
+      currentLine = chunk;
+    } else {
+      // Current line has content: wrap to next line
+      lines.push(currentLine.replace(/\s+$/, ""));
+      if (/^\s+$/.test(word)) {
+        currentLine = "";
+      } else if (measure(word) > maxW) {
+        let chunk = "";
+        for (const ch of word) {
+          if (measure(chunk + ch) <= maxW || chunk === "") {
+            chunk += ch;
+          } else {
+            lines.push(chunk);
+            chunk = ch;
+          }
+        }
+        currentLine = chunk;
+      } else {
+        currentLine = word;
+      }
+    }
+  }
+
+  if (currentLine !== "") {
+    lines.push(currentLine.replace(/\s+$/, ""));
+  }
+
+  return lines.length > 0 ? lines : [""];
+}
+
 export function textLayout(el: TextStyle): TextLayout {
-  const ctx = measureCtx();
-  ctx.font = fontString(el);
-  ctx.letterSpacing = `${el.letterSpacing ?? 0}px`;
-  const lines = el.text.split("\n");
-  const widths = lines.map((line) => ctx.measureText(line).width);
+  const measure = (line: string) =>
+    measureTextWidth(line, {
+      font: el.font,
+      size: el.size,
+      weight: el.weight,
+      italic: el.italic,
+      letterSpacing: el.letterSpacing,
+    });
+
+  const rawParagraphs = el.text.split("\n");
+  const wrapW = typeof el.w === "number" && el.w > 0 ? el.w : undefined;
+
+  const lines =
+    wrapW !== undefined
+      ? rawParagraphs.flatMap((p) => wrapParagraph(p, el, wrapW, measure))
+      : rawParagraphs;
+
+  const widths = lines.map((line) => measure(line));
   const lineStep = el.size * (el.lineHeight ?? 1.2);
+  const layoutW = wrapW !== undefined ? wrapW : Math.max(1, ...widths);
+
   return {
     lines,
     widths,
-    w: Math.max(1, ...widths),
+    w: layoutW,
     h: Math.max(lineStep, lines.length * lineStep),
     lineStep,
   };

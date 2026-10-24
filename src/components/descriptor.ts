@@ -48,6 +48,8 @@ export type ElementOf<K extends string, F extends Fields> = {
   hidden?: boolean;
   /** Locked against selection and canvas drag edits (034). */
   locked?: boolean;
+  /** Optional bounding box width for wrapping text or sizing (054). */
+  w?: number;
 } & ValueOf<F>;
 
 /** Which animation preset an element's animation was copied from, and where it started. */

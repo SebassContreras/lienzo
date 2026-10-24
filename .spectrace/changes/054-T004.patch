@@ -1,0 +1,27 @@
+diff --git a/schemas/compact-scene.json b/schemas/compact-scene.json
+index 6836b2c..41a9792 100644
+--- a/schemas/compact-scene.json
++++ b/schemas/compact-scene.json
+@@ -216,6 +216,10 @@
+                   }
+                 ]
+               },
++              "w": {
++                "type": "number",
++                "minimum": 0
++              },
+               "from": {
+                 "type": "string"
+               },
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index e9fddc8..a1a4ec1 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -140,6 +140,7 @@ const baseSpecialFields = {
+   at: AtPlacementSchema.optional(),
+   fit: FitPlacementSchema.optional(),
+   origin: CompactOriginSchema.optional(),
++  w: z.number().min(0).optional(),
+   from: z.string().optional(),
+   to: z.string().optional(),
+   tracks: CompactTracksSchema.optional(),

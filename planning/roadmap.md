@@ -58,7 +58,7 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 051 | nested-tools-and-validation | done        | 007, 011 | —      | 51 |
 | 052 | track-loops-and-step | done        | 011, 015 | —      | 52 |
 | 053 | transform-origin-and-opacity | done        | 011, 012, 013 | —      | 53 |
-| 054 | text-measurement-and-box | todo        | 007, 011, 012, 045 | design | 54 |
+| 054 | text-measurement-and-box | done        | 007, 011, 012, 045 | —      | 54 |
 | 055 | shots-and-camera | todo        | 011, 015, 034, 053 | design | 55 |
 | 056 | reusable-symbols | todo        | 011, 012 | design | 56 |
 | 057 | path-layers-and-particles | todo        | 005, 012, 024 | design | 57 |

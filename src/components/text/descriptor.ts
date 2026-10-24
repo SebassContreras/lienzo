@@ -54,7 +54,7 @@ const fields = {
   anim: anim(TEXT_ANIMS),
 };
 
-export type TextEl = ElementOf<"text", typeof fields>;
+export type TextEl = ElementOf<"text", typeof fields> & { w?: number };
 
 export const text = defineComponent<TextEl>({
   kind: "text",

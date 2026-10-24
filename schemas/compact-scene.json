@@ -216,6 +216,10 @@
                   }
                 ]
               },
+              "w": {
+                "type": "number",
+                "minimum": 0
+              },
               "from": {
                 "type": "string"
               },

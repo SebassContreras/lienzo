@@ -1,3 +1,4 @@
+// Free text drawing with support for auto-wrapping and box width alignment (054/D2, D3).
 import type { AnimState } from "../../engine/anim.ts";
 import { fontString, textLayout } from "../../engine/geometry.ts";
 import {

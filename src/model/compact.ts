@@ -140,6 +140,7 @@ const baseSpecialFields = {
   at: AtPlacementSchema.optional(),
   fit: FitPlacementSchema.optional(),
   origin: CompactOriginSchema.optional(),
+  w: z.number().min(0).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
   tracks: CompactTracksSchema.optional(),
