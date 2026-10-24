@@ -9,6 +9,7 @@ import {
   QUALITY_HIGH,
   WebMOutputFormat,
 } from "mediabunny";
+import { registerAacEncoder } from "@mediabunny/aac-encoder";
 import type { FrameEncoder } from "./frame-encoder.ts";
 
 export type VideoEncoderOptions = {
@@ -41,17 +42,17 @@ export async function createVideoEncoder(
 
   let audioSource: AudioBufferSource | null = null;
   if (options.audioBuffer) {
-    const preferredCodec = useMp4 ? "aac" : "opus";
-    const canUsePreferred = await canEncodeAudio(preferredCodec, {
-      numberOfChannels: options.audioBuffer.numberOfChannels,
-      sampleRate: options.audioBuffer.sampleRate,
-    });
-    // Fallback: If preferred codec is unavailable in MP4, use uncompressed PCM (pcm-s16)
-    const audioCodec = canUsePreferred
-      ? preferredCodec
-      : useMp4
-        ? "pcm-s16"
-        : "opus";
+    const audioCodec = useMp4 ? "aac" : "opus";
+    // Firefox has no native AAC encoder; PCM in MP4 plays silent on phones/WhatsApp, so use the WASM AAC encoder
+    if (
+      useMp4 &&
+      !(await canEncodeAudio("aac", {
+        numberOfChannels: options.audioBuffer.numberOfChannels,
+        sampleRate: options.audioBuffer.sampleRate,
+      }))
+    ) {
+      registerAacEncoder();
+    }
 
     audioSource = new AudioBufferSource(
       {
