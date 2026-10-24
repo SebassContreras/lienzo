@@ -1,0 +1,82 @@
+/**
+ * The editor's controls and the tools write the same scene JSON (062/R5): each case applies
+ * the edit the editor makes to a saved scene and compares it with what the tool saved.
+ */
+import { cp, mkdir, mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { beforeEach, describe, expect, it } from "vitest";
+import type { Scene } from "../model/model.ts";
+import { setShot } from "../model/shots.ts";
+import { trackEntry, trackKeys } from "../model/track.ts";
+import { resolveOrigin } from "./compact/layout.ts";
+import { type Ctx, createCtx } from "./ctx.ts";
+import { fakeRenderer } from "./fake-renderer.ts";
+import { registry } from "./tools/index.ts";
+
+const project = "parity";
+let ctx: Ctx;
+
+async function ok(tool: string, input: Record<string, unknown>) {
+  const result = await registry.call(tool, { project, ...input }, ctx);
+  if (!result.ok) throw new Error(JSON.stringify(result.error));
+  return result.value as Record<string, unknown>;
+}
+
+const saved = async () =>
+  (await ok("scene_get", { scene: "s" })) as unknown as Scene;
+
+beforeEach(async () => {
+  const root = await mkdtemp(join(tmpdir(), "lienzo-parity-"));
+  await cp("presets/built-in", join(root, "presets", "built-in"), {
+    recursive: true,
+  });
+  await mkdir(join(root, "presets", "animations"), { recursive: true });
+  ctx = createCtx(root, fakeRenderer());
+  await registry.call("project_create", { slug: project, name: "Parity" }, ctx);
+  await ok("scene_create", { name: "s" });
+});
+
+describe("editor and tools write the same JSON", () => {
+  it("a shot edited in the editor matches shot_set", async () => {
+    await ok("shot_set", { scene: "s", id: "a", start: 0, end: 2 });
+    const before = await saved();
+    const patch = { id: "a", end: 3, camera: { zoom: 1.5 } };
+
+    const fromEditor = setShot(before.shots ?? [], patch);
+    await ok("shot_set", { scene: "s", ...patch });
+
+    expect(fromEditor).toEqual({ shots: (await saved()).shots });
+  });
+
+  it("a track loop set in the timeline matches keyframe_set", async () => {
+    const { id } = await ok("element_add", { scene: "s", kind: "rect" });
+    await ok("keyframe_set", { scene: "s", id, path: "x", t: 0, value: 0 });
+    await ok("keyframe_set", { scene: "s", id, path: "x", t: 1, value: 50 });
+    const keys = [...trackKeys((await saved()).elements[0]?.tracks?.x)];
+
+    const fromEditor = trackEntry(keys, "loop", 3);
+    await ok("keyframe_set", {
+      scene: "s",
+      id,
+      path: "x",
+      repeat: "loop",
+      until: 3,
+    });
+
+    expect((await saved()).elements[0]?.tracks?.x).toEqual(fromEditor);
+  });
+
+  it("an origin picked on the anchor grid matches element_update", async () => {
+    const { id } = await ok("element_add", { scene: "s", kind: "rect" });
+
+    const fromEditor = resolveOrigin("bottom");
+    await ok("element_update", {
+      scene: "s",
+      id,
+      patch: { origin: fromEditor },
+    });
+
+    expect((await saved()).elements[0]?.origin).toEqual({ x: 0.5, y: 1 });
+  });
+});

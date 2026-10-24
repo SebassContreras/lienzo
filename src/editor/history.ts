@@ -78,6 +78,9 @@ export function useHistory<T>(get: () => T, set: (value: T) => void) {
     checkpoint,
     undo: useCallback(() => step(undo), [step]),
     redo: useCallback(() => step(redo), [step]),
+    /** The current undo history, to put back later with `reset` (062/D4). */
+    snapshot: useCallback(() => history.current, []),
+    reset: commit,
     canUndo: history.current.past.length > 0,
     canRedo: history.current.future.length > 0,
   };

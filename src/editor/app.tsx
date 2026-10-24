@@ -34,6 +34,12 @@ import {
 import type { PresetRecipe } from "../model/preset.ts";
 import type { ColorPalette } from "../model/project.ts";
 import { parsePresetRecipe } from "../model/schema.ts";
+import {
+  freeSymbolName,
+  instanceCount,
+  replaceWithUse,
+  withSymbolChildren,
+} from "../model/symbols.ts";
 import type { VoicePreset } from "../model/voice-preset.ts";
 import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
 import { filterByName } from "../presets/categories.ts";
@@ -45,6 +51,7 @@ import {
   readJsonFile,
 } from "../presets/json-files.ts";
 import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+import { slugify } from "../presets/slug.ts";
 import {
   deleteStored,
   loadAnimPresetFiles,
@@ -64,7 +71,7 @@ import {
 } from "./backgrounds.tsx";
 import { TtsDialog } from "./dialogs/tts-dialog.tsx";
 import { EditorFooter } from "./footer/editor-footer.tsx";
-import { useHistory } from "./history.ts";
+import { emptyHistory, type History, push, useHistory } from "./history.ts";
 import { IconSvg } from "./icon-picker.tsx";
 import { imageSources, withImageAspects } from "./image-aspect.ts";
 import {
@@ -234,6 +241,53 @@ export function App() {
     if (!lockedRef.current) history.redo();
   }, [history.redo]);
 
+  /**
+   * Editing a symbol (062/D4): the stage holds a temporary scene of the symbol's size and
+   * children; `main` and its undo history wait here until "Volver" writes the children back.
+   */
+  const [symbolEdit, setSymbolEdit] = useState<{
+    name: string;
+    main: Scene;
+    history: History<Scene>;
+  } | null>(null);
+  const symbolEditRef = useRef(symbolEdit);
+  symbolEditRef.current = symbolEdit;
+
+  const editSymbol = useCallback(
+    (name: string) => {
+      const main = sceneRef.current;
+      const symbol = main.symbols?.[name];
+      if (!symbol || lockedRef.current) return;
+      setSymbolEdit({ name, main, history: history.snapshot() });
+      history.reset(emptyHistory<Scene>());
+      commitScene({
+        ...main,
+        width: symbol.w,
+        height: symbol.h,
+        elements: structuredClone(symbol.children),
+        shots: undefined,
+      });
+      setSelection([]);
+    },
+    [commitScene, history.snapshot, history.reset],
+  );
+
+  /** Back to the scene with the edited children, as one undoable step. */
+  const leaveSymbol = useCallback(() => {
+    const edit = symbolEditRef.current;
+    if (!edit) return;
+    const children = sceneRef.current.elements;
+    const changed =
+      JSON.stringify(children) !==
+      JSON.stringify(edit.main.symbols?.[edit.name]?.children);
+    history.reset(changed ? push(edit.history, edit.main) : edit.history);
+    setSymbolEdit(null);
+    commitScene(
+      changed ? withSymbolChildren(edit.main, edit.name, children) : edit.main,
+    );
+    setSelection([]);
+  }, [commitScene, history.reset]);
+
   const [jointOn, setJointOn] = useState(false);
   const sceneEventsRef = useRef(sceneEvents());
   // the mode is per project and starts off (050/R1)
@@ -267,7 +321,8 @@ export function App() {
   }, [joint.invalid]);
 
   useEffect(() => {
-    if (!draftGuard.shouldSave(scene)) return;
+    // the symbol being edited is a temporary scene: never autosave it (062/D4)
+    if (symbolEditRef.current || !draftGuard.shouldSave(scene)) return;
     writeAutosave(activeProjectSlug, scene);
   }, [scene, activeProjectSlug, draftGuard]);
 
@@ -537,6 +592,18 @@ export function App() {
     setSelection(ids);
   }, [applyScene, selection]);
 
+  /** The selected top-level group becomes a symbol drawn by a `use` in its place (062/D3). */
+  const symbolizeSelected = useCallback(() => {
+    const s = sceneRef.current;
+    const target = s.elements.find(
+      (el) => selection.length === 1 && el.id === selection[0],
+    );
+    if (target?.kind !== "group") return;
+    applyScene(
+      replaceWithUse(s, target.id, freeSymbolName(s, slugify(target.name))),
+    );
+  }, [applyScene, selection]);
+
   /** With a particles element and one other selected: the other becomes its particle. */
   const particlePair = (() => {
     if (selection.length !== 2) return undefined;
@@ -743,7 +810,7 @@ export function App() {
         palette: activePalette,
       }}
     >
-      <div className="app">
+      <div className={symbolEdit ? "app symbol-editing" : "app"}>
         <header className="topbar">
           <div className="brand">
             <Sparkles size={16} /> Lienzo
@@ -1033,6 +1100,19 @@ export function App() {
           )}
         </aside>
         <main className="center">
+          {symbolEdit && (
+            <div className="joint-banner" role="status">
+              Editando el símbolo «{symbolEdit.name}» ·{" "}
+              {instanceCount(symbolEdit.main, symbolEdit.name)} instancia(s)
+              <button
+                type="button"
+                className="joint-take"
+                onClick={leaveSymbol}
+              >
+                Volver
+              </button>
+            </div>
+          )}
           {joint.locked && (
             <div className="joint-banner" role="status">
               El agente está editando…
@@ -1138,6 +1218,12 @@ export function App() {
               onLayer={(dir) => moveLayer(selected.id, dir)}
               onSavePreset={(name) => savePreset(selected, name)}
               onUngroup={ungroupSelected}
+              onMakeSymbol={
+                selected.kind === "group" &&
+                scene.elements.some((e) => e.id === selected.id)
+                  ? symbolizeSelected
+                  : undefined
+              }
               onEditParticle={editParticle}
               onCropMode={
                 selected.kind === "image"
@@ -1145,6 +1231,12 @@ export function App() {
                   : undefined
               }
               canvas={scene}
+              symbols={Object.keys(scene.symbols ?? {})}
+              shots={
+                scene.elements.some((e) => e.id === selected.id)
+                  ? scene.shots
+                  : undefined
+              }
               time={playhead}
               staticMode={isStatic}
             />
@@ -1161,6 +1253,7 @@ export function App() {
             <SceneInspector
               scene={scene}
               onChange={setScene}
+              onEditSymbol={symbolEdit || jointOn ? undefined : editSymbol}
               focusBackground={backgroundFocus}
               onSaveBackground={(name) =>
                 presetChange(

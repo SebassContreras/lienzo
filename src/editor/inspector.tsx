@@ -10,6 +10,7 @@ import {
   ArrowDown,
   ArrowUp,
   BookmarkPlus,
+  Boxes,
   Copy,
   Group,
   Sparkles,
@@ -21,11 +22,15 @@ import {
   type Element,
   isStaticMode,
   type Scene,
+  type Shot,
   SIZE_PRESETS,
 } from "../model/model.ts";
 import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";
+import { ShotsSection } from "./scene/shots-section.tsx";
+import { SymbolsSection } from "./scene/symbols-section.tsx";
+import { OriginPicker } from "./widgets/origin-picker.tsx";
 
 export function ElementInspector({
   el,
@@ -35,6 +40,7 @@ export function ElementInspector({
   onLayer,
   onSavePreset,
   onUngroup,
+  onMakeSymbol,
   onEditParticle,
   onCropMode,
   nameOf,
@@ -42,6 +48,8 @@ export function ElementInspector({
   time,
   staticMode,
   fonts,
+  shots,
+  symbols,
 }: {
   el: Element;
   onChange: (el: Element) => void;
@@ -50,6 +58,8 @@ export function ElementInspector({
   onLayer: (dir: 1 | -1) => void;
   onSavePreset?: (name: string) => void;
   onUngroup?: () => void;
+  /** Turns the selected top-level group into a symbol (062/D3). */
+  onMakeSymbol?: () => void;
   onEditParticle?: () => void;
   onCropMode?: () => void;
   nameOf: (id: string) => string;
@@ -61,6 +71,10 @@ export function ElementInspector({
   staticMode?: boolean;
   /** The active project's fonts, for the font picker (045/D4). */
   fonts?: readonly ResolvedFont[];
+  /** The scene's shots when `el` is top-level and can bind to one (062/D2). */
+  shots?: readonly Shot[];
+  /** The scene's symbol names, for the `use` picker (062/D3). */
+  symbols?: readonly string[];
 }) {
   const [presetName, setPresetName] = useState("");
   const change = <T extends Element>(fn: (draft: T) => void) => {
@@ -103,6 +117,24 @@ export function ElementInspector({
           </button>
         </div>
       </div>
+      {shots && shots.length > 0 && (
+        <Section title="Toma">
+          <Select
+            label="Toma"
+            value={el.shot ?? ""}
+            options={[
+              ["", "Sin toma"],
+              ...shots.map((sh) => [sh.id, sh.name] as const),
+            ]}
+            onChange={(id) =>
+              change((d) => {
+                if (id) d.shot = id;
+                else delete d.shot;
+              })
+            }
+          />
+        </Section>
+      )}
       <FieldEditor
         el={el}
         change={change}
@@ -115,8 +147,30 @@ export function ElementInspector({
           time,
           staticMode,
           fonts,
+          symbols,
         }}
       />
+      {!staticMode && el.kind !== "line" && (
+        <OriginPicker
+          value={el.origin}
+          onChange={(origin) =>
+            change((d) => {
+              d.origin = origin;
+            })
+          }
+        />
+      )}
+      {onMakeSymbol && (
+        <Section title="Símbolo">
+          <button type="button" onClick={onMakeSymbol}>
+            <Boxes size={15} /> Crear símbolo desde el grupo
+          </button>
+          <div className="hint">
+            El grupo pasa a los símbolos de la escena y queda una instancia en
+            su lugar.
+          </div>
+        </Section>
+      )}
       {onSavePreset && (
         <Section title="Guardar como preset">
           <div className="preset-save">
@@ -222,9 +276,12 @@ export function SceneInspector({
   onChange,
   focusBackground = 0,
   onSaveBackground,
+  onEditSymbol,
 }: {
   scene: Scene;
   onChange: (s: Scene) => void;
+  /** Opens a symbol for editing; the section is hidden without it (062/D4). */
+  onEditSymbol?: (name: string) => void;
   /** Each time this number changes, the "Fondo" section opens and scrolls into view. */
   focusBackground?: number;
   onSaveBackground?: (name: string) => void;
@@ -324,6 +381,10 @@ export function SceneInspector({
           </>
         )}
       </Section>
+      {!isStaticMode(scene) && (
+        <ShotsSection scene={scene} onChange={onChange} />
+      )}
+      {onEditSymbol && <SymbolsSection scene={scene} onEdit={onEditSymbol} />}
       <Section title="Fondo" ref={backgroundRef}>
         <Color
           label="Color"

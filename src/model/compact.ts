@@ -48,7 +48,7 @@ const CompactAnimSchema = z.union([
   z.record(z.string(), z.unknown()),
 ]);
 
-const AnchorNameSchema = z.enum([
+export const AnchorNameSchema = z.enum([
   "top-left",
   "top",
   "top-right",

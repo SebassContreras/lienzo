@@ -182,8 +182,11 @@ The same options work in compact scenes (`scene_build`) and through the element 
 - **Checking a scene:** `scene_validate`, `scene_inspect_layout` (overlaps, out of canvas,
   contrast, drawn boxes) and `scene_preview` (`out` also saves the PNG in `exports/`).
 
-In the editor, the layers panel groups elements by shot; shots, symbols, track `repeat`
-and `origin` are edited through the tools or the scene JSON for now.
+In the editor: the scene inspector's **Tomas** section adds and edits shots (times,
+transition, camera) and a top-level element picks its shot under **Toma**; **Crear símbolo
+desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens it on the stage
+(**Volver** updates every instance); each keyframe track has **Bucle / Ida y vuelta** and a
+**hasta** time; **Pivote** sets `origin`. They write the same JSON as the tools.
 
 ## Tools
 

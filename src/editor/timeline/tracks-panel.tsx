@@ -14,6 +14,7 @@ import {
 import type { Element } from "../../model/model.ts";
 import {
   type Keyframe,
+  type TrackRepeat,
   trackEntry,
   trackKeys,
   trackRepeat,
@@ -35,6 +36,12 @@ function labelOf(el: Element, path: string): string {
 }
 
 type Picked = { path: string; i: number };
+
+const REPEATS: [TrackRepeat, string][] = [
+  ["none", "Una vez"],
+  ["loop", "Bucle"],
+  ["pingpong", "Ida y vuelta"],
+];
 
 export function TracksPanel({
   el,
@@ -82,6 +89,15 @@ export function TracksPanel({
       };
     });
 
+  /** Sets a track's repeat and `until` (062/D5), as `keyframe_set` does. */
+  const setLoop = (path: string, repeat: TrackRepeat, until?: number) => {
+    checkpoint();
+    change((d) => {
+      const keys = [...trackKeys(d.tracks?.[path])];
+      d.tracks = { ...d.tracks, [path]: trackEntry(keys, repeat, until) };
+    });
+  };
+
   const timeAt = (lane: DOMRect, clientX: number) =>
     Math.min(
       duration,
@@ -126,6 +142,39 @@ export function TracksPanel({
         <div className="track-row" key={path}>
           <span className="track-label" title={path}>
             {labelOf(el, path)}
+          </span>
+          <span className="track-loop">
+            <select
+              aria-label="Repetición"
+              value={trackRepeat(track)}
+              onChange={(e) =>
+                setLoop(path, e.target.value as TrackRepeat, trackUntil(track))
+              }
+            >
+              {REPEATS.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              className="track-until"
+              aria-label="Hasta (s)"
+              title="Hasta (s): después mantiene el valor"
+              placeholder="hasta"
+              min={0}
+              max={duration}
+              step={0.1}
+              value={trackUntil(track) ?? ""}
+              onChange={(e) =>
+                setLoop(
+                  path,
+                  trackRepeat(track),
+                  e.target.value === "" ? undefined : Number(e.target.value),
+                )
+              }
+            />
           </span>
           <div className="track-lane">
             <div

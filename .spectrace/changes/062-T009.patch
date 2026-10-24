@@ -1,0 +1,159 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index bae5c0c..a882970 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -34,7 +34,12 @@ import {
+ import type { PresetRecipe } from "../model/preset.ts";
+ import type { ColorPalette } from "../model/project.ts";
+ import { parsePresetRecipe } from "../model/schema.ts";
+-import { freeSymbolName, replaceWithUse } from "../model/symbols.ts";
++import {
++  freeSymbolName,
++  instanceCount,
++  replaceWithUse,
++  withSymbolChildren,
++} from "../model/symbols.ts";
+ import type { VoicePreset } from "../model/voice-preset.ts";
+ import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
+ import { filterByName } from "../presets/categories.ts";
+@@ -66,7 +71,7 @@ import {
+ } from "./backgrounds.tsx";
+ import { TtsDialog } from "./dialogs/tts-dialog.tsx";
+ import { EditorFooter } from "./footer/editor-footer.tsx";
+-import { useHistory } from "./history.ts";
++import { emptyHistory, type History, push, useHistory } from "./history.ts";
+ import { IconSvg } from "./icon-picker.tsx";
+ import { imageSources, withImageAspects } from "./image-aspect.ts";
+ import {
+@@ -236,6 +241,53 @@ export function App() {
+     if (!lockedRef.current) history.redo();
+   }, [history.redo]);
+ 
++  /**
++   * Editing a symbol (062/D4): the stage holds a temporary scene of the symbol's size and
++   * children; `main` and its undo history wait here until "Volver" writes the children back.
++   */
++  const [symbolEdit, setSymbolEdit] = useState<{
++    name: string;
++    main: Scene;
++    history: History<Scene>;
++  } | null>(null);
++  const symbolEditRef = useRef(symbolEdit);
++  symbolEditRef.current = symbolEdit;
++
++  const editSymbol = useCallback(
++    (name: string) => {
++      const main = sceneRef.current;
++      const symbol = main.symbols?.[name];
++      if (!symbol || lockedRef.current) return;
++      setSymbolEdit({ name, main, history: history.snapshot() });
++      history.reset(emptyHistory<Scene>());
++      commitScene({
++        ...main,
++        width: symbol.w,
++        height: symbol.h,
++        elements: structuredClone(symbol.children),
++        shots: undefined,
++      });
++      setSelection([]);
++    },
++    [commitScene, history.snapshot, history.reset],
++  );
++
++  /** Back to the scene with the edited children, as one undoable step. */
++  const leaveSymbol = useCallback(() => {
++    const edit = symbolEditRef.current;
++    if (!edit) return;
++    const children = sceneRef.current.elements;
++    const changed =
++      JSON.stringify(children) !==
++      JSON.stringify(edit.main.symbols?.[edit.name]?.children);
++    history.reset(changed ? push(edit.history, edit.main) : edit.history);
++    setSymbolEdit(null);
++    commitScene(
++      changed ? withSymbolChildren(edit.main, edit.name, children) : edit.main,
++    );
++    setSelection([]);
++  }, [commitScene, history.reset]);
++
+   const [jointOn, setJointOn] = useState(false);
+   const sceneEventsRef = useRef(sceneEvents());
+   // the mode is per project and starts off (050/R1)
+@@ -269,7 +321,8 @@ export function App() {
+   }, [joint.invalid]);
+ 
+   useEffect(() => {
+-    if (!draftGuard.shouldSave(scene)) return;
++    // the symbol being edited is a temporary scene: never autosave it (062/D4)
++    if (symbolEditRef.current || !draftGuard.shouldSave(scene)) return;
+     writeAutosave(activeProjectSlug, scene);
+   }, [scene, activeProjectSlug, draftGuard]);
+ 
+@@ -757,7 +810,7 @@ export function App() {
+         palette: activePalette,
+       }}
+     >
+-      <div className="app">
++      <div className={symbolEdit ? "app symbol-editing" : "app"}>
+         <header className="topbar">
+           <div className="brand">
+             <Sparkles size={16} /> Lienzo
+@@ -1047,6 +1100,19 @@ export function App() {
+           )}
+         </aside>
+         <main className="center">
++          {symbolEdit && (
++            <div className="joint-banner" role="status">
++              Editando el símbolo «{symbolEdit.name}» ·{" "}
++              {instanceCount(symbolEdit.main, symbolEdit.name)} instancia(s)
++              <button
++                type="button"
++                className="joint-take"
++                onClick={leaveSymbol}
++              >
++                Volver
++              </button>
++            </div>
++          )}
+           {joint.locked && (
+             <div className="joint-banner" role="status">
+               El agente está editando…
+@@ -1187,6 +1253,7 @@ export function App() {
+             <SceneInspector
+               scene={scene}
+               onChange={setScene}
++              onEditSymbol={symbolEdit || jointOn ? undefined : editSymbol}
+               focusBackground={backgroundFocus}
+               onSaveBackground={(name) =>
+                 presetChange(
+diff --git a/src/editor/history.ts b/src/editor/history.ts
+index 2b2ca62..15d1213 100644
+--- a/src/editor/history.ts
++++ b/src/editor/history.ts
+@@ -78,6 +78,9 @@ export function useHistory<T>(get: () => T, set: (value: T) => void) {
+     checkpoint,
+     undo: useCallback(() => step(undo), [step]),
+     redo: useCallback(() => step(redo), [step]),
++    /** The current undo history, to put back later with `reset` (062/D4). */
++    snapshot: useCallback(() => history.current, []),
++    reset: commit,
+     canUndo: history.current.past.length > 0,
+     canRedo: history.current.future.length > 0,
+   };
+diff --git a/src/styles.css b/src/styles.css
+index 0ca8099..5bd5a08 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -1149,6 +1149,12 @@ code {
+   border-radius: 999px;
+   font-size: 12px;
+ }
++.app.symbol-editing .topbar,
++.app.symbol-editing .library,
++.app.symbol-editing .editor-footer {
++  pointer-events: none;
++  opacity: 0.55;
++}
+ .panel.locked {
+   pointer-events: none;
+   opacity: 0.55;

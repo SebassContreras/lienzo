@@ -86,6 +86,5 @@ The full schema is `schemas/compact-scene.json`; component fields are in
 
 ## In the editor
 
-`pnpm dev` (http://localhost:5173) opens the same scenes. The editor has no controls yet
-for shots, symbols, track `repeat`/`until` or `origin`; those are set with the tools or the
-scene JSON (the layers panel groups elements by shot).
+`pnpm dev` (http://localhost:5173) opens the same scenes. The editor edits shots, symbols, track
+`repeat`/`until` and `origin` too, writing the same JSON as the tools.

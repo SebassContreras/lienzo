@@ -56,8 +56,10 @@ What exists today:
 - Compact extras: partial `effects`, `defaults: "flat"` (build time only), `audioTracks`;
   `notices` lists what was ignored and missing fonts (058, 060). Speech `asTrack: true`
   appends an `audioTracks` entry at `startOffset` (060)
-- Editor gaps: shots, symbols, track `repeat`/`until` and `origin` have no editor controls yet
-  (only the tools and JSON); the layers panel groups by shot
+- Editor controls for these (062): shots in `src/editor/scene/shots-section.tsx` and
+  symbols in `scene/symbols-section.tsx`, both over pure helpers shared with the tools
+  (`src/model/shots.ts`, `src/model/symbols.ts`); symbol editing swaps the stage to a
+  temporary scene and is never autosaved; `origin` in `widgets/origin-picker.tsx`
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and

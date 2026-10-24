@@ -1,0 +1,70 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 6501df8..1415f9b 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -1145,6 +1145,11 @@ export function App() {
+                   : undefined
+               }
+               canvas={scene}
++              shots={
++                scene.elements.some((e) => e.id === selected.id)
++                  ? scene.shots
++                  : undefined
++              }
+               time={playhead}
+               staticMode={isStatic}
+             />
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index ad33564..2eb208e 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -21,6 +21,7 @@ import {
+   type Element,
+   isStaticMode,
+   type Scene,
++  type Shot,
+   SIZE_PRESETS,
+ } from "../model/model.ts";
+ import type { AlignAction } from "./align.ts";
+@@ -43,6 +44,7 @@ export function ElementInspector({
+   time,
+   staticMode,
+   fonts,
++  shots,
+ }: {
+   el: Element;
+   onChange: (el: Element) => void;
+@@ -62,6 +64,8 @@ export function ElementInspector({
+   staticMode?: boolean;
+   /** The active project's fonts, for the font picker (045/D4). */
+   fonts?: readonly ResolvedFont[];
++  /** The scene's shots when `el` is top-level and can bind to one (062/D2). */
++  shots?: readonly Shot[];
+ }) {
+   const [presetName, setPresetName] = useState("");
+   const change = <T extends Element>(fn: (draft: T) => void) => {
+@@ -104,6 +108,24 @@ export function ElementInspector({
+           </button>
+         </div>
+       </div>
++      {shots && shots.length > 0 && (
++        <Section title="Toma">
++          <Select
++            label="Toma"
++            value={el.shot ?? ""}
++            options={[
++              ["", "Sin toma"],
++              ...shots.map((sh) => [sh.id, sh.name] as const),
++            ]}
++            onChange={(id) =>
++              change((d) => {
++                if (id) d.shot = id;
++                else delete d.shot;
++              })
++            }
++          />
++        </Section>
++      )}
+       <FieldEditor
+         el={el}
+         change={change}

@@ -60,6 +60,8 @@ export type EditorContext = {
   staticMode?: boolean;
   /** Fonts the active project can use, for the font picker (045/D4). */
   fonts?: readonly ResolvedFont[];
+  /** The scene's symbol names, for a `use` element's picker (062/D3). */
+  symbols?: readonly string[];
 };
 
 type WidgetProps = {
@@ -276,6 +278,33 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
       }
     />
   ),
+  symbol: ({ item, value, label, change, ctx }) => {
+    const names = ctx.symbols ?? [];
+    const current = value as string;
+    return (
+      <Select
+        label={label}
+        value={current}
+        options={[
+          ...(names.includes(current)
+            ? []
+            : [
+                [
+                  current,
+                  current ? `${current} (no existe)` : "Elige un símbolo",
+                ] as const,
+              ]),
+          ...names.map((n) => [n, n] as const),
+        ]}
+        onChange={(v) =>
+          change((d) => {
+            if (item.field.type === "select")
+              writeField(d, item.path, item.field, v);
+          })
+        }
+      />
+    );
+  },
   font: ({ item, value, label, change, ctx }) => (
     <FontSelect
       label={label}

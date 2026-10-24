@@ -1,0 +1,124 @@
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 3faf702..f329771 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -30,6 +30,7 @@ import { Check, Color, Num, Section, Select } from "./controls.tsx";
+ import { FieldEditor } from "./field-editor.tsx";
+ import { ShotsSection } from "./scene/shots-section.tsx";
+ import { SymbolsSection } from "./scene/symbols-section.tsx";
++import { OriginPicker } from "./widgets/origin-picker.tsx";
+ 
+ export function ElementInspector({
+   el,
+@@ -149,6 +150,16 @@ export function ElementInspector({
+           symbols,
+         }}
+       />
++      {!staticMode && el.kind !== "line" && (
++        <OriginPicker
++          value={el.origin}
++          onChange={(origin) =>
++            change((d) => {
++              d.origin = origin;
++            })
++          }
++        />
++      )}
+       {onMakeSymbol && (
+         <Section title="Símbolo">
+           <button type="button" onClick={onMakeSymbol}>
+diff --git a/src/editor/widgets/origin-picker.tsx b/src/editor/widgets/origin-picker.tsx
+new file mode 100644
+index 0000000..e21fdad
+--- /dev/null
++++ b/src/editor/widgets/origin-picker.tsx
+@@ -0,0 +1,51 @@
++/** The pivot of rotation and scale: a 3×3 anchor grid plus numeric `x`, `y` (062/D6). */
++import { AnchorNameSchema } from "../../model/compact.ts";
++import { resolveOrigin } from "../../service/compact/layout.ts";
++import { Num, Section } from "../controls.tsx";
++
++type Origin = { x: number; y: number };
++
++export function OriginPicker({
++  value,
++  onChange,
++}: {
++  value: Origin | undefined;
++  onChange: (origin: Origin) => void;
++}) {
++  const origin = value ?? { x: 0.5, y: 0.5 };
++  return (
++    <Section title="Pivote" open={false}>
++      <div className="origin-grid">
++        {AnchorNameSchema.options.map((name) => {
++          const at = resolveOrigin(name);
++          const active = at.x === origin.x && at.y === origin.y;
++          return (
++            <button
++              type="button"
++              key={name}
++              title={name}
++              aria-label={`Pivote ${name}`}
++              aria-pressed={active}
++              className={active ? "active" : ""}
++              onClick={() => onChange(at)}
++            />
++          );
++        })}
++      </div>
++      <Num
++        label="X"
++        value={origin.x}
++        max={1}
++        step={0.01}
++        onChange={(x) => onChange({ ...origin, x })}
++      />
++      <Num
++        label="Y"
++        value={origin.y}
++        max={1}
++        step={0.01}
++        onChange={(y) => onChange({ ...origin, y })}
++      />
++    </Section>
++  );
++}
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index 197cf6b..2ddb0e6 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -48,7 +48,7 @@ const CompactAnimSchema = z.union([
+   z.record(z.string(), z.unknown()),
+ ]);
+ 
+-const AnchorNameSchema = z.enum([
++export const AnchorNameSchema = z.enum([
+   "top-left",
+   "top",
+   "top-right",
+diff --git a/src/styles.css b/src/styles.css
+index 4bfff72..1b397ec 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -559,6 +559,20 @@ textarea {
+ .hint.pad {
+   padding: 10px;
+ }
++.origin-grid {
++  display: grid;
++  grid-template-columns: repeat(3, 22px);
++  gap: 4px;
++}
++.origin-grid button {
++  width: 22px;
++  height: 22px;
++  padding: 0;
++  border-radius: 4px;
++}
++.origin-grid button.active {
++  background: var(--accent);
++}
+ .shot-item {
+   display: flex;
+   flex-direction: column;

@@ -1,0 +1,97 @@
+diff --git a/src/model/symbols.ts b/src/model/symbols.ts
+new file mode 100644
+index 0000000..59f41f7
+--- /dev/null
++++ b/src/model/symbols.ts
+@@ -0,0 +1,91 @@
++/**
++ * Reusable symbols from the editor (062/D3, D4): a group becomes a `scene.symbols` entry and a
++ * `use` instance in its place. Pure: every function returns a new scene.
++ */
++import type { UseEl } from "../components/use/descriptor.ts";
++import { detachOutside } from "../engine/groups.ts";
++import {
++  defaultElement,
++  type Element,
++  type GroupEl,
++  type Scene,
++  type SymbolDefinition,
++} from "./model.ts";
++
++/** The group's content as a symbol: its children, in its content box (`cw × ch`). */
++export function symbolFromGroup(group: GroupEl): SymbolDefinition {
++  return {
++    w: group.cw,
++    h: group.ch,
++    children: detachOutside(group).children as Element[],
++  };
++}
++
++/** `base`, or `base-2`, `base-3`… when the scene already has a symbol by that name. */
++export function freeSymbolName(scene: Scene, base: string): string {
++  const taken = scene.symbols ?? {};
++  if (!taken[base]) return base;
++  let n = 2;
++  while (taken[`${base}-${n}`]) n++;
++  return `${base}-${n}`;
++}
++
++/**
++ * Stores the top-level group `groupId` as the symbol `name` and draws a `use` of it in the
++ * group's place and box, keeping its id, name, opacity and animation.
++ */
++export function replaceWithUse(
++  scene: Scene,
++  groupId: string,
++  name: string,
++): Scene {
++  const group = scene.elements.find((el) => el.id === groupId);
++  if (group?.kind !== "group") return scene;
++  const instance: UseEl = {
++    ...(defaultElement("use") as UseEl),
++    id: group.id,
++    name: group.name,
++    x: group.x,
++    y: group.y,
++    w: group.w,
++    h: group.h,
++    opacity: group.opacity,
++    anim: group.anim,
++    symbol: name,
++  };
++  if (group.shot) instance.shot = group.shot;
++  return {
++    ...scene,
++    symbols: { ...scene.symbols, [name]: symbolFromGroup(group) },
++    elements: scene.elements.map((el) =>
++      el.id === groupId ? (instance as Element) : el,
++    ),
++  };
++}
++
++/** How many `use` elements, at any depth, draw the symbol `name`. */
++export function instanceCount(scene: Scene, name: string): number {
++  const count = (els: readonly Element[]): number =>
++    els.reduce(
++      (n, el) =>
++        n +
++        (el.kind === "use" && el.symbol === name ? 1 : 0) +
++        (el.kind === "group" ? count(el.children as Element[]) : 0),
++      0,
++    );
++  return count(scene.elements);
++}
++
++/** The scene with the symbol `name`'s children replaced, so every instance draws them. */
++export function withSymbolChildren(
++  scene: Scene,
++  name: string,
++  children: Element[],
++): Scene {
++  const symbol = scene.symbols?.[name];
++  if (!symbol) return scene;
++  return {
++    ...scene,
++    symbols: { ...scene.symbols, [name]: { ...symbol, children } },
++  };
++}

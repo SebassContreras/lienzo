@@ -559,6 +559,27 @@ textarea {
 .hint.pad {
   padding: 10px;
 }
+.origin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 22px);
+  gap: 4px;
+}
+.origin-grid button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 4px;
+}
+.origin-grid button.active {
+  background: var(--accent);
+}
+.shot-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
 .preset-save {
   display: flex;
   gap: 6px;
@@ -805,10 +826,18 @@ code {
 }
 .track-row {
   display: grid;
-  grid-template-columns: 110px 1fr;
+  grid-template-columns: 110px auto 1fr;
   align-items: center;
   gap: 10px;
   height: 22px;
+}
+.track-loop {
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+}
+.track-until {
+  width: 52px;
 }
 .track-label {
   color: var(--muted);
@@ -1141,6 +1170,12 @@ code {
   padding: 2px 10px;
   border-radius: 999px;
   font-size: 12px;
+}
+.app.symbol-editing .topbar,
+.app.symbol-editing .library,
+.app.symbol-editing .editor-footer {
+  pointer-events: none;
+  opacity: 0.55;
 }
 .panel.locked {
   pointer-events: none;
