@@ -58,8 +58,9 @@ What exists today:
   `projects/<slug>/` (`inProject` in `src/service/project-scope.ts`, 046); only a
   `ProjectCtx` reaches scenes, so the compiler rejects scene access without a project.
   `pnpm lienzo <tool>` (`src/cli/`, 008) runs
-  any of them under `tsx` — top-level scalar fields as flags, the rest in `--json` (or
-  `--json -` from stdin), result JSON on stdout, errors JSON on stderr with exit 1. Code
+  any of them under `tsx` — top-level scalar fields as flags, the rest in `--json` (inline,
+  `--json @file` relative to where the command was typed, or `--json -` from stdin), result
+  JSON on stdout, errors JSON on stderr with exit 1. Code
   the descriptors import must load in plain Node: no Vite-only imports (`?url`, `?raw`,
   `import.meta.glob`); static files go in `public/`
 - MCP: `pnpm lienzo mcp` (`src/mcp/server.ts`, 009) serves every registry tool over stdio
@@ -76,7 +77,9 @@ What exists today:
 - Speech (TTS): adapters in `src/service/tts/` (OpenRouter, local Kokoro-compatible server);
   env variables (`.env.example`) are read in Node only. The editor reaches OpenRouter through
   the dev server's `/api/tts/speech` (`src/service/tts-proxy.ts`), which adds the key, so no
-  `OPENROUTER_*` value reaches the browser or `dist/` (046)
+  `OPENROUTER_*` value reaches the browser or `dist/` (046). A key the user types in the TTS
+  dialog is the one exception: it is kept in the browser's TTS preferences (`localStorage`,
+  `src/service/tts/preferences.ts`) and sent straight to OpenRouter, bypassing the proxy (061)
 
 ## Layout
 
@@ -86,7 +89,8 @@ src/model/       scene and background types, size presets, fonts; Zod schemas (s
 src/animations/  the animation registry, one file per family (entrances, attention, emphasis,
                  text): pure functions of progress; exits replay entrances backwards
 src/engine/      drawScene, animate, keyframe tracks, painting helpers, animation state,
-                 geometry, particle field
+                 geometry, particle field; audio/ = audio tracks and timing; subtitles/ =
+                 cue layout and word windows; path/ = free-path geometry
 src/components/  index.ts = the registry; descriptor.ts = the descriptor type; fields/ = field
                  builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);
                  <kind>/descriptor.ts + <kind>/draw.ts per element kind (the kinds are the
@@ -95,7 +99,9 @@ src/editor/      React UI: app shell, stage, library, background library, animat
                  (anim-library.tsx), inspector (the
                  element inspector is generated: layout.ts + field-editor.tsx; keyframe
                  buttons in keyframe-controls.tsx; timeline/ = the keyframe tracks panel;
-                 sidebar/ = the project tabs: Escenas, assets, presets)
+                 sidebar/ = the project tabs: Escenas, assets, presets; brand/ = brand guide
+                 managers; dialogs/ = modal dialogs (TTS, brand); footer/ = editor footer;
+                 widgets/ = custom field widgets; joint/ = joint mode)
 src/export/      PNG / GIF / MP4
 src/traits/      reusable style pieces, one file per trait
 src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
@@ -103,12 +109,13 @@ src/presets/     recipe resolver, recipe diff, JSON store (server side: json-sto
                  animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
 src/service/     tool registry, ctx, Node store, project scope, headless renderer (010), dev
                  server middlewares (projects, fonts, TTS proxy); tools/ = one file per tool
-                 (007); tts/ = speech adapters
+                 (007); tts/ = speech adapters; compact/ = compact scene expansion (011)
 src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008); build.ts
                  bundles dist/cli.js
 src/mcp/         `pnpm lienzo mcp`: the stdio MCP server over the registry (009)
 src/test/        golden render tests, fixtures and test helpers
 src/types/       type declarations for packages that ship none
+docs/            reference docs (components.md: every component kind)
 presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
 presets/animations/  animation presets (JSON)
 projects/        project workspaces (e.g. projects/mi-proyecto/ containing scenes/, assets/, presets/, exports/)
@@ -136,7 +143,7 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   are deterministic.
 - Minimal testing (KISS / YAGNI): test pure domain logic, mathematical timing, transformations,
   and contract boundaries. Do not write redundant micro-tests for every Zod field or heavy E2E tests
-  when pure unit tests suffice; keep the full suite fast (about 30 s today) and run single files while working. Do not run micro-tests
+  when pure unit tests suffice; keep the full suite fast and run single files while working. Do not run micro-tests
   repeatedly on intermediate tasks when a dedicated test task exists at the end of the spec.
 - Fast execution & verification: use `pnpm typecheck` (single-pass TypeScript check) to confirm
   correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;

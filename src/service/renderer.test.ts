@@ -58,7 +58,7 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
   afterAll(async () => {
     await ctx?.dispose();
     if (editor) await closeApp(editor);
-  });
+  }, 60_000);
 
   /**
    * Runs `body` (an async function body, or one expression) in the editor page. A string,

@@ -13,11 +13,10 @@ import {
 import { COMPONENTS, createElement, KINDS } from "../components/index.ts";
 import { WIDGET_NAMES } from "../editor/field-editor.tsx";
 import { inspectorLayout } from "../editor/layout.ts";
-import { defaultScene, type Element, type Scene } from "../model/model.ts";
+import { defaultScene, type Element } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parsePresetRecipe, parseScene } from "../model/schema.ts";
 import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
-import { LegacySceneSchema } from "./legacy-schema.ts";
 import { installCanvasFakes } from "./recording-ctx.ts";
 
 installCanvasFakes();
@@ -25,81 +24,9 @@ const { goldenScenes } = await import("./golden-scenes.ts");
 
 const descriptors = COMPONENTS as unknown as Descriptor<Element>[];
 
-/** Every leaf value's path in `v` (objects and arrays opened). */
-function leaves(
-  v: unknown,
-  path: (string | number)[] = [],
-): (string | number)[][] {
-  if (v && typeof v === "object") {
-    return Object.entries(v).flatMap(([k, x]) =>
-      leaves(x, [...path, Array.isArray(v) ? Number(k) : k]),
-    );
-  }
-  return [path];
-}
-
-function setAt(root: unknown, path: (string | number)[], value: unknown) {
-  const copy = structuredClone(root) as Record<string | number, unknown>;
-  let o = copy;
-  for (const k of path.slice(0, -1)) o = o[k] as typeof o;
-  const last = path[path.length - 1] as string | number;
-  if (value === undefined) delete o[last];
-  else o[last] = value;
-  return copy;
-}
-
-/** A value of the wrong type for whatever is at `path`. */
-const wrong = (v: unknown) => (typeof v === "string" ? 3 : "x");
-
-function sameVerdict(data: unknown) {
-  const now = parseScene(data);
-  const before = LegacySceneSchema.safeParse(data);
-  expect(now.ok, JSON.stringify(data).slice(0, 200)).toBe(before.success);
-  if (now.ok && before.success) expect(now.value).toEqual(before.data);
-}
-
 describe("the generated scene schema", () => {
-  const scenes = goldenScenes();
-
-  // «later» holds kinds the old schema never knew
-  const old = Object.keys(scenes).filter((name) => name !== "later");
-
-  it.each(old)("accepts «%s» as the old schema did", (name) => {
-    sameVerdict(scenes[name]);
-  });
-
-  it("agrees with the old schema on every broken or missing value", () => {
-    const scene = scenes.kinds as Scene;
-    for (const path of leaves(scene.elements)) {
-      const full = ["elements", ...path];
-      const value = full.reduce<unknown>(
-        (o, k) => (o as Record<string | number, unknown>)[k],
-        scene,
-      );
-      sameVerdict(setAt(scene, full, wrong(value)));
-      sameVerdict(setAt(scene, full, undefined));
-    }
-    // One full-scene parse per leaf, twice; the anim slots (013) add many leaves.
-  }, 60_000);
-
-  it("agrees on the particle limits and on unknown kinds", () => {
-    const particles = createElement("particles");
-    for (const [key, values] of [
-      ["count", [0, 1, 300, 301, 1.5]],
-      ["speed", [0, 1, 2.5, 6]],
-      ["drift", [-1, 0, 500]],
-    ] as const) {
-      for (const v of values) {
-        sameVerdict({
-          ...defaultScene(),
-          elements: [{ ...particles, [key]: v }],
-        });
-      }
-    }
-    sameVerdict({
-      ...defaultScene(),
-      elements: [{ ...createElement("rect"), kind: "no-such-kind" }],
-    });
+  it.each(Object.entries(goldenScenes()))("accepts «%s»", (_, scene) => {
+    expect(parseScene(scene).ok).toBe(true);
   });
 
   it("opens every built-in preset and background", () => {

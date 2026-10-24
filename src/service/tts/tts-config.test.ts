@@ -11,6 +11,7 @@ import {
   resolveDefaultTtsVoice,
   resolveOpenRouterApiKey,
   resolveOpenRouterBaseUrl,
+  STORAGE_KEY_OPENROUTER_API_KEY,
 } from "./config.ts";
 import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
 import {
@@ -148,6 +149,17 @@ describe("Browser UI preferences persistence (R5, D3)", () => {
     expect(loaded.adjustDuration).toBe(false);
     expect(loaded.isCustomModel).toBe(true);
     expect(loaded.isCustomVoice).toBe(true);
+  });
+
+  it("moves a key from the old slot into the preferences and removes the slot (061/R3)", () => {
+    fakeLocalStorage.setItem(STORAGE_KEY_OPENROUTER_API_KEY, " sk-legacy ");
+
+    expect(loadTtsPreferences().apiKey).toBe("sk-legacy");
+    expect(fakeLocalStorage.getItem(STORAGE_KEY_OPENROUTER_API_KEY)).toBeNull();
+    expect(loadTtsPreferences().apiKey).toBe("sk-legacy");
+
+    saveTtsPreferences({ apiKey: "sk-new" });
+    expect(fakeLocalStorage.getItem(STORAGE_KEY_OPENROUTER_API_KEY)).toBeNull();
   });
 });
 

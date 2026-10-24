@@ -3,23 +3,14 @@
 A free-form canvas editor for animated social media posts. Drag pre-made components onto
 the canvas, edit them live, and export PNG, GIF or MP4.
 
-- **Rectangle and ellipse:** fill or gradient, border (solid, dashed, dotted, moving),
-  border glow, background glow, shadow, inner text. Lines attach to the ellipse's outline.
-- **Text:** font, size, weight, color or gradient, glow.
-- **Icon:** any [Lucide](https://lucide.dev) icon from a searchable picker, with stroke,
-  color, glow and an optional rounded tile (color or gradient).
-- **Image:** PNG, JPG, SVG or WebP picked from disk and stored in `assets/`; size (aspect
-  kept by default), corners, opacity, border, shadow.
-- **Line:** attach its ends to elements so it follows them; curve, arrows, glow, and
-  animated flow (light pulses, marching ants, comet).
-- **Particles:** points drifting inside a box and joined by lines when close (a
-  "constellation"), with no background of their own: count (up to 300), speed, drift,
-  seed ("Redistribuir"), point and line style, glow. "Ajustar al lienzo" makes them cover
-  the whole post. Their motion loops seamlessly.
+- **Components:** shapes (rectangle, ellipse, polygon, star, arrow), text, icons,
+  images, connecting lines, particles, 3D objects, groups and symbols, plus ready-made pieces
+  (badge, progress, counter, chat bubble, steps, list, table, code, chart, free path,
+  subtitles). Every kind is described in [docs/components.md](docs/components.md).
 - **Groups:** select several elements (Shift+click or drag a box), move them together,
   and group them; a group moves, resizes, duplicates and animates as one.
-- **Animations:** float, pulse, breathing glow, fade-in, pop-in, slide-up, draw-on. Loops
-  are seamless in GIF and MP4.
+- **Animations:** entry, loop and exit animations per element (fades, slides, pops, float,
+  pulse, glow, draw-on and more) plus keyframe tracks. Loops are seamless in GIF and MP4.
 - **Presets:** the library's presets are JSON recipes in `presets/built-in/` that combine
   reusable traits (glow, glass, border, float…), grouped by category (Tarjetas, Texto,
   Conexiones, Iconos e imágenes, Partículas) and filterable by name. Save any element or
@@ -90,7 +81,8 @@ In OpenCode (`opencode.json`) or other MCP clients, configure the server with ex
 }
 ```
 
-Or with the compiled bundle (`pnpm build:cli` writes `dist/cli.js`):
+Or with the compiled bundle (`pnpm build:cli` writes `dist/cli.js`; `dist/` is not committed,
+so rerun it after every pull or the server lists an older set of tools):
 
 ```json
 {

@@ -13,7 +13,7 @@ import { checkScene, findPreset, SceneResult, saveScene } from "../scenes.ts";
 export const sceneBuild = defineTool({
   name: "scene_build",
   description:
-    "Build a full scene from a compact description (spec 011). Expands size, background, " +
+    "Build a full scene from a compact description. Expands size, background, " +
     "presets, shortcuts (at, fit, from, to, short tracks and anim), partial `effects`, and validates " +
     'the resulting scene. `defaults: "flat"` turns off the default gradient, shadow and border ' +
     "of shapes (rect, ellipse, polygon, star, arrow) unless the element sets them; it is applied " +

@@ -9,7 +9,7 @@ import { editScene, SceneResult } from "../scenes.ts";
 export const shotSet = defineTool({
   name: "shot_set",
   description:
-    "Create, update, or remove a shot in a scene (055/D3). Specify `id`, `start`, and `end` " +
+    "Create, update, or remove a shot in a scene. Specify `id`, `start`, and `end` " +
     "to create or update a shot; pass `remove: true` to delete it. Optional `name`, `transition` " +
     "({ kind: 'cut'|'fade'|'slide'|'zoom', duration: number }), and `camera` ({ x, y, zoom, tracks }) " +
     "configure cut pacing and camera movement.",

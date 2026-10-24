@@ -115,7 +115,7 @@ D7 (orphan docs): none found; `.claude/` is empty.
 ## 8. Discards / do not touch
 
 - `.agents/skills/spectrace-*` — vendored, owned upstream (`skills-lock.json`).
-- `src/test/legacy-schema.ts` — test fixture for backward compat.
+- the `src/test/` legacy schema (removed in 061) — test fixture for backward compat.
 - Exported Zod schemas in `src/model/*` flagged by knip — public shape of scene JSON; un-export only after Q3.
 - Lint warnings (`noNonNullAssertion`) — style, not dead code.
 

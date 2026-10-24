@@ -62,7 +62,9 @@ describe.skipIf(!browser)(
   { timeout: 180_000 },
   () => {
     const probe = createBrowserImageProbe(APP_ROOT);
-    afterAll(() => probe.dispose());
+    // The describe timeout covers tests only; closing Vite and the browser under a loaded
+    // full run can outlast the 10 s hook default.
+    afterAll(() => probe.dispose(), 60_000);
 
     it("finds the visible pixels inside a transparent margin", async () => {
       const src = marginPng(10, 2, 7);

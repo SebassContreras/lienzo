@@ -55,19 +55,24 @@ export function loadTtsPreferences(): TtsUiPreferences {
     // Fall back to defaults on parse error or security restriction
   }
 
-  // Backwards compatibility check for existing API key key
+  // 061/D3: a key in the old separate slot moves into the preferences once.
   let apiKey = prefs.apiKey;
-  if (!apiKey) {
-    try {
-      const storedKey = window.localStorage.getItem(
-        STORAGE_KEY_OPENROUTER_API_KEY,
-      );
-      if (storedKey && storedKey.trim().length > 0) {
-        apiKey = storedKey.trim();
+  try {
+    const legacyKey = window.localStorage
+      .getItem(STORAGE_KEY_OPENROUTER_API_KEY)
+      ?.trim();
+    if (legacyKey !== undefined) {
+      window.localStorage.removeItem(STORAGE_KEY_OPENROUTER_API_KEY);
+      if (!apiKey && legacyKey) {
+        apiKey = legacyKey;
+        window.localStorage.setItem(
+          STORAGE_KEY_TTS_PREFERENCES,
+          JSON.stringify({ ...prefs, apiKey }),
+        );
       }
-    } catch {
-      // Ignore
     }
+  } catch {
+    // Ignore
   }
 
   return {
@@ -110,18 +115,6 @@ export function saveTtsPreferences(prefs: Partial<TtsUiPreferences>): void {
       STORAGE_KEY_TTS_PREFERENCES,
       JSON.stringify(updated),
     );
-
-    // Keep legacy single API key in sync if provided
-    if (typeof prefs.apiKey === "string") {
-      if (prefs.apiKey.trim().length > 0) {
-        window.localStorage.setItem(
-          STORAGE_KEY_OPENROUTER_API_KEY,
-          prefs.apiKey.trim(),
-        );
-      } else {
-        window.localStorage.removeItem(STORAGE_KEY_OPENROUTER_API_KEY);
-      }
-    }
   } catch {
     // Ignore localStorage quota or private-mode errors
   }

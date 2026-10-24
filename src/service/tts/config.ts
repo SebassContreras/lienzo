@@ -5,8 +5,7 @@
  * Resolves configuration following precedence:
  * 1. Explicit override passed in options (e.g. CLI flag, tool argument, dialog input)
  * 2. Process environment variables (`process.env.OPENROUTER_*`) loaded via native `process.loadEnvFile`
- * 3. Browser localStorage (for API key in editor)
- * 4. Hardcoded default fallbacks
+ * 3. Hardcoded default fallbacks
  *
  * The environment is read in Node only: no `OPENROUTER_*` value reaches browser code; the
  * editor reaches OpenRouter through the dev server's proxy (`TTS_PROXY_PATH`, 046/D4).
@@ -16,11 +15,12 @@ export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/audio/speech";
 /** The dev server's speech endpoint that adds the server's API key (046/D4). */
 export const TTS_PROXY_PATH = "/api/tts/speech";
 export const DEFAULT_LOCAL_TTS_URL = "http://localhost:8880/v1/audio/speech";
+/** The old separate key slot, read once to migrate it into the TTS preferences (061/D3). */
 export const STORAGE_KEY_OPENROUTER_API_KEY = "lienzo_openrouter_api_key";
 export const DEFAULT_TTS_MODEL = "openai/tts-1";
 export const DEFAULT_TTS_VOICE = "alloy";
-const DEFAULT_LOCAL_TTS_MODEL = "kokoro-es";
-const DEFAULT_LOCAL_TTS_VOICE = "ef_dora";
+export const DEFAULT_LOCAL_TTS_MODEL = "kokoro-es";
+export const DEFAULT_LOCAL_TTS_VOICE = "ef_dora";
 
 export type TtsProviderType = "openrouter" | "local" | "kokoro" | "custom";
 
@@ -61,7 +61,8 @@ function getEnvVariable(name: string): string | undefined {
 }
 
 /**
- * Resolves the OpenRouter API key from explicit value, process.env / Vite env, or localStorage.
+ * Resolves the OpenRouter API key from an explicit value (the editor passes the key saved in
+ * its TTS preferences), else `process.env` in Node.
  */
 export function resolveOpenRouterApiKey(explicitKey?: string): string {
   if (explicitKey && explicitKey.trim().length > 0) {
@@ -71,20 +72,6 @@ export function resolveOpenRouterApiKey(explicitKey?: string): string {
   // Environment check (Node only)
   const envKey = getEnvVariable("OPENROUTER_API_KEY");
   if (envKey) return envKey;
-
-  // Browser localStorage check
-  if (typeof window !== "undefined" && window.localStorage) {
-    try {
-      const stored = window.localStorage.getItem(
-        STORAGE_KEY_OPENROUTER_API_KEY,
-      );
-      if (stored && stored.trim().length > 0) {
-        return stored.trim();
-      }
-    } catch {
-      // LocalStorage access may fail in restricted/private modes
-    }
-  }
 
   return "";
 }

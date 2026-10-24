@@ -1,0 +1,171 @@
+diff --git a/README.md b/README.md
+index 39993d2..77362d9 100644
+--- a/README.md
++++ b/README.md
+@@ -3,23 +3,14 @@
+ A free-form canvas editor for animated social media posts. Drag pre-made components onto
+ the canvas, edit them live, and export PNG, GIF or MP4.
+ 
+-- **Rectangle and ellipse:** fill or gradient, border (solid, dashed, dotted, moving),
+-  border glow, background glow, shadow, inner text. Lines attach to the ellipse's outline.
+-- **Text:** font, size, weight, color or gradient, glow.
+-- **Icon:** any [Lucide](https://lucide.dev) icon from a searchable picker, with stroke,
+-  color, glow and an optional rounded tile (color or gradient).
+-- **Image:** PNG, JPG, SVG or WebP picked from disk and stored in `assets/`; size (aspect
+-  kept by default), corners, opacity, border, shadow.
+-- **Line:** attach its ends to elements so it follows them; curve, arrows, glow, and
+-  animated flow (light pulses, marching ants, comet).
+-- **Particles:** points drifting inside a box and joined by lines when close (a
+-  "constellation"), with no background of their own: count (up to 300), speed, drift,
+-  seed ("Redistribuir"), point and line style, glow. "Ajustar al lienzo" makes them cover
+-  the whole post. Their motion loops seamlessly.
++- **Components:** shapes (rectangle, ellipse, polygon, star, arrow), text, icons,
++  images, connecting lines, particles, 3D objects, groups and symbols, plus ready-made pieces
++  (badge, progress, counter, chat bubble, steps, list, table, code, chart, free path,
++  subtitles). Every kind is described in [docs/components.md](docs/components.md).
+ - **Groups:** select several elements (Shift+click or drag a box), move them together,
+   and group them; a group moves, resizes, duplicates and animates as one.
+-- **Animations:** float, pulse, breathing glow, fade-in, pop-in, slide-up, draw-on. Loops
+-  are seamless in GIF and MP4.
++- **Animations:** entry, loop and exit animations per element (fades, slides, pops, float,
++  pulse, glow, draw-on and more) plus keyframe tracks. Loops are seamless in GIF and MP4.
+ - **Presets:** the library's presets are JSON recipes in `presets/built-in/` that combine
+   reusable traits (glow, glass, border, float…), grouped by category (Tarjetas, Texto,
+   Conexiones, Iconos e imágenes, Partículas) and filterable by name. Save any element or
+diff --git a/docs/components.md b/docs/components.md
+new file mode 100644
+index 0000000..ee1e46c
+--- /dev/null
++++ b/docs/components.md
+@@ -0,0 +1,131 @@
++# Components
++
++Every element kind Lienzo can draw, in the library's order (`COMPONENTS` in
++`src/components/index.ts`). The Spanish name is the label shown in the editor. Each kind's
++full field list, with the paths keyframes can animate, comes from the `component_list` tool
++(`pnpm lienzo component_list`); this page says what each kind is for.
++
++Shared by every kind: position and size (`x`, `y`, `w`, `h` where the kind has a box),
++`opacity`, entry / loop / exit animations (`anim.in`, `anim.loop`, `anim.out`), keyframe
++tracks (`tracks`, by field path or the `@rotate` / `@scale` channels) and a transform origin.
++Most kinds also offer glow and shadow.
++
++## `rect`
++
++**Rectángulo.** A box with rounded corners (`radius`); fill (color or gradient, linear,
++radial or multi-stop), border (solid, dashed, dotted, moving `flow`), border glow,
++background glow, shadow and inner text (`label`).
++
++## `ellipse`
++
++**Elipse.** The same styling as `rect` in an ellipse; lines attach to its outline.
++
++## `icon`
++
++**Icono.** Any [Lucide](https://lucide.dev) icon from a searchable picker, with stroke,
++color, glow and an optional rounded tile (color or gradient).
++
++## `image`
++
++**Imagen.** A PNG, JPG, SVG or WebP from the project's `assets/`: size (aspect kept by
++default), corners, border, shadow, and a non-destructive `crop` (manual handles, or
++**Recortar transparencia** / `image_trim` to cut the transparent margin).
++
++## `group`
++
++**Grupo.** Holds other elements that move, resize, duplicate and animate as one; an optional
++frame and body, `stagger` between children's animations, and `clip` to clip the children to
++the group's box (with `radius`).
++
++## `text`
++
++**Texto.** Text with font, size, weight, color or gradient, line height, letter spacing,
++alignment inside its box, and glow.
++
++## `line`
++
++**Línea.** A connector whose ends attach to elements so it follows them: curve (`bend`),
++arrows, glow, and animated flow (light pulses, marching ants, comet).
++
++## `particles`
++
++**Partículas.** Points drifting inside a box and joined by lines when close (a
++"constellation"): count, speed, direction, gravity, twinkle, drift, `seed`, per-particle
++variation, point and link style, glow. Their motion loops seamlessly.
++
++## `three`
++
++**Objeto 3D.** A three.js shape rendered offscreen and composited into the canvas: shape,
++object rotation, position and scale, `spin`, material, ambient and point light, camera.
++
++## `polygon`
++
++**Polígono.** A regular polygon with `rect`'s styling; `fit: "box"` stretches it to fill its
++box.
++
++## `star`
++
++**Estrella.** A star with `rect`'s styling.
++
++## `arrow`
++
++**Flecha.** A block arrow pointing in a chosen direction, with `rect`'s styling.
++
++## `badge`
++
++**Insignia.** A pill with text and an optional icon: size, padding, fill, border and glow.
++
++## `progress`
++
++**Progreso.** A progress indicator (bar or ring styles) for a `value`, with track color,
++thickness and an optional number.
++
++## `counter`
++
++**Contador.** A number that counts from `from` to `to` as `progress` goes 0 → 1, with
++decimals and a thousands separator.
++
++## `bubble`
++
++**Mensaje de chat.** A chat message bubble with author, avatar color, side (left or right)
++and a typing effect (`typingSpeed`).
++
++## `steps`
++
++**Pasos.** A row or column of numbered steps joined by a line, with the `active` step
++highlighted.
++
++## `list`
++
++**Lista.** A bulleted list whose items appear one by one (`reveal`), with bullet style,
++spacing and color.
++
++## `table`
++
++**Tabla.** A table with a header row, striped rows and rows that appear one by one
++(`reveal`).
++
++## `code`
++
++**Código.** A code block with syntax highlighting for a chosen language and theme, typed
++in over time (`typed`).
++
++## `chart`
++
++**Gráfico.** A data chart (bars and other types, with a palette) that grows in with
++`progress`; axis and donut `hole` options.
++
++## `path`
++
++**Trazado libre.** A free-form vector path drawn in the editor or from SVG path data: fill,
++border, glow, draw-on (`progress`) and `morph` between shapes.
++
++## `subtitles`
++
++**Subtítulos.** Captions synced to the scene's speech cues, shown a few words at a time
++(`wordsPerWindow`) with the spoken word highlighted, on an optional background box.
++
++## `use`
++
++**Símbolo.** An instance of a reusable symbol defined in the scene's `symbols`; it draws
++the symbol's elements in its own box and takes its own animations.
