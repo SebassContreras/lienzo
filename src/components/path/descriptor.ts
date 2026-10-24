@@ -12,6 +12,7 @@ import {
   border,
   box,
   custom,
+  defaulted,
   elementOpacity,
   fill,
   glow,
@@ -64,6 +65,12 @@ const PATH_ANIMS: AnimOffer = {
   loops: LOOP_KINDS,
 };
 
+export type PathMode = "morph" | "layers";
+
+/** The morph controls only matter with several shapes blending into each other. */
+const morphs = (p: Parent) =>
+  (p.shapes as unknown[]).length > 1 && p.mode !== "layers";
+
 const MORPH_EASINGS = EASING_NAMES.map((n) => [n, n] as const);
 
 /** Any SVG path, drawn with fill and stroke into its box; it can draw itself on and morph. */
@@ -84,6 +91,21 @@ const fields = {
     ViewSchema,
     { label: "Vista", inspector: false },
   ),
+  /** "morph" blends the shapes through `morph`; "layers" draws them all stacked (057/D1). */
+  mode: defaulted(
+    select<PathMode>(
+      [
+        ["morph", "Transformar"],
+        ["layers", "Capas"],
+      ],
+      "morph",
+      {
+        label: "Modo",
+        section: "Trazado",
+        visible: (p: Parent) => (p.shapes as unknown[]).length > 1,
+      },
+    ),
+  ),
   /** 0 = first shape, 1 = second…; animated by keyframes. */
   morph: num(0, {
     label: "Transformación",
@@ -91,13 +113,13 @@ const fields = {
     max: (p: Parent) => Math.max(1, (p.shapes as unknown[]).length - 1),
     step: 0.01,
     bounds: [0, Infinity],
-    visible: (p: Parent) => (p.shapes as unknown[]).length > 1,
+    visible: morphs,
   }),
   morphEasing: select<Easing>(MORPH_EASINGS, "ease-in-out", {
     label: "Curva de la transformación",
     section: "Trazado",
     schema: EasingSchema,
-    visible: (p: Parent) => (p.shapes as unknown[]).length > 1,
+    visible: morphs,
   }),
   /** How much of the stroke is drawn, 0–1 (024/D2). */
   progress: num(1, {

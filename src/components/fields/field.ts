@@ -223,6 +223,16 @@ export function select<T extends string | number, P = Parent>(
   };
 }
 
+/**
+ * `f` with its default filled in when the value is missing, so scenes saved before the field
+ * existed still parse and read as they did.
+ */
+export function defaulted<F extends { default: unknown; schema: z.ZodType }>(
+  f: F,
+): F {
+  return { ...f, schema: f.schema.default(f.default) as F["schema"] };
+}
+
 export function custom<T, P = Parent>(
   widget: string,
   value: T,

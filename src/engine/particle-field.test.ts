@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultParticles } from "../model/model.ts";
 import { linkAlpha, mulberry32, particlePositions } from "./particle-field.ts";
+import { twinkleAlphas } from "./particle-twinkle.ts";
 
 const field = { ...defaultParticles(), w: 500, h: 300, count: 300, speed: 4 };
 const T = 4;
@@ -71,5 +72,62 @@ describe("linkAlpha", () => {
 
   it("draws no links when the distance is 0", () => {
     expect(linkAlpha(0, 0, 1)).toBe(0);
+  });
+});
+
+describe("still particles (057/R3)", () => {
+  it("keeps «static» points in place over the loop", () => {
+    const still = { ...field, motion: "static" as const };
+
+    expect(Array.from(particlePositions(still, 2.1, T))).toEqual(
+      Array.from(particlePositions(still, 0.3, T)),
+    );
+  });
+
+  it("keeps points still when speed is 0", () => {
+    const still = { ...field, speed: 0 };
+
+    expect(Array.from(particlePositions(still, 2.1, T))).toEqual(
+      Array.from(particlePositions(still, 0.3, T)),
+    );
+  });
+
+  it("rests «static» points where speed-0 drifting points rest", () => {
+    const fixed = { ...field, motion: "static" as const };
+    const halted = { ...field, speed: 0 };
+
+    expect(Array.from(particlePositions(fixed, 1, T))).toEqual(
+      Array.from(particlePositions(halted, 1, T)),
+    );
+  });
+
+  it("still twinkles while static", () => {
+    const still = { ...field, motion: "static" as const, twinkle: 1 };
+
+    expect(Array.from(twinkleAlphas(still, 0, T) ?? [])).not.toEqual(
+      Array.from(twinkleAlphas(still, 1, T) ?? []),
+    );
+  });
+
+  it("closes the loop with a fractional speed below 1", () => {
+    const slow = { ...field, speed: 0.4 };
+    const a = particlePositions(slow, 0, T);
+    const b = particlePositions(slow, T, T);
+
+    a.forEach((v, i) => {
+      expect(b[i]).toBeCloseTo(v, 9);
+    });
+  });
+});
+
+describe("drift saved before 057 (057/R4)", () => {
+  it("puts points exactly where they were before 057", () => {
+    const el = { ...defaultParticles(), w: 500, h: 300, count: 3, speed: 4 };
+
+    // recorded with the code before 057
+    expect(Array.from(particlePositions(el, 1.3, T))).toEqual([
+      426.45913130638087, 188.5522889480627, 305.6209587724851,
+      215.9046370295074, 252.68254721593115, 228.0391805408484,
+    ]);
   });
 });

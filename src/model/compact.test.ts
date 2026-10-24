@@ -145,7 +145,7 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
           kind: "group",
           children: [
             { kind: "rect", w: 50 },
-            { kind: "particles", speed: 0 },
+            { kind: "particles", speed: -1 },
           ],
         },
       ],

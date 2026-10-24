@@ -113,8 +113,26 @@ export function frameOf(el: PathEl): Frame | undefined {
 }
 
 /**
- * A free path: shadow, fill, then the stroke with its glow. The stroke is revealed up to
- * `progress` (times the "draw" entrance's), and the fill fades in with it (024/D2).
+ * What `el` draws: in "layers" mode every shape that parses, stacked in list order (057/D2);
+ * otherwise the one frame at its `morph` value.
+ */
+function framesOf(el: PathEl): Frame[] {
+  if (el.mode !== "layers") {
+    const frame = frameOf(el);
+    return frame ? [frame] : [];
+  }
+  return el.shapes.flatMap((_, i) => {
+    try {
+      return [shapeFrame(el, i)];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/**
+ * A free path: shadow, fill, then the stroke with its glow, per frame. The stroke is revealed
+ * up to `progress` (times the "draw" entrance's), and the fill fades in with it (024/D2).
  */
 export function drawPath(
   ctx: Ctx,
@@ -122,61 +140,83 @@ export function drawPath(
   st: AnimState,
   { scene, t }: DrawContext,
 ): void {
-  const frame = frameOf(el);
-  if (!frame) return;
-  const { path, length, style } = frame;
+  const frames = framesOf(el);
+  if (frames.length === 0) return;
   const shown = Math.max(0, Math.min(1, el.progress * st.progress));
   if (shown <= 0) return;
   const box = { x: el.x, y: el.y, w: el.w, h: el.h };
+  const flow = (t / scene.duration) * el.border.flow;
   withTransform(ctx, box, st, () => {
-    ctx.globalAlpha *= style.opacity;
-    if (el.shadow.enabled) {
+    // a lone frame paints straight into the transform, with the same canvas calls as before 057
+    const [only] = frames;
+    if (only && frames.length === 1) {
+      paintFrame(ctx, el, only, shown, flow, st.glowMul);
+      return;
+    }
+    for (const frame of frames) {
+      ctx.save();
+      paintFrame(ctx, el, frame, shown, flow, st.glowMul);
+      ctx.restore();
+    }
+  });
+}
+
+/** One frame inside the element's transform; `flow` is how far the dashes have run. */
+function paintFrame(
+  ctx: Ctx,
+  el: PathEl,
+  { path, length, style }: Frame,
+  shown: number,
+  flow: number,
+  glowMul: number,
+): void {
+  const box = { x: el.x, y: el.y, w: el.w, h: el.h };
+  ctx.globalAlpha *= style.opacity;
+  if (el.shadow.enabled) {
+    shadowOnly(
+      ctx,
+      () => ctx.fill(path),
+      rgba(el.shadow.color, el.shadow.opacity * shown),
+      el.shadow.blur,
+      el.shadow.x,
+      el.shadow.y,
+    );
+  }
+
+  ctx.save();
+  ctx.globalAlpha *= el.fill.opacity * shown;
+  ctx.fillStyle = el.fill.gradient
+    ? linearGradient(ctx, box, el.fill.angle, style.fill, el.fill.color2)
+    : style.fill;
+  ctx.fill(path);
+  ctx.restore();
+
+  if (style.width <= 0) return;
+  const dash =
+    shown < 1
+      ? [length * shown, length + 1]
+      : dashFor(el.border.style, style.width);
+  const period = dash.reduce((a, b) => a + b, 0);
+  const stroke = () => {
+    ctx.lineWidth = style.width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.setLineDash(dash);
+    ctx.lineDashOffset = shown < 1 ? 0 : -flow * period;
+    ctx.stroke(path);
+  };
+  if (el.borderGlow.enabled) {
+    for (let i = 0; i < el.borderGlow.strength; i++) {
       shadowOnly(
         ctx,
-        () => ctx.fill(path),
-        rgba(el.shadow.color, el.shadow.opacity * shown),
-        el.shadow.blur,
-        el.shadow.x,
-        el.shadow.y,
+        stroke,
+        el.borderGlow.color,
+        el.borderGlow.blur * glowMul,
       );
     }
-
-    ctx.save();
-    ctx.globalAlpha *= el.fill.opacity * shown;
-    ctx.fillStyle = el.fill.gradient
-      ? linearGradient(ctx, box, el.fill.angle, style.fill, el.fill.color2)
-      : style.fill;
-    ctx.fill(path);
-    ctx.restore();
-
-    if (style.width <= 0) return;
-    const dash =
-      shown < 1
-        ? [length * shown, length + 1]
-        : dashFor(el.border.style, style.width);
-    const period = dash.reduce((a, b) => a + b, 0);
-    const stroke = () => {
-      ctx.lineWidth = style.width;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.setLineDash(dash);
-      ctx.lineDashOffset =
-        shown < 1 ? 0 : -(t / scene.duration) * el.border.flow * period;
-      ctx.stroke(path);
-    };
-    if (el.borderGlow.enabled) {
-      for (let i = 0; i < el.borderGlow.strength; i++) {
-        shadowOnly(
-          ctx,
-          stroke,
-          el.borderGlow.color,
-          el.borderGlow.blur * st.glowMul,
-        );
-      }
-    }
-    ctx.save();
-    ctx.strokeStyle = rgba(style.stroke, el.border.opacity);
-    stroke();
-    ctx.restore();
-  });
+  }
+  ctx.save();
+  ctx.strokeStyle = rgba(style.stroke, el.border.opacity);
+  stroke();
+  ctx.restore();
 }

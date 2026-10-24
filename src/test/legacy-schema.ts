@@ -195,8 +195,13 @@ const particles = z.object({
   kind: z.literal("particles"),
   count: z.number().int().min(1).max(300),
   seed: z.number(),
-  speed: z.number().int().min(1),
+  // relaxed by spec 057: fractional and zero speeds; the motion fields are new and default
+  speed: z.number().min(0),
   drift: z.number().min(0),
+  motion: z.enum(["drift", "fall", "static"]).default("drift"),
+  direction: z.number().min(0).max(360).default(90),
+  gravity: z.number().min(0).default(0),
+  twinkle: z.number().min(0).max(1).default(0),
   // added by spec 014; missing in old scenes, they read as `null` and alike points
   template,
   variation,

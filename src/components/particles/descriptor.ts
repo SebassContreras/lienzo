@@ -8,12 +8,14 @@ import {
   box,
   color,
   custom,
+  defaulted,
   elementOpacity,
   glow,
   noGlow,
   num,
   obj,
   type Parent,
+  select,
   widget,
 } from "../fields/index.ts";
 import { drawParticles } from "./draw.ts";
@@ -24,6 +26,11 @@ const PARTICLE_ANIMS: AnimOffer = {
 };
 
 const P = { section: "Partículas" };
+
+export type ParticleMotion = "drift" | "fall" | "static";
+
+const moves = (p: Parent) => p.motion !== "static";
+const falls = (p: Parent) => p.motion === "fall";
 
 /** The dot's controls only matter while no template replaces it. */
 const dotShown = (p: Parent) => p.template == null;
@@ -90,7 +97,7 @@ function variation() {
     },
     { section: "Variación" },
   );
-  return { ...V, schema: V.schema.default(V.default) as typeof V.schema };
+  return defaulted(V);
 }
 
 const variationField = variation();
@@ -111,17 +118,74 @@ const fields = {
     bounds: [1, 300],
     ...P,
   }),
-  /** Highest number of laps a point makes per loop. */
+  /**
+   * "drift" wanders around a resting place, "fall" travels along `direction` across the box
+   * and "static" stays at the resting place (057/D3).
+   */
+  motion: defaulted(
+    select<ParticleMotion>(
+      [
+        ["drift", "Flotar"],
+        ["fall", "Caer"],
+        ["static", "Quietas"],
+      ],
+      "drift",
+      { label: "Movimiento", ...P },
+    ),
+  ),
+  /**
+   * In "drift", the highest number of laps a point makes per loop (below 1 it also wanders
+   * less). In "fall", the mean whole crossings of the field per loop, at least 1 (A6).
+   * 0 keeps the points still.
+   */
   speed: num(1, {
     label: "Velocidad",
-    min: 1,
+    min: 0,
     max: 6,
-    int: true,
-    bounds: [1, Infinity],
+    step: 0.1,
+    bounds: [0, Infinity],
+    visible: moves,
     ...P,
   }),
+  /** Degrees the points fall towards: 0 = right, 90 = down, 180 = left, 270 = up. */
+  direction: defaulted(
+    num(90, {
+      label: "Dirección",
+      max: 360,
+      bounds: [0, 360],
+      visible: falls,
+      ...P,
+    }),
+  ),
+  /** 0 falls at an even pace; higher values start each crossing slower and speed it up. */
+  gravity: defaulted(
+    num(0, {
+      label: "Gravedad",
+      max: 4,
+      step: 0.1,
+      bounds: [0, Infinity],
+      visible: falls,
+      ...P,
+    }),
+  ),
+  /** How deep each point's opacity pulses over the loop, 0 (off) to 1. */
+  twinkle: defaulted(
+    num(0, {
+      label: "Parpadeo",
+      max: 1,
+      step: 0.05,
+      bounds: [0, 1],
+      ...P,
+    }),
+  ),
   /** How far, px, a point wanders from its resting place. */
-  drift: num(40, { label: "Recorrido", max: 300, bounds: [0, Infinity], ...P }),
+  drift: num(40, {
+    label: "Recorrido",
+    max: 300,
+    bounds: [0, Infinity],
+    visible: (p: Parent) => (p.motion ?? "drift") === "drift",
+    ...P,
+  }),
   /** Changing it redistributes the points. */
   seed: num(1, {
     label: "Semilla",

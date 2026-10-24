@@ -1,4 +1,8 @@
 import type { ParticlesEl } from "../model/model.ts";
+import { fallPositions } from "./particle-fall.ts";
+import { mulberry32 } from "./prng.ts";
+
+export { mulberry32 };
 
 /** Where a point rests and how it orbits around that place once per loop. */
 type Orbit = {
@@ -11,18 +15,6 @@ type Orbit = {
   px: number;
   py: number;
 };
-
-/** mulberry32: a small seeded PRNG giving numbers in [0, 1). */
-export function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 const cache = new Map<string, Orbit[]>();
 const MAX_CACHED = 64;
@@ -65,21 +57,44 @@ function orbitsOf(
   return orbits;
 }
 
+/** What the positions depend on. */
+export type FieldMotion = Pick<
+  ParticlesEl,
+  | "seed"
+  | "count"
+  | "w"
+  | "h"
+  | "drift"
+  | "speed"
+  | "motion"
+  | "direction"
+  | "gravity"
+>;
+
 /**
  * Point positions at time `t` of a loop lasting `duration` seconds, relative to the box's
  * top-left corner. Nothing random runs here: the same inputs always give the same points.
+ * Still points ("static" or `speed` 0) rest where drifting ones orbit (057/D4); falling points
+ * off the box by more than `margin` px come back as `NaN` (057/D5).
  */
 export function particlePositions(
-  el: Pick<ParticlesEl, "seed" | "count" | "w" | "h" | "drift" | "speed">,
+  el: FieldMotion,
   t: number,
   duration: number,
+  margin = 0,
 ): Float64Array {
+  const still = el.motion === "static" || el.speed === 0;
+  if (el.motion === "fall" && !still) {
+    return fallPositions(el, t, duration, margin);
+  }
   const orbits = orbitsOf(el);
+  // below one lap per loop a point wanders less instead of slower, so it still closes (A6)
+  const reach = still ? 0 : Math.min(1, el.speed);
   const out = new Float64Array(orbits.length * 2);
   const phase = (Math.PI * 2 * t) / (duration > 0 ? duration : 1);
   orbits.forEach((o, i) => {
-    out[i * 2] = o.bx + o.ax * Math.cos(o.fx * phase + o.px);
-    out[i * 2 + 1] = o.by + o.ay * Math.sin(o.fy * phase + o.py);
+    out[i * 2] = o.bx + reach * o.ax * Math.cos(o.fx * phase + o.px);
+    out[i * 2 + 1] = o.by + reach * o.ay * Math.sin(o.fy * phase + o.py);
   });
   return out;
 }
