@@ -36,7 +36,7 @@ export type EffectsDefaults = {
   mask?: string;
 };
 
-const defaultEffects = (): EffectsDefaults => ({
+export const defaultEffects = (): EffectsDefaults => ({
   blur: 0,
   blend: "normal",
   mask: "",

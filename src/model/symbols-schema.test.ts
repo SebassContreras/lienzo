@@ -78,7 +78,7 @@ describe("Symbol schema and expansion (056/T006 - R1)", () => {
     const parseResult = CompactSceneSchema.safeParse(compact);
     expect(parseResult.success).toBe(true);
 
-    const expanded = await expandScene(compact);
+    const { scene: expanded } = await expandScene(compact);
     expect(expanded.symbols).toBeDefined();
     expect(expanded.symbols?.house).toBeDefined();
     expect(expanded.symbols?.house.children).toHaveLength(2);

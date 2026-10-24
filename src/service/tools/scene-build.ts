@@ -11,7 +11,10 @@ export const sceneBuild = defineTool({
   name: "scene_build",
   description:
     "Build a full scene from a compact description (spec 011). Expands size, background, " +
-    "presets, shortcuts (at, fit, from, to, short tracks and anim), and validates the resulting scene. " +
+    "presets, shortcuts (at, fit, from, to, short tracks and anim), partial `effects`, and validates " +
+    'the resulting scene. `defaults: "flat"` turns off the default gradient, shadow and border ' +
+    "of shapes (rect, ellipse, polygon, star, arrow) unless the element sets them; it is applied " +
+    "at build time, not stored. `notices` lists what was ignored (e.g. unknown effect keys). " +
     "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true.",
   input: z.object({
     compact: CompactSceneSchema,
@@ -22,11 +25,13 @@ export const sceneBuild = defineTool({
   output: z.object({
     scene: SceneSchema,
     saved: SceneResult.optional(),
+    notices: z.array(z.string()),
   }),
   async run({ compact, project, save, overwrite }, ctx) {
     const effectiveCtx = await inProject(ctx, project);
 
     let expanded: ReturnType<typeof checkScene>;
+    let notices: string[];
     try {
       const full = await expandScene(compact, {
         findPreset: async (name) => {
@@ -42,7 +47,8 @@ export const sceneBuild = defineTool({
           return animLibrary(effectiveCtx);
         })(),
       });
-      expanded = checkScene(full);
+      expanded = checkScene(full.scene);
+      notices = full.notices;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       fail("invalid_compact_scene", msg, "compact");
@@ -62,6 +68,7 @@ export const sceneBuild = defineTool({
     return {
       scene: expanded,
       saved,
+      notices,
     };
   },
 });

@@ -1,8 +1,7 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { z } from "zod";
+import { writeExport } from "../exports.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
+import { defineTool } from "../registry.ts";
 import { resolveAndRenderScene } from "../render-target.ts";
 
 const EXTENSIONS: Record<string, string> = {
@@ -62,26 +61,12 @@ export const sceneExport = defineTool({
         "H.264 no está disponible en este navegador; se exportó WebM",
       );
     }
-    // 046/D2: an export never leaves projects/<slug>/exports/.
-    const exportsDir = join(
-      ctx.root,
-      "projects",
-      effectiveCtx.project,
-      "exports",
+    const target = await writeExport(
+      effectiveCtx,
+      out ?? `${name}.${ext}`,
+      rendered.bytes,
+      ext,
     );
-    const target = resolve(exportsDir, out ?? `${name}.${ext}`).replace(
-      /\.\w+$/,
-      `.${ext}`,
-    );
-    const inside = relative(exportsDir, target);
-    if (!inside || inside.startsWith("..") || isAbsolute(inside))
-      fail(
-        "out_of_project",
-        `«${out}» queda fuera de projects/${effectiveCtx.project}/exports/`,
-        "out",
-      );
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, rendered.bytes);
     return {
       file: target,
       type: rendered.type,

@@ -7,7 +7,7 @@ import { layoutBoxes } from "./layout.ts";
 describe("text layout and compact placement (054/R4, T007)", () => {
   it("centers unwrapped text in compact scenes using accurate measured metrics (R1, R4)", async () => {
     // When expanding a compact scene with at: "center" on text
-    const expanded = await expandScene({
+    const { scene: expanded } = await expandScene({
       size: "1080x1080",
       elements: [
         {
@@ -33,7 +33,7 @@ describe("text layout and compact placement (054/R4, T007)", () => {
   });
 
   it("places wrapped text in compact scenes using box width w (R2, R4)", async () => {
-    const expanded = await expandScene({
+    const { scene: expanded } = await expandScene({
       size: "1080x1080",
       elements: [
         {

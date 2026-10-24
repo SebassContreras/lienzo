@@ -33,12 +33,20 @@ function mcpToolOf(tool: Tool): McpTool {
   };
 }
 
-/** A tool's value as MCP content: an `ImageResult` is an image (010/D3), anything else JSON text. */
+/**
+ * A tool's value as MCP content: an `ImageResult` is an image (010/D3), followed by its
+ * saved `file` as JSON text when it has one (058/D7); anything else is JSON text.
+ */
 function contentOf(value: unknown): CallToolResult["content"] {
   const image = ImageResult.safeParse(value);
-  return image.success
-    ? [{ type: "image", ...image.data.image }]
-    : [{ type: "text", text: JSON.stringify(value) }];
+  if (!image.success) return [{ type: "text", text: JSON.stringify(value) }];
+  const { image: picture, file } = image.data;
+  return file === undefined
+    ? [{ type: "image", ...picture }]
+    : [
+        { type: "image", ...picture },
+        { type: "text", text: JSON.stringify({ file }) },
+      ];
 }
 
 /** An MCP server over `registry`; connect it to any transport. */

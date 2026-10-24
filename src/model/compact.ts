@@ -4,6 +4,7 @@
  * shortcuts (`at`, `fit`), line connections (`from`, `to`) and short keyframe tracks.
  */
 import { z } from "zod";
+import { effects } from "../components/fields/effects.ts";
 import {
   type DataField,
   dataFields,
@@ -133,6 +134,21 @@ function compactShapeOf(
   return shape;
 }
 
+/**
+ * Partial `effects` (058/D1): `effects` is common to every kind, so no descriptor declares
+ * it. Known keys are type-checked; unknown ones pass through so expansion can report them.
+ */
+const CompactEffectsSchema = z.looseObject(
+  Object.fromEntries(
+    dataFields(effects().fields).map(([k, f]) => [k, f.schema.optional()]),
+  ),
+);
+
+/** Scene-level style defaults (058/D4); `flat` turns off shape gradients, shadows and borders. */
+const SceneDefaultsSchema = z.enum(["flat"]);
+
+export type SceneDefaults = z.infer<typeof SceneDefaultsSchema>;
+
 const baseSpecialFields = {
   id: z.string().optional(),
   name: z.string().optional(),
@@ -145,6 +161,7 @@ const baseSpecialFields = {
   from: z.string().optional(),
   to: z.string().optional(),
   tracks: CompactTracksSchema.optional(),
+  effects: CompactEffectsSchema.optional(),
   animPreset: z
     .union([
       z.string().min(1),
@@ -313,6 +330,7 @@ export function generateCompactJsonSchema(): Record<string, unknown> {
     duration: z.number().positive().optional(),
     fps: z.number().positive().optional(),
     background: CompactBackgroundSchema.optional(),
+    defaults: SceneDefaultsSchema.optional(),
     symbols: z
       .record(
         z.string(),
@@ -341,6 +359,7 @@ export const CompactSceneSchema = z.object({
   duration: z.number().positive().optional(),
   fps: z.number().positive().optional(),
   background: CompactBackgroundSchema.optional(),
+  defaults: SceneDefaultsSchema.optional(),
   symbols: z.record(z.string(), CompactSymbolSchema).optional(),
   elements: z.array(CompactElementSchema).default([]),
   shots: z.array(CompactShotSchema).optional(),

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import {
   cp,
   mkdir,
@@ -331,6 +332,63 @@ describe("animation presets (D6, R7)", () => {
     >;
     expect(firstEl.id).toBe("my-rect");
     expect(firstEl.x).toBe((1080 - 120) / 2);
+  });
+});
+
+describe("scene_build effects and notices (058/R1)", () => {
+  it("keeps partial effects on a compact element", async () => {
+    const res = await ok("scene_build", {
+      compact: { elements: [{ kind: "rect", effects: { blur: 6 } }] },
+    });
+
+    const rect = (res.scene as Scene).elements[0];
+    expect(rect.effects).toEqual({ blur: 6, blend: "normal", mask: "" });
+  });
+
+  it("returns a notice for an unknown effect key", async () => {
+    const res = await ok("scene_build", {
+      compact: { elements: [{ kind: "rect", effects: { blurr: 6 } }] },
+    });
+
+    expect(res.notices).toEqual([
+      expect.stringContaining("elements.0.effects: «blurr»"),
+    ]);
+  });
+});
+
+describe("scene_preview out (058/R3)", () => {
+  const exports = () => join(ctx.root, "projects", "mi-proyecto", "exports");
+
+  it("saves the PNG inside exports/ and returns its path", async () => {
+    await ok("scene_create", { name: "demo" });
+
+    const res = await ok("scene_preview", { scene: "demo", out: "look.png" });
+
+    expect(res.file).toBe(join(exports(), "look.png"));
+    await expect(readFile(res.file as string)).resolves.toBeDefined();
+  });
+
+  it("rejects an `out` outside exports/ and writes nothing", async () => {
+    await ok("scene_create", { name: "demo" });
+
+    const r = await call("scene_preview", { scene: "demo", out: "../x.png" });
+
+    expect(r.ok ? undefined : r.error).toMatchObject({
+      code: "out_of_project",
+      path: "out",
+    });
+    expect(existsSync(join(ctx.root, "projects", "mi-proyecto", "x.png"))).toBe(
+      false,
+    );
+  });
+
+  it("writes nothing without `out`", async () => {
+    await ok("scene_create", { name: "demo" });
+
+    const res = await ok("scene_preview", { scene: "demo" });
+
+    expect(res.file).toBeUndefined();
+    expect(existsSync(exports())).toBe(false);
   });
 });
 

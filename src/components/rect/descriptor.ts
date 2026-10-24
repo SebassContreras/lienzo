@@ -81,6 +81,15 @@ export const SHAPE_SECTIONS = [
 /** Shapes that share the rectangle's fill, border, glows, shadow and label. */
 export type ShapeEl = RectEl | EllipseEl | PolygonEl | StarEl | ArrowEl;
 
+/** The kinds built from `shapeFields` (058/D5). */
+export const SHAPE_KINDS: readonly string[] = [
+  "rect",
+  "ellipse",
+  "polygon",
+  "star",
+  "arrow",
+] satisfies ShapeEl["kind"][];
+
 const { x, y, w, h, ...style } = shapeFields(280, 180);
 
 const fields = {

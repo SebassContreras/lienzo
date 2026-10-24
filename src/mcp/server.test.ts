@@ -123,4 +123,16 @@ describe("lienzo MCP server", () => {
       { type: "image", mimeType: "image/png", data: expect.any(String) },
     ]);
   });
+
+  it("returns scene_preview with `out` as image then its file (058/R3)", async () => {
+    await mcp("scene_create", { name: "demo", project: "p" });
+    const r = await client.callTool({
+      name: "scene_preview",
+      arguments: { scene: "demo", project: "p", out: "look.png" },
+    });
+    expect(r.content).toEqual([
+      { type: "image", mimeType: "image/png", data: expect.any(String) },
+      { type: "text", text: expect.stringMatching(/look\.png"\}$/) },
+    ]);
+  });
 });

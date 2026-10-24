@@ -83,6 +83,10 @@
         }
       ]
     },
+    "defaults": {
+      "type": "string",
+      "enum": ["flat"]
+    },
     "symbols": {
       "type": "object",
       "propertyNames": {
@@ -164,9 +168,7 @@
                               "maxItems": 2
                             }
                           },
-                          "required": [
-                            "anchor"
-                          ],
+                          "required": ["anchor"],
                           "additionalProperties": false
                         }
                       ]
@@ -223,10 +225,7 @@
                               "maximum": 1
                             }
                           },
-                          "required": [
-                            "x",
-                            "y"
-                          ],
+                          "required": ["x", "y"],
                           "additionalProperties": false
                         }
                       ]
@@ -263,10 +262,7 @@
                                       "minimum": 0
                                     },
                                     {
-                                      "type": [
-                                        "number",
-                                        "string"
-                                      ]
+                                      "type": ["number", "string"]
                                     },
                                     {
                                       "type": "string",
@@ -309,10 +305,7 @@
                                       "minimum": 0
                                     },
                                     "value": {
-                                      "type": [
-                                        "number",
-                                        "string"
-                                      ]
+                                      "type": ["number", "string"]
                                     },
                                     "easing": {
                                       "type": "string",
@@ -343,10 +336,7 @@
                                       ]
                                     }
                                   },
-                                  "required": [
-                                    "t",
-                                    "value"
-                                  ],
+                                  "required": ["t", "value"],
                                   "additionalProperties": false
                                 }
                               ]
@@ -367,10 +357,7 @@
                                           "minimum": 0
                                         },
                                         {
-                                          "type": [
-                                            "number",
-                                            "string"
-                                          ]
+                                          "type": ["number", "string"]
                                         },
                                         {
                                           "type": "string",
@@ -413,10 +400,7 @@
                                           "minimum": 0
                                         },
                                         "value": {
-                                          "type": [
-                                            "number",
-                                            "string"
-                                          ]
+                                          "type": ["number", "string"]
                                         },
                                         "easing": {
                                           "type": "string",
@@ -447,10 +431,7 @@
                                           ]
                                         }
                                       },
-                                      "required": [
-                                        "t",
-                                        "value"
-                                      ],
+                                      "required": ["t", "value"],
                                       "additionalProperties": false
                                     }
                                   ]
@@ -458,24 +439,50 @@
                               },
                               "repeat": {
                                 "type": "string",
-                                "enum": [
-                                  "none",
-                                  "loop",
-                                  "pingpong"
-                                ]
+                                "enum": ["none", "loop", "pingpong"]
                               },
                               "until": {
                                 "type": "number",
                                 "minimum": 0
                               }
                             },
-                            "required": [
-                              "keys"
-                            ],
+                            "required": ["keys"],
                             "additionalProperties": false
                           }
                         ]
                       }
+                    },
+                    "effects": {
+                      "type": "object",
+                      "properties": {
+                        "blur": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 200
+                        },
+                        "blend": {
+                          "type": "string",
+                          "enum": [
+                            "normal",
+                            "multiply",
+                            "screen",
+                            "overlay",
+                            "darken",
+                            "lighten",
+                            "color-dodge",
+                            "color-burn",
+                            "hard-light",
+                            "soft-light",
+                            "difference",
+                            "exclusion"
+                          ]
+                        },
+                        "mask": {
+                          "default": "",
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": {}
                     },
                     "animPreset": {
                       "anyOf": [
@@ -495,28 +502,20 @@
                               "minimum": 0
                             }
                           },
-                          "required": [
-                            "name"
-                          ],
+                          "required": ["name"],
                           "additionalProperties": false
                         }
                       ]
                     }
                   },
-                  "required": [
-                    "preset"
-                  ],
+                  "required": ["preset"],
                   "additionalProperties": {}
                 }
               ]
             }
           }
         },
-        "required": [
-          "w",
-          "h",
-          "children"
-        ],
+        "required": ["w", "h", "children"],
         "additionalProperties": false
       }
     },
@@ -586,9 +585,7 @@
                         "maxItems": 2
                       }
                     },
-                    "required": [
-                      "anchor"
-                    ],
+                    "required": ["anchor"],
                     "additionalProperties": false
                   }
                 ]
@@ -645,10 +642,7 @@
                         "maximum": 1
                       }
                     },
-                    "required": [
-                      "x",
-                      "y"
-                    ],
+                    "required": ["x", "y"],
                     "additionalProperties": false
                   }
                 ]
@@ -685,10 +679,7 @@
                                 "minimum": 0
                               },
                               {
-                                "type": [
-                                  "number",
-                                  "string"
-                                ]
+                                "type": ["number", "string"]
                               },
                               {
                                 "type": "string",
@@ -731,10 +722,7 @@
                                 "minimum": 0
                               },
                               "value": {
-                                "type": [
-                                  "number",
-                                  "string"
-                                ]
+                                "type": ["number", "string"]
                               },
                               "easing": {
                                 "type": "string",
@@ -765,10 +753,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "t",
-                              "value"
-                            ],
+                            "required": ["t", "value"],
                             "additionalProperties": false
                           }
                         ]
@@ -789,10 +774,7 @@
                                     "minimum": 0
                                   },
                                   {
-                                    "type": [
-                                      "number",
-                                      "string"
-                                    ]
+                                    "type": ["number", "string"]
                                   },
                                   {
                                     "type": "string",
@@ -835,10 +817,7 @@
                                     "minimum": 0
                                   },
                                   "value": {
-                                    "type": [
-                                      "number",
-                                      "string"
-                                    ]
+                                    "type": ["number", "string"]
                                   },
                                   "easing": {
                                     "type": "string",
@@ -869,10 +848,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "t",
-                                  "value"
-                                ],
+                                "required": ["t", "value"],
                                 "additionalProperties": false
                               }
                             ]
@@ -880,24 +856,50 @@
                         },
                         "repeat": {
                           "type": "string",
-                          "enum": [
-                            "none",
-                            "loop",
-                            "pingpong"
-                          ]
+                          "enum": ["none", "loop", "pingpong"]
                         },
                         "until": {
                           "type": "number",
                           "minimum": 0
                         }
                       },
-                      "required": [
-                        "keys"
-                      ],
+                      "required": ["keys"],
                       "additionalProperties": false
                     }
                   ]
                 }
+              },
+              "effects": {
+                "type": "object",
+                "properties": {
+                  "blur": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 200
+                  },
+                  "blend": {
+                    "type": "string",
+                    "enum": [
+                      "normal",
+                      "multiply",
+                      "screen",
+                      "overlay",
+                      "darken",
+                      "lighten",
+                      "color-dodge",
+                      "color-burn",
+                      "hard-light",
+                      "soft-light",
+                      "difference",
+                      "exclusion"
+                    ]
+                  },
+                  "mask": {
+                    "default": "",
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": {}
               },
               "animPreset": {
                 "anyOf": [
@@ -917,17 +919,13 @@
                         "minimum": 0
                       }
                     },
-                    "required": [
-                      "name"
-                    ],
+                    "required": ["name"],
                     "additionalProperties": false
                   }
                 ]
               }
             },
-            "required": [
-              "preset"
-            ],
+            "required": ["preset"],
             "additionalProperties": {}
           }
         ]
@@ -958,22 +956,14 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": [
-                  "cut",
-                  "fade",
-                  "slide",
-                  "zoom"
-                ]
+                "enum": ["cut", "fade", "slide", "zoom"]
               },
               "duration": {
                 "type": "number",
                 "minimum": 0
               }
             },
-            "required": [
-              "kind",
-              "duration"
-            ],
+            "required": ["kind", "duration"],
             "additionalProperties": false
           },
           "camera": {
@@ -1008,10 +998,7 @@
                                 "minimum": 0
                               },
                               {
-                                "type": [
-                                  "number",
-                                  "string"
-                                ]
+                                "type": ["number", "string"]
                               },
                               {
                                 "type": "string",
@@ -1054,10 +1041,7 @@
                                 "minimum": 0
                               },
                               "value": {
-                                "type": [
-                                  "number",
-                                  "string"
-                                ]
+                                "type": ["number", "string"]
                               },
                               "easing": {
                                 "type": "string",
@@ -1088,10 +1072,7 @@
                                 ]
                               }
                             },
-                            "required": [
-                              "t",
-                              "value"
-                            ],
+                            "required": ["t", "value"],
                             "additionalProperties": false
                           }
                         ]
@@ -1112,10 +1093,7 @@
                                     "minimum": 0
                                   },
                                   {
-                                    "type": [
-                                      "number",
-                                      "string"
-                                    ]
+                                    "type": ["number", "string"]
                                   },
                                   {
                                     "type": "string",
@@ -1158,10 +1136,7 @@
                                     "minimum": 0
                                   },
                                   "value": {
-                                    "type": [
-                                      "number",
-                                      "string"
-                                    ]
+                                    "type": ["number", "string"]
                                   },
                                   "easing": {
                                     "type": "string",
@@ -1192,10 +1167,7 @@
                                     ]
                                   }
                                 },
-                                "required": [
-                                  "t",
-                                  "value"
-                                ],
+                                "required": ["t", "value"],
                                 "additionalProperties": false
                               }
                             ]
@@ -1203,20 +1175,14 @@
                         },
                         "repeat": {
                           "type": "string",
-                          "enum": [
-                            "none",
-                            "loop",
-                            "pingpong"
-                          ]
+                          "enum": ["none", "loop", "pingpong"]
                         },
                         "until": {
                           "type": "number",
                           "minimum": 0
                         }
                       },
-                      "required": [
-                        "keys"
-                      ],
+                      "required": ["keys"],
                       "additionalProperties": false
                     }
                   ]
@@ -1226,17 +1192,11 @@
             "additionalProperties": false
           }
         },
-        "required": [
-          "id",
-          "start",
-          "end"
-        ],
+        "required": ["id", "start", "end"],
         "additionalProperties": false
       }
     }
   },
-  "required": [
-    "elements"
-  ],
+  "required": ["elements"],
   "additionalProperties": false
 }

@@ -9,7 +9,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       size: "Story",
       elements: [],
     };
-    const scene1 = await expandScene(compact1);
+    const { scene: scene1 } = await expandScene(compact1);
     expect(scene1.width).toBe(1080);
     expect(scene1.height).toBe(1920);
 
@@ -17,7 +17,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       size: "800x600",
       elements: [],
     };
-    const scene2 = await expandScene(compact2);
+    const { scene: scene2 } = await expandScene(compact2);
     expect(scene2.width).toBe(800);
     expect(scene2.height).toBe(600);
   });
@@ -30,7 +30,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       },
       elements: [],
     };
-    const scene = await expandScene(compact);
+    const { scene } = await expandScene(compact);
     expect(scene.background.color).toBe("#123456");
     expect(scene.background.dots).toBe(false);
     expect(scene.background.gradient).toBe(true);
@@ -57,7 +57,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact, {
+    const { scene } = await expandScene(compact, {
       findPreset: async (name) =>
         name === "custom-card" ? fakePreset : undefined,
     });
@@ -96,7 +96,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact);
+    const { scene } = await expandScene(compact);
     expect(scene.elements).toHaveLength(2);
     const grp = scene.elements[0] as Extract<
       import("../../model/model.ts").Element,
@@ -150,7 +150,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact);
+    const { scene } = await expandScene(compact);
     const rect = scene.elements[0] as Extract<
       import("../../model/model.ts").Element,
       { kind: "rect" }
@@ -198,7 +198,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact);
+    const { scene } = await expandScene(compact);
     const centered = scene.elements[0] as Extract<
       import("../../model/model.ts").Element,
       { kind: "rect" }
@@ -247,7 +247,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact);
+    const { scene } = await expandScene(compact);
     expect(scene.elements[0]?.id).toBe("card-a");
     expect(scene.elements[1]?.id).toBe("card-b");
     expect(scene.elements[2]?.id).toBe("conn-1");
@@ -298,7 +298,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(readmePost);
+    const { scene } = await expandScene(readmePost);
     expect(scene.width).toBe(1080);
     expect(scene.height).toBe(1920);
     expect(scene.duration).toBe(4);
@@ -354,7 +354,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact, {
+    const { scene } = await expandScene(compact, {
       animLibrary: fakeAnimLibrary,
     });
 
@@ -380,7 +380,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact);
+    const { scene } = await expandScene(compact);
     const rect = scene.elements[0] as Extract<
       import("../../model/model.ts").Element,
       { kind: "rect" }
@@ -428,7 +428,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       ],
     };
 
-    const scene = await expandScene(compact);
+    const { scene } = await expandScene(compact);
     const rect = scene.elements[0] as Extract<
       import("../../model/model.ts").Element,
       { kind: "rect" }
@@ -468,7 +468,7 @@ describe("expandScene pure expansion (011/T002)", () => {
         ],
       };
 
-      const scene = await expandScene(compact);
+      const { scene } = await expandScene(compact);
       expect(scene.elements[0]?.origin).toEqual({ x: 0.25, y: 0.75 });
       expect(scene.elements[1]?.origin).toEqual({ x: 0.1, y: 0.9 });
     });
@@ -496,7 +496,7 @@ describe("expandScene pure expansion (011/T002)", () => {
         })),
       };
 
-      const scene = await expandScene(compact);
+      const { scene } = await expandScene(compact);
       anchors.forEach(([, expected], i) => {
         expect(scene.elements[i]?.origin).toEqual(expected);
       });
@@ -529,7 +529,7 @@ describe("expandScene pure expansion (011/T002)", () => {
         ],
       };
 
-      const scene = await expandScene(compact);
+      const { scene } = await expandScene(compact);
       const rect = scene.elements[0] as Extract<
         import("../../model/model.ts").Element,
         { kind: "rect" }
@@ -578,7 +578,7 @@ describe("expandScene pure expansion (011/T002)", () => {
         ],
       };
 
-      const scene = await expandScene(compact);
+      const { scene } = await expandScene(compact);
       const group = scene.elements[0] as Extract<
         import("../../model/model.ts").Element,
         { kind: "group" }
@@ -636,7 +636,7 @@ describe("expandScene pure expansion (011/T002)", () => {
         ],
       };
 
-      const scene = await expandScene(compact);
+      const { scene } = await expandScene(compact);
       expect(scene.shots?.length).toBe(1);
       const shot = scene.shots?.[0];
       expect(shot?.id).toBe("s1");

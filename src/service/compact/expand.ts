@@ -3,7 +3,11 @@
  */
 
 import type { AnimPreset } from "../../model/anim-preset.ts";
-import type { CompactElement, CompactScene } from "../../model/compact.ts";
+import type {
+  CompactElement,
+  CompactScene,
+  SceneDefaults,
+} from "../../model/compact.ts";
 import {
   type Background,
   defaultBackground,
@@ -22,6 +26,8 @@ import {
   resolvePreset,
 } from "../../presets/resolve.ts";
 import { resolveLineConnections } from "./connections.ts";
+import { applySceneDefaults } from "./defaults.ts";
+import { expandEffects } from "./effects.ts";
 import {
   resolveAtPlacement,
   resolveFitCanvas,
@@ -36,6 +42,13 @@ type PresetResolver = (
 export type ExpandOptions = {
   findPreset?: PresetResolver;
   animLibrary?: readonly AnimPreset[];
+};
+
+/** What every element of one expansion shares (058/D3); `notices` collects what was ignored. */
+type ExpandState = {
+  findPreset?: PresetResolver;
+  defaults?: SceneDefaults;
+  notices: string[];
 };
 
 /** Parses size specification (e.g. "1080x1080", "1920x1080", "story", or [w, h]) */
@@ -140,8 +153,10 @@ function normalizeAnim(rawAnim: unknown): unknown {
 /** Builds an element from preset or kind, applying deepMerge and children expansion */
 async function buildElement(
   raw: CompactElement,
-  findPreset?: PresetResolver,
+  state: ExpandState,
+  path: string,
 ): Promise<Element> {
+  const { findPreset } = state;
   let element: Element;
 
   const rawPreset = raw.preset as string | undefined;
@@ -161,6 +176,7 @@ async function buildElement(
     }
   } else if (rawKind) {
     element = defaultElement(rawKind);
+    applySceneDefaults(element, state.defaults);
   } else {
     throw new Error("El elemento compacto debe especificar 'kind' o 'preset'");
   }
@@ -178,6 +194,7 @@ async function buildElement(
     animPreset,
     children,
     template,
+    effects,
     ...overrides
   } = raw as Record<string, unknown>;
 
@@ -186,6 +203,16 @@ async function buildElement(
   }
 
   deepMerge(element as unknown as Record<string, unknown>, overrides);
+
+  if (effects !== undefined) {
+    const expanded = expandEffects(
+      element.effects,
+      effects as Record<string, unknown>,
+      `${path}.effects`,
+    );
+    element.effects = expanded.effects;
+    state.notices.push(...expanded.notices);
+  }
 
   if (anim !== undefined) {
     const normalized = normalizeAnim(anim);
@@ -233,9 +260,13 @@ async function buildElement(
   // Handle nested children for groups
   if (element.kind === "group" && Array.isArray(children)) {
     const builtChildren: Element[] = [];
-    for (const child of children) {
+    for (const [i, child] of children.entries()) {
       builtChildren.push(
-        await buildElement(child as CompactElement, findPreset),
+        await buildElement(
+          child as CompactElement,
+          state,
+          `${path}.children.${i}`,
+        ),
       );
     }
     element.children = builtChildren;
@@ -249,7 +280,8 @@ async function buildElement(
   ) {
     element.template = await buildElement(
       template as CompactElement,
-      findPreset,
+      state,
+      `${path}.template`,
     );
   }
 
@@ -257,13 +289,19 @@ async function buildElement(
 }
 
 /**
- * Pure function: expands a CompactScene into a full canonical Scene.
+ * Pure function: expands a CompactScene into a full canonical Scene, with `notices` for
+ * what it ignored (058/D3).
  */
 export async function expandScene(
   compact: CompactScene,
   options: ExpandOptions = {},
-): Promise<Scene> {
+): Promise<{ scene: Scene; notices: string[] }> {
   const scene = defaultScene();
+  const state: ExpandState = {
+    findPreset: options.findPreset,
+    defaults: compact.defaults,
+    notices: [],
+  };
 
   const dims = resolveSceneDimensions(
     compact.size as string | [number, number],
@@ -287,8 +325,12 @@ export async function expandScene(
     for (const [symName, symDef] of Object.entries(compact.symbols)) {
       const symElements: Element[] = [];
       const symSeenIds = new Set<string>();
-      for (const rawEl of symDef.children ?? []) {
-        const el = await buildElement(rawEl, options.findPreset);
+      for (const [i, rawEl] of (symDef.children ?? []).entries()) {
+        const el = await buildElement(
+          rawEl,
+          state,
+          `symbols.${symName}.children.${i}`,
+        );
         if (rawEl.id) {
           if (symSeenIds.has(el.id)) {
             throw new Error(
@@ -311,8 +353,8 @@ export async function expandScene(
     }
   }
 
-  for (const rawEl of compact.elements ?? []) {
-    const el = await buildElement(rawEl, options.findPreset);
+  for (const [i, rawEl] of (compact.elements ?? []).entries()) {
+    const el = await buildElement(rawEl, state, `elements.${i}`);
 
     if (rawEl.id) {
       if (seenIds.has(el.id)) {
@@ -388,12 +430,12 @@ export async function expandScene(
   }
 
   if (options.animLibrary && options.animLibrary.length > 0) {
-    const { scene: expandedAnimScene } = expandAnimPresets(
-      scene,
-      options.animLibrary,
-    );
-    return expandedAnimScene;
+    const expanded = expandAnimPresets(scene, options.animLibrary);
+    return {
+      scene: expanded.scene,
+      notices: [...state.notices, ...expanded.notices],
+    };
   }
 
-  return scene;
+  return { scene, notices: state.notices };
 }
