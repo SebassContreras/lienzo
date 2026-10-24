@@ -43,3 +43,18 @@
       covers: R1@1, R2@1, R3@1, R4@1
       kind: test
       changes: .agents/skills/lienzo-usage/SKILL.md (+2 -3), AGENTS.md (+4 -2), README.md (+5 -2)
+- [ ] T014 [agent] [status:todo] `symbolMode` in `SceneInspector` (only width and height) and "Volver" writes them into the symbol
+      covers: D7@1
+- [ ] T015 [agent] [status:todo] Optional `widget` on text fields; `use.symbol` back to a `text` field with `widget: "symbol"`
+      covers: D8@1
+- [ ] T016 [agent] [status:todo] Regression test: `component_list` reports `use.symbol` as a text field
+      covers: R7@1
+      kind: test
+- [ ] T017 [agent] [status:todo] `toggleCameraKey` in `src/model/shots.ts` and key buttons for camera x, y, zoom in the "Tomas" section
+      covers: D9@1
+- [ ] T018 [agent] [status:todo] Tests: `toggleCameraKey` adds and removes a key, and the editor's camera key matches `shot_set` with the same `camera.tracks`
+      covers: R8@1
+      kind: test
+- [ ] T019 [agent] [status:todo] Browser check of the symbol-mode inspector (size written back, nothing else shown) and camera keys
+      covers: R6@1, R8@1
+      kind: test

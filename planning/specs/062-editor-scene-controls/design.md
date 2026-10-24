@@ -12,3 +12,9 @@
 ## Sequencing
 
 Pure functions (D1, D3) before the UI that uses them; the equivalence test after both.
+
+## Follow-up (2026-10-24)
+
+- D7@1 (implements R6): `SceneInspector` takes a `symbolMode` flag that renders only "Ancho" and "Alto"; "Volver" writes the temporary scene's width and height into the symbol with the children. Trade-off: the background cannot be previewed per symbol — acceptable, a symbol has none of its own.
+- D8@1 (implements R7): Text fields accept an optional `widget`, as select fields already do (`font`); `use.symbol` is a `text` field with `widget: "symbol"`, so its schema and `component_list` entry are a plain string again. Trade-off: one more optional key on `TextField` — it mirrors the existing `SelectField.widget`, no new abstraction.
+- D9@1 (implements R8): A key button next to camera `x`, `y` and `zoom` toggles a keyframe at the playhead through a pure `toggleCameraKey(shot, axis, t)` in `src/model/shots.ts` (built on `withKeyframe` / `keyframeAt`), and the result goes through `setShot` as a `camera.tracks` patch, the same path `shot_set` takes. Camera tracks use scene time, as `resolveShotCamera` reads them. Trade-off: no lanes for camera tracks in the timeline — the key button shows whether the playhead sits on a key, and moving keys stays in `shot_set`/JSON (YAGNI until asked).
