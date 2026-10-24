@@ -108,13 +108,6 @@ export async function editScene(
   return saveScene(ctx, name, edit(await openScene(ctx, name)));
 }
 
-/** The index of top-level element `id` in `scene`, or a failure on `path`. */
-export function elementIndex(scene: Scene, id: string, path = "id"): number {
-  const i = scene.elements.findIndex((el) => el.id === id);
-  if (i < 0) fail("not_found", `No existe el elemento «${id}»`, path);
-  return i;
-}
-
 export type FoundPreset = {
   recipe: PresetRecipe;
   source: PresetSource;

@@ -121,6 +121,43 @@ describe("image_trim", () => {
       path: "id",
     });
   });
+
+  it("trims an image nested inside a group by id or slash path (051/R1)", async () => {
+    const g = await call("element_add", {
+      scene: SCENE,
+      kind: "group",
+    });
+    expect(g.ok).toBe(true);
+    const groupId = g.ok ? (g.value as { id: string }).id : "";
+    const img = await call("element_add", {
+      scene: SCENE,
+      kind: "image",
+      parent: groupId,
+      set: {
+        x: 100,
+        y: 50,
+        w: 200,
+        h: 100,
+        src: "assets/logo.png",
+        aspect: 2,
+      },
+    });
+    expect(img.ok).toBe(true);
+    const imgId = img.ok ? (img.value as { id: string }).id : "";
+
+    const r = await call("image_trim", {
+      scene: SCENE,
+      id: `${groupId}/${imgId}`,
+    });
+
+    expect(r.ok).toBe(true);
+    const group = (await onDisk()).elements[0] as Extract<
+      Scene["elements"][number],
+      { kind: "group" }
+    >;
+    const el = group.children[0] as ImageEl;
+    expect(el.crop).toEqual(HALF);
+  });
 });
 
 describe("element_add with trim", () => {

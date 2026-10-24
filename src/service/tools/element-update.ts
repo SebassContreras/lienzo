@@ -1,18 +1,20 @@
 import { z } from "zod";
 import { centerOn } from "../../engine/geometry.ts";
 import type { Element } from "../../model/model.ts";
+import { updateElement } from "../element-tree.ts";
 import { COORDINATES, patched } from "../elements.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { editScene, elementIndex, SceneResult } from "../scenes.ts";
+import { editScene, SceneResult } from "../scenes.ts";
 
 export const elementUpdate = defineTool({
   name: "element_update",
   description:
-    "Change an element with a partial patch, deep-merged: objects merge key by key, " +
-    "anything else (arrays, tracks' keyframe lists) is replaced. id and kind never change. " +
-    "The result is checked against the kind's fields. `at` re-centres the patched element " +
-    "on a point and wins over an `x`/`y` in the patch. " +
+    "Change an element (at root or inside nested groups, by `id` or `group/child` path) with a " +
+    "partial patch, deep-merged: objects merge key by key, anything else (arrays, tracks' " +
+    "keyframe lists) is replaced. id and kind never change. The result is checked against the " +
+    "kind's fields. `at` re-centres the patched element on a point and wins over an `x`/`y` in " +
+    "the patch. " +
     COORDINATES,
   input: z.object({
     scene: z.string().min(1),
@@ -23,15 +25,12 @@ export const elementUpdate = defineTool({
   }),
   output: SceneResult,
   run: async ({ scene, project, id, patch, at }, ctx) =>
-    editScene(await inProject(ctx, project), scene, (s) => {
-      const i = elementIndex(s, id);
-      return {
-        ...s,
-        elements: s.elements.map((el, j) =>
-          j === i ? recentred(patched(el, patch), at) : el,
-        ),
-      };
-    }),
+    editScene(await inProject(ctx, project), scene, (s) => ({
+      ...s,
+      elements: updateElement(s.elements, id, (el) =>
+        recentred(patched(el, patch), at),
+      ),
+    })),
 });
 
 const recentred = (el: Element, at?: { x: number; y: number }) =>

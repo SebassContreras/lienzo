@@ -1,0 +1,327 @@
+diff --git a/src/service/tools/element-move.ts b/src/service/tools/element-move.ts
+index 80c07a5..43b4884 100644
+--- a/src/service/tools/element-move.ts
++++ b/src/service/tools/element-move.ts
+@@ -1,7 +1,8 @@
+ import { z } from "zod";
++import { updateSiblings } from "../element-tree.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool } from "../registry.ts";
+-import { editScene, elementIndex, SceneResult } from "../scenes.ts";
++import { editScene, SceneResult } from "../scenes.ts";
+ 
+ const STEPS = ["front", "back", "forward", "backward"] as const;
+ 
+@@ -16,8 +17,9 @@ function target(to: (typeof STEPS)[number] | number, i: number, n: number) {
+ export const elementMove = defineTool({
+   name: "element_move",
+   description:
+-    "Move an element in the layer order: `front` (drawn last, on top), `back`, one step " +
+-    "`forward` or `backward`, or to an index (0 = bottom).",
++    "Move an element (at root or inside a group, by `id` or `group/child` path) in its sibling " +
++    "layer order: `front` (drawn last, on top), `back`, one step `forward` or `backward`, or to " +
++    "an index (0 = bottom).",
+   input: z.object({
+     scene: z.string().min(1),
+     project: PROJECT,
+@@ -26,14 +28,16 @@ export const elementMove = defineTool({
+   }),
+   output: SceneResult,
+   run: async ({ scene, project, id, to }, ctx) =>
+-    editScene(await inProject(ctx, project), scene, (s) => {
+-      const i = elementIndex(s, id);
+-      const elements = s.elements.filter((_, j) => j !== i);
+-      elements.splice(
+-        target(to, i, s.elements.length),
+-        0,
+-        s.elements[i] as (typeof elements)[number],
+-      );
+-      return { ...s, elements };
+-    }),
++    editScene(await inProject(ctx, project), scene, (s) => ({
++      ...s,
++      elements: updateSiblings(s.elements, id, (siblings, i) => {
++        const next = siblings.filter((_, j) => j !== i);
++        next.splice(
++          target(to, i, siblings.length),
++          0,
++          siblings[i] as (typeof next)[number],
++        );
++        return next;
++      }),
++    })),
+ });
+diff --git a/src/service/tools/element-remove.ts b/src/service/tools/element-remove.ts
+index c99bfd1..5da50f6 100644
+--- a/src/service/tools/element-remove.ts
++++ b/src/service/tools/element-remove.ts
+@@ -1,11 +1,13 @@
+ import { z } from "zod";
++import { mapElementsDeep, updateSiblings } from "../element-tree.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool } from "../registry.ts";
+-import { editScene, elementIndex, SceneResult } from "../scenes.ts";
++import { editScene, SceneResult } from "../scenes.ts";
+ 
+ export const elementRemove = defineTool({
+   name: "element_remove",
+-  description: "Remove an element from a scene by id.",
++  description:
++    "Remove an element from a scene by `id` or `group/child` path (at root or inside nested groups).",
+   input: z.object({
+     scene: z.string().min(1),
+     project: PROJECT,
+@@ -14,23 +16,23 @@ export const elementRemove = defineTool({
+   output: SceneResult,
+   run: async ({ scene, project, id }, ctx) =>
+     editScene(await inProject(ctx, project), scene, (s) => {
+-      const i = elementIndex(s, id);
+-      const removedId = s.elements[i]?.id;
++      let removedId: string | undefined;
++      const withoutTarget = updateSiblings(s.elements, id, (siblings, i) => {
++        removedId = siblings[i]?.id;
++        return siblings.filter((_, j) => j !== i);
++      });
+       return {
+         ...s,
+-        elements: s.elements
+-          .filter((_, j) => j !== i)
+-          .map((el) => {
+-            const fx = (el as unknown as { effects?: { mask?: string } })
+-              .effects;
+-            if (fx && fx.mask === removedId) {
+-              return {
+-                ...el,
+-                effects: { ...fx, mask: "" },
+-              } as typeof el;
+-            }
+-            return el;
+-          }),
++        elements: mapElementsDeep(withoutTarget, (el) => {
++          const fx = (el as unknown as { effects?: { mask?: string } }).effects;
++          if (fx && fx.mask === removedId) {
++            return {
++              ...el,
++              effects: { ...fx, mask: "" },
++            } as typeof el;
++          }
++          return el;
++        }),
+       };
+     }),
+ });
+diff --git a/src/service/tools/element-update.ts b/src/service/tools/element-update.ts
+index 4297ead..40de3b0 100644
+--- a/src/service/tools/element-update.ts
++++ b/src/service/tools/element-update.ts
+@@ -1,18 +1,20 @@
+ import { z } from "zod";
+ import { centerOn } from "../../engine/geometry.ts";
+ import type { Element } from "../../model/model.ts";
++import { updateElement } from "../element-tree.ts";
+ import { COORDINATES, patched } from "../elements.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool } from "../registry.ts";
+-import { editScene, elementIndex, SceneResult } from "../scenes.ts";
++import { editScene, SceneResult } from "../scenes.ts";
+ 
+ export const elementUpdate = defineTool({
+   name: "element_update",
+   description:
+-    "Change an element with a partial patch, deep-merged: objects merge key by key, " +
+-    "anything else (arrays, tracks' keyframe lists) is replaced. id and kind never change. " +
+-    "The result is checked against the kind's fields. `at` re-centres the patched element " +
+-    "on a point and wins over an `x`/`y` in the patch. " +
++    "Change an element (at root or inside nested groups, by `id` or `group/child` path) with a " +
++    "partial patch, deep-merged: objects merge key by key, anything else (arrays, tracks' " +
++    "keyframe lists) is replaced. id and kind never change. The result is checked against the " +
++    "kind's fields. `at` re-centres the patched element on a point and wins over an `x`/`y` in " +
++    "the patch. " +
+     COORDINATES,
+   input: z.object({
+     scene: z.string().min(1),
+@@ -23,15 +25,12 @@ export const elementUpdate = defineTool({
+   }),
+   output: SceneResult,
+   run: async ({ scene, project, id, patch, at }, ctx) =>
+-    editScene(await inProject(ctx, project), scene, (s) => {
+-      const i = elementIndex(s, id);
+-      return {
+-        ...s,
+-        elements: s.elements.map((el, j) =>
+-          j === i ? recentred(patched(el, patch), at) : el,
+-        ),
+-      };
+-    }),
++    editScene(await inProject(ctx, project), scene, (s) => ({
++      ...s,
++      elements: updateElement(s.elements, id, (el) =>
++        recentred(patched(el, patch), at),
++      ),
++    })),
+ });
+ 
+ const recentred = (el: Element, at?: { x: number; y: number }) =>
+diff --git a/src/service/tools/image-trim.ts b/src/service/tools/image-trim.ts
+index c774510..9461e1b 100644
+--- a/src/service/tools/image-trim.ts
++++ b/src/service/tools/image-trim.ts
+@@ -1,17 +1,18 @@
+ import { z } from "zod";
+-import type { Element } from "../../model/model.ts";
++import { findElement, updateElement } from "../element-tree.ts";
+ import { trimImage } from "../image-trim.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool } from "../registry.ts";
+-import { elementIndex, openScene, SceneResult, saveScene } from "../scenes.ts";
++import { openScene, SceneResult, saveScene } from "../scenes.ts";
+ 
+ export const imageTrim = defineTool({
+   name: "image_trim",
+   description:
+-    "Crop an image element to its visible pixels, removing the transparent margin of the " +
+-    "picture. The asset file is not changed: the element's `crop` is set and its box shrinks " +
+-    "so the visible content keeps its place and scale on the canvas. Fails on `id` when it " +
+-    "is not an image, cannot be decoded or is fully transparent.",
++    "Crop an image element (at root or inside nested groups, by `id` or `group/child` path) to " +
++    "its visible pixels, removing the transparent margin of the picture. The asset file is not " +
++    "changed: the element's `crop` is set and its box shrinks so the visible content keeps its " +
++    "place and scale on the canvas. Fails on `id` when it is not an image, cannot be decoded or " +
++    "is fully transparent.",
+   input: z.object({
+     scene: z.string().min(1),
+     project: PROJECT,
+@@ -21,11 +22,11 @@ export const imageTrim = defineTool({
+   async run({ scene, project, id }, ctx) {
+     const pctx = await inProject(ctx, project);
+     const s = await openScene(pctx, scene);
+-    const i = elementIndex(s, id);
+-    const trimmed = await trimImage(pctx, s.elements[i] as Element);
++    const el = findElement(s.elements, id);
++    const trimmed = await trimImage(pctx, el);
+     return saveScene(pctx, scene, {
+       ...s,
+-      elements: s.elements.map((el, j) => (j === i ? trimmed : el)),
++      elements: updateElement(s.elements, id, () => trimmed),
+     });
+   },
+ });
+diff --git a/src/service/tools/keyframe-remove.ts b/src/service/tools/keyframe-remove.ts
+index b7122af..a4d8fba 100644
+--- a/src/service/tools/keyframe-remove.ts
++++ b/src/service/tools/keyframe-remove.ts
+@@ -1,13 +1,15 @@
+ import { z } from "zod";
+ import { keyframeAt, withoutKeyframe } from "../../engine/tracks.ts";
++import { updateElement } from "../element-tree.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool, fail } from "../registry.ts";
+-import { editScene, elementIndex, SceneResult } from "../scenes.ts";
++import { editScene, SceneResult } from "../scenes.ts";
+ 
+ export const keyframeRemove = defineTool({
+   name: "keyframe_remove",
+   description:
+-    "Remove an element's keyframe on `path` at time `t`; a track left empty is removed.",
++    "Remove an element's keyframe on `path` at time `t` (by `id` or `group/child` path); " +
++    "a track left empty is removed.",
+   input: z.object({
+     scene: z.string().min(1),
+     project: PROJECT,
+@@ -17,19 +19,18 @@ export const keyframeRemove = defineTool({
+   }),
+   output: SceneResult,
+   run: async ({ scene, project, id, path, t }, ctx) =>
+-    editScene(await inProject(ctx, project), scene, (s) => {
+-      const i = elementIndex(s, id);
+-      const el = s.elements[i] as (typeof s.elements)[number];
+-      const { [path]: keys = [], ...rest } = el.tracks ?? {};
+-      const k = keyframeAt(keys, t);
+-      if (k < 0) fail("not_found", `No hay keyframe en ${t}s`, "t");
+-      const left = withoutKeyframe(keys, k);
+-      const tracks = left.length ? { ...rest, [path]: left } : rest;
+-      const { tracks: _, ...bare } = el;
+-      const out = Object.keys(tracks).length ? { ...bare, tracks } : bare;
+-      return {
+-        ...s,
+-        elements: s.elements.map((e, j) => (j === i ? (out as typeof el) : e)),
+-      };
+-    }),
++    editScene(await inProject(ctx, project), scene, (s) => ({
++      ...s,
++      elements: updateElement(s.elements, id, (el) => {
++        const { [path]: keys = [], ...rest } = el.tracks ?? {};
++        const k = keyframeAt(keys, t);
++        if (k < 0) fail("not_found", `No hay keyframe en ${t}s`, "t");
++        const left = withoutKeyframe(keys, k);
++        const tracks = left.length ? { ...rest, [path]: left } : rest;
++        const { tracks: _, ...bare } = el;
++        return (
++          Object.keys(tracks).length ? { ...bare, tracks } : bare
++        ) as typeof el;
++      }),
++    })),
+ });
+diff --git a/src/service/tools/keyframe-set.ts b/src/service/tools/keyframe-set.ts
+index 0ef18ea..1c13626 100644
+--- a/src/service/tools/keyframe-set.ts
++++ b/src/service/tools/keyframe-set.ts
+@@ -1,18 +1,20 @@
+ import { z } from "zod";
+ import { EasingSchema } from "../../engine/easing.ts";
+ import { withKeyframe } from "../../engine/tracks.ts";
++import { updateElement } from "../element-tree.ts";
+ import { checkKeyframe } from "../elements.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool, fail } from "../registry.ts";
+-import { editScene, elementIndex, SceneResult } from "../scenes.ts";
++import { editScene, SceneResult } from "../scenes.ts";
+ 
+ export const keyframeSet = defineTool({
+   name: "keyframe_set",
+   description:
+-    "Set a keyframe on an element: `path` is an animatable field path or channel of its " +
+-    "kind (see component_list, e.g. `x`, `fill.color`, `@rotate`, `@scale`), `t` seconds " +
+-    "within the scene, `value` a number or a color. A keyframe already at `t` is " +
+-    "replaced. `easing` (default `auto`) shapes the segment to the next keyframe.",
++    "Set a keyframe on an element (at root or inside nested groups, by `id` or `group/child` " +
++    "path): `path` is an animatable field path or channel of its kind (see component_list, e.g. " +
++    "`x`, `fill.color`, `@rotate`, `@scale`), `t` seconds within the scene, `value` a number or " +
++    "a color. A keyframe already at `t` is replaced. `easing` (default `auto`) shapes the " +
++    "segment to the next keyframe.",
+   input: z.object({
+     scene: z.string().min(1),
+     project: PROJECT,
+@@ -24,18 +26,18 @@ export const keyframeSet = defineTool({
+   }),
+   output: SceneResult,
+   run: async ({ scene, project, id, path, t, value, easing }, ctx) =>
+-    editScene(await inProject(ctx, project), scene, (s) => {
+-      const i = elementIndex(s, id);
+-      const el = s.elements[i] as (typeof s.elements)[number];
+-      checkKeyframe(el.kind, path, value);
+-      if (t > s.duration)
+-        fail("invalid_time", `t pasa la duración (${s.duration}s)`, "t");
+-      const keys = withKeyframe(el.tracks?.[path] ?? [], {
+-        t,
+-        value,
+-        easing: easing ?? "auto",
+-      });
+-      const out = { ...el, tracks: { ...el.tracks, [path]: keys } };
+-      return { ...s, elements: s.elements.map((e, j) => (j === i ? out : e)) };
+-    }),
++    editScene(await inProject(ctx, project), scene, (s) => ({
++      ...s,
++      elements: updateElement(s.elements, id, (el) => {
++        checkKeyframe(el.kind, path, value);
++        if (t > s.duration)
++          fail("invalid_time", `t pasa la duración (${s.duration}s)`, "t");
++        const keys = withKeyframe(el.tracks?.[path] ?? [], {
++          t,
++          value,
++          easing: easing ?? "auto",
++        });
++        return { ...el, tracks: { ...el.tracks, [path]: keys } };
++      }),
++    })),
+ });

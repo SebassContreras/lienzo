@@ -55,3 +55,12 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 048 | image-trim | done        | 044, 047 | —     | 48 |
 | 049 | image-trim-service | done        | 048 | —     | 49 |
 | 050 | joint-mode | done        | 043, 049 | —      | 50 |
+| 051 | nested-tools-and-validation | done        | 007, 011 | —      | 51 |
+| 052 | track-loops-and-step | todo        | 011, 015 | design | 52 |
+| 053 | transform-origin-and-opacity | todo        | 011, 012, 013 | design | 53 |
+| 054 | text-measurement-and-box | todo        | 007, 011, 012, 045 | design | 54 |
+| 055 | shots-and-camera | todo        | 011, 015, 034, 053 | design | 55 |
+| 056 | reusable-symbols | todo        | 011, 012 | design | 56 |
+| 057 | path-layers-and-particles | todo        | 005, 012, 024 | design | 57 |
+| 058 | compact-effects-and-defaults | todo        | 010, 011, 025 | design | 58 |
+| 059 | shapes-clip-and-gradients | todo        | 002, 012, 017 | design | 59 |

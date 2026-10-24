@@ -94,13 +94,22 @@ function makeCompactFieldSchema(field: DataField): z.ZodType {
 }
 
 /** Builds the compact schema shape for a set of descriptor fields. */
-function compactShapeOf(fields: Fields): Record<string, z.ZodType> {
+function compactShapeOf(
+  fields: Fields,
+  forJsonSchema = false,
+): Record<string, z.ZodType> {
   const shape: Record<string, z.ZodType> = {};
   for (const [k, field] of dataFields(fields)) {
     if (k === "anim") {
       shape[k] = CompactAnimSchema.optional();
     } else if (k === "children") {
-      shape[k] = z.lazy(() => z.array(CompactElementSchema)).optional();
+      shape[k] = forJsonSchema
+        ? z.array(z.record(z.string(), z.unknown())).optional()
+        : z.lazy(() => z.array(CompactElementSchema)).optional();
+    } else if (k === "template") {
+      shape[k] = forJsonSchema
+        ? z.record(z.string(), z.unknown()).nullable().optional()
+        : z.lazy(() => CompactElementSchema.nullable()).optional();
     } else {
       shape[k] = makeCompactFieldSchema(field);
     }
@@ -108,54 +117,71 @@ function compactShapeOf(fields: Fields): Record<string, z.ZodType> {
   return shape;
 }
 
+const baseSpecialFields = {
+  id: z.string().optional(),
+  name: z.string().optional(),
+  preset: z.string().optional(),
+  at: AtPlacementSchema.optional(),
+  fit: FitPlacementSchema.optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  tracks: CompactTracksSchema.optional(),
+  animPreset: z
+    .union([
+      z.string().min(1),
+      z.object({
+        name: z.string().min(1),
+        start: z.number().min(0).optional(),
+      }),
+    ])
+    .optional(),
+};
+
+const { preset: _preset, ...otherSpecialFields } = baseSpecialFields;
+const presetOnlySchema = z
+  .object({
+    preset: z.string().min(1),
+    ...otherSpecialFields,
+  })
+  .passthrough();
+
 let registeredComponents: readonly { kind: string; fields: Fields }[] = [];
-let compactElementUnion: z.ZodType<unknown> | undefined;
+let compactKindSchemas:
+  | Map<string, z.ZodType<Record<string, unknown>>>
+  | undefined;
 
 /** Updates the registered components used to derive the compact element schema. */
 export function registerCompactElementKinds(
   list: readonly { kind: string; fields: Fields }[],
 ): void {
   registeredComponents = list;
-  compactElementUnion = undefined;
+  compactKindSchemas = undefined;
+}
+
+function getKindSchemas(): Map<string, z.ZodType<Record<string, unknown>>> {
+  if (!compactKindSchemas) {
+    compactKindSchemas = new Map(
+      registeredComponents.map((d) => [
+        d.kind,
+        z.object({
+          kind: z.literal(d.kind),
+          ...baseSpecialFields,
+          ...compactShapeOf(d.fields),
+        }) as unknown as z.ZodType<Record<string, unknown>>,
+      ]),
+    );
+  }
+  return compactKindSchemas;
 }
 
 function buildCompactElementUnion(): z.ZodType<unknown> {
-  const baseSpecialFields = {
-    id: z.string().optional(),
-    name: z.string().optional(),
-    preset: z.string().optional(),
-    at: AtPlacementSchema.optional(),
-    fit: FitPlacementSchema.optional(),
-    from: z.string().optional(),
-    to: z.string().optional(),
-    tracks: CompactTracksSchema.optional(),
-    animPreset: z
-      .union([
-        z.string().min(1),
-        z.object({
-          name: z.string().min(1),
-          start: z.number().min(0).optional(),
-        }),
-      ])
-      .optional(),
-  };
-
-  const schemas = registeredComponents.map((d) => {
-    const compactShape = compactShapeOf(d.fields);
-    return z.object({
+  const schemas = registeredComponents.map((d) =>
+    z.object({
       kind: z.literal(d.kind).optional(),
       ...baseSpecialFields,
-      ...compactShape,
-    });
-  });
-
-  const { preset: _preset, ...otherSpecialFields } = baseSpecialFields;
-  const presetOnlySchema = z
-    .object({
-      preset: z.string().min(1),
-      ...otherSpecialFields,
-    })
-    .passthrough();
+      ...compactShapeOf(d.fields, true),
+    }),
+  );
 
   return z.union([presetOnlySchema, ...schemas] as unknown as [
     z.ZodType,
@@ -164,14 +190,62 @@ function buildCompactElementUnion(): z.ZodType<unknown> {
   ]);
 }
 
-/** Any compact element, validated against registered kinds or preset. */
+/**
+ * Any compact element, validated by kind-directed dispatch (051/D4) so nested field errors
+ * report their exact path instead of collapsing into a generic union error.
+ */
 export const CompactElementSchema: z.ZodType<Record<string, unknown>> = z
   .unknown()
   .transform((value, ctx) => {
-    compactElementUnion ??= buildCompactElementUnion();
-    const r = compactElementUnion.safeParse(value);
-    if (r.success) return r.data as Record<string, unknown>;
-    for (const issue of r.error.issues) ctx.issues.push(issue as never);
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      ctx.issues.push({
+        code: "invalid_type",
+        expected: "object",
+        input: value,
+        path: [],
+        message: "Se esperaba un objeto para el elemento compacto",
+      } as never);
+      return z.NEVER;
+    }
+
+    const raw = value as Record<string, unknown>;
+    const byKind = getKindSchemas();
+    const rawKind = raw.kind;
+
+    if (rawKind !== undefined) {
+      if (typeof rawKind === "string") {
+        const schema = byKind.get(rawKind);
+        if (schema) {
+          const r = schema.safeParse(raw);
+          if (r.success) return r.data;
+          for (const issue of r.error.issues) ctx.issues.push(issue as never);
+          return z.NEVER;
+        }
+      }
+      const known = [...byKind.keys()].join(", ");
+      ctx.issues.push({
+        code: "custom",
+        input: rawKind,
+        path: ["kind"],
+        message: `Tipo de elemento desconocido «${String(rawKind)}» (hay: ${known})`,
+      } as never);
+      return z.NEVER;
+    }
+
+    if (typeof raw.preset === "string" && raw.preset.length > 0) {
+      const r = presetOnlySchema.safeParse(raw);
+      if (r.success) return r.data as Record<string, unknown>;
+      for (const issue of r.error.issues) ctx.issues.push(issue as never);
+      return z.NEVER;
+    }
+
+    const known = [...byKind.keys()].join(", ");
+    ctx.issues.push({
+      code: "custom",
+      input: rawKind,
+      path: ["kind"],
+      message: `Falta 'kind' (o 'preset') en el elemento compacto (tipos: ${known})`,
+    } as never);
     return z.NEVER;
   }) as unknown as z.ZodType<Record<string, unknown>>;
 

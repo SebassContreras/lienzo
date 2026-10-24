@@ -134,4 +134,52 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
     const parsed = CompactElementSchema.safeParse(groupElement);
     expect(parsed.success).toBe(true);
   });
+
+  it("reports the deepest field path inside nested group children when a known kind has an invalid field (051/R3)", () => {
+    const compact = {
+      elements: [
+        { kind: "rect" },
+        { kind: "rect" },
+        { kind: "rect" },
+        {
+          kind: "group",
+          children: [
+            { kind: "rect", w: 50 },
+            { kind: "particles", speed: 0 },
+          ],
+        },
+      ],
+    };
+
+    const parsed = CompactSceneSchema.safeParse(compact);
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues[0]?.path.join(".")).toBe(
+        "elements.3.children.1.speed",
+      );
+    }
+  });
+
+  it("reports missing or unknown kind at the exact element path (051/R4)", () => {
+    const missingKind = CompactSceneSchema.safeParse({
+      elements: [{ kind: "group", children: [{ w: 100 }] }],
+    });
+    expect(missingKind.success).toBe(false);
+    if (!missingKind.success) {
+      expect(missingKind.error.issues[0]?.path.join(".")).toBe(
+        "elements.0.children.0.kind",
+      );
+    }
+
+    const unknownKind = CompactSceneSchema.safeParse({
+      elements: [{ kind: "spaceship" }],
+    });
+    expect(unknownKind.success).toBe(false);
+    if (!unknownKind.success) {
+      expect(unknownKind.error.issues[0]?.path.join(".")).toBe(
+        "elements.0.kind",
+      );
+      expect(unknownKind.error.issues[0]?.message).toContain("spaceship");
+    }
+  });
 });
