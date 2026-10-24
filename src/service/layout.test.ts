@@ -268,8 +268,12 @@ describe("pure layoutBoxes (023/T009, R2)", () => {
     expect(oob1).toBeDefined();
     expect(oob1?.shot).toBe("shot-1");
 
-    expect(diagsAt1.find((d) => d.elementId === "zero-opacity-el")).toBeUndefined();
-    expect(diagsAt1.find((d) => d.elementId === "delayed-in-el")).toBeUndefined();
+    expect(
+      diagsAt1.find((d) => d.elementId === "zero-opacity-el"),
+    ).toBeUndefined();
+    expect(
+      diagsAt1.find((d) => d.elementId === "delayed-in-el"),
+    ).toBeUndefined();
     expect(diagsAt1.find((d) => d.elementId === "early-out-el")).toBeDefined();
 
     // At t = 5:
@@ -279,6 +283,8 @@ describe("pure layoutBoxes (023/T009, R2)", () => {
     const diagsAt5 = inspectLayout(scene, [5]);
     expect(diagsAt5.find((d) => d.elementId === "oob-shot-1")).toBeUndefined();
     expect(diagsAt5.find((d) => d.elementId === "delayed-in-el")).toBeDefined();
-    expect(diagsAt5.find((d) => d.elementId === "early-out-el")).toBeUndefined();
+    expect(
+      diagsAt5.find((d) => d.elementId === "early-out-el"),
+    ).toBeUndefined();
   });
 });

@@ -100,7 +100,7 @@ describe("Use component & drawing (056/T007 - R2, R3)", () => {
       beginPath: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
-    } as any;
+    } as unknown as CanvasRenderingContext2D;
 
     const drawElementsMock = vi.fn();
 
@@ -138,7 +138,7 @@ describe("Use component & drawing (056/T007 - R2, R3)", () => {
       fillRect: vi.fn(),
       fillText: vi.fn(),
       setLineDash: vi.fn(),
-    } as any;
+    } as unknown as CanvasRenderingContext2D;
 
     const drawElementsMock = vi.fn();
 

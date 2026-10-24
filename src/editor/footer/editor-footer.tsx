@@ -224,7 +224,15 @@ export function EditorFooter({
         >
           {playing ? <Pause size={16} /> : <Play size={16} />}
         </button>
-        <div className="scrub-container" style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
+        <div
+          className="scrub-container"
+          style={{
+            position: "relative",
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           {scene.shots && scene.shots.length > 0 && (
             <div
               className="shots-timeline-strip"
@@ -276,9 +284,14 @@ export function EditorFooter({
             max={duration}
             step={0.01}
             defaultValue={0}
-            onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
+            onInput={(e) =>
+              onScrub(Number((e.target as HTMLInputElement).value))
+            }
             className="scrub-slider"
-            style={{ width: "100%", marginTop: scene.shots && scene.shots.length > 0 ? 12 : 0 }}
+            style={{
+              width: "100%",
+              marginTop: scene.shots && scene.shots.length > 0 ? 12 : 0,
+            }}
           />
         </div>
         <span ref={readout} className="readout" />

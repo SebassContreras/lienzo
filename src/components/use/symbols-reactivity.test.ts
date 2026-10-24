@@ -59,9 +59,9 @@ describe("Symbol updates reactivity (056/T009 - R4, D5)", () => {
       beginPath: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
-    } as any;
+    } as unknown as CanvasRenderingContext2D;
 
-    let drawnElementsLog: any[] = [];
+    let drawnElementsLog: RectEl[] = [];
     const drawElementsMock = vi.fn((_ctx, elements) => {
       drawnElementsLog.push(...elements);
     });

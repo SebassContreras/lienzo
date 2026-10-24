@@ -387,11 +387,11 @@ export async function expandScene(
         );
         delete mutable.__at;
       }
-      if (el.kind === "group" && Array.isArray((el as any).children)) {
-        const groupEl = el as any;
-        applyLayoutPass(groupEl.children, {
-          width: typeof groupEl.w === "number" ? groupEl.w : container.width,
-          height: typeof groupEl.h === "number" ? groupEl.h : container.height,
+      if (el.kind === "group" && Array.isArray(el.children)) {
+        const size = el as { w?: unknown; h?: unknown };
+        applyLayoutPass(el.children, {
+          width: typeof size.w === "number" ? size.w : container.width,
+          height: typeof size.h === "number" ? size.h : container.height,
         });
       }
     }

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { expandScene } from "../service/compact/expand.ts";
 import { CompactSceneSchema } from "./compact.ts";
-import { defaultEllipse, defaultRect, defaultScene } from "./model.ts";
+import {
+  defaultEllipse,
+  defaultRect,
+  defaultScene,
+  type Element,
+} from "./model.ts";
 import { parseScene } from "./schema.ts";
 
 describe("Symbol schema and expansion (056/T006 - R1)", () => {
@@ -84,7 +89,9 @@ describe("Symbol schema and expansion (056/T006 - R1)", () => {
     expect(expanded.symbols?.house.children).toHaveLength(2);
     expect(expanded.elements).toHaveLength(1);
     expect(expanded.elements[0].kind).toBe("use");
-    expect((expanded.elements[0] as any).symbol).toBe("house");
+    expect(
+      (expanded.elements[0] as Extract<Element, { kind: "use" }>).symbol,
+    ).toBe("house");
   });
 
   it("rejects duplicate IDs inside compact symbol definitions", async () => {

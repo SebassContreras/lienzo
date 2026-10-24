@@ -148,8 +148,8 @@ export function LayersPanel({
   const query = filterText.trim().toLowerCase();
   const matchesFilter = (el: Element): boolean => {
     if (!query) return true;
-    if (el.name && el.name.toLowerCase().includes(query)) return true;
-    if (el.id && el.id.toLowerCase().includes(query)) return true;
+    if (el.name?.toLowerCase().includes(query)) return true;
+    if (el.id?.toLowerCase().includes(query)) return true;
     if (el.kind === "group" && Array.isArray((el as GroupEl).children)) {
       return (el as GroupEl).children.some(matchesFilter);
     }
@@ -163,25 +163,53 @@ export function LayersPanel({
 
   return (
     <div className="layers-panel" ref={panelRef}>
-      <div className="layers-header" style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        className="layers-header"
+        style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <span className="layers-title">Capas ({scene.elements.length})</span>
         </div>
-        <div className="layer-search-box" style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--panel-2)", padding: "4px 8px", borderRadius: 4, border: "1px solid var(--line)" }}>
+        <div
+          className="layer-search-box"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "var(--panel-2)",
+            padding: "4px 8px",
+            borderRadius: 4,
+            border: "1px solid var(--line)",
+          }}
+        >
           <Search size={12} style={{ color: "var(--muted)", flexShrink: 0 }} />
           <input
             type="text"
             placeholder="Buscar capas..."
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontSize: 12 }}
+            style={{
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              width: "100%",
+              fontSize: 12,
+            }}
           />
         </div>
       </div>
       <div className="layers-list" role="tree">
         {filteredElements.length === 0 ? (
           <div className="layers-empty">
-            {filterText ? "No se encontraron capas." : "No hay capas en el lienzo."}
+            {filterText
+              ? "No se encontraron capas."
+              : "No hay capas en el lienzo."}
           </div>
         ) : hasShots ? (
           // Grouped by shots
@@ -198,62 +226,90 @@ export function LayersPanel({
               shotGroups.get(sid)?.push(el);
             }
 
-            return Array.from(shotGroups.entries()).map(([shotId, elements]) => {
-              if (elements.length === 0 && shotId === null) return null;
-              const shotObj = scene.shots?.find((s) => s.id === shotId);
-              const label = shotObj ? `Toma: ${shotObj.name} (${shotObj.start}s - ${shotObj.end}s)` : "Global / Sin toma";
-              const isCollapsed = shotId ? collapsedShots.has(shotId) : false;
+            return Array.from(shotGroups.entries()).map(
+              ([shotId, elements]) => {
+                if (elements.length === 0 && shotId === null) return null;
+                const shotObj = scene.shots?.find((s) => s.id === shotId);
+                const label = shotObj
+                  ? `Toma: ${shotObj.name} (${shotObj.start}s - ${shotObj.end}s)`
+                  : "Global / Sin toma";
+                const isCollapsed = shotId ? collapsedShots.has(shotId) : false;
 
-              return (
-                <div key={shotId ?? "__global"} className="shot-layers-section" style={{ marginBottom: 6 }}>
+                return (
                   <div
-                    className="shot-header-row"
-                    onClick={() => shotId && toggleShotCollapse(shotId)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "4px 8px",
-                      background: "rgba(255, 255, 255, 0.03)",
-                      borderBottom: "1px solid var(--line)",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: "var(--muted)",
-                      cursor: shotId ? "pointer" : "default",
-                      userSelect: "none",
-                    }}
+                    key={shotId ?? "__global"}
+                    className="shot-layers-section"
+                    style={{ marginBottom: 6 }}
                   >
-                    {shotId && (isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />)}
-                    <span>{label}</span>
-                    <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.7 }}>{elements.length}</span>
+                    <button
+                      type="button"
+                      className="shot-header-row"
+                      disabled={!shotId}
+                      onClick={() => shotId && toggleShotCollapse(shotId)}
+                      style={{
+                        display: "flex",
+                        width: "100%",
+                        border: "none",
+                        font: "inherit",
+                        textAlign: "left",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "4px 8px",
+                        background: "rgba(255, 255, 255, 0.03)",
+                        borderBottom: "1px solid var(--line)",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "var(--muted)",
+                        cursor: shotId ? "pointer" : "default",
+                        userSelect: "none",
+                      }}
+                    >
+                      {shotId &&
+                        (isCollapsed ? (
+                          <ChevronRight size={12} />
+                        ) : (
+                          <ChevronDown size={12} />
+                        ))}
+                      <span>{label}</span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          fontSize: 10,
+                          opacity: 0.7,
+                        }}
+                      >
+                        {elements.length}
+                      </span>
+                    </button>
+                    {!isCollapsed &&
+                      elements.map((el, visualIdx) => (
+                        <LayerItem
+                          key={el.id}
+                          element={el}
+                          depth={0}
+                          visualIndex={visualIdx}
+                          totalCount={elements.length}
+                          isSelected={selection.includes(el.id)}
+                          isCollapsed={collapsedGroups.has(el.id)}
+                          onToggleCollapse={() => toggleGroupCollapse(el.id)}
+                          onClick={(e) => handleRowClick(e, el.id)}
+                          onToggleVisibility={() => handleVisibility(el.id)}
+                          onToggleLock={() => handleLock(el.id)}
+                          onMove={(dir) => handleMove(el.id, dir)}
+                          onDragStart={(e) => onDragStart(e, visualIdx)}
+                          onDragOver={onDragOver}
+                          onDrop={(e) => onDrop(e, visualIdx)}
+                          selection={selection}
+                          onChildSelect={handleRowClick}
+                          onChildVisibility={handleVisibility}
+                          onChildLock={handleLock}
+                          onChildMove={handleMove}
+                        />
+                      ))}
                   </div>
-                  {!isCollapsed && elements.map((el, visualIdx) => (
-                    <LayerItem
-                      key={el.id}
-                      element={el}
-                      depth={0}
-                      visualIndex={visualIdx}
-                      totalCount={elements.length}
-                      isSelected={selection.includes(el.id)}
-                      isCollapsed={collapsedGroups.has(el.id)}
-                      onToggleCollapse={() => toggleGroupCollapse(el.id)}
-                      onClick={(e) => handleRowClick(e, el.id)}
-                      onToggleVisibility={() => handleVisibility(el.id)}
-                      onToggleLock={() => handleLock(el.id)}
-                      onMove={(dir) => handleMove(el.id, dir)}
-                      onDragStart={(e) => onDragStart(e, visualIdx)}
-                      onDragOver={onDragOver}
-                      onDrop={(e) => onDrop(e, visualIdx)}
-                      selection={selection}
-                      onChildSelect={handleRowClick}
-                      onChildVisibility={handleVisibility}
-                      onChildLock={handleLock}
-                      onChildMove={handleMove}
-                    />
-                  ))}
-                </div>
-              );
-            });
+                );
+              },
+            );
           })()
         ) : (
           filteredElements.map((el, visualIdx) => (

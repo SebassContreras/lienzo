@@ -63,38 +63,39 @@ export function drawElements(
       // A mask element itself is skipped instead of being drawn directly (025/D2)
       if (maskIds.has(el.id)) continue;
 
-    const now = animate(el, t, scene);
-    const elOpacity = (now.el as unknown as { opacity?: number }).opacity ?? 1;
-    if (elOpacity <= 0) continue;
+      const now = animate(el, t, scene);
+      const elOpacity =
+        (now.el as unknown as { opacity?: number }).opacity ?? 1;
+      if (elOpacity <= 0) continue;
 
-    if (!OWN_OPACITY_KINDS.has(el.kind) && elOpacity < 1) {
-      now.transform.alpha *= elOpacity;
-    }
-
-    const fx = (
-      now.el as unknown as {
-        effects?: {
-          blur?: number;
-          blend?: import("../components/fields/effects.ts").BlendMode;
-          mask?: string;
-        };
+      if (!OWN_OPACITY_KINDS.has(el.kind) && elOpacity < 1) {
+        now.transform.alpha *= elOpacity;
       }
-    ).effects;
 
-    const drawItem = () => {
-      withEffects(ctx, fx, () => {
-        descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
-      });
-    };
+      const fx = (
+        now.el as unknown as {
+          effects?: {
+            blur?: number;
+            blend?: import("../components/fields/effects.ts").BlendMode;
+            mask?: string;
+          };
+        }
+      ).effects;
 
-    const maskTarget = fx?.mask ? byId.get(fx.mask) : undefined;
-    if (maskTarget) {
-      const maskNow = animate(maskTarget, t, scene);
-      withMask(ctx, maskNow.el, maskNow.transform, drawItem);
-    } else {
-      drawItem();
+      const drawItem = () => {
+        withEffects(ctx, fx, () => {
+          descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
+        });
+      };
+
+      const maskTarget = fx?.mask ? byId.get(fx.mask) : undefined;
+      if (maskTarget) {
+        const maskNow = animate(maskTarget, t, scene);
+        withMask(ctx, maskNow.el, maskNow.transform, drawItem);
+      } else {
+        drawItem();
+      }
     }
-  }
   } finally {
     if (hasCameraTransform) {
       ctx.restore();

@@ -1,3 +1,4 @@
+import { registerAacEncoder } from "@mediabunny/aac-encoder";
 import {
   AudioBufferSource,
   BufferTarget,
@@ -9,7 +10,6 @@ import {
   QUALITY_HIGH,
   WebMOutputFormat,
 } from "mediabunny";
-import { registerAacEncoder } from "@mediabunny/aac-encoder";
 import type { FrameEncoder } from "./frame-encoder.ts";
 
 export type VideoEncoderOptions = {
