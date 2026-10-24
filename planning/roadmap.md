@@ -62,6 +62,6 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 055 | shots-and-camera | done        | 011, 015, 034, 053 | —      | 55 |
 | 056 | reusable-symbols | done        | 011, 012 | —      | 56 |
 | 057 | path-layers-and-particles | done        | 005, 012, 024 | —      | 57 |
-| 058 | compact-effects-and-defaults | todo        | 010, 011, 025 | design | 58 |
+| 058 | compact-effects-and-defaults | todo        | 010, 011, 025 | build  | 58 |
 | 059 | shapes-clip-and-gradients | todo        | 002, 012, 017 | design | 59 |
 | 060 | voice-audio-and-font-validation | todo        | 028, 035, 045 | design       | 60 |
