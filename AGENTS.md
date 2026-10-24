@@ -46,6 +46,20 @@ What exists today:
   cropping go through `alphaBounds`/`applyCrop` in `src/engine/image-trim.ts`, shared by the
   inspector, the stage crop mode and the `image_trim` tool (specs 048, 049)
 
+- Element targets: tools resolve an `id` or `group/child` path at any depth; `element_add`
+  takes a `parent` (spec 051)
+- Tracks take `repeat: "loop" | "pingpong"` and `until`, evaluated in `src/engine/tracks.ts`
+  (052); every element has `origin` (pivot, box fractions) and `opacity` (053); `text` takes
+  a wrap width `w`, and Node-side text measurement uses real glyph metrics (054)
+- Shots: `scene.shots` (cut windows, transitions, camera) and `el.shot` bindings; edited by
+  `shot_set` (055). Symbols: `scene.symbols` drawn by the `use` kind with `overrides` (056)
+- Compact extras: partial `effects`, `defaults: "flat"` (build time only), `audioTracks`;
+  `notices` lists what was ignored and missing fonts (058, 060). Speech `asTrack: true`
+  appends an `audioTracks` entry at `startOffset` (060)
+- Editor gaps: shots, symbols, track `repeat`/`until` and `origin` have no editor controls yet
+  (only the tools and JSON); the layers panel groups by shot
+- How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
+
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
   offsets on `relative` fields; applying always copies; `animPreset` on an element is
   provenance only, and a scene naming one is expanded on load; pure logic in

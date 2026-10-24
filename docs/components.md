@@ -40,7 +40,8 @@ the group's box (with `radius`).
 ## `text`
 
 **Texto.** Text with font, size, weight, color or gradient, line height, letter spacing,
-alignment inside its box, and glow.
+alignment inside its box, and glow. With a box width `w` it wraps at word boundaries
+and aligns inside that width.
 
 ## `line`
 
@@ -118,7 +119,8 @@ in over time (`typed`).
 ## `path`
 
 **Trazado libre.** A free-form vector path made of one or more shapes: fill, border, glow,
-draw-on (`progress`) and `morph` between its shapes.
+draw-on (`progress`) and `morph` between its shapes; `mode: "layers"` draws every shape
+at once instead (flat illustrations).
 
 ## `subtitles`
 

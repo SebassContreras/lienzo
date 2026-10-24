@@ -136,8 +136,8 @@ pnpm lienzo scene_build --json '{
         "text": "Lienzo 0.1",
         "at": { "anchor": "top", "offset": [0, 200] },
         "size": 56,
-        "weight": "bold",
-        "anim": "pop-in"
+        "weight": 700,
+        "anim": "pop"
       },
       {
         "id": "conn",
@@ -153,6 +153,49 @@ pnpm lienzo scene_build --json '{
 ```
 
 The schema is defined in `schemas/compact-scene.json`.
+
+### What a scene can also hold
+
+The same options work in compact scenes (`scene_build`) and through the element tools:
+
+- **Nested elements:** element and keyframe tools find an element at any depth by its `id`
+  or by a `group/child` path; `element_add` takes a `parent` group.
+- **Keyframe loops:** a track takes `repeat: "loop" | "pingpong"` and an optional `until`
+  (seconds); compact keyframes accept `[t, value, easing?]` or an object form.
+- **Pivot:** `origin` (`{ x, y }` box fractions, `[x, y]` or an anchor like `"bottom"`)
+  is where rotation and scale pivot; `opacity` works on every kind.
+- **Text box:** `w` on a `text` wraps it at word boundaries and aligns it inside the box.
+- **Shots and camera:** `shots: [{ id, start, end, transition?, camera? }]` splits a video
+  into cuts (`cut`, `fade`, `slide`, `zoom`) with a camera (`x`, `y`, `zoom`, keyframe
+  tracks); top-level elements bind with `shot: "<id>"`. `shot_set` edits one shot.
+- **Symbols:** `symbols: { car: { w, h, children } }` defines a piece once; a `use`
+  element (`symbol: "car"`, `overrides` by child id) draws an instance.
+- **Shapes:** `polygon` `fit: "box"`; `path` `mode: "layers"` draws every shape at once;
+  group `clip`; radial and multi-stop fills (`fill.type`, `fill.stops`).
+- **Particles:** direction and gravity for falling particles, fractional or `0` speed.
+- **Effects and flat style:** partial `effects` (blur, blend, mask…) on any element;
+  `defaults: "flat"` turns off the default gradient, shadow and border of shapes.
+- **Voice and audio:** `scene_generate_speech` with `asTrack: true` and `startOffset`
+  appends one voice track per shot instead of replacing `scene.audio`; `scene_build` keeps
+  existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not
+  installed (`font_install`).
+- **Checking a scene:** `scene_validate`, `scene_inspect_layout` (overlaps, out of canvas,
+  contrast, drawn boxes) and `scene_preview` (`out` also saves the PNG in `exports/`).
+
+In the editor, the layers panel groups elements by shot; shots, symbols, track `repeat`
+and `origin` are edited through the tools or the scene JSON for now.
+
+## Tools
+
+`pnpm lienzo --help` (or the MCP tool list) shows each one with its input. By area:
+
+- Projects: `project_list`, `project_create`, `project_inspect`, `project_delete`
+- Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_validate`,
+  `scene_inspect_layout`, `scene_preview`, `scene_export`, `scene_generate_speech`
+- Elements: `element_add`, `element_update`, `element_move`, `element_remove`,
+  `image_trim`, `keyframe_set`, `keyframe_remove`, `background_set`, `shot_set`
+- Catalog: `component_list`, `preset_list`, `preset_get`, `preset_validate`, `font_list`,
+  `font_install`
 
 ## Shortcuts
 
