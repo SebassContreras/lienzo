@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultLine, defaultRect, type Element } from "../model/model.ts";
+import { fitToBox } from "./geometry.ts";
 import {
   controlPoint,
   distToPath,
@@ -46,5 +47,37 @@ describe("line geometry", () => {
     const line = defaultLine();
     line.a = { x: 10, y: 20, attach: "gone" };
     expect(resolveLine(line, new Map()).a).toMatchObject({ x: 10, y: 20 });
+  });
+});
+
+describe("fitToBox (059/D2)", () => {
+  it("stretches the points' bounds onto the box", () => {
+    const pts = [
+      { x: 10, y: 10 },
+      { x: 30, y: 20 },
+      { x: 20, y: 40 },
+    ];
+
+    const fitted = fitToBox(pts, { x: 0, y: 100, w: 200, h: 300 });
+
+    expect(fitted).toEqual([
+      { x: 0, y: 100 },
+      { x: 200, y: 200 },
+      { x: 100, y: 400 },
+    ]);
+  });
+
+  it("centres an axis the points have no extent on", () => {
+    const flat = [
+      { x: 0, y: 5 },
+      { x: 10, y: 5 },
+    ];
+
+    const fitted = fitToBox(flat, { x: 0, y: 0, w: 100, h: 60 });
+
+    expect(fitted).toEqual([
+      { x: 0, y: 30 },
+      { x: 100, y: 30 },
+    ]);
   });
 });

@@ -260,3 +260,25 @@ export function translate(
     ep.attach && moving.has(ep.attach) ? ep : { x: at.x + dx, y: at.y + dy };
   return { ...el, a: end(el.a, r.a), b: end(el.b, r.b) };
 }
+
+/**
+ * `pts` stretched so their own bounds span `box` exactly (059/D2); an axis with no extent stays
+ * centred in the box.
+ */
+export function fitToBox(pts: Pt[], box: Box): Pt[] {
+  const xs = pts.map((p) => p.x);
+  const ys = pts.map((p) => p.y);
+  const axis = (
+    v: number,
+    lo: number,
+    hi: number,
+    start: number,
+    size: number,
+  ) => (hi > lo ? start + ((v - lo) / (hi - lo)) * size : start + size / 2);
+  const [x0, x1] = [Math.min(...xs), Math.max(...xs)];
+  const [y0, y1] = [Math.min(...ys), Math.max(...ys)];
+  return pts.map((p) => ({
+    x: axis(p.x, x0, x1, box.x, box.w),
+    y: axis(p.y, y0, y1, box.y, box.h),
+  }));
+}

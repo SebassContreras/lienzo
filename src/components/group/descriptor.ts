@@ -6,6 +6,7 @@ import {
   anim,
   BOX_ANIMS,
   box,
+  check,
   color,
   custom,
   elementOpacity,
@@ -50,6 +51,17 @@ const fields = {
   h,
   opacity: elementOpacity("Grupo"),
   ungroup: widget("ungroup", { section: "Grupo" }),
+  /** Clips the children to the group's box when no window frame does (059/D3). */
+  clip: later(check(false, { label: "Recortar contenido", section: "Grupo" })),
+  radius: later(
+    num(0, {
+      label: "Radio",
+      section: "Grupo",
+      max: 400,
+      bounds: [0, Infinity],
+      visible: (p) => p.clip === true && p.frame === "none",
+    }),
+  ),
   cw: num(100, { label: "Ancho interior", inspector: false }),
   ch: num(100, { label: "Alto interior", inspector: false }),
   children: custom("children", [] as unknown[], childrenSchema, {

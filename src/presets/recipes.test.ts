@@ -31,12 +31,17 @@ describe("built-in recipes", () => {
     const migrated = before.anim
       ? { ...before, anim: migrateAnim(before.anim) }
       : before;
-    // Lines recorded before spec 021 are straight; rects recorded before 053 have opacity 1.
+    // Lines recorded before spec 021 are straight; rects recorded before 053 have opacity 1,
+    // and their fills, recorded before 059, are linear.
     const expected =
       migrated.kind === "line"
         ? { ...migrated, route: "straight" }
         : migrated.kind === "rect"
-          ? { opacity: 1, ...migrated }
+          ? {
+              opacity: 1,
+              ...migrated,
+              fill: { type: "linear", ...migrated.fill },
+            }
           : migrated;
     expect(element).toEqual(expected);
   });

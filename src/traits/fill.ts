@@ -13,7 +13,7 @@ export const fill = defineTrait({
   },
   apply: {
     shape: (el, p) => {
-      el.fill = { ...p };
+      el.fill = { type: "linear", ...p };
     },
   },
 });

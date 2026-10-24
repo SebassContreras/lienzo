@@ -1,0 +1,221 @@
+diff --git a/src/components/badge/draw.ts b/src/components/badge/draw.ts
+index 2c376ef..bd3cdf6 100644
+--- a/src/components/badge/draw.ts
++++ b/src/components/badge/draw.ts
+@@ -4,7 +4,7 @@ import { iconPaths } from "../../engine/icon-shapes.ts";
+ import {
+   type Ctx,
+   dashFor,
+-  linearGradient,
++  fillGradient,
+   rgba,
+   shadowOnly,
+   withTransform,
+@@ -40,7 +40,7 @@ export function drawBadge(
+     ctx.save();
+     ctx.globalAlpha *= el.fill.opacity;
+     ctx.fillStyle = el.fill.gradient
+-      ? linearGradient(ctx, box, el.fill.angle, el.fill.color, el.fill.color2)
++      ? fillGradient(ctx, box, el.fill)
+       : el.fill.color;
+     ctx.fill(pill);
+     ctx.restore();
+diff --git a/src/components/icon/draw.ts b/src/components/icon/draw.ts
+index e5936fa..22a7496 100644
+--- a/src/components/icon/draw.ts
++++ b/src/components/icon/draw.ts
+@@ -3,7 +3,7 @@ import { boxOf } from "../../engine/geometry.ts";
+ import { iconPaths } from "../../engine/icon-shapes.ts";
+ import {
+   type Ctx,
+-  linearGradient,
++  fillGradient,
+   shadowOnly,
+   withTransform,
+ } from "../../engine/paint.ts";
+@@ -27,9 +27,7 @@ export function drawIcon(ctx: Ctx, el: IconEl, st: AnimState): void {
+       );
+       ctx.save();
+       ctx.globalAlpha *= tile.opacity;
+-      ctx.fillStyle = tile.gradient
+-        ? linearGradient(ctx, box, tile.angle, tile.color, tile.color2)
+-        : tile.color;
++      ctx.fillStyle = tile.gradient ? fillGradient(ctx, box, tile) : tile.color;
+       ctx.fill(path);
+       ctx.restore();
+     }
+diff --git a/src/components/path/draw.ts b/src/components/path/draw.ts
+index 7f61234..9d8cd73 100644
+--- a/src/components/path/draw.ts
++++ b/src/components/path/draw.ts
+@@ -3,7 +3,7 @@ import { EASINGS, easingFn } from "../../engine/easing.ts";
+ import {
+   type Ctx,
+   dashFor,
+-  linearGradient,
++  fillGradient,
+   rgba,
+   shadowOnly,
+   withTransform,
+@@ -186,7 +186,7 @@ function paintFrame(
+   ctx.save();
+   ctx.globalAlpha *= el.fill.opacity * shown;
+   ctx.fillStyle = el.fill.gradient
+-    ? linearGradient(ctx, box, el.fill.angle, style.fill, el.fill.color2)
++    ? fillGradient(ctx, box, { ...el.fill, color: style.fill })
+     : style.fill;
+   ctx.fill(path);
+   ctx.restore();
+diff --git a/src/components/rect/draw.ts b/src/components/rect/draw.ts
+index 9628029..f2006a5 100644
+--- a/src/components/rect/draw.ts
++++ b/src/components/rect/draw.ts
+@@ -3,7 +3,7 @@ import { fontString, textLayout } from "../../engine/geometry.ts";
+ import {
+   type Ctx,
+   dashFor,
+-  linearGradient,
++  fillGradient,
+   rgba,
+   shadowOnly,
+   withTransform,
+@@ -65,7 +65,7 @@ export function drawShape(
+     ctx.save();
+     ctx.globalAlpha *= el.fill.opacity;
+     ctx.fillStyle = el.fill.gradient
+-      ? linearGradient(ctx, box, el.fill.angle, el.fill.color, el.fill.color2)
++      ? fillGradient(ctx, box, el.fill)
+       : el.fill.color;
+     ctx.fill(path);
+     ctx.restore();
+diff --git a/src/engine/geometry.ts b/src/engine/geometry.ts
+index 3ede4ce..cb4a520 100644
+--- a/src/engine/geometry.ts
++++ b/src/engine/geometry.ts
+@@ -268,8 +268,13 @@ export function translate(
+ export function fitToBox(pts: Pt[], box: Box): Pt[] {
+   const xs = pts.map((p) => p.x);
+   const ys = pts.map((p) => p.y);
+-  const axis = (v: number, lo: number, hi: number, start: number, size: number) =>
+-    hi > lo ? start + ((v - lo) / (hi - lo)) * size : start + size / 2;
++  const axis = (
++    v: number,
++    lo: number,
++    hi: number,
++    start: number,
++    size: number,
++  ) => (hi > lo ? start + ((v - lo) / (hi - lo)) * size : start + size / 2);
+   const [x0, x1] = [Math.min(...xs), Math.max(...xs)];
+   const [y0, y1] = [Math.min(...ys), Math.max(...ys)];
+   return pts.map((p) => ({
+diff --git a/src/engine/paint.ts b/src/engine/paint.ts
+index 59140b9..9e4683d 100644
+--- a/src/engine/paint.ts
++++ b/src/engine/paint.ts
+@@ -36,6 +36,81 @@ export function rgba(hex: string, alpha: number): string {
+   return `rgba(${r}, ${g}, ${b}, ${clamp01(alpha)})`;
+ }
+ 
++/** A gradient color stop: `color` at fraction `at` (0–1) of the way. */
++export type Stop = { at: number; color: string };
++
++/** What a gradient fill needs: two colors, or its own `stops` (059/D4). */
++export type GradientFill = {
++  type?: "linear" | "radial";
++  angle: number;
++  color: string;
++  color2: string;
++  stops?: Stop[];
++};
++
++/** A fill's stops in the order given, or `color` → `color2` when it has none (059/D5). */
++export function gradientStops(fill: GradientFill): Stop[] {
++  return (
++    fill.stops ?? [
++      { at: 0, color: fill.color },
++      { at: 1, color: fill.color2 },
++    ]
++  );
++}
++
++/**
++ * A linear gradient across `box` at `angleDeg` (0 = left to right), or a radial one from the
++ * box centre out to its farthest corner, like CSS's default (059/D5), through `stops`.
++ */
++function gradientAcross(
++  ctx: Ctx,
++  box: Box,
++  type: "linear" | "radial",
++  angleDeg: number,
++  stops: Stop[],
++): CanvasGradient {
++  const cx = box.x + box.w / 2;
++  const cy = box.y + box.h / 2;
++  let g: CanvasGradient;
++  if (type === "radial") {
++    g = ctx.createRadialGradient(
++      cx,
++      cy,
++      0,
++      cx,
++      cy,
++      Math.hypot(box.w, box.h) / 2,
++    );
++  } else {
++    const a = (angleDeg * Math.PI) / 180;
++    const r =
++      Math.abs((box.w / 2) * Math.cos(a)) + Math.abs((box.h / 2) * Math.sin(a));
++    g = ctx.createLinearGradient(
++      cx - Math.cos(a) * r,
++      cy - Math.sin(a) * r,
++      cx + Math.cos(a) * r,
++      cy + Math.sin(a) * r,
++    );
++  }
++  for (const s of stops) g.addColorStop(s.at, s.color);
++  return g;
++}
++
++/** A fill's gradient across `box`: linear or radial, two colors or its own stops. */
++export function fillGradient(
++  ctx: Ctx,
++  box: Box,
++  fill: GradientFill,
++): CanvasGradient {
++  return gradientAcross(
++    ctx,
++    box,
++    fill.type ?? "linear",
++    fill.angle,
++    gradientStops(fill),
++  );
++}
++
+ /** A two-color gradient across `box` at `angleDeg` (0 = left to right). */
+ export function linearGradient(
+   ctx: Ctx,
+@@ -44,20 +119,10 @@ export function linearGradient(
+   c1: string,
+   c2: string,
+ ): CanvasGradient {
+-  const a = (angleDeg * Math.PI) / 180;
+-  const cx = box.x + box.w / 2;
+-  const cy = box.y + box.h / 2;
+-  const r =
+-    Math.abs((box.w / 2) * Math.cos(a)) + Math.abs((box.h / 2) * Math.sin(a));
+-  const g = ctx.createLinearGradient(
+-    cx - Math.cos(a) * r,
+-    cy - Math.sin(a) * r,
+-    cx + Math.cos(a) * r,
+-    cy + Math.sin(a) * r,
+-  );
+-  g.addColorStop(0, c1);
+-  g.addColorStop(1, c2);
+-  return g;
++  return gradientAcross(ctx, box, "linear", angleDeg, [
++    { at: 0, color: c1 },
++    { at: 1, color: c2 },
++  ]);
+ }
+ 
+ /**

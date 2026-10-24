@@ -36,6 +36,81 @@ export function rgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${clamp01(alpha)})`;
 }
 
+/** A gradient color stop: `color` at fraction `at` (0–1) of the way. */
+export type Stop = { at: number; color: string };
+
+/** What a gradient fill needs: two colors, or its own `stops` (059/D4). */
+export type GradientFill = {
+  type?: "linear" | "radial";
+  angle: number;
+  color: string;
+  color2: string;
+  stops?: Stop[];
+};
+
+/** A fill's stops in the order given, or `color` → `color2` when it has none (059/D5). */
+export function gradientStops(fill: GradientFill): Stop[] {
+  return (
+    fill.stops ?? [
+      { at: 0, color: fill.color },
+      { at: 1, color: fill.color2 },
+    ]
+  );
+}
+
+/**
+ * A linear gradient across `box` at `angleDeg` (0 = left to right), or a radial one from the
+ * box centre out to its farthest corner, like CSS's default (059/D5), through `stops`.
+ */
+function gradientAcross(
+  ctx: Ctx,
+  box: Box,
+  type: "linear" | "radial",
+  angleDeg: number,
+  stops: Stop[],
+): CanvasGradient {
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  let g: CanvasGradient;
+  if (type === "radial") {
+    g = ctx.createRadialGradient(
+      cx,
+      cy,
+      0,
+      cx,
+      cy,
+      Math.hypot(box.w, box.h) / 2,
+    );
+  } else {
+    const a = (angleDeg * Math.PI) / 180;
+    const r =
+      Math.abs((box.w / 2) * Math.cos(a)) + Math.abs((box.h / 2) * Math.sin(a));
+    g = ctx.createLinearGradient(
+      cx - Math.cos(a) * r,
+      cy - Math.sin(a) * r,
+      cx + Math.cos(a) * r,
+      cy + Math.sin(a) * r,
+    );
+  }
+  for (const s of stops) g.addColorStop(s.at, s.color);
+  return g;
+}
+
+/** A fill's gradient across `box`: linear or radial, two colors or its own stops. */
+export function fillGradient(
+  ctx: Ctx,
+  box: Box,
+  fill: GradientFill,
+): CanvasGradient {
+  return gradientAcross(
+    ctx,
+    box,
+    fill.type ?? "linear",
+    fill.angle,
+    gradientStops(fill),
+  );
+}
+
 /** A two-color gradient across `box` at `angleDeg` (0 = left to right). */
 export function linearGradient(
   ctx: Ctx,
@@ -44,20 +119,10 @@ export function linearGradient(
   c1: string,
   c2: string,
 ): CanvasGradient {
-  const a = (angleDeg * Math.PI) / 180;
-  const cx = box.x + box.w / 2;
-  const cy = box.y + box.h / 2;
-  const r =
-    Math.abs((box.w / 2) * Math.cos(a)) + Math.abs((box.h / 2) * Math.sin(a));
-  const g = ctx.createLinearGradient(
-    cx - Math.cos(a) * r,
-    cy - Math.sin(a) * r,
-    cx + Math.cos(a) * r,
-    cy + Math.sin(a) * r,
-  );
-  g.addColorStop(0, c1);
-  g.addColorStop(1, c2);
-  return g;
+  return gradientAcross(ctx, box, "linear", angleDeg, [
+    { at: 0, color: c1 },
+    { at: 1, color: c2 },
+  ]);
 }
 
 /**

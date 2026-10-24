@@ -4,7 +4,7 @@ import { iconPaths } from "../../engine/icon-shapes.ts";
 import {
   type Ctx,
   dashFor,
-  linearGradient,
+  fillGradient,
   rgba,
   shadowOnly,
   withTransform,
@@ -40,7 +40,7 @@ export function drawBadge(
     ctx.save();
     ctx.globalAlpha *= el.fill.opacity;
     ctx.fillStyle = el.fill.gradient
-      ? linearGradient(ctx, box, el.fill.angle, el.fill.color, el.fill.color2)
+      ? fillGradient(ctx, box, el.fill)
       : el.fill.color;
     ctx.fill(pill);
     ctx.restore();

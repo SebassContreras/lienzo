@@ -116,8 +116,8 @@ describe("the generated scene schema", () => {
 
 /** Fields kept out of the inspector on purpose, and why. */
 const NOT_IN_INSPECTOR: Record<string, string[]> = {
-  // dragged on the stage
-  "*": ["x", "y"],
+  // dragged on the stage; a gradient's own stops are JSON only for now (059/D6)
+  "*": ["x", "y", "fill.stops", "tile.stops"],
   // symbol instances: overrides are set via code / compact overrides
   use: ["overrides"],
   // square: the size control sets both sides

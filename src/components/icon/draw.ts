@@ -3,7 +3,7 @@ import { boxOf } from "../../engine/geometry.ts";
 import { iconPaths } from "../../engine/icon-shapes.ts";
 import {
   type Ctx,
-  linearGradient,
+  fillGradient,
   shadowOnly,
   withTransform,
 } from "../../engine/paint.ts";
@@ -27,9 +27,7 @@ export function drawIcon(ctx: Ctx, el: IconEl, st: AnimState): void {
       );
       ctx.save();
       ctx.globalAlpha *= tile.opacity;
-      ctx.fillStyle = tile.gradient
-        ? linearGradient(ctx, box, tile.angle, tile.color, tile.color2)
-        : tile.color;
+      ctx.fillStyle = tile.gradient ? fillGradient(ctx, box, tile) : tile.color;
       ctx.fill(path);
       ctx.restore();
     }

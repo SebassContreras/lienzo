@@ -15,6 +15,10 @@ export const sceneBuild = defineTool({
     'the resulting scene. `defaults: "flat"` turns off the default gradient, shadow and border ' +
     "of shapes (rect, ellipse, polygon, star, arrow) unless the element sets them; it is applied " +
     "at build time, not stored. `notices` lists what was ignored (e.g. unknown effect keys). " +
+    'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
+    "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
+    'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
+    "order) give radial and multi-stop gradients when `fill.gradient` is on. " +
     "If `save` is provided, the scene is saved under that name; fails if the name exists unless `overwrite` is true.",
   input: z.object({
     compact: CompactSceneSchema,

@@ -11,6 +11,7 @@ export const glass = defineTrait({
         color: "#ffffff",
         color2: p.tint,
         gradient: true,
+        type: "linear",
         angle: 135,
         opacity: p.opacity,
       };

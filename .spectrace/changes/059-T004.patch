@@ -1,0 +1,234 @@
+diff --git a/src/components/fields/field.ts b/src/components/fields/field.ts
+index cd33dac..10209e7 100644
+--- a/src/components/fields/field.ts
++++ b/src/components/fields/field.ts
+@@ -111,15 +111,27 @@ type Field = DataField | WidgetField;
+ 
+ export type Fields = Record<string, Field>;
+ 
+-/** The value a set of fields describes; widgets hold no data and are left out. */
++type DefaultOf<F> = F extends { default: infer T } ? T : never;
++
++/** Data keys whose default may be `undefined` (an optional value, like a fill's `stops`). */
++type OptionalKey<F extends Fields, K extends keyof F> = F[K] extends WidgetField
++  ? never
++  : undefined extends DefaultOf<F[K]>
++    ? K
++    : never;
++
++/**
++ * The value a set of fields describes; widgets hold no data and are left out, and a field
++ * whose default may be `undefined` is an optional key.
++ */
+ export type ValueOf<F extends Fields> = {
+   -readonly [K in keyof F as F[K] extends WidgetField
+     ? never
+-    : K]: F[K] extends {
+-    default: infer T;
+-  }
+-    ? T
+-    : never;
++    : OptionalKey<F, K> extends never
++      ? K
++      : never]: DefaultOf<F[K]>;
++} & {
++  -readonly [K in keyof F as OptionalKey<F, K>]?: DefaultOf<F[K]>;
+ };
+ 
+ /** `T`'s own default type kept on top of the field's erased one. */
+diff --git a/src/components/fields/fill.ts b/src/components/fields/fill.ts
+index e71c304..37205a2 100644
+--- a/src/components/fields/fill.ts
++++ b/src/components/fields/fill.ts
+@@ -1,4 +1,25 @@
+-import { check, color, type Fields, num, obj, type Parent } from "./field.ts";
++import { z } from "zod";
++import {
++  check,
++  color,
++  custom,
++  defaulted,
++  type Fields,
++  num,
++  obj,
++  type Parent,
++  select,
++} from "./field.ts";
++
++/**
++ * A gradient's own color stops (059/D4): at least two, each at a fraction 0–1 of the way,
++ * applied in order so two stops at the same place give a hard edge.
++ */
++export const StopsSchema = z
++  .array(z.object({ at: z.number().min(0).max(1), color: z.string() }))
++  .min(2);
++
++export type GradientStop = z.infer<typeof StopsSchema>[number];
+ 
+ export type FillDefaults = {
+   color: string;
+@@ -11,7 +32,7 @@ export type FillDefaults = {
+ const always = () => true;
+ 
+ /**
+- * A solid or two-color gradient fill. `shown` hides every field while it fails (an icon's
++ * A solid fill or a linear or radial gradient, from `color` to `color2` unless `stops` is set. `shown` hides every field while it fails (an icon's
+  * tile when it is off).
+  */
+ export function fillFields(
+@@ -19,11 +40,30 @@ export function fillFields(
+   shown: (p: Parent) => boolean = always,
+ ) {
+   const gradient = (p: Parent) => shown(p) && p.gradient === true;
++  const linear = (p: Parent) => gradient(p) && p.type !== "radial";
+   return {
+     color: color(d.color, { label: "Color", visible: shown }),
+     gradient: check(d.gradient, { label: "Degradado", visible: shown }),
++    /** Fills from before 059 lack it: parsed as `linear`, so they paint as they did. */
++    type: defaulted(
++      select(
++        [
++          ["linear", "Lineal"],
++          ["radial", "Radial"],
++        ] as const,
++        "linear",
++        { label: "Tipo", visible: gradient },
++      ),
++    ),
+     color2: color(d.color2, { label: "Color 2", visible: gradient }),
+-    angle: num(d.angle, { label: "Ángulo", max: 360, visible: gradient }),
++    angle: num(d.angle, { label: "Ángulo", max: 360, visible: linear }),
++    /** JSON only for now: the inspector edits `color` and `color2`. */
++    stops: custom(
++      "gradient-stops",
++      undefined as GradientStop[] | undefined,
++      StopsSchema.optional(),
++      { label: "Paradas", inspector: false },
++    ),
+     opacity: num(d.opacity, {
+       label: "Opacidad",
+       max: 1,
+diff --git a/src/presets/recipes.test.ts b/src/presets/recipes.test.ts
+index 9de2928..78b2ea6 100644
+--- a/src/presets/recipes.test.ts
++++ b/src/presets/recipes.test.ts
+@@ -31,12 +31,17 @@ describe("built-in recipes", () => {
+     const migrated = before.anim
+       ? { ...before, anim: migrateAnim(before.anim) }
+       : before;
+-    // Lines recorded before spec 021 are straight; rects recorded before 053 have opacity 1.
++    // Lines recorded before spec 021 are straight; rects recorded before 053 have opacity 1,
++    // and their fills, recorded before 059, are linear.
+     const expected =
+       migrated.kind === "line"
+         ? { ...migrated, route: "straight" }
+         : migrated.kind === "rect"
+-          ? { opacity: 1, ...migrated }
++          ? {
++              opacity: 1,
++              ...migrated,
++              fill: { type: "linear", ...migrated.fill },
++            }
+           : migrated;
+     expect(element).toEqual(expected);
+   });
+diff --git a/src/service/contrast.test.ts b/src/service/contrast.test.ts
+index 7941ea8..e6149b2 100644
+--- a/src/service/contrast.test.ts
++++ b/src/service/contrast.test.ts
+@@ -54,6 +54,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
+         color: "#000000",
+         color2: "#000000",
+         gradient: false,
++        type: "linear" as const,
+         angle: 0,
+         opacity: 1,
+       },
+@@ -97,6 +98,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
+         color: "#000000",
+         color2: "#000000",
+         gradient: false,
++        type: "linear" as const,
+         angle: 0,
+         opacity: 0.5,
+       },
+diff --git a/src/test/legacy-schema.ts b/src/test/legacy-schema.ts
+index e1799cf..056e14d 100644
+--- a/src/test/legacy-schema.ts
++++ b/src/test/legacy-schema.ts
+@@ -55,6 +55,12 @@ const shapeFields = {
+     color,
+     color2: color,
+     gradient: z.boolean(),
++    // added by 059 with defaults: a linear gradient through `color` and `color2`
++    type: z.enum(["linear", "radial"]).default("linear"),
++    stops: z
++      .array(z.object({ at: z.number().min(0).max(1), color }))
++      .min(2)
++      .optional(),
+     angle: z.number(),
+     opacity: z.number(),
+   }),
+@@ -100,6 +106,12 @@ const icon = z.object({
+     color,
+     color2: color,
+     gradient: z.boolean(),
++    // added by 059 with defaults: a linear gradient through `color` and `color2`
++    type: z.enum(["linear", "radial"]).default("linear"),
++    stops: z
++      .array(z.object({ at: z.number().min(0).max(1), color }))
++      .min(2)
++      .optional(),
+     angle: z.number(),
+     opacity: z.number(),
+     radius: z.number(),
+@@ -233,6 +245,9 @@ const group = z.object({
+   title: z.string().default("lienzo.app"),
+   frameColor: color.default("#1e293b"),
+   bodyColor: color.default("#0b1220"),
++  // added by 059 with defaults: children are not clipped without a frame
++  clip: z.boolean().default(false),
++  radius: z.number().min(0).default(0),
+ });
+ 
+ const LegacyElement: z.ZodType<unknown> = z.discriminatedUnion("kind", [
+diff --git a/src/test/registry.test.ts b/src/test/registry.test.ts
+index e883f73..e57af4d 100644
+--- a/src/test/registry.test.ts
++++ b/src/test/registry.test.ts
+@@ -116,8 +116,8 @@ describe("the generated scene schema", () => {
+ 
+ /** Fields kept out of the inspector on purpose, and why. */
+ const NOT_IN_INSPECTOR: Record<string, string[]> = {
+-  // dragged on the stage
+-  "*": ["x", "y"],
++  // dragged on the stage; a gradient's own stops are JSON only for now (059/D6)
++  "*": ["x", "y", "fill.stops", "tile.stops"],
+   // symbol instances: overrides are set via code / compact overrides
+   use: ["overrides"],
+   // square: the size control sets both sides
+diff --git a/src/traits/fill.ts b/src/traits/fill.ts
+index 48439be..a8c9a85 100644
+--- a/src/traits/fill.ts
++++ b/src/traits/fill.ts
+@@ -13,7 +13,7 @@ export const fill = defineTrait({
+   },
+   apply: {
+     shape: (el, p) => {
+-      el.fill = { ...p };
++      el.fill = { type: "linear", ...p };
+     },
+   },
+ });
+diff --git a/src/traits/glass.ts b/src/traits/glass.ts
+index f62df4b..30dfbdb 100644
+--- a/src/traits/glass.ts
++++ b/src/traits/glass.ts
+@@ -11,6 +11,7 @@ export const glass = defineTrait({
+         color: "#ffffff",
+         color2: p.tint,
+         gradient: true,
++        type: "linear",
+         angle: 135,
+         opacity: p.opacity,
+       };

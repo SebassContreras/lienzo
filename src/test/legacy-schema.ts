@@ -55,6 +55,12 @@ const shapeFields = {
     color,
     color2: color,
     gradient: z.boolean(),
+    // added by 059 with defaults: a linear gradient through `color` and `color2`
+    type: z.enum(["linear", "radial"]).default("linear"),
+    stops: z
+      .array(z.object({ at: z.number().min(0).max(1), color }))
+      .min(2)
+      .optional(),
     angle: z.number(),
     opacity: z.number(),
   }),
@@ -100,6 +106,12 @@ const icon = z.object({
     color,
     color2: color,
     gradient: z.boolean(),
+    // added by 059 with defaults: a linear gradient through `color` and `color2`
+    type: z.enum(["linear", "radial"]).default("linear"),
+    stops: z
+      .array(z.object({ at: z.number().min(0).max(1), color }))
+      .min(2)
+      .optional(),
     angle: z.number(),
     opacity: z.number(),
     radius: z.number(),
@@ -233,6 +245,9 @@ const group = z.object({
   title: z.string().default("lienzo.app"),
   frameColor: color.default("#1e293b"),
   bodyColor: color.default("#0b1220"),
+  // added by 059 with defaults: children are not clipped without a frame
+  clip: z.boolean().default(false),
+  radius: z.number().min(0).default(0),
 });
 
 const LegacyElement: z.ZodType<unknown> = z.discriminatedUnion("kind", [

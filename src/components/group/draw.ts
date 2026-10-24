@@ -44,8 +44,9 @@ export function drawGroup(
       ctx.scale(body.w / (el.cw || 1), body.h / (el.ch || 1));
       drawChildren();
     };
-    if (el.frame === "none") content();
-    else withClip(ctx, bodyPath(el), content);
+    if (el.frame !== "none") withClip(ctx, bodyPath(el), content);
+    else if (el.clip) withClip(ctx, boxPath(el), content);
+    else content();
   });
 
   function drawChildren() {
@@ -62,6 +63,14 @@ export function drawGroup(
       );
     });
   }
+}
+
+/** The group's own box, rounded by `radius`: what `clip` cuts the children to (059/D3). */
+function boxPath(el: GroupEl): Path2D {
+  const r = Math.max(0, Math.min(el.radius, el.w / 2, el.h / 2));
+  const path = new Path2D();
+  path.roundRect(el.x, el.y, el.w, el.h, r);
+  return path;
 }
 
 /** The body's outline: rounded at the bottom like the window around it. */

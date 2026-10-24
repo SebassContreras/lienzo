@@ -1,0 +1,61 @@
+diff --git a/src/components/group/descriptor.ts b/src/components/group/descriptor.ts
+index ab82710..5d38a99 100644
+--- a/src/components/group/descriptor.ts
++++ b/src/components/group/descriptor.ts
+@@ -6,6 +6,7 @@ import {
+   anim,
+   BOX_ANIMS,
+   box,
++  check,
+   color,
+   custom,
+   elementOpacity,
+@@ -50,6 +51,17 @@ const fields = {
+   h,
+   opacity: elementOpacity("Grupo"),
+   ungroup: widget("ungroup", { section: "Grupo" }),
++  /** Clips the children to the group's box when no window frame does (059/D3). */
++  clip: later(check(false, { label: "Recortar contenido", section: "Grupo" })),
++  radius: later(
++    num(0, {
++      label: "Radio",
++      section: "Grupo",
++      max: 400,
++      bounds: [0, Infinity],
++      visible: (p) => p.clip === true && p.frame === "none",
++    }),
++  ),
+   cw: num(100, { label: "Ancho interior", inspector: false }),
+   ch: num(100, { label: "Alto interior", inspector: false }),
+   children: custom("children", [] as unknown[], childrenSchema, {
+diff --git a/src/components/group/draw.ts b/src/components/group/draw.ts
+index 16bcd88..e123cc4 100644
+--- a/src/components/group/draw.ts
++++ b/src/components/group/draw.ts
+@@ -44,8 +44,9 @@ export function drawGroup(
+       ctx.scale(body.w / (el.cw || 1), body.h / (el.ch || 1));
+       drawChildren();
+     };
+-    if (el.frame === "none") content();
+-    else withClip(ctx, bodyPath(el), content);
++    if (el.frame !== "none") withClip(ctx, bodyPath(el), content);
++    else if (el.clip) withClip(ctx, boxPath(el), content);
++    else content();
+   });
+ 
+   function drawChildren() {
+@@ -64,6 +65,14 @@ export function drawGroup(
+   }
+ }
+ 
++/** The group's own box, rounded by `radius`: what `clip` cuts the children to (059/D3). */
++function boxPath(el: GroupEl): Path2D {
++  const r = Math.max(0, Math.min(el.radius, el.w / 2, el.h / 2));
++  const path = new Path2D();
++  path.roundRect(el.x, el.y, el.w, el.h, r);
++  return path;
++}
++
+ /** The body's outline: rounded at the bottom like the window around it. */
+ function bodyPath(el: GroupEl): Path2D {
+   const b = bodyBox(el);

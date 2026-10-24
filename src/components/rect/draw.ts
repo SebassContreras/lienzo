@@ -3,7 +3,7 @@ import { fontString, textLayout } from "../../engine/geometry.ts";
 import {
   type Ctx,
   dashFor,
-  linearGradient,
+  fillGradient,
   rgba,
   shadowOnly,
   withTransform,
@@ -65,7 +65,7 @@ export function drawShape(
     ctx.save();
     ctx.globalAlpha *= el.fill.opacity;
     ctx.fillStyle = el.fill.gradient
-      ? linearGradient(ctx, box, el.fill.angle, el.fill.color, el.fill.color2)
+      ? fillGradient(ctx, box, el.fill)
       : el.fill.color;
     ctx.fill(path);
     ctx.restore();

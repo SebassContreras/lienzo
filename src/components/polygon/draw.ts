@@ -1,5 +1,5 @@
 import type { AnimState } from "../../engine/anim.ts";
-import type { Box, Pt } from "../../engine/geometry.ts";
+import { type Box, fitToBox, type Pt } from "../../engine/geometry.ts";
 import type { Ctx } from "../../engine/paint.ts";
 import type { DrawContext } from "../descriptor.ts";
 import { drawShape } from "../rect/draw.ts";
@@ -37,12 +37,18 @@ export function closedPath(pts: Pt[]): Path2D {
 export const cornerCount = (n: number): number =>
   Math.round(Math.min(12, Math.max(3, n)));
 
+/** A polygon's corners: inscribed in its box, or stretched to span it (059/D2). */
+export function polygonPoints(el: PolygonEl): Pt[] {
+  const pts = radialPoints(el, cornerCount(el.sides));
+  return el.fit === "box" ? fitToBox(pts, el) : pts;
+}
+
 export function drawPolygon(
   ctx: Ctx,
   el: PolygonEl,
   st: AnimState,
   dc: DrawContext,
 ): void {
-  const path = closedPath(radialPoints(el, cornerCount(el.sides)));
+  const path = closedPath(polygonPoints(el));
   drawShape(ctx, el, path, st, dc);
 }

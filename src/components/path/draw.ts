@@ -3,7 +3,7 @@ import { EASINGS, easingFn } from "../../engine/easing.ts";
 import {
   type Ctx,
   dashFor,
-  linearGradient,
+  fillGradient,
   rgba,
   shadowOnly,
   withTransform,
@@ -186,7 +186,7 @@ function paintFrame(
   ctx.save();
   ctx.globalAlpha *= el.fill.opacity * shown;
   ctx.fillStyle = el.fill.gradient
-    ? linearGradient(ctx, box, el.fill.angle, style.fill, el.fill.color2)
+    ? fillGradient(ctx, box, { ...el.fill, color: style.fill })
     : style.fill;
   ctx.fill(path);
   ctx.restore();

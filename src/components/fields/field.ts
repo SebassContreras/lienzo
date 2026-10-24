@@ -111,15 +111,27 @@ type Field = DataField | WidgetField;
 
 export type Fields = Record<string, Field>;
 
-/** The value a set of fields describes; widgets hold no data and are left out. */
+type DefaultOf<F> = F extends { default: infer T } ? T : never;
+
+/** Data keys whose default may be `undefined` (an optional value, like a fill's `stops`). */
+type OptionalKey<F extends Fields, K extends keyof F> = F[K] extends WidgetField
+  ? never
+  : undefined extends DefaultOf<F[K]>
+    ? K
+    : never;
+
+/**
+ * The value a set of fields describes; widgets hold no data and are left out, and a field
+ * whose default may be `undefined` is an optional key.
+ */
 export type ValueOf<F extends Fields> = {
   -readonly [K in keyof F as F[K] extends WidgetField
     ? never
-    : K]: F[K] extends {
-    default: infer T;
-  }
-    ? T
-    : never;
+    : OptionalKey<F, K> extends never
+      ? K
+      : never]: DefaultOf<F[K]>;
+} & {
+  -readonly [K in keyof F as OptionalKey<F, K>]?: DefaultOf<F[K]>;
 };
 
 /** `T`'s own default type kept on top of the field's erased one. */

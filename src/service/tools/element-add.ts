@@ -21,6 +21,10 @@ export const elementAdd = defineTool({
     "defaults (see component_list). `set` deep-merges field values (tracks and animPreset " +
     "included); `at` centres it on a point, else it is centred on the scene (or the parent " +
     "group's content area) unless `set` gives its position. " +
+    'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
+    "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
+    'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
+    "order) give radial and multi-stop gradients when `fill.gradient` is on. " +
     "`trim: true` on an image crops it to its visible pixels first (see image_trim). " +
     "Returns the new element's id. " +
     COORDINATES,

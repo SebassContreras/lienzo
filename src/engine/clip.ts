@@ -4,6 +4,7 @@ import { frameOf } from "../components/path/draw.ts";
 import {
   closedPath,
   cornerCount,
+  polygonPoints,
   radialPoints,
 } from "../components/polygon/draw.ts";
 import type { Element } from "../model/model.ts";
@@ -50,7 +51,7 @@ function outlineOf(el: Element): Path2D {
       return path;
     }
     case "polygon": {
-      return closedPath(radialPoints(el, cornerCount(el.sides)));
+      return closedPath(polygonPoints(el));
     }
     case "star": {
       const n = cornerCount(el.points) * 2;
