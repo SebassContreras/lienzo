@@ -30,6 +30,7 @@ import { type SubtitlesEl, subtitles } from "./subtitles/descriptor.ts";
 import { type TableEl, table } from "./table/descriptor.ts";
 import { type TextEl, text } from "./text/descriptor.ts";
 import { type ThreeEl, three } from "./three/descriptor.ts";
+import { type UseEl, use } from "./use/descriptor.ts";
 
 /** Every element kind's type, as a union. */
 export type RegisteredElement =
@@ -55,7 +56,8 @@ export type RegisteredElement =
   | CodeEl
   | ChartEl
   | PathEl
-  | SubtitlesEl;
+  | SubtitlesEl
+  | UseEl;
 
 export type RegisteredKind = RegisteredElement["kind"];
 
@@ -85,6 +87,7 @@ const LIST: DescriptorOf<RegisteredElement>[] = [
   chart,
   path,
   subtitles,
+  use,
 ];
 
 export const COMPONENTS: readonly DescriptorOf<RegisteredElement>[] = LIST;

@@ -118,6 +118,8 @@ describe("the generated scene schema", () => {
 const NOT_IN_INSPECTOR: Record<string, string[]> = {
   // dragged on the stage
   "*": ["x", "y"],
+  // symbol instances: overrides are set via code / compact overrides
+  use: ["overrides"],
   // square: the size control sets both sides
   icon: ["h"],
   // read from the uploaded file; the crop is set by the trim buttons and the crop mode
@@ -208,6 +210,7 @@ describe("descriptors", () => {
       "chart",
       "path",
       "subtitles",
+      "use",
     ]);
     for (const d of descriptors) {
       expect(typeof d.draw).toBe("function");

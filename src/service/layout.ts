@@ -1,3 +1,5 @@
+import type { UseEl } from "../components/use/descriptor.ts";
+import { instantiateSymbolElements } from "../components/use/draw.ts";
 import { animate } from "../engine/animate.ts";
 import {
   contrastRatio,
@@ -8,6 +10,7 @@ import {
 } from "../engine/color.ts";
 import { type Box, boxesTouch, boxOf, placeChild } from "../engine/geometry.ts";
 import { resolveLine } from "../engine/lines.ts";
+import { isElementActiveInShot } from "../engine/shots.ts";
 import type {
   Element,
   GroupEl,
@@ -15,7 +18,6 @@ import type {
   Scene,
   TextEl,
 } from "../model/model.ts";
-import { isElementActiveInShot } from "../engine/shots.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
 
 export type LayoutDiagnostic = {
@@ -24,7 +26,8 @@ export type LayoutDiagnostic = {
     | "out_of_bounds"
     | "dangling_attachment"
     | "low_contrast"
-    | "unverifiable_contrast";
+    | "unverifiable_contrast"
+    | "missing_symbol";
   elementId: string;
   shot?: string;
   t: number;
@@ -78,10 +81,19 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
       // Skip elements that have not yet entered (before in.delay) or have exited (after out.delay + out.duration) (055/R5)
       const anim = raw.anim;
       if (anim) {
-        if (anim.in && anim.in.kind !== "none" && anim.in.delay > 0 && t < anim.in.delay) {
+        if (
+          anim.in &&
+          anim.in.kind !== "none" &&
+          anim.in.delay > 0 &&
+          t < anim.in.delay
+        ) {
           continue;
         }
-        if (anim.out && anim.out.kind !== "none" && t >= anim.out.delay + anim.out.duration) {
+        if (
+          anim.out &&
+          anim.out.kind !== "none" &&
+          t >= anim.out.delay + anim.out.duration
+        ) {
           continue;
         }
       }
@@ -133,6 +145,31 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
 
       if (raw.kind === "group") {
         collect(raw.children, placed as GroupEl, effectiveAlpha);
+      } else if (raw.kind === "use") {
+        const useEl = raw as UseEl;
+        const sym = scene.symbols ? scene.symbols[useEl.symbol] : undefined;
+        if (sym) {
+          const targetW = useEl.w || 1;
+          const targetH = useEl.h || 1;
+          const scaleX = targetW / (sym.w || targetW);
+          const scaleY = targetH / (sym.h || targetH);
+          const instances = instantiateSymbolElements(
+            sym.children,
+            useEl.overrides,
+          );
+          // Scale and translate instances relative to the use element's box
+          const scaledInstances = instances.map((child) => {
+            const childBox = boxOf(child);
+            return {
+              ...child,
+              x: effectiveBox.x + childBox.x * scaleX,
+              y: effectiveBox.y + childBox.y * scaleY,
+              w: childBox.w * scaleX,
+              h: childBox.h * scaleY,
+            } as Element;
+          });
+          collect(scaledInstances, parentGroup, effectiveAlpha);
+        }
       }
     }
   }
@@ -331,6 +368,24 @@ export function inspectLayout(
 
   for (const t of times) {
     const placed = placedElementsAt(scene, t);
+
+    // 0. Check missing symbols on `use` elements
+    for (const item of placed) {
+      if (item.el.kind === "use") {
+        const useEl = item.el as UseEl;
+        const exists = Boolean(scene.symbols?.[useEl.symbol]);
+        if (!exists) {
+          diagnostics.push({
+            code: "missing_symbol",
+            elementId: useEl.id,
+            t,
+            message: useEl.symbol
+              ? `El símbolo «${useEl.symbol}» no existe en la escena`
+              : "La instancia «use» no tiene ningún símbolo especificado",
+          });
+        }
+      }
+    }
 
     // 1. Check dangling attachments on lines
     for (const item of placed) {

@@ -65,6 +65,12 @@ export const ShotSchema = z.object({
   camera: ShotCameraSchema.optional(),
 });
 
+export const SymbolDefinitionSchema = z.object({
+  w: z.number().positive(),
+  h: z.number().positive(),
+  children: z.array(ElementSchema),
+});
+
 export const SceneSchema: z.ZodType<Scene> = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
@@ -72,6 +78,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
   fps: z.number().positive(),
   background: BackgroundSchema,
   elements: z.array(ElementSchema),
+  symbols: z.record(z.string(), SymbolDefinitionSchema).optional(),
   audio: SceneAudioSchema.optional(),
   audioTracks: z.array(AudioTrackItemSchema).optional(),
   shots: z.array(ShotSchema).optional(),

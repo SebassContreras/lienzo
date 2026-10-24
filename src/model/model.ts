@@ -89,6 +89,12 @@ import type { SceneMode } from "./mode.ts";
 
 export { isStaticMode } from "./mode.ts";
 
+export type SymbolDefinition = {
+  w: number;
+  h: number;
+  children: Element[];
+};
+
 export type Scene = {
   width: number;
   height: number;
@@ -97,6 +103,7 @@ export type Scene = {
   fps: number;
   background: Background;
   elements: Element[];
+  symbols?: Record<string, SymbolDefinition>;
   audio?: SceneAudio;
   audioTracks?: AudioTrackItem[];
   shots?: Shot[];

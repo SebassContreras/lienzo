@@ -291,6 +291,14 @@ export const CompactShotSchema = z.object({
 
 export type CompactShot = z.infer<typeof CompactShotSchema>;
 
+export const CompactSymbolSchema = z.object({
+  w: z.number().positive(),
+  h: z.number().positive(),
+  children: z.array(CompactElementSchema),
+});
+
+export type CompactSymbol = z.infer<typeof CompactSymbolSchema>;
+
 export function generateCompactJsonSchema(): Record<string, unknown> {
   const elementUnion = buildCompactElementUnion();
   const staticSceneSchema = z.object({
@@ -305,6 +313,16 @@ export function generateCompactJsonSchema(): Record<string, unknown> {
     duration: z.number().positive().optional(),
     fps: z.number().positive().optional(),
     background: CompactBackgroundSchema.optional(),
+    symbols: z
+      .record(
+        z.string(),
+        z.object({
+          w: z.number().positive(),
+          h: z.number().positive(),
+          children: z.array(elementUnion),
+        }),
+      )
+      .optional(),
     elements: z.array(elementUnion).default([]),
     shots: z.array(CompactShotSchema).optional(),
   });
@@ -323,6 +341,7 @@ export const CompactSceneSchema = z.object({
   duration: z.number().positive().optional(),
   fps: z.number().positive().optional(),
   background: CompactBackgroundSchema.optional(),
+  symbols: z.record(z.string(), CompactSymbolSchema).optional(),
   elements: z.array(CompactElementSchema).default([]),
   shots: z.array(CompactShotSchema).optional(),
 });

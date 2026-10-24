@@ -282,6 +282,35 @@ export async function expandScene(
   const elements: Element[] = [];
   const seenIds = new Set<string>();
 
+  if (compact.symbols) {
+    scene.symbols = {};
+    for (const [symName, symDef] of Object.entries(compact.symbols)) {
+      const symElements: Element[] = [];
+      const symSeenIds = new Set<string>();
+      for (const rawEl of symDef.children ?? []) {
+        const el = await buildElement(rawEl, options.findPreset);
+        if (rawEl.id) {
+          if (symSeenIds.has(el.id)) {
+            throw new Error(
+              `ID duplicado «${el.id}» en el símbolo «${symName}»`,
+            );
+          }
+          symSeenIds.add(el.id);
+        } else if (!el.id) {
+          el.id = newId();
+        }
+        symElements.push(el);
+      }
+      applyLayoutPass(symElements, { width: symDef.w, height: symDef.h });
+      resolveLineConnections(symElements);
+      scene.symbols[symName] = {
+        w: symDef.w,
+        h: symDef.h,
+        children: symElements,
+      };
+    }
+  }
+
   for (const rawEl of compact.elements ?? []) {
     const el = await buildElement(rawEl, options.findPreset);
 
@@ -347,8 +376,10 @@ export async function expandScene(
             zoom: sh.camera.zoom,
             tracks: sh.camera.tracks
               ? normalizeTracks(
-                  sh.camera
-                    .tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
+                  sh.camera.tracks as Record<
+                    string,
+                    import("./tracks.ts").CompactTrackInput
+                  >,
                 )
               : undefined,
           }
