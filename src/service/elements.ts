@@ -26,8 +26,8 @@ export function checkKind(kind: string, path = "kind"): void {
     );
 }
 
-/** Fails unless `value` fits keyframe `path` of an element of `kind` (a color, or a number). */
-export function checkKeyframe(kind: string, path: string, value: unknown) {
+/** Fails unless `path` is an animatable track path of `kind`. */
+export function checkTrackPath(kind: string, path: string): void {
   const d = descriptorOf(kind);
   const paths = d ? trackPaths(d) : [];
   if (!paths.includes(path))
@@ -36,6 +36,11 @@ export function checkKeyframe(kind: string, path: string, value: unknown) {
       `«${path}» no se puede animar en «${kind}» (se puede: ${paths.join(", ")})`,
       "path",
     );
+}
+
+/** Fails unless `value` fits keyframe `path` of an element of `kind` (a color, or a number). */
+export function checkKeyframe(kind: string, path: string, value: unknown) {
+  checkTrackPath(kind, path);
   const color = valueKind(kind, path) === "color";
   if (color ? typeof value !== "string" : typeof value !== "number")
     fail(

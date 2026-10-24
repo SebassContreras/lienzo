@@ -397,4 +397,59 @@ describe("expandScene pure expansion (011/T002)", () => {
     // Default 'out' should still be intact on canonical element
     expect(rect.anim?.out?.kind).toBe("none");
   });
+
+  it("expands track object form with repeat, until, and step/hold easing (052/R3, R4)", async () => {
+    const compact: CompactScene = {
+      elements: [
+        {
+          kind: "rect",
+          tracks: {
+            x: {
+              keys: [
+                [0, 0, "linear"],
+                [1, 100],
+              ],
+              repeat: "loop",
+              until: 4,
+            },
+            y: {
+              keys: [
+                [0, 10, "step"],
+                [2, 50, "hold"],
+              ],
+              repeat: "pingpong",
+            },
+            w: {
+              keys: [[0, 100]],
+              repeat: "none",
+            },
+          },
+        },
+      ],
+    };
+
+    const scene = await expandScene(compact);
+    const rect = scene.elements[0] as Extract<
+      import("../../model/model.ts").Element,
+      { kind: "rect" }
+    >;
+
+    expect(rect.tracks?.x).toEqual({
+      keys: [
+        { t: 0, value: 0, easing: "linear" },
+        { t: 1, value: 100, easing: "auto" },
+      ],
+      repeat: "loop",
+      until: 4,
+    });
+    expect(rect.tracks?.y).toEqual({
+      keys: [
+        { t: 0, value: 10, easing: "step" },
+        { t: 2, value: 50, easing: "hold" },
+      ],
+      repeat: "pingpong",
+    });
+    // repeat: "none" without until collapses back to a bare keyframe array
+    expect(rect.tracks?.w).toEqual([{ t: 0, value: 100, easing: "auto" }]);
+  });
 });

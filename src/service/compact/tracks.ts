@@ -3,7 +3,12 @@
  * Turns compact [t, value, easing?] tuples or partial objects into canonical Keyframe objects.
  */
 import type { Easing } from "../../engine/easing.ts";
-import type { Keyframe, Tracks } from "../../model/track.ts";
+import {
+  type Keyframe,
+  type TrackRepeat,
+  type Tracks,
+  trackEntry,
+} from "../../model/track.ts";
 
 type CompactKeyframeTuple = readonly [
   t: number,
@@ -14,6 +19,14 @@ type CompactKeyframeTuple = readonly [
 export type CompactKeyframeInput =
   | CompactKeyframeTuple
   | { t: number; value: number | string; easing?: Easing };
+
+export type CompactTrackInput =
+  | CompactKeyframeInput[]
+  | {
+      keys: CompactKeyframeInput[];
+      repeat?: TrackRepeat;
+      until?: number;
+    };
 
 function normalizeKeyframe(k: CompactKeyframeInput): Keyframe {
   if (Array.isArray(k)) {
@@ -33,11 +46,19 @@ function normalizeKeyframe(k: CompactKeyframeInput): Keyframe {
 }
 
 export function normalizeTracks(
-  rawTracks: Record<string, CompactKeyframeInput[]>,
+  rawTracks: Record<string, CompactTrackInput>,
 ): Tracks {
   const result: Tracks = {};
-  for (const [path, keys] of Object.entries(rawTracks)) {
-    result[path] = keys.map(normalizeKeyframe);
+  for (const [path, raw] of Object.entries(rawTracks)) {
+    if (Array.isArray(raw)) {
+      result[path] = raw.map(normalizeKeyframe);
+    } else {
+      result[path] = trackEntry(
+        raw.keys.map(normalizeKeyframe),
+        raw.repeat,
+        raw.until,
+      );
+    }
   }
   return result;
 }

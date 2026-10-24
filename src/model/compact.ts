@@ -10,6 +10,7 @@ import {
   type Fields,
 } from "../components/fields/index.ts";
 import { EASING_NAMES, type Easing } from "../engine/easing.ts";
+import { TrackRepeatSchema } from "./track.ts";
 
 const ShortKeyframeTupleSchema = z.tuple([
   z.number().min(0),
@@ -28,9 +29,15 @@ const CompactKeyframeSchema = z.union([
   CanonicalKeyframeSchema,
 ]);
 
+const CompactTrackObjectSchema = z.object({
+  keys: z.array(CompactKeyframeSchema),
+  repeat: TrackRepeatSchema.optional(),
+  until: z.number().min(0).optional(),
+});
+
 export const CompactTracksSchema = z.record(
   z.string(),
-  z.array(CompactKeyframeSchema),
+  z.union([z.array(CompactKeyframeSchema), CompactTrackObjectSchema]),
 );
 
 /** Short animation: kind name as a string, or an object with slots. */

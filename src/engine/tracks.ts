@@ -11,6 +11,12 @@ import {
   type Channel,
   isChannel,
   type Keyframe,
+  type Track,
+  type TrackRepeat,
+  trackEntry,
+  trackKeys,
+  trackRepeat,
+  trackUntil,
 } from "../model/track.ts";
 import { EASINGS, easingFn } from "./easing.ts";
 import { mixColor } from "./paint.ts";
@@ -39,23 +45,55 @@ export function valueKind(kind: string, path: string): ValueKind {
 }
 
 /**
- * A track's value at `t`: held before the first keyframe and after the last; between two,
- * blended through the first one's easing (whole numbers step at the next keyframe).
+ * Resolves the effective lookup timestamp for a track at `t` (052/D2):
+ * clamps at `until` when set and `t >= until`, then wraps `t` past `last.t`
+ * across `last.t - first.t` for `repeat: "loop"` or `"pingpong"`.
+ */
+export function effectiveTrackTime(
+  keys: readonly Keyframe[],
+  t: number,
+  repeat: TrackRepeat = "none",
+  until?: number,
+): number {
+  const clamped = until !== undefined && t >= until ? until : t;
+  if (keys.length < 2 || repeat === "none") return clamped;
+  const first = keys[0] as Keyframe;
+  const last = keys[keys.length - 1] as Keyframe;
+  const span = last.t - first.t;
+  if (span <= 0 || clamped <= last.t) return clamped;
+  const elapsed = clamped - first.t;
+  const cycle = Math.floor(elapsed / span);
+  const rem = elapsed - cycle * span;
+  if (repeat === "loop") return first.t + rem;
+  return cycle % 2 === 0 ? first.t + rem : last.t - rem;
+}
+
+/**
+ * A track's value at `t`: held before the first keyframe and after the last (or wrapped by
+ * `repeat` / `until`); between two, blended through the first one's easing (whole numbers
+ * step at the next keyframe).
  */
 export function valueAt(
-  keys: readonly Keyframe[],
+  track: Track | readonly Keyframe[],
   t: number,
   kind: ValueKind,
 ): number | string | undefined {
+  const keys = trackKeys(track);
   const first = keys[0];
   if (!first) return undefined;
-  if (t <= first.t) return first.value;
+  const effT = effectiveTrackTime(
+    keys,
+    t,
+    trackRepeat(track),
+    trackUntil(track),
+  );
+  if (effT <= first.t) return first.value;
   for (let i = 0; i < keys.length - 1; i++) {
     const a = keys[i] as Keyframe;
     const b = keys[i + 1] as Keyframe;
-    if (t >= b.t) continue;
+    if (effT >= b.t) continue;
     if (kind === "int") return a.value;
-    const k = easingFn(a.easing, EASINGS.linear)((t - a.t) / (b.t - a.t));
+    const k = easingFn(a.easing, EASINGS.linear)((effT - a.t) / (b.t - a.t));
     if (kind === "color") return mixColor(String(a.value), String(b.value), k);
     return Number(a.value) + (Number(b.value) - Number(a.value)) * k;
   }
@@ -142,12 +180,19 @@ export function writeAt(
   t: number,
   writeField: (draft: Element, value: unknown) => void,
 ): void {
-  const keys = draft.tracks?.[path];
-  if (!keys && !isChannel(path)) {
+  const track = draft.tracks?.[path];
+  if (!track && !isChannel(path)) {
     writeField(draft, value);
     return;
   }
-  draft.tracks = { ...draft.tracks, [path]: setKeyframe(keys ?? [], t, value) };
+  draft.tracks = {
+    ...draft.tracks,
+    [path]: trackEntry(
+      setKeyframe(trackKeys(track), t, value),
+      trackRepeat(track),
+      trackUntil(track),
+    ),
+  };
 }
 
 /** `keys` with `value` at `t`, keeping the easing of a keyframe already there. */
@@ -169,14 +214,18 @@ export function commitAt(el: Element, edited: Element, t: number): Element {
   if (!el.tracks) return edited;
   const shown = applyTracks(el, t).el;
   let out: Element = { ...edited, tracks: el.tracks };
-  for (const [path, keys] of Object.entries(el.tracks)) {
+  for (const [path, track] of Object.entries(el.tracks)) {
     if (isChannel(path)) continue;
     const v = getPath(edited, path);
     out = setPath(out, path, getPath(el, path));
     if (v !== getPath(shown, path))
       out.tracks = {
         ...out.tracks,
-        [path]: setKeyframe(keys, t, v as number | string),
+        [path]: trackEntry(
+          setKeyframe(trackKeys(track), t, v as number | string),
+          trackRepeat(track),
+          trackUntil(track),
+        ),
       };
   }
   return out;
@@ -187,9 +236,9 @@ export function commitAt(el: Element, edited: Element, t: number): Element {
  * leaving the field at the value the track had at `t` so nothing jumps.
  */
 export function toggleTrack(draft: Element, path: string, t: number): void {
-  const { [path]: keys, ...rest } = draft.tracks ?? {};
-  if (keys) {
-    const v = valueAt(keys, t, valueKind(draft.kind, path));
+  const { [path]: track, ...rest } = draft.tracks ?? {};
+  if (track) {
+    const v = valueAt(track, t, valueKind(draft.kind, path));
     draft.tracks = rest;
     if (v !== undefined && !isChannel(path))
       Object.assign(draft, setPath(draft, path, v));

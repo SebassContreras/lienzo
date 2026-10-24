@@ -12,7 +12,13 @@ import {
   withoutKeyframe,
 } from "../../engine/tracks.ts";
 import type { Element } from "../../model/model.ts";
-import type { Keyframe } from "../../model/track.ts";
+import {
+  type Keyframe,
+  trackEntry,
+  trackKeys,
+  trackRepeat,
+  trackUntil,
+} from "../../model/track.ts";
 import type { Change } from "../field-editor.tsx";
 import type { Clock } from "../stage.tsx";
 
@@ -69,7 +75,11 @@ export function TracksPanel({
 
   const setKeys = (path: string, keys: Keyframe[]) =>
     change((d) => {
-      d.tracks = { ...d.tracks, [path]: keys };
+      const prev = d.tracks?.[path];
+      d.tracks = {
+        ...d.tracks,
+        [path]: trackEntry(keys, trackRepeat(prev), trackUntil(prev)),
+      };
     });
 
   const timeAt = (lane: DOMRect, clientX: number) =>
@@ -78,7 +88,7 @@ export function TracksPanel({
       Math.max(0, ((clientX - lane.left) / lane.width) * duration),
     );
 
-  const pickedKey = picked && el.tracks?.[picked.path]?.[picked.i];
+  const pickedKey = picked && trackKeys(el.tracks?.[picked.path])[picked.i];
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: Delete acts on the picked keyframe
@@ -91,7 +101,7 @@ export function TracksPanel({
           e.preventDefault();
           e.stopPropagation(); // the editor would delete the element
           checkpoint();
-          const keys = el.tracks?.[picked.path] ?? [];
+          const keys = trackKeys(el.tracks?.[picked.path]);
           setKeys(picked.path, withoutKeyframe(keys, picked.i));
           setPicked(null);
         }
@@ -99,7 +109,7 @@ export function TracksPanel({
       onPointerMove={(e) => {
         const d = dragging.current;
         if (!d) return;
-        const keys = el.tracks?.[d.path] ?? [];
+        const keys = trackKeys(el.tracks?.[d.path]);
         const t = timeAt(d.lane, e.clientX);
         const moved = movedKeyframe(keys, d.i, t);
         const i = moved.findIndex((k) => k.t === Math.max(0, t));
@@ -112,7 +122,7 @@ export function TracksPanel({
         dragging.current = null;
       }}
     >
-      {tracks.map(([path, keys], row) => (
+      {tracks.map(([path, track], row) => (
         <div className="track-row" key={path}>
           <span className="track-label" title={path}>
             {labelOf(el, path)}
@@ -124,7 +134,7 @@ export function TracksPanel({
                 if (r) playheads.current[row] = r;
               }}
             />
-            {keys.map((k, i) => (
+            {trackKeys(track).map((k, i) => (
               <button
                 type="button"
                 key={k.t}
@@ -163,7 +173,7 @@ export function TracksPanel({
             value={pickedKey.easing}
             onChange={(e) => {
               checkpoint();
-              const keys = [...(el.tracks?.[picked.path] ?? [])];
+              const keys = [...trackKeys(el.tracks?.[picked.path])];
               keys[picked.i] = {
                 ...pickedKey,
                 easing: e.target.value as Keyframe["easing"],

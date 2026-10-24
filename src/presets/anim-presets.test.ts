@@ -3,7 +3,7 @@ import { createElement } from "../components/index.ts";
 import type { AnimPreset } from "../model/anim-preset.ts";
 import { defaultScene, type Element, type Scene } from "../model/model.ts";
 import { parseScene } from "../model/schema.ts";
-import type { Keyframe } from "../model/track.ts";
+import { type Keyframe, type Track, trackKeys } from "../model/track.ts";
 import {
   applyPreset,
   applyToSelection,
@@ -20,8 +20,8 @@ const kf = (t: number, value: number | string): Keyframe => ({
   easing: "auto",
 });
 
-const pairs = (keys: readonly Keyframe[] | undefined) =>
-  keys?.map((k) => [k.t, k.value]);
+const pairs = (track: Track | readonly Keyframe[] | undefined) =>
+  track ? trackKeys(track).map((k) => [k.t, k.value]) : undefined;
 
 const animOf = (el: Element) => (el as ReturnType<typeof rect>).anim;
 
@@ -131,9 +131,9 @@ describe("apply", () => {
     const p = { name: "p", ...capturePreset(rect()) };
     const { el } = applyPreset(createElement("rect"), p, 0);
     (p.anim?.in as { kind: string }).kind = "pop";
-    (p.tracks?.x?.[0] as Keyframe).value = 999;
+    (trackKeys(p.tracks?.x)[0] as Keyframe).value = 999;
     expect(animOf(el).in.kind).toBe("fade");
-    expect(el.tracks?.x?.[0]?.value).not.toBe(999);
+    expect(trackKeys(el.tracks?.x)[0]?.value).not.toBe(999);
     expect(el.animPreset).toEqual({ name: "p", start: 0 });
   });
 });

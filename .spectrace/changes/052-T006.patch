@@ -1,0 +1,216 @@
+diff --git a/src/editor/timeline/tracks-panel.tsx b/src/editor/timeline/tracks-panel.tsx
+index 3753af1..d7e3372 100644
+--- a/src/editor/timeline/tracks-panel.tsx
++++ b/src/editor/timeline/tracks-panel.tsx
+@@ -88,8 +88,7 @@ export function TracksPanel({
+       Math.max(0, ((clientX - lane.left) / lane.width) * duration),
+     );
+ 
+-  const pickedKey =
+-    picked && trackKeys(el.tracks?.[picked.path])[picked.i];
++  const pickedKey = picked && trackKeys(el.tracks?.[picked.path])[picked.i];
+ 
+   return (
+     // biome-ignore lint/a11y/noStaticElementInteractions: Delete acts on the picked keyframe
+diff --git a/src/presets/anim-presets.test.ts b/src/presets/anim-presets.test.ts
+index 0c203a7..55322b6 100644
+--- a/src/presets/anim-presets.test.ts
++++ b/src/presets/anim-presets.test.ts
+@@ -3,11 +3,7 @@ import { createElement } from "../components/index.ts";
+ import type { AnimPreset } from "../model/anim-preset.ts";
+ import { defaultScene, type Element, type Scene } from "../model/model.ts";
+ import { parseScene } from "../model/schema.ts";
+-import {
+-  type Keyframe,
+-  type Track,
+-  trackKeys,
+-} from "../model/track.ts";
++import { type Keyframe, type Track, trackKeys } from "../model/track.ts";
+ import {
+   applyPreset,
+   applyToSelection,
+diff --git a/src/presets/anim-presets.ts b/src/presets/anim-presets.ts
+index 7c26d9a..b8fe31b 100644
+--- a/src/presets/anim-presets.ts
++++ b/src/presets/anim-presets.ts
+@@ -99,14 +99,12 @@ export function capturePreset(el: Element, start = animStart(el)): PresetBody {
+   if (Object.keys(anim).length) body.anim = anim;
+   const tracks: Tracks = {};
+   for (const [path, track] of Object.entries(el.tracks ?? {})) {
+-    const keys = shifted(
+-      trackKeys(track),
+-      -start,
+-      -offsetOf(el, path),
+-    ).map((k) => ({
+-      ...k,
+-      t: Math.max(0, k.t),
+-    }));
++    const keys = shifted(trackKeys(track), -start, -offsetOf(el, path)).map(
++      (k) => ({
++        ...k,
++        t: Math.max(0, k.t),
++      }),
++    );
+     const until = trackUntil(track);
+     tracks[path] = trackEntry(
+       keys,
+diff --git a/src/service/compact/expand.test.ts b/src/service/compact/expand.test.ts
+index f4de3f1..21cb73b 100644
+--- a/src/service/compact/expand.test.ts
++++ b/src/service/compact/expand.test.ts
+@@ -397,4 +397,59 @@ describe("expandScene pure expansion (011/T002)", () => {
+     // Default 'out' should still be intact on canonical element
+     expect(rect.anim?.out?.kind).toBe("none");
+   });
++
++  it("expands track object form with repeat, until, and step/hold easing (052/R3, R4)", async () => {
++    const compact: CompactScene = {
++      elements: [
++        {
++          kind: "rect",
++          tracks: {
++            x: {
++              keys: [
++                [0, 0, "linear"],
++                [1, 100],
++              ],
++              repeat: "loop",
++              until: 4,
++            },
++            y: {
++              keys: [
++                [0, 10, "step"],
++                [2, 50, "hold"],
++              ],
++              repeat: "pingpong",
++            },
++            w: {
++              keys: [[0, 100]],
++              repeat: "none",
++            },
++          },
++        },
++      ],
++    };
++
++    const scene = await expandScene(compact);
++    const rect = scene.elements[0] as Extract<
++      import("../../model/model.ts").Element,
++      { kind: "rect" }
++    >;
++
++    expect(rect.tracks?.x).toEqual({
++      keys: [
++        { t: 0, value: 0, easing: "linear" },
++        { t: 1, value: 100, easing: "auto" },
++      ],
++      repeat: "loop",
++      until: 4,
++    });
++    expect(rect.tracks?.y).toEqual({
++      keys: [
++        { t: 0, value: 10, easing: "step" },
++        { t: 2, value: 50, easing: "hold" },
++      ],
++      repeat: "pingpong",
++    });
++    // repeat: "none" without until collapses back to a bare keyframe array
++    expect(rect.tracks?.w).toEqual([{ t: 0, value: 100, easing: "auto" }]);
++  });
+ });
+diff --git a/src/service/service.test.ts b/src/service/service.test.ts
+index b389a8d..4065014 100644
+--- a/src/service/service.test.ts
++++ b/src/service/service.test.ts
+@@ -561,4 +561,74 @@ describe("nested element tools and group parent insertion (051/R1, R2)", () => {
+ 
+     expect(await onDisk("flat")).toEqual(before);
+   });
++
++  it("sets and clears track repeat, until, and step/hold easings via keyframe_set and scene_build (052/R3, R4)", async () => {
++    await ok("scene_build", {
++      compact: {
++        size: "1080x1080",
++        duration: 6,
++        elements: [
++          {
++            id: "wheel",
++            kind: "rect",
++            tracks: {
++              "@rotate": {
++                keys: [
++                  [0, 0, "linear"],
++                  [1, 360],
++                ],
++                repeat: "loop",
++                until: 4,
++              },
++            },
++          },
++        ],
++      },
++      save: "loop-scene",
++    });
++
++    let scene = await onDisk("loop-scene");
++    expect(scene.elements[0]?.tracks?.["@rotate"]).toEqual({
++      keys: [
++        { t: 0, value: 0, easing: "linear" },
++        { t: 1, value: 360, easing: "auto" },
++      ],
++      repeat: "loop",
++      until: 4,
++    });
++
++    // Update repeat to pingpong and add a keyframe with step easing while keeping until
++    await ok("keyframe_set", {
++      scene: "loop-scene",
++      id: "wheel",
++      path: "@rotate",
++      t: 0,
++      value: 15,
++      easing: "step",
++      repeat: "pingpong",
++    });
++    scene = await onDisk("loop-scene");
++    expect(scene.elements[0]?.tracks?.["@rotate"]).toEqual({
++      keys: [
++        { t: 0, value: 15, easing: "step" },
++        { t: 1, value: 360, easing: "auto" },
++      ],
++      repeat: "pingpong",
++      until: 4,
++    });
++
++    // Clear repeat ("none") and until (null) without modifying keyframes
++    await ok("keyframe_set", {
++      scene: "loop-scene",
++      id: "wheel",
++      path: "@rotate",
++      repeat: "none",
++      until: null,
++    });
++    scene = await onDisk("loop-scene");
++    expect(scene.elements[0]?.tracks?.["@rotate"]).toEqual([
++      { t: 0, value: 15, easing: "step" },
++      { t: 1, value: 360, easing: "auto" },
++    ]);
++  });
+ });
+diff --git a/src/service/tools/keyframe-set.ts b/src/service/tools/keyframe-set.ts
+index 296a431..72ccf0f 100644
+--- a/src/service/tools/keyframe-set.ts
++++ b/src/service/tools/keyframe-set.ts
+@@ -73,11 +73,7 @@ export const keyframeSet = defineTool({
+             );
+           }
+           if (!prev || keys.length === 0) {
+-            fail(
+-              "not_found",
+-              `No hay pista de keyframes en «${path}»`,
+-              "path",
+-            );
++            fail("not_found", `No hay pista de keyframes en «${path}»`, "path");
+           }
+         }
+         const nextRepeat = repeat ?? trackRepeat(prev);

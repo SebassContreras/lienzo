@@ -10,7 +10,7 @@ import {
   writeAt,
 } from "../engine/tracks.ts";
 import type { Element } from "../model/model.ts";
-import type { Channel } from "../model/track.ts";
+import { type Channel, trackKeys } from "../model/track.ts";
 import { Num, Section } from "./controls.tsx";
 import type { Change } from "./field-editor.tsx";
 
@@ -26,17 +26,17 @@ export function KeyButton({
   t: number;
   change: Change;
 }) {
-  const keys = el.tracks?.[path];
-  const here = keys !== undefined && keyframeAt(keys, t) >= 0;
-  const state = !keys ? "" : here ? "on" : "track";
+  const track = el.tracks?.[path];
+  const here = track !== undefined && keyframeAt(trackKeys(track), t) >= 0;
+  const state = !track ? "" : here ? "on" : "track";
   return (
     <button
       type="button"
       className={`key-button ${state}`}
-      title={keys ? "Quitar keyframes" : "Animar con keyframes"}
+      title={track ? "Quitar keyframes" : "Animar con keyframes"}
       onClick={() => change((d) => toggleTrack(d, path, t))}
     >
-      <Diamond size={12} fill={keys ? "currentColor" : "none"} />
+      <Diamond size={12} fill={track ? "currentColor" : "none"} />
     </button>
   );
 }

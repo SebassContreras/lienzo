@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { keyframeAt, withoutKeyframe } from "../../engine/tracks.ts";
+import {
+  trackEntry,
+  trackKeys,
+  trackRepeat,
+  trackUntil,
+} from "../../model/track.ts";
 import { updateElement } from "../element-tree.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
@@ -22,11 +28,17 @@ export const keyframeRemove = defineTool({
     editScene(await inProject(ctx, project), scene, (s) => ({
       ...s,
       elements: updateElement(s.elements, id, (el) => {
-        const { [path]: keys = [], ...rest } = el.tracks ?? {};
+        const { [path]: track, ...rest } = el.tracks ?? {};
+        const keys = trackKeys(track);
         const k = keyframeAt(keys, t);
         if (k < 0) fail("not_found", `No hay keyframe en ${t}s`, "t");
         const left = withoutKeyframe(keys, k);
-        const tracks = left.length ? { ...rest, [path]: left } : rest;
+        const tracks = left.length
+          ? {
+              ...rest,
+              [path]: trackEntry(left, trackRepeat(track), trackUntil(track)),
+            }
+          : rest;
         const { tracks: _, ...bare } = el;
         return (
           Object.keys(tracks).length ? { ...bare, tracks } : bare

@@ -209,7 +209,7 @@ async function buildElement(
 
   if (tracks) {
     element.tracks = normalizeTracks(
-      tracks as Record<string, import("./tracks.ts").CompactKeyframeInput[]>,
+      tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
     );
   }
 

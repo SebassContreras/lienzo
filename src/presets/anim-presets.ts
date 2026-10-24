@@ -7,7 +7,15 @@ import { descriptorOf } from "../components/index.ts";
 import { baseValue, fieldAt, valueKind } from "../engine/tracks.ts";
 import type { AnimPreset, AnimSlots } from "../model/anim-preset.ts";
 import type { Element, Scene } from "../model/model.ts";
-import { isChannel, type Keyframe, type Tracks } from "../model/track.ts";
+import {
+  isChannel,
+  type Keyframe,
+  type Tracks,
+  trackEntry,
+  trackKeys,
+  trackRepeat,
+  trackUntil,
+} from "../model/track.ts";
 
 /** What a preset holds besides its name and category. */
 export type PresetBody = Pick<AnimPreset, "anim" | "tracks">;
@@ -76,7 +84,9 @@ function shiftDelays(anim: AnimSlots, dt: number): AnimSlots {
 function animStart(el: Element): number {
   const anim = activeSlots(el);
   const times = [
-    ...Object.values(el.tracks ?? {}).flatMap((keys) => keys.map((k) => k.t)),
+    ...Object.values(el.tracks ?? {}).flatMap((track) =>
+      trackKeys(track).map((k) => k.t),
+    ),
     ...timed(anim).map((s) => (anim[s] as { delay: number }).delay),
   ];
   return times.length ? Math.min(...times) : 0;
@@ -88,11 +98,19 @@ export function capturePreset(el: Element, start = animStart(el)): PresetBody {
   const anim = shiftDelays(activeSlots(el), -start);
   if (Object.keys(anim).length) body.anim = anim;
   const tracks: Tracks = {};
-  for (const [path, keys] of Object.entries(el.tracks ?? {})) {
-    tracks[path] = shifted(keys, -start, -offsetOf(el, path)).map((k) => ({
-      ...k,
-      t: Math.max(0, k.t),
-    }));
+  for (const [path, track] of Object.entries(el.tracks ?? {})) {
+    const keys = shifted(trackKeys(track), -start, -offsetOf(el, path)).map(
+      (k) => ({
+        ...k,
+        t: Math.max(0, k.t),
+      }),
+    );
+    const until = trackUntil(track);
+    tracks[path] = trackEntry(
+      keys,
+      trackRepeat(track),
+      until !== undefined ? Math.max(0, until - start) : undefined,
+    );
   }
   if (Object.keys(tracks).length) body.tracks = tracks;
   return body;
@@ -138,10 +156,16 @@ export function applyPreset(
     out = { ...out, anim: { ...own, ...slots } } as Element;
   }
   const tracks: Tracks = {};
-  for (const [path, keys] of Object.entries(preset.tracks ?? {})) {
-    if (fits(el, path, keys))
-      tracks[path] = shifted(keys, start, offsetOf(el, path));
-    else skipped.push(path);
+  for (const [path, track] of Object.entries(preset.tracks ?? {})) {
+    const keys = trackKeys(track);
+    if (fits(el, path, keys)) {
+      const until = trackUntil(track);
+      tracks[path] = trackEntry(
+        shifted(keys, start, offsetOf(el, path)),
+        trackRepeat(track),
+        until !== undefined ? until + start : undefined,
+      );
+    } else skipped.push(path);
   }
   if (Object.keys(tracks).length)
     out = { ...out, tracks: { ...el.tracks, ...tracks } };
@@ -158,11 +182,13 @@ function within(el: Element, duration: number): { el: Element; cut: string[] } {
   if (!el.tracks) return { el, cut: [] };
   const cut: string[] = [];
   const tracks: Tracks = {};
-  for (const [path, keys] of Object.entries(el.tracks)) {
+  for (const [path, track] of Object.entries(el.tracks)) {
+    const keys = trackKeys(track);
     const kept = keys.filter((k) => k.t <= duration);
     if (kept.length < keys.length)
       cut.push(`${path} (después de ${duration}s)`);
-    if (kept.length) tracks[path] = kept;
+    if (kept.length)
+      tracks[path] = trackEntry(kept, trackRepeat(track), trackUntil(track));
   }
   return { el: { ...el, tracks }, cut };
 }

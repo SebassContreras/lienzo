@@ -1,0 +1,110 @@
+diff --git a/src/engine/tracks.test.ts b/src/engine/tracks.test.ts
+index 87b520c..57f3adf 100644
+--- a/src/engine/tracks.test.ts
++++ b/src/engine/tracks.test.ts
+@@ -4,8 +4,9 @@ import { trackPaths } from "../components/descriptor.ts";
+ import { descriptorOf } from "../components/index.ts";
+ import { defaultRect, defaultScene, type Element } from "../model/model.ts";
+ import { parseScene } from "../model/schema.ts";
+-import type { Keyframe } from "../model/track.ts";
++import { type Keyframe, type Track, trackKeys } from "../model/track.ts";
+ import { animate } from "./animate.ts";
++import { EASING_NAMES } from "./easing.ts";
+ import {
+   applyTracks,
+   commitAt,
+@@ -73,6 +74,66 @@ describe("track values", () => {
+     expect(paths).toContain("@rotate");
+     expect(paths).toContain("@scale");
+   });
++
++  it("hold the starting value until the next keyframe timestamp with step and hold easings (052/R4)", () => {
++    expect(EASING_NAMES).toContain("step");
++    expect(EASING_NAMES).toContain("hold");
++    const stepKeys = [kf(1, 10, "step"), kf(3, 90)];
++    expect(valueAt(stepKeys, 1, "number")).toBe(10);
++    expect(valueAt(stepKeys, 2.999, "number")).toBe(10);
++    expect(valueAt(stepKeys, 3, "number")).toBe(90);
++
++    const holdColors = [kf(0, "#ff0000", "hold"), kf(2, "#00ff00")];
++    expect(valueAt(holdColors, 1.5, "color")).toBe("#ff0000");
++    expect(valueAt(holdColors, 2, "color")).toBe("#00ff00");
++  });
++
++  it("wrap elapsed time modulo track span when repeat is loop (052/R1, R2)", () => {
++    const loopTrack: Track = {
++      keys: [kf(1, 0), kf(3, 100)],
++      repeat: "loop",
++    };
++    expect(valueAt(loopTrack, 0.5, "number")).toBe(0);
++    expect(valueAt(loopTrack, 2, "number")).toBeCloseTo(50, 9);
++    expect(valueAt(loopTrack, 3, "number")).toBe(100);
++    expect(valueAt(loopTrack, 3.5, "number")).toBeCloseTo(25, 9);
++    expect(valueAt(loopTrack, 4, "number")).toBeCloseTo(50, 9);
++    expect(valueAt(loopTrack, 5.5, "number")).toBeCloseTo(25, 9);
++  });
++
++  it("alternate forward and backward cycles when repeat is pingpong (052/R1, R2)", () => {
++    const pingpongTrack: Track = {
++      keys: [kf(1, 0), kf(3, 100)],
++      repeat: "pingpong",
++    };
++    expect(valueAt(pingpongTrack, 2, "number")).toBeCloseTo(50, 9);
++    expect(valueAt(pingpongTrack, 3, "number")).toBe(100);
++    // backward cycle (3..5 -> 3..1)
++    expect(valueAt(pingpongTrack, 3.5, "number")).toBeCloseTo(75, 9);
++    expect(valueAt(pingpongTrack, 4, "number")).toBeCloseTo(50, 9);
++    expect(valueAt(pingpongTrack, 5, "number")).toBeCloseTo(0, 9);
++    // next forward cycle (5..7 -> 1..3)
++    expect(valueAt(pingpongTrack, 5.5, "number")).toBeCloseTo(25, 9);
++  });
++
++  it("freeze the track at the value at until when t is at or past until (052/R1, R2)", () => {
++    const loopUntil: Track = {
++      keys: [kf(1, 0), kf(3, 100)],
++      repeat: "loop",
++      until: 4,
++    };
++    expect(valueAt(loopUntil, 3.5, "number")).toBeCloseTo(25, 9);
++    expect(valueAt(loopUntil, 4, "number")).toBeCloseTo(50, 9);
++    expect(valueAt(loopUntil, 6.2, "number")).toBeCloseTo(50, 9);
++
++    const pingpongUntil: Track = {
++      keys: [kf(0, 0), kf(2, 100)],
++      repeat: "pingpong",
++      until: 2.5,
++    };
++    expect(valueAt(pingpongUntil, 2.5, "number")).toBeCloseTo(75, 9);
++    expect(valueAt(pingpongUntil, 10, "number")).toBeCloseTo(75, 9);
++  });
+ });
+ 
+ describe("keyframe edits", () => {
+@@ -139,7 +200,7 @@ describe("keyframe edits", () => {
+     const out = commitAt(r, dragged, 1) as typeof r;
+     expect(out.x).toBe(100);
+     expect(out.y).toBe(40);
+-    expect(out.tracks?.x?.map((k) => [k.t, k.value])).toEqual([
++    expect(trackKeys(out.tracks?.x).map((k) => [k.t, k.value])).toEqual([
+       [0, 0],
+       [1, 150],
+       [2, 200],
+@@ -149,6 +210,18 @@ describe("keyframe edits", () => {
+       r.tracks,
+     );
+   });
++
++  it("preserve repeat and until when writing keyframes on a track", () => {
++    const r = rect({
++      x: { keys: [kf(0, 0), kf(2, 200)], repeat: "loop", until: 5 },
++    });
++    writeAt(r, "x", 100, 1, () => {});
++    expect(r.tracks?.x).toEqual({
++      keys: [kf(0, 0), kf(1, 100), kf(2, 200)],
++      repeat: "loop",
++      until: 5,
++    });
++  });
+ });
+ 
+ describe("animate with tracks", () => {

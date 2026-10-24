@@ -68,6 +68,8 @@ export function cubicBezier(
 
 export const EASINGS = {
   linear: (x: number) => x,
+  step: (x: number) => (x < 1 ? 0 : 1),
+  hold: (x: number) => (x < 1 ? 0 : 1),
   ease: cubicBezier(0.25, 0.1, 0.25, 1),
   "ease-in": cubicBezier(0.42, 0, 1, 1),
   "ease-out": cubicBezier(0, 0, 0.58, 1),

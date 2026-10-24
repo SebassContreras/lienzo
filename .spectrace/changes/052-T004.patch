@@ -1,0 +1,319 @@
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index 56e868b..cf6bd28 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -10,6 +10,7 @@ import {
+   type Fields,
+ } from "../components/fields/index.ts";
+ import { EASING_NAMES, type Easing } from "../engine/easing.ts";
++import { TrackRepeatSchema } from "./track.ts";
+ 
+ const ShortKeyframeTupleSchema = z.tuple([
+   z.number().min(0),
+@@ -28,9 +29,15 @@ const CompactKeyframeSchema = z.union([
+   CanonicalKeyframeSchema,
+ ]);
+ 
++const CompactTrackObjectSchema = z.object({
++  keys: z.array(CompactKeyframeSchema),
++  repeat: TrackRepeatSchema.optional(),
++  until: z.number().min(0).optional(),
++});
++
+ export const CompactTracksSchema = z.record(
+   z.string(),
+-  z.array(CompactKeyframeSchema),
++  z.union([z.array(CompactKeyframeSchema), CompactTrackObjectSchema]),
+ );
+ 
+ /** Short animation: kind name as a string, or an object with slots. */
+diff --git a/src/presets/anim-presets.test.ts b/src/presets/anim-presets.test.ts
+index f7fc1a0..0c203a7 100644
+--- a/src/presets/anim-presets.test.ts
++++ b/src/presets/anim-presets.test.ts
+@@ -3,7 +3,11 @@ import { createElement } from "../components/index.ts";
+ import type { AnimPreset } from "../model/anim-preset.ts";
+ import { defaultScene, type Element, type Scene } from "../model/model.ts";
+ import { parseScene } from "../model/schema.ts";
+-import type { Keyframe } from "../model/track.ts";
++import {
++  type Keyframe,
++  type Track,
++  trackKeys,
++} from "../model/track.ts";
+ import {
+   applyPreset,
+   applyToSelection,
+@@ -20,8 +24,8 @@ const kf = (t: number, value: number | string): Keyframe => ({
+   easing: "auto",
+ });
+ 
+-const pairs = (keys: readonly Keyframe[] | undefined) =>
+-  keys?.map((k) => [k.t, k.value]);
++const pairs = (track: Track | readonly Keyframe[] | undefined) =>
++  track ? trackKeys(track).map((k) => [k.t, k.value]) : undefined;
+ 
+ const animOf = (el: Element) => (el as ReturnType<typeof rect>).anim;
+ 
+@@ -131,9 +135,9 @@ describe("apply", () => {
+     const p = { name: "p", ...capturePreset(rect()) };
+     const { el } = applyPreset(createElement("rect"), p, 0);
+     (p.anim?.in as { kind: string }).kind = "pop";
+-    (p.tracks?.x?.[0] as Keyframe).value = 999;
++    (trackKeys(p.tracks?.x)[0] as Keyframe).value = 999;
+     expect(animOf(el).in.kind).toBe("fade");
+-    expect(el.tracks?.x?.[0]?.value).not.toBe(999);
++    expect(trackKeys(el.tracks?.x)[0]?.value).not.toBe(999);
+     expect(el.animPreset).toEqual({ name: "p", start: 0 });
+   });
+ });
+diff --git a/src/service/compact/expand.ts b/src/service/compact/expand.ts
+index 7788325..b67b032 100644
+--- a/src/service/compact/expand.ts
++++ b/src/service/compact/expand.ts
+@@ -209,7 +209,7 @@ async function buildElement(
+ 
+   if (tracks) {
+     element.tracks = normalizeTracks(
+-      tracks as Record<string, import("./tracks.ts").CompactKeyframeInput[]>,
++      tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
+     );
+   }
+ 
+diff --git a/src/service/compact/tracks.ts b/src/service/compact/tracks.ts
+index f9e3994..dc72a46 100644
+--- a/src/service/compact/tracks.ts
++++ b/src/service/compact/tracks.ts
+@@ -3,7 +3,12 @@
+  * Turns compact [t, value, easing?] tuples or partial objects into canonical Keyframe objects.
+  */
+ import type { Easing } from "../../engine/easing.ts";
+-import type { Keyframe, Tracks } from "../../model/track.ts";
++import {
++  type Keyframe,
++  type TrackRepeat,
++  type Tracks,
++  trackEntry,
++} from "../../model/track.ts";
+ 
+ type CompactKeyframeTuple = readonly [
+   t: number,
+@@ -15,6 +20,14 @@ export type CompactKeyframeInput =
+   | CompactKeyframeTuple
+   | { t: number; value: number | string; easing?: Easing };
+ 
++export type CompactTrackInput =
++  | CompactKeyframeInput[]
++  | {
++      keys: CompactKeyframeInput[];
++      repeat?: TrackRepeat;
++      until?: number;
++    };
++
+ function normalizeKeyframe(k: CompactKeyframeInput): Keyframe {
+   if (Array.isArray(k)) {
+     const [t, value, easing] = k;
+@@ -33,11 +46,19 @@ function normalizeKeyframe(k: CompactKeyframeInput): Keyframe {
+ }
+ 
+ export function normalizeTracks(
+-  rawTracks: Record<string, CompactKeyframeInput[]>,
++  rawTracks: Record<string, CompactTrackInput>,
+ ): Tracks {
+   const result: Tracks = {};
+-  for (const [path, keys] of Object.entries(rawTracks)) {
+-    result[path] = keys.map(normalizeKeyframe);
++  for (const [path, raw] of Object.entries(rawTracks)) {
++    if (Array.isArray(raw)) {
++      result[path] = raw.map(normalizeKeyframe);
++    } else {
++      result[path] = trackEntry(
++        raw.keys.map(normalizeKeyframe),
++        raw.repeat,
++        raw.until,
++      );
++    }
+   }
+   return result;
+ }
+diff --git a/src/service/elements.ts b/src/service/elements.ts
+index c22f282..842bc90 100644
+--- a/src/service/elements.ts
++++ b/src/service/elements.ts
+@@ -26,8 +26,8 @@ export function checkKind(kind: string, path = "kind"): void {
+     );
+ }
+ 
+-/** Fails unless `value` fits keyframe `path` of an element of `kind` (a color, or a number). */
+-export function checkKeyframe(kind: string, path: string, value: unknown) {
++/** Fails unless `path` is an animatable track path of `kind`. */
++export function checkTrackPath(kind: string, path: string): void {
+   const d = descriptorOf(kind);
+   const paths = d ? trackPaths(d) : [];
+   if (!paths.includes(path))
+@@ -36,6 +36,11 @@ export function checkKeyframe(kind: string, path: string, value: unknown) {
+       `«${path}» no se puede animar en «${kind}» (se puede: ${paths.join(", ")})`,
+       "path",
+     );
++}
++
++/** Fails unless `value` fits keyframe `path` of an element of `kind` (a color, or a number). */
++export function checkKeyframe(kind: string, path: string, value: unknown) {
++  checkTrackPath(kind, path);
+   const color = valueKind(kind, path) === "color";
+   if (color ? typeof value !== "string" : typeof value !== "number")
+     fail(
+diff --git a/src/service/tools/keyframe-remove.ts b/src/service/tools/keyframe-remove.ts
+index a4d8fba..d9151fa 100644
+--- a/src/service/tools/keyframe-remove.ts
++++ b/src/service/tools/keyframe-remove.ts
+@@ -1,5 +1,11 @@
+ import { z } from "zod";
+ import { keyframeAt, withoutKeyframe } from "../../engine/tracks.ts";
++import {
++  trackEntry,
++  trackKeys,
++  trackRepeat,
++  trackUntil,
++} from "../../model/track.ts";
+ import { updateElement } from "../element-tree.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool, fail } from "../registry.ts";
+@@ -22,11 +28,17 @@ export const keyframeRemove = defineTool({
+     editScene(await inProject(ctx, project), scene, (s) => ({
+       ...s,
+       elements: updateElement(s.elements, id, (el) => {
+-        const { [path]: keys = [], ...rest } = el.tracks ?? {};
++        const { [path]: track, ...rest } = el.tracks ?? {};
++        const keys = trackKeys(track);
+         const k = keyframeAt(keys, t);
+         if (k < 0) fail("not_found", `No hay keyframe en ${t}s`, "t");
+         const left = withoutKeyframe(keys, k);
+-        const tracks = left.length ? { ...rest, [path]: left } : rest;
++        const tracks = left.length
++          ? {
++              ...rest,
++              [path]: trackEntry(left, trackRepeat(track), trackUntil(track)),
++            }
++          : rest;
+         const { tracks: _, ...bare } = el;
+         return (
+           Object.keys(tracks).length ? { ...bare, tracks } : bare
+diff --git a/src/service/tools/keyframe-set.ts b/src/service/tools/keyframe-set.ts
+index 1c13626..296a431 100644
+--- a/src/service/tools/keyframe-set.ts
++++ b/src/service/tools/keyframe-set.ts
+@@ -1,8 +1,15 @@
+ import { z } from "zod";
+ import { EasingSchema } from "../../engine/easing.ts";
+ import { withKeyframe } from "../../engine/tracks.ts";
++import {
++  TrackRepeatSchema,
++  trackEntry,
++  trackKeys,
++  trackRepeat,
++  trackUntil,
++} from "../../model/track.ts";
+ import { updateElement } from "../element-tree.ts";
+-import { checkKeyframe } from "../elements.ts";
++import { checkKeyframe, checkTrackPath } from "../elements.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+ import { defineTool, fail } from "../registry.ts";
+ import { editScene, SceneResult } from "../scenes.ts";
+@@ -10,34 +17,79 @@ import { editScene, SceneResult } from "../scenes.ts";
+ export const keyframeSet = defineTool({
+   name: "keyframe_set",
+   description:
+-    "Set a keyframe on an element (at root or inside nested groups, by `id` or `group/child` " +
+-    "path): `path` is an animatable field path or channel of its kind (see component_list, e.g. " +
+-    "`x`, `fill.color`, `@rotate`, `@scale`), `t` seconds within the scene, `value` a number or " +
+-    "a color. A keyframe already at `t` is replaced. `easing` (default `auto`) shapes the " +
+-    "segment to the next keyframe.",
++    "Set a keyframe or configure loop options on an element's track (at root or inside nested " +
++    "groups, by `id` or `group/child` path): `path` is an animatable field path or channel of " +
++    "its kind (see component_list, e.g. `x`, `fill.color`, `@rotate`, `@scale`), `t` seconds " +
++    "within the scene, `value` a number or a color. A keyframe already at `t` is replaced. " +
++    "`easing` (default `auto`) shapes the segment to the next keyframe (`step` / `hold` holds " +
++    "the value until the next keyframe). `repeat` (`none` | `loop` | `pingpong`) and `until` " +
++    "(seconds, or `null` to clear) set or clear track looping.",
+   input: z.object({
+     scene: z.string().min(1),
+     project: PROJECT,
+     id: z.string().min(1),
+     path: z.string().min(1),
+-    t: z.number().min(0),
+-    value: z.union([z.number(), z.string()]),
++    t: z.number().min(0).optional(),
++    value: z.union([z.number(), z.string()]).optional(),
+     easing: EasingSchema.optional(),
++    repeat: TrackRepeatSchema.optional(),
++    until: z.number().min(0).nullable().optional(),
+   }),
+   output: SceneResult,
+-  run: async ({ scene, project, id, path, t, value, easing }, ctx) =>
++  run: async (
++    { scene, project, id, path, t, value, easing, repeat, until },
++    ctx,
++  ) =>
+     editScene(await inProject(ctx, project), scene, (s) => ({
+       ...s,
+       elements: updateElement(s.elements, id, (el) => {
+-        checkKeyframe(el.kind, path, value);
+-        if (t > s.duration)
+-          fail("invalid_time", `t pasa la duración (${s.duration}s)`, "t");
+-        const keys = withKeyframe(el.tracks?.[path] ?? [], {
+-          t,
+-          value,
+-          easing: easing ?? "auto",
+-        });
+-        return { ...el, tracks: { ...el.tracks, [path]: keys } };
++        const hasT = t !== undefined;
++        const hasValue = value !== undefined;
++        if (hasT !== hasValue) {
++          fail(
++            "invalid_input",
++            "Debes indicar tanto 't' como 'value' para fijar un keyframe",
++            hasT ? "value" : "t",
++          );
++        }
++        const prev = el.tracks?.[path];
++        let keys = [...trackKeys(prev)];
++        if (hasT && hasValue) {
++          checkKeyframe(el.kind, path, value);
++          if (t > s.duration)
++            fail("invalid_time", `t pasa la duración (${s.duration}s)`, "t");
++          keys = withKeyframe(keys, {
++            t,
++            value,
++            easing: easing ?? "auto",
++          });
++        } else {
++          checkTrackPath(el.kind, path);
++          if (repeat === undefined && until === undefined) {
++            fail(
++              "invalid_input",
++              "Debes indicar un keyframe ('t' y 'value') o 'repeat'/'until'",
++              "t",
++            );
++          }
++          if (!prev || keys.length === 0) {
++            fail(
++              "not_found",
++              `No hay pista de keyframes en «${path}»`,
++              "path",
++            );
++          }
++        }
++        const nextRepeat = repeat ?? trackRepeat(prev);
++        const nextUntil =
++          until === null ? undefined : (until ?? trackUntil(prev));
++        return {
++          ...el,
++          tracks: {
++            ...el.tracks,
++            [path]: trackEntry(keys, nextRepeat, nextUntil),
++          },
++        };
+       }),
+     })),
+ });

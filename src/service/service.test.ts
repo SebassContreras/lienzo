@@ -561,4 +561,74 @@ describe("nested element tools and group parent insertion (051/R1, R2)", () => {
 
     expect(await onDisk("flat")).toEqual(before);
   });
+
+  it("sets and clears track repeat, until, and step/hold easings via keyframe_set and scene_build (052/R3, R4)", async () => {
+    await ok("scene_build", {
+      compact: {
+        size: "1080x1080",
+        duration: 6,
+        elements: [
+          {
+            id: "wheel",
+            kind: "rect",
+            tracks: {
+              "@rotate": {
+                keys: [
+                  [0, 0, "linear"],
+                  [1, 360],
+                ],
+                repeat: "loop",
+                until: 4,
+              },
+            },
+          },
+        ],
+      },
+      save: "loop-scene",
+    });
+
+    let scene = await onDisk("loop-scene");
+    expect(scene.elements[0]?.tracks?.["@rotate"]).toEqual({
+      keys: [
+        { t: 0, value: 0, easing: "linear" },
+        { t: 1, value: 360, easing: "auto" },
+      ],
+      repeat: "loop",
+      until: 4,
+    });
+
+    // Update repeat to pingpong and add a keyframe with step easing while keeping until
+    await ok("keyframe_set", {
+      scene: "loop-scene",
+      id: "wheel",
+      path: "@rotate",
+      t: 0,
+      value: 15,
+      easing: "step",
+      repeat: "pingpong",
+    });
+    scene = await onDisk("loop-scene");
+    expect(scene.elements[0]?.tracks?.["@rotate"]).toEqual({
+      keys: [
+        { t: 0, value: 15, easing: "step" },
+        { t: 1, value: 360, easing: "auto" },
+      ],
+      repeat: "pingpong",
+      until: 4,
+    });
+
+    // Clear repeat ("none") and until (null) without modifying keyframes
+    await ok("keyframe_set", {
+      scene: "loop-scene",
+      id: "wheel",
+      path: "@rotate",
+      repeat: "none",
+      until: null,
+    });
+    scene = await onDisk("loop-scene");
+    expect(scene.elements[0]?.tracks?.["@rotate"]).toEqual([
+      { t: 0, value: 15, easing: "step" },
+      { t: 1, value: 360, easing: "auto" },
+    ]);
+  });
 });
