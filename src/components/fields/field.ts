@@ -61,6 +61,8 @@ export type TextField = Common & {
   default: string;
   schema: z.ZodType<string>;
   multiline?: boolean;
+  /** Shown by this widget instead of a text box, as on select fields (062/D8). */
+  widget?: string;
 };
 
 type Option = readonly [value: string | number, label: string];
@@ -200,7 +202,7 @@ export function check<P = Parent>(
 
 export function text<P = Parent>(
   value: string,
-  o: Opts<P, string> & { multiline?: boolean },
+  o: Opts<P, string> & { multiline?: boolean; widget?: string },
 ): Typed<TextField, string> {
   return {
     ...common(o),
@@ -208,6 +210,7 @@ export function text<P = Parent>(
     default: value,
     schema: z.string(),
     multiline: o.multiline,
+    widget: o.widget,
   };
 }
 

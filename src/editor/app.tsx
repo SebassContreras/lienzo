@@ -38,7 +38,7 @@ import {
   freeSymbolName,
   instanceCount,
   replaceWithUse,
-  withSymbolChildren,
+  withSymbol,
 } from "../model/symbols.ts";
 import type { VoicePreset } from "../model/voice-preset.ts";
 import { expandAnimPresets, namesAnimPreset } from "../presets/anim-presets.ts";
@@ -276,15 +276,14 @@ export function App() {
   const leaveSymbol = useCallback(() => {
     const edit = symbolEditRef.current;
     if (!edit) return;
-    const children = sceneRef.current.elements;
+    const { elements, width, height } = sceneRef.current;
+    const edited = { children: elements, w: width, h: height };
+    const { children, w, h } = edit.main.symbols?.[edit.name] ?? {};
     const changed =
-      JSON.stringify(children) !==
-      JSON.stringify(edit.main.symbols?.[edit.name]?.children);
+      JSON.stringify(edited) !== JSON.stringify({ children, w, h });
     history.reset(changed ? push(edit.history, edit.main) : edit.history);
     setSymbolEdit(null);
-    commitScene(
-      changed ? withSymbolChildren(edit.main, edit.name, children) : edit.main,
-    );
+    commitScene(changed ? withSymbol(edit.main, edit.name, edited) : edit.main);
     setSelection([]);
   }, [commitScene, history.reset]);
 
@@ -1254,6 +1253,8 @@ export function App() {
               scene={scene}
               onChange={setScene}
               onEditSymbol={symbolEdit || jointOn ? undefined : editSymbol}
+              symbolMode={symbolEdit !== null}
+              time={playhead}
               focusBackground={backgroundFocus}
               onSaveBackground={(name) =>
                 presetChange(

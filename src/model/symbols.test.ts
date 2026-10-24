@@ -11,7 +11,7 @@ import {
   freeSymbolName,
   instanceCount,
   replaceWithUse,
-  withSymbolChildren,
+  withSymbol,
 } from "./symbols.ts";
 
 /** A scene with two rects at (100,100) and (300,200), grouped. */
@@ -68,7 +68,7 @@ describe("replaceWithUse", () => {
   });
 });
 
-describe("withSymbolChildren", () => {
+describe("withSymbol", () => {
   it("changes the symbol every instance draws", () => {
     const { scene, group } = groupedScene();
     const withUse = replaceWithUse(scene, group.id, "car");
@@ -81,7 +81,7 @@ describe("withSymbolChildren", () => {
     };
     const wheel = { ...defaultRect(), id: "wheel" };
 
-    const next = withSymbolChildren(twice, "car", [wheel]);
+    const next = withSymbol(twice, "car", { children: [wheel] });
 
     expect(next.symbols?.car?.children).toEqual([wheel]);
     expect(instanceCount(next, "car")).toBe(2);

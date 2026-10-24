@@ -298,7 +298,7 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
         ]}
         onChange={(v) =>
           change((d) => {
-            if (item.field.type === "select")
+            if (item.field.type === "text")
               writeField(d, item.path, item.field, v);
           })
         }
@@ -443,7 +443,7 @@ function Control({
   if (
     field.type === "widget" ||
     field.type === "custom" ||
-    (field.type === "select" && field.widget)
+    ((field.type === "select" || field.type === "text") && field.widget)
   ) {
     const render = WIDGETS[field.widget as string];
     if (!render) throw new Error(`unknown inspector widget ${field.widget}`);

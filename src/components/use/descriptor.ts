@@ -6,7 +6,7 @@ import {
   box,
   custom,
   elementOpacity,
-  select,
+  text,
 } from "../fields/index.ts";
 import { drawUse } from "./draw.ts";
 
@@ -26,12 +26,7 @@ const fields = {
   w,
   h,
   /** Picked from the scene's symbols by the `symbol` widget (062/D3). */
-  symbol: select([], "", {
-    label: "Símbolo",
-    section: "Símbolo",
-    schema: z.string(),
-    widget: "symbol",
-  }),
+  symbol: text("", { label: "Símbolo", section: "Símbolo", widget: "symbol" }),
   opacity: elementOpacity("Símbolo"),
   overrides: custom<Record<string, Record<string, unknown>>>(
     "overrides",

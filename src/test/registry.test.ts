@@ -103,7 +103,11 @@ describe("the generated inspector", () => {
       expect(placed).toBeGreaterThan(0);
       for (const s of layout) expect(s.items.length).toBeGreaterThan(0);
       for (const { field } of layout.flatMap((s) => s.items)) {
-        if (field.type === "widget" || field.type === "custom") {
+        if (
+          field.type === "widget" ||
+          field.type === "custom" ||
+          ((field.type === "select" || field.type === "text") && field.widget)
+        ) {
           expect(WIDGET_NAMES).toContain(field.widget);
         }
       }
@@ -163,5 +167,13 @@ describe("descriptors", () => {
       }
       expect(dataFields(d.fields).some(([k]) => k === "anim")).toBe(true);
     }
+  });
+});
+
+describe("use element", () => {
+  it("stores its symbol as free text picked by the symbol widget (062/R9)", () => {
+    const field = COMPONENTS.find((d) => d.kind === "use")?.fields.symbol;
+
+    expect(field).toMatchObject({ type: "text", widget: "symbol" });
   });
 });

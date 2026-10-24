@@ -1,0 +1,262 @@
+diff --git a/src/editor/app.tsx b/src/editor/app.tsx
+index 03130e7..eea5773 100644
+--- a/src/editor/app.tsx
++++ b/src/editor/app.tsx
+@@ -1254,6 +1254,7 @@ export function App() {
+               onChange={setScene}
+               onEditSymbol={symbolEdit || jointOn ? undefined : editSymbol}
+               symbolMode={symbolEdit !== null}
++              time={playhead}
+               focusBackground={backgroundFocus}
+               onSaveBackground={(name) =>
+                 presetChange(
+diff --git a/src/editor/inspector.tsx b/src/editor/inspector.tsx
+index 6408237..29740f0 100644
+--- a/src/editor/inspector.tsx
++++ b/src/editor/inspector.tsx
+@@ -278,6 +278,7 @@ export function SceneInspector({
+   onSaveBackground,
+   onEditSymbol,
+   symbolMode = false,
++  time,
+ }: {
+   scene: Scene;
+   onChange: (s: Scene) => void;
+@@ -285,6 +286,8 @@ export function SceneInspector({
+   onEditSymbol?: (name: string) => void;
+   /** Editing a symbol: only its size is shown, the rest would be dropped (062/D7). */
+   symbolMode?: boolean;
++  /** The playhead (s), for camera keyframes. */
++  time?: number;
+   /** Each time this number changes, the "Fondo" section opens and scrolls into view. */
+   focusBackground?: number;
+   onSaveBackground?: (name: string) => void;
+@@ -421,7 +424,7 @@ export function SceneInspector({
+         )}
+       </Section>
+       {!isStaticMode(scene) && (
+-        <ShotsSection scene={scene} onChange={onChange} />
++        <ShotsSection scene={scene} onChange={onChange} time={time} />
+       )}
+       {onEditSymbol && <SymbolsSection scene={scene} onEdit={onEditSymbol} />}
+       <Section title="Fondo" ref={backgroundRef}>
+diff --git a/src/editor/scene/shots-section.tsx b/src/editor/scene/shots-section.tsx
+index 41f12cb..e5b55ba 100644
+--- a/src/editor/scene/shots-section.tsx
++++ b/src/editor/scene/shots-section.tsx
+@@ -1,13 +1,19 @@
+ /** The scene inspector's "Tomas" section: add, retime, rename and remove shots (062/D2). */
+-import { Plus, Trash2 } from "lucide-react";
++import { Diamond, Plus, Trash2 } from "lucide-react";
+ import { useState } from "react";
++import { resolveShotCamera } from "../../engine/shots.ts";
++import { keyframeAt } from "../../engine/tracks.ts";
+ import type { Scene, Shot, ShotTransition } from "../../model/model.ts";
+ import {
++  type CameraAxis,
++  cameraValuePatch,
+   removeShot,
+   type ShotPatch,
+   type ShotsResult,
+   setShot,
++  toggleCameraKey,
+ } from "../../model/shots.ts";
++import { trackKeys } from "../../model/track.ts";
+ import { Num, Section, Select } from "../controls.tsx";
+ 
+ const TRANSITIONS: [ShotTransition["kind"], string][] = [
+@@ -24,12 +30,80 @@ export function nextShotId(shots: readonly Shot[]): string {
+   return `shot-${n}`;
+ }
+ 
++/** Each camera axis: label, range in the scene and step. */
++const CAMERA: [
++  CameraAxis,
++  string,
++  (s: Scene) => number,
++  (s: Scene) => number,
++  number,
++][] = [
++  ["x", "Cámara X", (s) => -s.width, (s) => s.width, 1],
++  ["y", "Cámara Y", (s) => -s.height, (s) => s.height, 1],
++  ["zoom", "Zoom", () => 0.1, () => 5, 0.05],
++];
++
++/** One camera axis: its value at the playhead and a key button (062/D9). */
++function CameraField({
++  shot,
++  axis,
++  label,
++  min,
++  max,
++  step,
++  time,
++  patch,
++}: {
++  shot: Shot;
++  axis: CameraAxis;
++  label: string;
++  min: number;
++  max: number;
++  step: number;
++  time: number;
++  patch: (p: ShotPatch) => void;
++}) {
++  const keys = trackKeys(shot.camera?.tracks?.[axis]);
++  const state =
++    keys.length === 0 ? "" : keyframeAt(keys, time) >= 0 ? "on" : "track";
++  return (
++    <div className="keyed">
++      <Num
++        label={label}
++        value={resolveShotCamera(shot, time)[axis]}
++        min={min}
++        max={max}
++        step={step}
++        onChange={(v) =>
++          patch({ id: shot.id, camera: cameraValuePatch(shot, axis, time, v) })
++        }
++      />
++      <button
++        type="button"
++        className={`key-button ${state}`}
++        title={state === "on" ? "Quitar keyframe" : "Keyframe aquí"}
++        onClick={() =>
++          patch({
++            id: shot.id,
++            camera: { tracks: toggleCameraKey(shot, axis, time) },
++          })
++        }
++      >
++        <Diamond size={12} fill={state ? "currentColor" : "none"} />
++      </button>
++    </div>
++  );
++}
++
+ export function ShotsSection({
+   scene,
+   onChange,
++  time = 0,
+ }: {
+   scene: Scene;
+   onChange: (s: Scene) => void;
++  /** The playhead (s), where camera keyframes are set. */
++  time?: number;
+ }) {
+   const [error, setError] = useState("");
+   const shots = scene.shots ?? [];
+@@ -114,28 +188,19 @@ export function ShotsSection({
+               }
+             />
+           )}
+-          <Num
+-            label="Cámara X"
+-            value={shot.camera?.x ?? 0}
+-            min={-scene.width}
+-            max={scene.width}
+-            onChange={(x) => patch({ id: shot.id, camera: { x } })}
+-          />
+-          <Num
+-            label="Cámara Y"
+-            value={shot.camera?.y ?? 0}
+-            min={-scene.height}
+-            max={scene.height}
+-            onChange={(y) => patch({ id: shot.id, camera: { y } })}
+-          />
+-          <Num
+-            label="Zoom"
+-            value={shot.camera?.zoom ?? 1}
+-            min={0.1}
+-            max={5}
+-            step={0.05}
+-            onChange={(zoom) => patch({ id: shot.id, camera: { zoom } })}
+-          />
++          {CAMERA.map(([axis, label, min, max, step]) => (
++            <CameraField
++              key={axis}
++              shot={shot}
++              axis={axis}
++              label={label}
++              min={min(scene)}
++              max={max(scene)}
++              step={step}
++              time={time}
++              patch={patch}
++            />
++          ))}
+         </div>
+       ))}
+       {error && <div className="hint">{error}</div>}
+diff --git a/src/model/shots.ts b/src/model/shots.ts
+index 3831d1f..a3452fa 100644
+--- a/src/model/shots.ts
++++ b/src/model/shots.ts
+@@ -2,8 +2,17 @@
+  * Editing a scene's shots: the one set of rules `shot_set` and the editor share, so both
+  * write the same JSON (062/D1). Pure: they return new arrays and never touch the input.
+  */
++import { resolveShotCamera } from "../engine/shots.ts";
++import { keyframeAt, withKeyframe } from "../engine/tracks.ts";
+ import { deepMerge } from "../presets/resolve.ts";
+ import type { Shot, ShotCamera, ShotTransition } from "./model.ts";
++import {
++  type Tracks,
++  trackEntry,
++  trackKeys,
++  trackRepeat,
++  trackUntil,
++} from "./track.ts";
+ 
+ export type ShotPatch = {
+   id: string;
+@@ -77,3 +86,49 @@ export function removeShot(shots: readonly Shot[], id: string): ShotsResult {
+   }
+   return { shots: shots.filter((sh) => sh.id !== id) };
+ }
++
++export type CameraAxis = "x" | "y" | "zoom";
++
++/**
++ * The `camera.tracks` patch that toggles a keyframe of `axis` at `t` (062/D9): removes the
++ * key there, or adds one holding the camera's value at `t`. Pass it to `setShot` as
++ * `camera: { tracks }`, the same patch `shot_set` takes.
++ */
++export function toggleCameraKey(
++  shot: Shot,
++  axis: CameraAxis,
++  t: number,
++): Tracks {
++  const track = shot.camera?.tracks?.[axis];
++  const keys = trackKeys(track);
++  const at = keyframeAt(keys, t);
++  const next =
++    at >= 0
++      ? keys.filter((_, i) => i !== at)
++      : withKeyframe(keys, {
++          t,
++          value: resolveShotCamera(shot, t)[axis],
++          easing: "auto",
++        });
++  return {
++    [axis]: trackEntry(next, trackRepeat(track), trackUntil(track)),
++  };
++}
++
++/**
++ * The camera patch for `axis` set to `value` at `t`: a keyframe there when the axis is
++ * animated (so the change shows), else the shot's still value.
++ */
++export function cameraValuePatch(
++  shot: Shot,
++  axis: CameraAxis,
++  t: number,
++  value: number,
++): ShotCamera {
++  const track = shot.camera?.tracks?.[axis];
++  if (trackKeys(track).length === 0) return { [axis]: value };
++  const keys = withKeyframe(trackKeys(track), { t, value, easing: "auto" });
++  return {
++    tracks: { [axis]: trackEntry(keys, trackRepeat(track), trackUntil(track)) },
++  };
++}

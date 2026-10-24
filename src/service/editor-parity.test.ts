@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Scene } from "../model/model.ts";
-import { setShot } from "../model/shots.ts";
+import { setShot, toggleCameraKey } from "../model/shots.ts";
 import { trackEntry, trackKeys } from "../model/track.ts";
 import { resolveOrigin } from "./compact/layout.ts";
 import { type Ctx, createCtx } from "./ctx.ts";
@@ -45,6 +45,25 @@ describe("editor and tools write the same JSON", () => {
 
     const fromEditor = setShot(before.shots ?? [], patch);
     await ok("shot_set", { scene: "s", ...patch });
+
+    expect(fromEditor).toEqual({ shots: (await saved()).shots });
+  });
+
+  it("a camera keyframe set in the Tomas section matches shot_set", async () => {
+    await ok("shot_set", {
+      scene: "s",
+      id: "a",
+      start: 0,
+      end: 2,
+      camera: { zoom: 2 },
+    });
+    const shot = (await saved()).shots?.[0] as NonNullable<
+      Scene["shots"]
+    >[number];
+    const camera = { tracks: toggleCameraKey(shot, "zoom", 1) };
+
+    const fromEditor = setShot([shot], { id: "a", camera });
+    await ok("shot_set", { scene: "s", id: "a", camera });
 
     expect(fromEditor).toEqual({ shots: (await saved()).shots });
   });

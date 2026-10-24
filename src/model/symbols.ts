@@ -76,16 +76,16 @@ export function instanceCount(scene: Scene, name: string): number {
   return count(scene.elements);
 }
 
-/** The scene with the symbol `name`'s children replaced, so every instance draws them. */
-export function withSymbolChildren(
+/** The scene with the symbol `name` edited (children, size), so every instance draws it. */
+export function withSymbol(
   scene: Scene,
   name: string,
-  children: Element[],
+  patch: Partial<SymbolDefinition>,
 ): Scene {
   const symbol = scene.symbols?.[name];
   if (!symbol) return scene;
   return {
     ...scene,
-    symbols: { ...scene.symbols, [name]: { ...symbol, children } },
+    symbols: { ...scene.symbols, [name]: { ...symbol, ...patch } },
   };
 }

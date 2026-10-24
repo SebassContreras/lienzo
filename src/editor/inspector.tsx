@@ -277,11 +277,17 @@ export function SceneInspector({
   focusBackground = 0,
   onSaveBackground,
   onEditSymbol,
+  symbolMode = false,
+  time,
 }: {
   scene: Scene;
   onChange: (s: Scene) => void;
   /** Opens a symbol for editing; the section is hidden without it (062/D4). */
   onEditSymbol?: (name: string) => void;
+  /** Editing a symbol: only its size is shown, the rest would be dropped (062/D7). */
+  symbolMode?: boolean;
+  /** The playhead (s), for camera keyframes. */
+  time?: number;
   /** Each time this number changes, the "Fondo" section opens and scrolls into view. */
   focusBackground?: number;
   onSaveBackground?: (name: string) => void;
@@ -310,6 +316,42 @@ export function SceneInspector({
       ? []
       : [[sizeKey, `Personalizado ${scene.width}×${scene.height}`] as const]),
   ];
+  if (symbolMode) {
+    return (
+      <div className="inspector">
+        <div className="inspector-head">
+          <div className="name">Símbolo</div>
+        </div>
+        <Section title="Tamaño del símbolo">
+          <Num
+            label="Ancho"
+            value={scene.width}
+            min={10}
+            max={4000}
+            onChange={(v) =>
+              change((d) => {
+                d.width = Math.round(v);
+              })
+            }
+          />
+          <Num
+            label="Alto"
+            value={scene.height}
+            min={10}
+            max={4000}
+            onChange={(v) =>
+              change((d) => {
+                d.height = Math.round(v);
+              })
+            }
+          />
+          <div className="hint">
+            Las instancias escalan su contenido a su propia caja.
+          </div>
+        </Section>
+      </div>
+    );
+  }
   return (
     <div className="inspector">
       <div className="inspector-head">
@@ -382,7 +424,7 @@ export function SceneInspector({
         )}
       </Section>
       {!isStaticMode(scene) && (
-        <ShotsSection scene={scene} onChange={onChange} />
+        <ShotsSection scene={scene} onChange={onChange} time={time} />
       )}
       {onEditSymbol && <SymbolsSection scene={scene} onEdit={onEditSymbol} />}
       <Section title="Fondo" ref={backgroundRef}>

@@ -1,13 +1,19 @@
 /** The scene inspector's "Tomas" section: add, retime, rename and remove shots (062/D2). */
-import { Plus, Trash2 } from "lucide-react";
+import { Diamond, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { resolveShotCamera } from "../../engine/shots.ts";
+import { keyframeAt } from "../../engine/tracks.ts";
 import type { Scene, Shot, ShotTransition } from "../../model/model.ts";
 import {
+  type CameraAxis,
+  cameraValuePatch,
   removeShot,
   type ShotPatch,
   type ShotsResult,
   setShot,
+  toggleCameraKey,
 } from "../../model/shots.ts";
+import { trackKeys } from "../../model/track.ts";
 import { Num, Section, Select } from "../controls.tsx";
 
 const TRANSITIONS: [ShotTransition["kind"], string][] = [
@@ -24,12 +30,80 @@ export function nextShotId(shots: readonly Shot[]): string {
   return `shot-${n}`;
 }
 
+/** Each camera axis: label, range in the scene and step. */
+const CAMERA: [
+  CameraAxis,
+  string,
+  (s: Scene) => number,
+  (s: Scene) => number,
+  number,
+][] = [
+  ["x", "Cámara X", (s) => -s.width, (s) => s.width, 1],
+  ["y", "Cámara Y", (s) => -s.height, (s) => s.height, 1],
+  ["zoom", "Zoom", () => 0.1, () => 5, 0.05],
+];
+
+/** One camera axis: its value at the playhead and a key button (062/D9). */
+function CameraField({
+  shot,
+  axis,
+  label,
+  min,
+  max,
+  step,
+  time,
+  patch,
+}: {
+  shot: Shot;
+  axis: CameraAxis;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  time: number;
+  patch: (p: ShotPatch) => void;
+}) {
+  const keys = trackKeys(shot.camera?.tracks?.[axis]);
+  const state =
+    keys.length === 0 ? "" : keyframeAt(keys, time) >= 0 ? "on" : "track";
+  return (
+    <div className="keyed">
+      <Num
+        label={label}
+        value={resolveShotCamera(shot, time)[axis]}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(v) =>
+          patch({ id: shot.id, camera: cameraValuePatch(shot, axis, time, v) })
+        }
+      />
+      <button
+        type="button"
+        className={`key-button ${state}`}
+        title={state === "on" ? "Quitar keyframe" : "Keyframe aquí"}
+        onClick={() =>
+          patch({
+            id: shot.id,
+            camera: { tracks: toggleCameraKey(shot, axis, time) },
+          })
+        }
+      >
+        <Diamond size={12} fill={state ? "currentColor" : "none"} />
+      </button>
+    </div>
+  );
+}
+
 export function ShotsSection({
   scene,
   onChange,
+  time = 0,
 }: {
   scene: Scene;
   onChange: (s: Scene) => void;
+  /** The playhead (s), where camera keyframes are set. */
+  time?: number;
 }) {
   const [error, setError] = useState("");
   const shots = scene.shots ?? [];
@@ -114,28 +188,19 @@ export function ShotsSection({
               }
             />
           )}
-          <Num
-            label="Cámara X"
-            value={shot.camera?.x ?? 0}
-            min={-scene.width}
-            max={scene.width}
-            onChange={(x) => patch({ id: shot.id, camera: { x } })}
-          />
-          <Num
-            label="Cámara Y"
-            value={shot.camera?.y ?? 0}
-            min={-scene.height}
-            max={scene.height}
-            onChange={(y) => patch({ id: shot.id, camera: { y } })}
-          />
-          <Num
-            label="Zoom"
-            value={shot.camera?.zoom ?? 1}
-            min={0.1}
-            max={5}
-            step={0.05}
-            onChange={(zoom) => patch({ id: shot.id, camera: { zoom } })}
-          />
+          {CAMERA.map(([axis, label, min, max, step]) => (
+            <CameraField
+              key={axis}
+              shot={shot}
+              axis={axis}
+              label={label}
+              min={min(scene)}
+              max={max(scene)}
+              step={step}
+              time={time}
+              patch={patch}
+            />
+          ))}
         </div>
       ))}
       {error && <div className="hint">{error}</div>}

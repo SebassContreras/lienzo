@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Shot } from "./model.ts";
-import { removeShot, setShot } from "./shots.ts";
+import {
+  cameraValuePatch,
+  removeShot,
+  setShot,
+  toggleCameraKey,
+} from "./shots.ts";
 
 const intro: Shot = { id: "intro", name: "intro", start: 0, end: 2 };
 
@@ -72,5 +77,52 @@ describe("removeShot", () => {
     const result = removeShot([intro], "nope");
 
     expect(result).toMatchObject({ error: { code: "not_found", path: "id" } });
+  });
+});
+
+describe("toggleCameraKey", () => {
+  it("adds a key holding the camera's value at that time", () => {
+    const shot: Shot = { ...intro, camera: { zoom: 1.5 } };
+
+    const tracks = toggleCameraKey(shot, "zoom", 1);
+
+    expect(tracks).toEqual({ zoom: [{ t: 1, value: 1.5, easing: "auto" }] });
+  });
+
+  it("removes the key already at that time", () => {
+    const shot: Shot = {
+      ...intro,
+      camera: { tracks: { x: [{ t: 1, value: 40, easing: "auto" }] } },
+    };
+
+    const tracks = toggleCameraKey(shot, "x", 1);
+
+    expect(tracks).toEqual({ x: [] });
+  });
+});
+
+describe("cameraValuePatch", () => {
+  it("sets the still value of an axis without keys", () => {
+    const patch = cameraValuePatch(intro, "y", 1, 30);
+
+    expect(patch).toEqual({ y: 30 });
+  });
+
+  it("writes a key at that time on an animated axis", () => {
+    const shot: Shot = {
+      ...intro,
+      camera: { tracks: { x: [{ t: 0, value: 0, easing: "auto" }] } },
+    };
+
+    const patch = cameraValuePatch(shot, "x", 2, 80);
+
+    expect(patch).toEqual({
+      tracks: {
+        x: [
+          { t: 0, value: 0, easing: "auto" },
+          { t: 2, value: 80, easing: "auto" },
+        ],
+      },
+    });
   });
 });

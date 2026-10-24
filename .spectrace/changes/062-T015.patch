@@ -1,0 +1,79 @@
+diff --git a/src/components/fields/field.ts b/src/components/fields/field.ts
+index 10209e7..19f2fd8 100644
+--- a/src/components/fields/field.ts
++++ b/src/components/fields/field.ts
+@@ -61,6 +61,8 @@ export type TextField = Common & {
+   default: string;
+   schema: z.ZodType<string>;
+   multiline?: boolean;
++  /** Shown by this widget instead of a text box, as on select fields (062/D8). */
++  widget?: string;
+ };
+ 
+ type Option = readonly [value: string | number, label: string];
+@@ -200,7 +202,7 @@ export function check<P = Parent>(
+ 
+ export function text<P = Parent>(
+   value: string,
+-  o: Opts<P, string> & { multiline?: boolean },
++  o: Opts<P, string> & { multiline?: boolean; widget?: string },
+ ): Typed<TextField, string> {
+   return {
+     ...common(o),
+@@ -208,6 +210,7 @@ export function text<P = Parent>(
+     default: value,
+     schema: z.string(),
+     multiline: o.multiline,
++    widget: o.widget,
+   };
+ }
+ 
+diff --git a/src/components/use/descriptor.ts b/src/components/use/descriptor.ts
+index 3ddd7b7..6999d10 100644
+--- a/src/components/use/descriptor.ts
++++ b/src/components/use/descriptor.ts
+@@ -6,7 +6,7 @@ import {
+   box,
+   custom,
+   elementOpacity,
+-  select,
++  text,
+ } from "../fields/index.ts";
+ import { drawUse } from "./draw.ts";
+ 
+@@ -26,12 +26,7 @@ const fields = {
+   w,
+   h,
+   /** Picked from the scene's symbols by the `symbol` widget (062/D3). */
+-  symbol: select([], "", {
+-    label: "Símbolo",
+-    section: "Símbolo",
+-    schema: z.string(),
+-    widget: "symbol",
+-  }),
++  symbol: text("", { label: "Símbolo", section: "Símbolo", widget: "symbol" }),
+   opacity: elementOpacity("Símbolo"),
+   overrides: custom<Record<string, Record<string, unknown>>>(
+     "overrides",
+diff --git a/src/editor/field-editor.tsx b/src/editor/field-editor.tsx
+index fe0e931..824c4ae 100644
+--- a/src/editor/field-editor.tsx
++++ b/src/editor/field-editor.tsx
+@@ -298,7 +298,7 @@ const WIDGETS: Record<string, (p: WidgetProps) => ReactNode> = {
+         ]}
+         onChange={(v) =>
+           change((d) => {
+-            if (item.field.type === "select")
++            if (item.field.type === "text")
+               writeField(d, item.path, item.field, v);
+           })
+         }
+@@ -443,7 +443,7 @@ function Control({
+   if (
+     field.type === "widget" ||
+     field.type === "custom" ||
+-    (field.type === "select" && field.widget)
++    ((field.type === "select" || field.type === "text") && field.widget)
+   ) {
+     const render = WIDGETS[field.widget as string];
+     if (!render) throw new Error(`unknown inspector widget ${field.widget}`);

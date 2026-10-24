@@ -1,0 +1,107 @@
+diff --git a/src/model/shots.test.ts b/src/model/shots.test.ts
+index f121b41..fd6d188 100644
+--- a/src/model/shots.test.ts
++++ b/src/model/shots.test.ts
+@@ -1,6 +1,11 @@
+ import { describe, expect, it } from "vitest";
+ import type { Shot } from "./model.ts";
+-import { removeShot, setShot } from "./shots.ts";
++import {
++  cameraValuePatch,
++  removeShot,
++  setShot,
++  toggleCameraKey,
++} from "./shots.ts";
+ 
+ const intro: Shot = { id: "intro", name: "intro", start: 0, end: 2 };
+ 
+@@ -74,3 +79,50 @@ describe("removeShot", () => {
+     expect(result).toMatchObject({ error: { code: "not_found", path: "id" } });
+   });
+ });
++
++describe("toggleCameraKey", () => {
++  it("adds a key holding the camera's value at that time", () => {
++    const shot: Shot = { ...intro, camera: { zoom: 1.5 } };
++
++    const tracks = toggleCameraKey(shot, "zoom", 1);
++
++    expect(tracks).toEqual({ zoom: [{ t: 1, value: 1.5, easing: "auto" }] });
++  });
++
++  it("removes the key already at that time", () => {
++    const shot: Shot = {
++      ...intro,
++      camera: { tracks: { x: [{ t: 1, value: 40, easing: "auto" }] } },
++    };
++
++    const tracks = toggleCameraKey(shot, "x", 1);
++
++    expect(tracks).toEqual({ x: [] });
++  });
++});
++
++describe("cameraValuePatch", () => {
++  it("sets the still value of an axis without keys", () => {
++    const patch = cameraValuePatch(intro, "y", 1, 30);
++
++    expect(patch).toEqual({ y: 30 });
++  });
++
++  it("writes a key at that time on an animated axis", () => {
++    const shot: Shot = {
++      ...intro,
++      camera: { tracks: { x: [{ t: 0, value: 0, easing: "auto" }] } },
++    };
++
++    const patch = cameraValuePatch(shot, "x", 2, 80);
++
++    expect(patch).toEqual({
++      tracks: {
++        x: [
++          { t: 0, value: 0, easing: "auto" },
++          { t: 2, value: 80, easing: "auto" },
++        ],
++      },
++    });
++  });
++});
+diff --git a/src/service/editor-parity.test.ts b/src/service/editor-parity.test.ts
+index a8eda78..21f7559 100644
+--- a/src/service/editor-parity.test.ts
++++ b/src/service/editor-parity.test.ts
+@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
+ import { join } from "node:path";
+ import { beforeEach, describe, expect, it } from "vitest";
+ import type { Scene } from "../model/model.ts";
+-import { setShot } from "../model/shots.ts";
++import { setShot, toggleCameraKey } from "../model/shots.ts";
+ import { trackEntry, trackKeys } from "../model/track.ts";
+ import { resolveOrigin } from "./compact/layout.ts";
+ import { type Ctx, createCtx } from "./ctx.ts";
+@@ -49,6 +49,25 @@ describe("editor and tools write the same JSON", () => {
+     expect(fromEditor).toEqual({ shots: (await saved()).shots });
+   });
+ 
++  it("a camera keyframe set in the Tomas section matches shot_set", async () => {
++    await ok("shot_set", {
++      scene: "s",
++      id: "a",
++      start: 0,
++      end: 2,
++      camera: { zoom: 2 },
++    });
++    const shot = (await saved()).shots?.[0] as NonNullable<
++      Scene["shots"]
++    >[number];
++    const camera = { tracks: toggleCameraKey(shot, "zoom", 1) };
++
++    const fromEditor = setShot([shot], { id: "a", camera });
++    await ok("shot_set", { scene: "s", id: "a", camera });
++
++    expect(fromEditor).toEqual({ shots: (await saved()).shots });
++  });
++
+   it("a track loop set in the timeline matches keyframe_set", async () => {
+     const { id } = await ok("element_add", { scene: "s", kind: "rect" });
+     await ok("keyframe_set", { scene: "s", id, path: "x", t: 0, value: 0 });
