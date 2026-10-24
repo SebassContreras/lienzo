@@ -1,7 +1,8 @@
 # 001 — editor-base — Tasks
 
 - [x] T001 [agent] [status:done] Set up the root project (package.json, tsconfig, Biome, Vite, index.html, .gitignore)
-      covers: D1@1, A1@1, A8@1, A9@1, A13@1, A14@1
+      covers: D1@2, A1@1, A8@1, A9@1, A13@1, A14@1
+      └─ reviewed 2026-10-24: the root project holds without the CI workflow
       changes: .gitignore (+16 -0), biome.json (+39 -0), index.html (+12 -0), package.json (+43 -0), pnpm-lock.yaml (+1132 -0), presets/.gitkeep (+0 -0), scenes/.gitkeep (+0 -0), src/main.tsx (+5 -0), tsconfig.json (+15 -0), vite.config.ts (+6 -0), vitest.config.ts (+8 -0)
 - [x] T002 [agent] [status:done] Write the scene model and the engine (render, paint, anim, geometry)
       covers: D2@1, D3@1, D4@1, D5@1, A3@1, A4@1, A6@1
@@ -29,11 +30,15 @@
       covers: D10@1
       changes: src/demo.ts (+186 -0), src/editor/app.tsx (+10 -2)
 - [x] T008 [agent] [status:done] Unit tests and CI workflow
-      covers: D11@1, D1@1, A15@1
+      covers: D11@1, D1@2
+      └─ reviewed 2026-10-24: the unit tests hold; the CI workflow it added is removed by T010
       kind: test
       changes: .github/workflows/ci.yml (+26 -0), src/engine/anim.test.ts (+46 -0), src/engine/geometry.test.ts (+47 -0), src/presets/slug.test.ts (+14 -0)
 - [x] T009 [agent] [status:done] Test: drive the editor in a browser — drop, select, move, attach a line, export PNG, GIF and MP4
-      covers: R1@1, R2@1, R3@1, R4@1, R5@1, R6@1, R7@1, R8@1, R9@1, R10@1, R11@1
+      covers: R1@1, R2@1, R3@1, R4@1, R5@1, R6@1, R7@1, R8@1, R9@1, R10@1, R12@1
       kind: test
       changes: none
       └─ manual check with a scripted browser; not part of CI
+- [x] T010 [agent] [status:done] Remove the GitHub Actions CI workflow
+      covers: D1@2
+      changes: .github/workflows/ci.yml (+0 -26), AGENTS.md (+1 -1)

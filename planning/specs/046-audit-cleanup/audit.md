@@ -6,7 +6,7 @@ Read-only. No repo file was modified.
 
 - **Root:** `lienzo/` (git root, single package, `pnpm-workspace.yaml` with no sub-packages). TS/React 19 + Vite 8, Node 24.
 - **Entry points:** `index.html` → `src/main.tsx` (editor + `?render` route), `src/cli/main.ts` (`pnpm lienzo`, also `mcp`), `src/cli/build.ts` → `dist/cli.js` (`bin`), `vite.config.ts` middlewares (`/api/*`), tests (`*.test.ts`).
-- **Safety net:** `pnpm typecheck` 0 errors; `pnpm lint` 0 errors / 34 warnings; `pnpm test` 72 files / 628 tests green (~30 s); CI runs lint+typecheck+test. Knip (via `pnpm dlx`) used for dead exports.
+- **Safety net:** `pnpm typecheck` 0 errors; `pnpm lint` 0 errors / 34 warnings; `pnpm test` 72 files / 628 tests green (~30 s). Knip (via `pnpm dlx`) used for dead exports.
 - **Assumptions:** `.agents/skills/spectrace-*` are vendored (pinned in `skills-lock.json`) → audited only for references into this repo. `planning/specs/**` are spec/history, not drift. `dist/` excluded.
 - **Findings:** 1 correctness/hollow-tool (high), 9 doc drift (D1×3, D2×4, D5×1, D6×4 overlapping), 1 security (red), 3 dead routes/modules, ~52 unused exports (mostly test-only or type exports; grey), 2 duplicated scripts/constants.
 
@@ -29,7 +29,6 @@ Read-only. No repo file was modified.
 | Agent docs | `AGENTS.md` (148 l), `.agents/skills/spectrace-*` (vendored), `.claude/` (no files) | no CLAUDE.md in repo |
 | Human docs | `README.md`, `planning/**`, `.spectrace/format.md` | |
 | Interface docs | 26 tool descriptions + Zod schemas, `schemas/compact-scene.json`, `.env.example` | |
-| CI | `.github/workflows/ci.yml` | lint, typecheck, test — matches AGENTS A15 |
 
 ## 3. Findings table
 
@@ -49,7 +48,7 @@ Read-only. No repo file was modified.
 | F12 | dead | `/api/scenes`, `/api/voices` json-store routes | `vite.config.ts:16-20` | no client fetches `/api/scenes` (grep); `/api/voices` only used by `loadVoicePresetFiles/saveVoicePreset` (`src/presets/store.ts:159,185`) which knip reports unused; `presets/voices/` does not exist | high | 🟡 | low | S | remove both route keys + the two functions | 4 |
 | F13 | dead | `loadUserPresets` + `toVoicePreset` | `src/presets/store.ts:34` | knip unused; presets now load via project middleware (`project-middleware.ts:123`) | med | 🟡 | low | S | delete after confirming sidebar uses project route | 4 |
 | F14 | dead | subtitles barrel `index.ts` (`src/engine/subtitles/`) | whole file | knip "unused file", no import of `subtitles/index` (grep) | high | 🟢 | low | S | delete barrel | 4 |
-| F15 | valueless-fn | `pnpm verify` ≡ `pnpm typecheck` | `package.json:15,19` | identical command; AGENTS.md:128 sells `verify` as "fast single-pass" | high | 🟡 | low | S | keep one (`typecheck` is what CI uses) and update AGENTS | 2, 9 |
+| F15 | valueless-fn | `pnpm verify` ≡ `pnpm typecheck` | `package.json:15,19` | identical command; AGENTS.md:128 sells `verify` as "fast single-pass" | high | 🟡 | low | S | keep one (`typecheck` is the one in use) and update AGENTS | 2, 9 |
 | F16 | doc-drift:D2 | "keep daily execution under a few seconds" | `AGENTS.md:124-126` | measured 30 s for 628 tests | med | 🟡 | low | S | restate as a goal or drop | 9 |
 | F17 | dead (grey) | ~52 unused exports / 28 types (knip list in §8 appendix) | e.g. `src/service/registry.ts` `callTool`, `src/mcp/server.ts` `mcpToolOf/contentOf`, `src/service/tts/config.ts` `persistOpenRouterApiKey`, `src/model/compact.ts` `generateCompactJsonSchema` | most are internal helpers exported for no consumer; some are deliberate test seams | med | 🟡 | low | M | un-export (not delete) in one sweep; keep `generateCompactJsonSchema` (see F18) | 4 |
 | F18 | doc-drift:mechanize | `schemas/compact-scene.json` | generator `src/model/compact.ts:185` | currently **in sync** (byte-equal JSON, checked via tsx) but nothing regenerates or asserts it | high | 🟢 | low | S | one test: `expect(generateCompactJsonSchema()).toEqual(readJson(...))` | 9 |
@@ -69,7 +68,6 @@ Read-only. No repo file was modified.
 | C8 | AGENTS.md:61-67 | renderer disposed after every CLI command | `src/cli/main.ts:93-96` | — | true | — |
 | C9 | AGENTS.md:39 | user fonts git-ignored | `.gitignore` `fonts/*`, `projects/mi-proyecto/fonts/` | — | true | — |
 | C10 | AGENTS.md:134-145 | `.spectrace/trace.py`, `format.md` | present | — | true | — |
-| C11 | AGENTS.md:40 | CI runs lint, typecheck, test | `ci.yml` | — | true | — |
 | C12 | README.md:100 | `dist/mcp.mjs` | `build.ts:10` | D1/D5 | phantom | code→doc |
 | C13 | README.md:41 | scenes dialog | removed | D2 | stale | code→doc |
 | C14 | README.md:107 | tools write `scenes/` | `store.ts:37` | D2 | stale | code→doc |

@@ -22,7 +22,8 @@ Creators building animated explainer posts.
 - R8@1: The scene exports to PNG (the current frame), GIF (one full loop) and MP4 (one full loop, WebM when the browser cannot encode H.264), at 100, 75, 50 or 25 % size, with progress shown while exporting.
 - R9@1: A selected element can be saved under a name as a preset JSON file in `presets/`; saved presets appear in the library. Scenes can be saved to and opened from JSON files in `scenes/`; the current scene is restored after a reload.
 - R10@1: The editor opens with a demo post explaining how an agent reaches tools through MCP, built only from library components.
-- R11@1: `pnpm lint`, `pnpm typecheck` and `pnpm test` pass locally and in CI.
+- ~~R11@1: `pnpm lint`, `pnpm typecheck` and `pnpm test` pass locally and in CI.~~ retired 2026-10-24 → R12
+- R12@1: `pnpm lint`, `pnpm typecheck` and `pnpm test` pass locally.
 
 ## Out of scope
 

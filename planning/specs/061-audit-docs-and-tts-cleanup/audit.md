@@ -6,7 +6,7 @@ Date: 2026-10-24 · HEAD `8c82d73` · Auditor mode: read-only (no repo files cha
 
 - **Root/stack:** `lienzo/` is the root (single package, `pnpm-workspace.yaml` with no sub-packages). TypeScript 7 on Node 24, React 19 + Vite 8, Vitest 5, Biome 2.5, Zod 4, MCP SDK.
 - **Assumptions:** scope = all versioned `src/`, `presets/`, `schemas/`, root docs, `.agents/skills/`, `.spectrace/`; `planning/specs/**` is treated as spec/roadmap (not drift) per its labels; excludes `dist/`, `node_modules/`, `.spectrace/changes/*.patch`, `projects/*` user data.
-- **Safety net (verified):** `pnpm typecheck` ✅ 0 errors · `pnpm lint` ✅ 437 files clean · `pnpm test` 904/904 passed, **but one of three runs exited non-zero** (see F-01). CI runs lint+typecheck+test as AGENTS.md claims (`.github/workflows/ci.yml`).
+- **Safety net (verified):** `pnpm typecheck` ✅ 0 errors · `pnpm lint` ✅ 437 files clean · `pnpm test` 904/904 passed, **but one of three runs exited non-zero** (see F-01).
 - **Findings:** 14 total — obsolete 2 · dead 2 · hollow-tool 0 · valueless-fn 1 (dup) · doc-drift 9 (D1 0, D2 4, D3 3, D4 1, D5 0, D6 1, D7 0). Zones: 🟢 8 · 🟡 5 · 🔴 1.
 - **Overall health is good:** every registered tool (28) has a real handler, every declared input field is read, CLI and MCP are generic adapters with no per-tool code, the compact JSON schema is already mechanized (generated + asserted in a test).
 - **Top 5 actions:** (1) stop tracking `.spectrace/__pycache__/*.pyc` · (2) find the intermittent test-run failure · (3) one source for TTS defaults (dialog re-hardcodes them) · (4) document the browser-side API-key path in AGENTS.md · (5) refresh AGENTS.md layout + README feature list.
@@ -68,7 +68,6 @@ Exported-but-locally-used types (≈110 symbols such as `NumberField`, `CompactS
 
 | Claim | Doc | Claim (quoted) | Code anchor | Class | Verdict | Conf. | Fix |
 |---|---|---|---|---|---|---|---|
-| C1 | AGENTS.md Stack | "CI runs lint, typecheck, test (A15)" | `.github/workflows/ci.yml` | — | true | high | — |
 | C2 | AGENTS.md Tools | "logic lives only in tools, CLI and MCP are thin adapters" | `src/cli/main.ts`, `src/mcp/server.ts:51-74` | — | true | high | — |
 | C3 | AGENTS.md MCP | "stdout is the protocol only" | `src/mcp/server.ts:86` | — | true | high | — |
 | C4 | AGENTS.md MCP | "a result shaped like `ImageResult` goes out as image content" | `src/mcp/server.ts:39-49` | — | true | high | — |
@@ -97,7 +96,7 @@ Not verified (stated, not assumed): README shortcuts table, `.agents/skills/*` w
 
 ## 5. Detail per finding
 
-**F-01 intermittent test failure.** Vitest reported all 904 passing and pnpm still exited non-zero once — typically an unhandled rejection/error after tests (jsdom also prints `HTMLCanvasElement.getContext not implemented`). Principle 9 (the safety net is a claim). Change: rerun until it reproduces with `--reporter=verbose` and fix the leak; consider a `getContext` stub in the jsdom tests. ✅ trustworthy CI ❌ time to reproduce 🛡️ loop the run in the scratchpad. Risk med, S. Verify: 10 consecutive green runs.
+**F-01 intermittent test failure.** Vitest reported all 904 passing and pnpm still exited non-zero once — typically an unhandled rejection/error after tests (jsdom also prints `HTMLCanvasElement.getContext not implemented`). Principle 9 (the safety net is a claim). Change: rerun until it reproduces with `--reporter=verbose` and fix the leak; consider a `getContext` stub in the jsdom tests. ✅ trustworthy checks ❌ time to reproduce 🛡️ loop the run in the scratchpad. Risk med, S. Verify: 10 consecutive green runs.
 
 **F-02 tracked `.pyc`.** Build artifact under version control, regenerates per Python version. Principle 6. ✅ clean diffs ❌ none 🛡️ —. Low, S. Verify: `git ls-files | grep pyc` empty.
 
@@ -109,7 +108,7 @@ Not verified (stated, not assumed): README shortcuts table, `.agents/skills/*` w
 
 **F-07 D6 TTS key path.** Agents told "no key reaches the browser" may assume the dialog is key-free. Principle 9. Change AGENTS.md: "the dialog may also take a user-typed key, stored in `localStorage`, and then calls OpenRouter directly". ✅ accurate threat model ❌ none. Low, S. Code-or-doc first: doc first (code is intended behavior per `tts-dialog.tsx:68`).
 
-**F-08 stale bundle.** `dist/` is ignored and built by hand; README's second recipe silently serves an older tool set. Principle 9. Change: README note "run `pnpm build:cli` after every pull", or prefer the `pnpm lienzo mcp` recipe. Mechanizing (check in CI) is not proportional yet (principle 4). Low, S.
+**F-08 stale bundle.** `dist/` is ignored and built by hand; README's second recipe silently serves an older tool set. Principle 9. Change: README note "run `pnpm build:cli` after every pull", or prefer the `pnpm lienzo mcp` recipe. Low, S.
 
 **F-09/F-10/F-12 AGENTS.md refresh.** Doc→code edits only. Low, S. Verify: reread vs `ls src/*/`.
 
@@ -143,7 +142,7 @@ No structural decision is proposed (no new layers, libraries or pipelines). Smal
 
 ## 9. Open questions for the owner
 
-1. F-01: have you seen `pnpm test` fail locally/CI with all tests green?
+1. F-01: have you seen `pnpm test` fail with all tests green?
 2. F-04: can the legacy `localStorage` key slot go after a one-time migration?
 3. F-05: keep the `src/test/` legacy schema (removed in 061) as a parity oracle, or retire it?
 4. F-13: should `.env.example` be English, or is it a deliberate user-facing (Spanish) file like the UI?

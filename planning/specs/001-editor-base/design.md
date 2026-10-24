@@ -2,7 +2,7 @@
 
 ## Approach
 
-- D1@1 (implements R11): Root project: `package.json` (scripts `dev`, `typecheck`, `lint`, `format`, `test`), `tsconfig.json`, `biome.json`, `vite.config.ts`, `index.html`, `.gitignore`, and `.github/workflows/ci.yml` running lint, typecheck and test with the Node version from `.nvmrc`.
+- D1@2 (implements R12): Root project: `package.json` (scripts `dev`, `typecheck`, `lint`, `format`, `test`), `tsconfig.json`, `biome.json`, `vite.config.ts`, `index.html` and `.gitignore`; Node version from `.nvmrc`.
 - D2@1 (implements R1, R4, R5, R6, R7): `src/model/model.ts` holds the scene types (`Scene`, `RectEl`, `TextEl`, `LineEl`, `Anim`, `Glow`, `Shadow`, `Fill`), size presets, font list, animation lists per element kind, and `default*()` factories; elements carry a random id and a display name.
 - D3@1 (implements R1, R4, R5, R6, R7): `src/engine/` holds `render.ts` (`drawScene`: background, then elements in order), `paint.ts` (color, gradient, shadow-only glow, dash patterns, animation transform), `anim.ts` (`animState(anim, t, duration)` → offset, scale, alpha, glow multiplier, progress) and `geometry.ts` (text layout, bounding boxes, line resolution with attachments, quadratic curve sampling, hit testing); `src/components/{rect,text,line}.ts` each export the draw function of one element kind.
 - D4@1 (implements R6): A line end with `attach: <id>` is resolved at draw time to the point where the ray from the target's center towards the curve's control point leaves the target's box, pushed out by a small gap; the curve is a quadratic Bézier whose control point is offset perpendicular to the chord by `bend`.
@@ -12,14 +12,14 @@
 - D8@1 (implements R8): `src/export/export.ts` renders frames into an `OffscreenCanvas` with `drawScene` after `document.fonts.ready`; GIF uses gifenc with a per-frame 256-color palette at up to 25 fps; video uses Mediabunny `CanvasSource` (H.264 MP4 when `canEncodeVideo('avc')`, else VP9 WebM); sizes are rounded to even numbers.
 - D9@2 (implements R9): `vite.config.ts` registers a dev-server middleware: `GET /api/{presets,scenes}` returns `[{ name, data }]` from the JSON files in that folder, `POST /api/{kind}?name=x` writes `<kind>/<slug>.json`; `src/presets/store.ts` wraps these calls and `src/presets/recipes.ts` loads the pre-made presets (JSON recipes, 004); the scene autosaves to `localStorage` under `lienzo-scene`.
 - D10@1 (implements R10): `src/demo.ts` builds the MCP demo scene from the default factories and built-in presets, with lines attached to the cards.
-- D11@1 (implements R11): Vitest unit tests cover `animState` (loops are periodic over the scene duration, entries end fully visible), curve sampling and line attachment geometry, and the JSON store path slugging.
+- D11@1 (implements R12): Vitest unit tests cover `animState` (loops are periodic over the scene duration, entries end fully visible), curve sampling and line attachment geometry, and the JSON store path slugging.
 
 ## Deliverables
 
 Root config files, `src/{model,engine,components,editor,export,presets}/`, `src/demo.ts`,
-`src/main.tsx`, `src/styles.css`, `presets/`, `scenes/`, CI workflow.
+`src/main.tsx`, `src/styles.css`, `presets/`, `scenes/`.
 
 ## Sequencing
 
 Project setup → model and engine → components → editor → export → presets and scenes →
-demo → tests and CI.
+demo → tests.

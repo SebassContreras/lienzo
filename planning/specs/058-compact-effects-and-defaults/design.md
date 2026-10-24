@@ -41,7 +41,7 @@
 ### 3. `expandScene` returning `{ scene, notices }` vs. a module-level collector
 - **Pro**: It stays a pure function, with no hidden state shared across concurrent builds (the MCP server handles several calls per process).
 - **Con**: The signature change breaks every caller.
-- **Mitigation**: There are only two callers (`scene-build.ts` and `expand.test.ts`), and the CI typecheck flags any that's missed.
+- **Mitigation**: There are only two callers (`scene-build.ts` and `expand.test.ts`), and `pnpm typecheck` flags any that's missed.
 
 ### 4. Defaults applied before overrides vs. a post-pass that fills unset fields
 - **Pro**: "Explicit wins" follows from the existing `deepMerge` order, with no need to track which fields the author wrote.

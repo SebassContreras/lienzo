@@ -58,3 +58,8 @@ Why: users need their own fonts per project and globally, and a way to fetch Goo
 Why: MP4s exported in Firefox on Windows played on desktop but not on phones or WhatsApp. Firefox's H.264 encoder emits an avcC with each SPS/PPS header byte repeated (`67 67 64…`); the in-band parameter sets are correct, so desktop players cope while phones read the broken record. Mediabunny 1.61.6 detects and rebuilds it (mediabunny #559, Bugzilla 2082867). Two earlier fixes targeted the wrong cause and were reverted: forcing the software H.264 encoder (cb28a62) and requesting Annex B output (2a2443c, which Firefox ignores); both were checked only in Edge, which never shows the bug.
 - MODIFIED A10@1 → A10@2
 - Tasks: 001/T005 re-pointed to A10@2 (still valid); no cleanup tasks, the workarounds were already reverted in 8afdef6
+
+## 2026-10-24 — no CI/CD
+Why: the owner removes everything CI/CD from the project; lint, typecheck and test run locally.
+- REMOVED A15@1
+- Tasks: 001/T010 deletes `.github/workflows/ci.yml`; 001/T008 and 039/T009 re-pointed (still valid)
