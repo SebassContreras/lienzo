@@ -49,6 +49,7 @@ function elementUnion(): z.ZodType<Element> {
       hidden: z.boolean().optional(),
       locked: z.boolean().optional(),
       w: z.number().min(0).optional(),
+      shot: z.string().optional(),
       ...shapeOf(d.fields),
     }),
   );

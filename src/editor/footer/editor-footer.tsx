@@ -224,16 +224,63 @@ export function EditorFooter({
         >
           {playing ? <Pause size={16} /> : <Play size={16} />}
         </button>
-        <input
-          ref={range}
-          type="range"
-          min={0}
-          max={duration}
-          step={0.01}
-          defaultValue={0}
-          onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
-          className="scrub-slider"
-        />
+        <div className="scrub-container" style={{ position: "relative", flex: 1, display: "flex", alignItems: "center" }}>
+          {scene.shots && scene.shots.length > 0 && (
+            <div
+              className="shots-timeline-strip"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 14,
+                display: "flex",
+                pointerEvents: "none",
+                fontSize: 10,
+                color: "var(--muted)",
+                overflow: "hidden",
+              }}
+            >
+              {scene.shots.map((sh) => {
+                const left = `${(sh.start / duration) * 100}%`;
+                const width = `${(Math.max(0, sh.end - sh.start) / duration) * 100}%`;
+                return (
+                  <div
+                    key={sh.id}
+                    className="shot-block-marker"
+                    style={{
+                      position: "absolute",
+                      left,
+                      width,
+                      height: "100%",
+                      borderLeft: "1px solid var(--accent)",
+                      background: "rgba(56, 189, 248, 0.08)",
+                      paddingLeft: 3,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      lineHeight: "14px",
+                    }}
+                    title={`Toma: ${sh.name} (${sh.start}s - ${sh.end}s)`}
+                  >
+                    {sh.name}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <input
+            ref={range}
+            type="range"
+            min={0}
+            max={duration}
+            step={0.01}
+            defaultValue={0}
+            onInput={(e) => onScrub(Number((e.target as HTMLInputElement).value))}
+            className="scrub-slider"
+            style={{ width: "100%", marginTop: scene.shots && scene.shots.length > 0 ? 12 : 0 }}
+          />
+        </div>
         <span ref={readout} className="readout" />
         {tracks.length > 0 ? (
           <button

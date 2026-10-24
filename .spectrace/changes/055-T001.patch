@@ -1,0 +1,121 @@
+diff --git a/src/components/descriptor.ts b/src/components/descriptor.ts
+index 7450e9a..23f477c 100644
+--- a/src/components/descriptor.ts
++++ b/src/components/descriptor.ts
+@@ -50,6 +50,8 @@ export type ElementOf<K extends string, F extends Fields> = {
+   locked?: boolean;
+   /** Optional bounding box width for wrapping text or sizing (054). */
+   w?: number;
++  /** Bound shot id (055). Active only in [shot.start, shot.end]. */
++  shot?: string;
+ } & ValueOf<F>;
+ 
+ /** Which animation preset an element's animation was copied from, and where it started. */
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index a1a4ec1..456ca75 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -141,6 +141,7 @@ const baseSpecialFields = {
+   fit: FitPlacementSchema.optional(),
+   origin: CompactOriginSchema.optional(),
+   w: z.number().min(0).optional(),
++  shot: z.string().optional(),
+   from: z.string().optional(),
+   to: z.string().optional(),
+   tracks: CompactTracksSchema.optional(),
+diff --git a/src/model/element-schema.ts b/src/model/element-schema.ts
+index 95493cd..b658cd8 100644
+--- a/src/model/element-schema.ts
++++ b/src/model/element-schema.ts
+@@ -49,6 +49,7 @@ function elementUnion(): z.ZodType<Element> {
+       hidden: z.boolean().optional(),
+       locked: z.boolean().optional(),
+       w: z.number().min(0).optional(),
++      shot: z.string().optional(),
+       ...shapeOf(d.fields),
+     }),
+   );
+diff --git a/src/model/model.ts b/src/model/model.ts
+index 7ffabeb..043aec1 100644
+--- a/src/model/model.ts
++++ b/src/model/model.ts
+@@ -62,6 +62,29 @@ export type AudioTrackItem = {
+   muted?: boolean;
+ };
+ 
++import type { Tracks } from "./track.ts";
++
++export type ShotTransition = {
++  kind: "cut" | "fade" | "slide" | "zoom";
++  duration: number;
++};
++
++export type ShotCamera = {
++  x?: number;
++  y?: number;
++  zoom?: number;
++  tracks?: Tracks;
++};
++
++export type Shot = {
++  id: string;
++  name: string;
++  start: number;
++  end: number;
++  transition?: ShotTransition;
++  camera?: ShotCamera;
++};
++
+ import type { SceneMode } from "./mode.ts";
+ 
+ export { isStaticMode } from "./mode.ts";
+@@ -76,6 +99,7 @@ export type Scene = {
+   elements: Element[];
+   audio?: SceneAudio;
+   audioTracks?: AudioTrackItem[];
++  shots?: Shot[];
+   mode?: SceneMode;
+ };
+ 
+diff --git a/src/model/schema.ts b/src/model/schema.ts
+index 47738e8..b92f82b 100644
+--- a/src/model/schema.ts
++++ b/src/model/schema.ts
+@@ -42,6 +42,29 @@ const AudioTrackItemSchema = z.object({
+   muted: z.boolean().optional(),
+ });
+ 
++import { TracksSchema } from "./track.ts";
++
++export const ShotTransitionSchema = z.object({
++  kind: z.enum(["cut", "fade", "slide", "zoom"]),
++  duration: z.number().min(0),
++});
++
++export const ShotCameraSchema = z.object({
++  x: z.number().optional(),
++  y: z.number().optional(),
++  zoom: z.number().positive().optional(),
++  tracks: TracksSchema.optional(),
++});
++
++export const ShotSchema = z.object({
++  id: z.string().min(1),
++  name: z.string(),
++  start: z.number().min(0),
++  end: z.number().min(0),
++  transition: ShotTransitionSchema.optional(),
++  camera: ShotCameraSchema.optional(),
++});
++
+ export const SceneSchema: z.ZodType<Scene> = z.object({
+   width: z.number().positive(),
+   height: z.number().positive(),
+@@ -51,6 +74,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
+   elements: z.array(ElementSchema),
+   audio: SceneAudioSchema.optional(),
+   audioTracks: z.array(AudioTrackItemSchema).optional(),
++  shots: z.array(ShotSchema).optional(),
+   mode: z.enum(["static", "video"]).optional(),
+ });
+ 

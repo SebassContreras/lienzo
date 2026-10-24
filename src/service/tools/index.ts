@@ -30,6 +30,7 @@ import { sceneInspectLayout } from "./scene-inspect-layout.ts";
 import { sceneList } from "./scene-list.ts";
 import { scenePreview } from "./scene-preview.ts";
 import { sceneValidate } from "./scene-validate.ts";
+import { shotSet } from "./shot-set.ts";
 
 const TOOLS: readonly Tool[] = [
   componentList,
@@ -56,6 +57,7 @@ const TOOLS: readonly Tool[] = [
   backgroundSet,
   keyframeSet,
   keyframeRemove,
+  shotSet,
   sceneGenerateSpeech,
   fontList,
   fontInstall,

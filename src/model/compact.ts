@@ -141,6 +141,7 @@ const baseSpecialFields = {
   fit: FitPlacementSchema.optional(),
   origin: CompactOriginSchema.optional(),
   w: z.number().min(0).optional(),
+  shot: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
   tracks: CompactTracksSchema.optional(),
@@ -267,6 +268,29 @@ export const CompactElementSchema: z.ZodType<Record<string, unknown>> = z
     return z.NEVER;
   }) as unknown as z.ZodType<Record<string, unknown>>;
 
+export const CompactShotTransitionSchema = z.object({
+  kind: z.enum(["cut", "fade", "slide", "zoom"]),
+  duration: z.number().min(0),
+});
+
+export const CompactShotCameraSchema = z.object({
+  x: z.number().optional(),
+  y: z.number().optional(),
+  zoom: z.number().positive().optional(),
+  tracks: CompactTracksSchema.optional(),
+});
+
+export const CompactShotSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().optional(),
+  start: z.number().min(0),
+  end: z.number().min(0),
+  transition: CompactShotTransitionSchema.optional(),
+  camera: CompactShotCameraSchema.optional(),
+});
+
+export type CompactShot = z.infer<typeof CompactShotSchema>;
+
 export function generateCompactJsonSchema(): Record<string, unknown> {
   const elementUnion = buildCompactElementUnion();
   const staticSceneSchema = z.object({
@@ -282,6 +306,7 @@ export function generateCompactJsonSchema(): Record<string, unknown> {
     fps: z.number().positive().optional(),
     background: CompactBackgroundSchema.optional(),
     elements: z.array(elementUnion).default([]),
+    shots: z.array(CompactShotSchema).optional(),
   });
   return z.toJSONSchema(staticSceneSchema) as Record<string, unknown>;
 }
@@ -299,6 +324,7 @@ export const CompactSceneSchema = z.object({
   fps: z.number().positive().optional(),
   background: CompactBackgroundSchema.optional(),
   elements: z.array(CompactElementSchema).default([]),
+  shots: z.array(CompactShotSchema).optional(),
 });
 
 export type CompactScene = z.infer<typeof CompactSceneSchema>;

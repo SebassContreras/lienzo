@@ -172,4 +172,113 @@ describe("pure layoutBoxes (023/T009, R2)", () => {
 
     expect(boxes.map((b) => b.x)).toEqual([-380, 20]);
   });
+
+  it("skips zero-opacity, before-in, after-out, and off-shot inactive elements and tags diagnostics with shot (055/R5, T011)", () => {
+    const scene = {
+      ...defaultScene(),
+      width: 1080,
+      height: 1080,
+      duration: 10,
+      shots: [
+        {
+          id: "shot-1",
+          name: "Intro",
+          start: 0,
+          end: 3,
+        },
+        {
+          id: "shot-2",
+          name: "Main",
+          start: 3,
+          end: 8,
+        },
+      ],
+      elements: [
+        // Out of bounds during shot-1
+        {
+          ...defaultRect(),
+          id: "oob-shot-1",
+          shot: "shot-1",
+          x: 2000,
+          y: 2000,
+          w: 100,
+          h: 100,
+        },
+        // Element with opacity: 0
+        {
+          ...defaultRect(),
+          id: "zero-opacity-el",
+          shot: "shot-1",
+          opacity: 0,
+          x: 3000,
+          y: 3000,
+          w: 100,
+          h: 100,
+        },
+        // Element with in animation starting at t=2
+        {
+          ...defaultRect(),
+          id: "delayed-in-el",
+          x: 4000,
+          y: 4000,
+          w: 100,
+          h: 100,
+          anim: {
+            ...defaultRect().anim,
+            in: {
+              kind: "fade" as const,
+              delay: 2,
+              duration: 1,
+              amount: 0,
+              from: "down" as const,
+              easing: "linear" as const,
+            },
+          },
+        },
+        // Element with out animation ending at t=5
+        {
+          ...defaultRect(),
+          id: "early-out-el",
+          x: 5000,
+          y: 5000,
+          w: 100,
+          h: 100,
+          anim: {
+            ...defaultRect().anim,
+            out: {
+              kind: "fade" as const,
+              delay: 4,
+              duration: 1,
+              amount: 0,
+              from: "down" as const,
+              easing: "linear" as const,
+            },
+          },
+        },
+      ],
+    };
+
+    // At t = 1:
+    // - oob-shot-1 is active (shot-1 [0,3]) and out of bounds -> reports diagnostic with shot: 'shot-1'
+    // - zero-opacity-el is skipped (opacity === 0)
+    // - delayed-in-el is skipped (t < in.delay = 2)
+    // - early-out-el is active (t < 5) and out of bounds
+    const diagsAt1 = inspectLayout(scene, [1]);
+    const oob1 = diagsAt1.find((d) => d.elementId === "oob-shot-1");
+    expect(oob1).toBeDefined();
+    expect(oob1?.shot).toBe("shot-1");
+
+    expect(diagsAt1.find((d) => d.elementId === "zero-opacity-el")).toBeUndefined();
+    expect(diagsAt1.find((d) => d.elementId === "delayed-in-el")).toBeUndefined();
+    expect(diagsAt1.find((d) => d.elementId === "early-out-el")).toBeDefined();
+
+    // At t = 5:
+    // - oob-shot-1 is off-shot (t=5 is outside shot-1 [0,3]) -> skipped
+    // - delayed-in-el is now active (t >= 2) -> reported
+    // - early-out-el has completed exit (t >= 4 + 1 = 5) -> skipped
+    const diagsAt5 = inspectLayout(scene, [5]);
+    expect(diagsAt5.find((d) => d.elementId === "oob-shot-1")).toBeUndefined();
+    expect(diagsAt5.find((d) => d.elementId === "delayed-in-el")).toBeDefined();
+    expect(diagsAt5.find((d) => d.elementId === "early-out-el")).toBeUndefined();
+  });
 });

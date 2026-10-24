@@ -5,6 +5,12 @@ import { withMask } from "./clip.ts";
 import { withEffects } from "./effects.ts";
 import { indexById, indexElements } from "./geometry.ts";
 import { type Ctx, linearGradient, rgba } from "./paint.ts";
+import {
+  applyCameraTransform,
+  findActiveShot,
+  isElementActiveInShot,
+  resolveShotCamera,
+} from "./shots.ts";
 
 const OWN_OPACITY_KINDS = new Set<string>(["icon", "image", "text", "line"]);
 
@@ -29,20 +35,33 @@ export function drawElements(
   t: number,
   byId: Map<string, Element> = indexElements(elements),
 ): void {
-  // Find all elements that act as a mask for any element in this scope
-  const maskIds = new Set<string>();
-  for (const el of elements) {
-    const mask = (el as unknown as { effects?: { mask?: string } }).effects
-      ?.mask;
-    if (mask) maskIds.add(mask);
+  const activeShot = findActiveShot(scene.shots, t);
+  const camera = resolveShotCamera(activeShot, t);
+  const hasCameraTransform =
+    camera.x !== 0 || camera.y !== 0 || camera.zoom !== 1;
+
+  if (hasCameraTransform) {
+    ctx.save();
+    applyCameraTransform(ctx, camera, scene.width, scene.height);
   }
 
-  const dc = { scene, t, byId, drawElements };
-  for (const el of elements) {
-    // A hidden element is skipped from drawing (034/D4)
-    if (el.hidden) continue;
-    // A mask element itself is skipped instead of being drawn directly (025/D2)
-    if (maskIds.has(el.id)) continue;
+  try {
+    // Find all elements that act as a mask for any element in this scope
+    const maskIds = new Set<string>();
+    for (const el of elements) {
+      const mask = (el as unknown as { effects?: { mask?: string } }).effects
+        ?.mask;
+      if (mask) maskIds.add(mask);
+    }
+
+    const dc = { scene, t, byId, drawElements };
+    for (const el of elements) {
+      // A hidden element is skipped from drawing (034/D4)
+      if (el.hidden) continue;
+      // An element bound to a shot is active only within the shot's window (055/D2)
+      if (!isElementActiveInShot(el, t, scene.shots)) continue;
+      // A mask element itself is skipped instead of being drawn directly (025/D2)
+      if (maskIds.has(el.id)) continue;
 
     const now = animate(el, t, scene);
     const elOpacity = (now.el as unknown as { opacity?: number }).opacity ?? 1;
@@ -74,6 +93,11 @@ export function drawElements(
       withMask(ctx, maskNow.el, maskNow.transform, drawItem);
     } else {
       drawItem();
+    }
+  }
+  } finally {
+    if (hasCameraTransform) {
+      ctx.restore();
     }
   }
 }

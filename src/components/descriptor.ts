@@ -50,6 +50,8 @@ export type ElementOf<K extends string, F extends Fields> = {
   locked?: boolean;
   /** Optional bounding box width for wrapping text or sizing (054). */
   w?: number;
+  /** Bound shot id (055). Active only in [shot.start, shot.end]. */
+  shot?: string;
 } & ValueOf<F>;
 
 /** Which animation preset an element's animation was copied from, and where it started. */

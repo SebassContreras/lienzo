@@ -8,9 +8,10 @@ import {
   Lock,
   MoveDown,
   MoveUp,
+  Search,
   Unlock,
 } from "lucide-react";
-import { type DragEvent, useState } from "react";
+import { type DragEvent, useEffect, useRef, useState } from "react";
 import { descriptorOf } from "../components/index.ts";
 import {
   type LayerDirection,
@@ -42,6 +43,31 @@ export function LayersPanel({
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(),
   );
+  const [collapsedShots, setCollapsedShots] = useState<Set<string>>(new Set());
+  const [filterText, setFilterText] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Auto-expand shot groups and scroll into view when an element is selected (055/R6, D6)
+  useEffect(() => {
+    if (selection.length === 0) return;
+    const selectedId = selection[0];
+    const targetEl = scene.elements.find((e) => e.id === selectedId);
+    if (targetEl?.shot && collapsedShots.has(targetEl.shot)) {
+      setCollapsedShots((prev) => {
+        const next = new Set(prev);
+        next.delete(targetEl.shot as string);
+        return next;
+      });
+    }
+
+    // Scroll to the selected layer item
+    requestAnimationFrame(() => {
+      const selectedDom = panelRef.current?.querySelector(
+        `[data-element-id="${selectedId}"]`,
+      );
+      selectedDom?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }, [selection, scene.elements, collapsedShots]);
 
   const visualElements = visualLayerOrder(scene.elements);
 
@@ -50,6 +76,15 @@ export function LayersPanel({
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleShotCollapse = (shotId: string) => {
+    setCollapsedShots((prev) => {
+      const next = new Set(prev);
+      if (next.has(shotId)) next.delete(shotId);
+      else next.add(shotId);
       return next;
     });
   };
@@ -110,22 +145,124 @@ export function LayersPanel({
     onChangeScene({ ...scene, elements: updated });
   };
 
+  const query = filterText.trim().toLowerCase();
+  const matchesFilter = (el: Element): boolean => {
+    if (!query) return true;
+    if (el.name && el.name.toLowerCase().includes(query)) return true;
+    if (el.id && el.id.toLowerCase().includes(query)) return true;
+    if (el.kind === "group" && Array.isArray((el as GroupEl).children)) {
+      return (el as GroupEl).children.some(matchesFilter);
+    }
+    return false;
+  };
+
+  const filteredElements = visualElements.filter(matchesFilter);
+
+  // Group elements by shot if the scene has shots defined (055/R6)
+  const hasShots = scene.shots && scene.shots.length > 0;
+
   return (
-    <div className="layers-panel">
-      <div className="layers-header">
-        <span className="layers-title">Capas ({scene.elements.length})</span>
+    <div className="layers-panel" ref={panelRef}>
+      <div className="layers-header" style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span className="layers-title">Capas ({scene.elements.length})</span>
+        </div>
+        <div className="layer-search-box" style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--panel-2)", padding: "4px 8px", borderRadius: 4, border: "1px solid var(--line)" }}>
+          <Search size={12} style={{ color: "var(--muted)", flexShrink: 0 }} />
+          <input
+            type="text"
+            placeholder="Buscar capas..."
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            style={{ background: "transparent", border: "none", outline: "none", width: "100%", fontSize: 12 }}
+          />
+        </div>
       </div>
       <div className="layers-list" role="tree">
-        {visualElements.length === 0 ? (
-          <div className="layers-empty">No hay capas en el lienzo.</div>
+        {filteredElements.length === 0 ? (
+          <div className="layers-empty">
+            {filterText ? "No se encontraron capas." : "No hay capas en el lienzo."}
+          </div>
+        ) : hasShots ? (
+          // Grouped by shots
+          (() => {
+            const shotGroups = new Map<string | null, Element[]>();
+            // Init shots in order
+            for (const sh of scene.shots ?? []) {
+              shotGroups.set(sh.id, []);
+            }
+            shotGroups.set(null, []); // Global elements without shot
+
+            for (const el of filteredElements) {
+              const sid = el.shot && shotGroups.has(el.shot) ? el.shot : null;
+              shotGroups.get(sid)?.push(el);
+            }
+
+            return Array.from(shotGroups.entries()).map(([shotId, elements]) => {
+              if (elements.length === 0 && shotId === null) return null;
+              const shotObj = scene.shots?.find((s) => s.id === shotId);
+              const label = shotObj ? `Toma: ${shotObj.name} (${shotObj.start}s - ${shotObj.end}s)` : "Global / Sin toma";
+              const isCollapsed = shotId ? collapsedShots.has(shotId) : false;
+
+              return (
+                <div key={shotId ?? "__global"} className="shot-layers-section" style={{ marginBottom: 6 }}>
+                  <div
+                    className="shot-header-row"
+                    onClick={() => shotId && toggleShotCollapse(shotId)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "4px 8px",
+                      background: "rgba(255, 255, 255, 0.03)",
+                      borderBottom: "1px solid var(--line)",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "var(--muted)",
+                      cursor: shotId ? "pointer" : "default",
+                      userSelect: "none",
+                    }}
+                  >
+                    {shotId && (isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />)}
+                    <span>{label}</span>
+                    <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.7 }}>{elements.length}</span>
+                  </div>
+                  {!isCollapsed && elements.map((el, visualIdx) => (
+                    <LayerItem
+                      key={el.id}
+                      element={el}
+                      depth={0}
+                      visualIndex={visualIdx}
+                      totalCount={elements.length}
+                      isSelected={selection.includes(el.id)}
+                      isCollapsed={collapsedGroups.has(el.id)}
+                      onToggleCollapse={() => toggleGroupCollapse(el.id)}
+                      onClick={(e) => handleRowClick(e, el.id)}
+                      onToggleVisibility={() => handleVisibility(el.id)}
+                      onToggleLock={() => handleLock(el.id)}
+                      onMove={(dir) => handleMove(el.id, dir)}
+                      onDragStart={(e) => onDragStart(e, visualIdx)}
+                      onDragOver={onDragOver}
+                      onDrop={(e) => onDrop(e, visualIdx)}
+                      selection={selection}
+                      onChildSelect={handleRowClick}
+                      onChildVisibility={handleVisibility}
+                      onChildLock={handleLock}
+                      onChildMove={handleMove}
+                    />
+                  ))}
+                </div>
+              );
+            });
+          })()
         ) : (
-          visualElements.map((el, visualIdx) => (
+          filteredElements.map((el, visualIdx) => (
             <LayerItem
               key={el.id}
               element={el}
               depth={0}
               visualIndex={visualIdx}
-              totalCount={visualElements.length}
+              totalCount={filteredElements.length}
               isSelected={selection.includes(el.id)}
               isCollapsed={collapsedGroups.has(el.id)}
               onToggleCollapse={() => toggleGroupCollapse(el.id)}
@@ -199,6 +336,7 @@ function LayerItem({
   return (
     <>
       <div
+        data-element-id={element.id}
         className={`layer-row ${isSelected ? "selected" : ""} ${element.hidden ? "hidden-layer" : ""} ${
           element.locked ? "locked-layer" : ""
         }`}

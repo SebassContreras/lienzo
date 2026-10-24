@@ -397,6 +397,7 @@ describe("project scope (046/R1)", () => {
     "background_set",
     "keyframe_set",
     "keyframe_remove",
+    "shot_set",
     "image_trim",
   ];
 

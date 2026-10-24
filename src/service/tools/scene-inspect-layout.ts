@@ -7,6 +7,7 @@ import { checkScene, openScene } from "../scenes.ts";
 const DiagnosticSchema = z.object({
   code: z.string(),
   elementId: z.string(),
+  shot: z.string().optional(),
   t: z.number(),
   message: stringSchema(),
   ratio: z.number().optional(),

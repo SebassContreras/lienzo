@@ -255,6 +255,19 @@ describe("lienzo CLI", () => {
       "--id",
       image.id,
     ]);
+    await ok([
+      "shot_set",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--id",
+      "intro",
+      "--start",
+      "0",
+      "--end",
+      "2",
+    ]);
     await ok(["font_list"]);
     // Google Fonts is the network boundary: a recorded css2 answer and fake files.
     const css = await readFile(

@@ -62,6 +62,29 @@ export type AudioTrackItem = {
   muted?: boolean;
 };
 
+import type { Tracks } from "./track.ts";
+
+export type ShotTransition = {
+  kind: "cut" | "fade" | "slide" | "zoom";
+  duration: number;
+};
+
+export type ShotCamera = {
+  x?: number;
+  y?: number;
+  zoom?: number;
+  tracks?: Tracks;
+};
+
+export type Shot = {
+  id: string;
+  name: string;
+  start: number;
+  end: number;
+  transition?: ShotTransition;
+  camera?: ShotCamera;
+};
+
 import type { SceneMode } from "./mode.ts";
 
 export { isStaticMode } from "./mode.ts";
@@ -76,6 +99,7 @@ export type Scene = {
   elements: Element[];
   audio?: SceneAudio;
   audioTracks?: AudioTrackItem[];
+  shots?: Shot[];
   mode?: SceneMode;
 };
 

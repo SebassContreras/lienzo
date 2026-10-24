@@ -15,6 +15,7 @@ import type {
   Scene,
   TextEl,
 } from "../model/model.ts";
+import { isElementActiveInShot } from "../engine/shots.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
 
 export type LayoutDiagnostic = {
@@ -25,6 +26,7 @@ export type LayoutDiagnostic = {
     | "low_contrast"
     | "unverifiable_contrast";
   elementId: string;
+  shot?: string;
   t: number;
   message: string;
   ratio?: number;
@@ -70,14 +72,34 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
     parentAlpha = 1,
   ) {
     for (const raw of elements) {
+      if (raw.hidden) continue;
+      if (!isElementActiveInShot(raw, t, scene.shots)) continue;
+
+      // Skip elements that have not yet entered (before in.delay) or have exited (after out.delay + out.duration) (055/R5)
+      const anim = raw.anim;
+      if (anim) {
+        if (anim.in && anim.in.kind !== "none" && anim.in.delay > 0 && t < anim.in.delay) {
+          continue;
+        }
+        if (anim.out && anim.out.kind !== "none" && t >= anim.out.delay + anim.out.duration) {
+          continue;
+        }
+      }
+
       const now = animate(raw, t, scene);
       const placed = parentGroup ? placeChild(now.el, parentGroup) : now.el;
       const elOpacity =
         typeof (now.el as unknown as { opacity?: unknown }).opacity === "number"
           ? (now.el as unknown as { opacity: number }).opacity
           : 1;
+
+      // An element explicitly set to opacity: 0 is skipped (055/R5)
+      if (elOpacity <= 0) continue;
+
       const effectiveAlpha =
         parentAlpha * (now.transform.alpha ?? 1) * elOpacity;
+
+      if (effectiveAlpha <= 0 && (!anim || anim.in?.kind === "none")) continue;
 
       let effectiveBox: Box;
       if (placed.kind === "line") {
@@ -353,7 +375,20 @@ export function inspectLayout(
     }
   }
 
-  return diagnostics;
+  // Tag every diagnostic with element's shot if present (055/D5)
+  const elementById = new Map<string, Element>();
+  function indexAll(elements: Element[]) {
+    for (const el of elements) {
+      elementById.set(el.id, el);
+      if (el.kind === "group") indexAll(el.children);
+    }
+  }
+  indexAll(scene.elements);
+
+  return diagnostics.map((d) => {
+    const el = elementById.get(d.elementId);
+    return el?.shot ? { ...d, shot: el.shot } : d;
+  });
 }
 
 export type LayoutBox = Box & { id: string; t: number };

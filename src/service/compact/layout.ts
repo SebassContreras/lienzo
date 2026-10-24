@@ -74,13 +74,13 @@ function resolveAnchorPosition(
 export function resolveAtPlacement(
   el: Element,
   at: AtPlacement,
-  scene: Pick<Scene, "width" | "height">,
+  container: Pick<Scene, "width" | "height"> | { width: number; height: number },
 ): void {
   const anchor: AnchorName = typeof at === "string" ? at : at.anchor;
   const offset = typeof at === "object" && at.offset ? at.offset : [0, 0];
 
   const box = boxOf(el);
-  const pos = resolveAnchorPosition(anchor, box, scene);
+  const pos = resolveAnchorPosition(anchor, box, container);
 
   const mutable = el as unknown as Record<string, unknown>;
   mutable.x = pos.x + offset[0];

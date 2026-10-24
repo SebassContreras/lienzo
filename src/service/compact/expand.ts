@@ -297,27 +297,64 @@ export async function expandScene(
     elements.push(el);
   }
 
-  // Post-layout pass: resolve fit and anchors
-  for (const el of elements) {
-    const mutable = el as unknown as Record<string, unknown>;
-    if (mutable.__fit === "canvas") {
-      resolveFitCanvas(el, scene);
-      delete mutable.__fit;
-    }
-    if (mutable.__at) {
-      resolveAtPlacement(
-        el,
-        mutable.__at as import("../../model/compact.ts").AtPlacement,
-        scene,
-      );
-      delete mutable.__at;
+  // Post-layout pass: resolve fit and anchors (at root and inside groups)
+  function applyLayoutPass(
+    items: Element[],
+    container: { width: number; height: number },
+  ) {
+    for (const el of items) {
+      const mutable = el as unknown as Record<string, unknown>;
+      if (mutable.__fit === "canvas") {
+        resolveFitCanvas(el, container);
+        delete mutable.__fit;
+      }
+      if (mutable.__at) {
+        resolveAtPlacement(
+          el,
+          mutable.__at as import("../../model/compact.ts").AtPlacement,
+          container,
+        );
+        delete mutable.__at;
+      }
+      if (el.kind === "group" && Array.isArray((el as any).children)) {
+        const groupEl = el as any;
+        applyLayoutPass(groupEl.children, {
+          width: typeof groupEl.w === "number" ? groupEl.w : container.width,
+          height: typeof groupEl.h === "number" ? groupEl.h : container.height,
+        });
+      }
     }
   }
+
+  applyLayoutPass(elements, scene);
 
   // Post-connections pass: resolve from / to
   resolveLineConnections(elements);
 
   scene.elements = elements;
+
+  if (compact.shots && compact.shots.length > 0) {
+    scene.shots = compact.shots.map((sh) => ({
+      id: sh.id,
+      name: sh.name ?? sh.id,
+      start: sh.start,
+      end: sh.end,
+      transition: sh.transition,
+      camera: sh.camera
+        ? {
+            x: sh.camera.x,
+            y: sh.camera.y,
+            zoom: sh.camera.zoom,
+            tracks: sh.camera.tracks
+              ? normalizeTracks(
+                  sh.camera
+                    .tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
+                )
+              : undefined,
+          }
+        : undefined,
+    }));
+  }
 
   if (options.animLibrary && options.animLibrary.length > 0) {
     const { scene: expandedAnimScene } = expandAnimPresets(

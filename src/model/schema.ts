@@ -42,6 +42,29 @@ const AudioTrackItemSchema = z.object({
   muted: z.boolean().optional(),
 });
 
+import { TracksSchema } from "./track.ts";
+
+export const ShotTransitionSchema = z.object({
+  kind: z.enum(["cut", "fade", "slide", "zoom"]),
+  duration: z.number().min(0),
+});
+
+export const ShotCameraSchema = z.object({
+  x: z.number().optional(),
+  y: z.number().optional(),
+  zoom: z.number().positive().optional(),
+  tracks: TracksSchema.optional(),
+});
+
+export const ShotSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  start: z.number().min(0),
+  end: z.number().min(0),
+  transition: ShotTransitionSchema.optional(),
+  camera: ShotCameraSchema.optional(),
+});
+
 export const SceneSchema: z.ZodType<Scene> = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
@@ -51,6 +74,7 @@ export const SceneSchema: z.ZodType<Scene> = z.object({
   elements: z.array(ElementSchema),
   audio: SceneAudioSchema.optional(),
   audioTracks: z.array(AudioTrackItemSchema).optional(),
+  shots: z.array(ShotSchema).optional(),
   mode: z.enum(["static", "video"]).optional(),
 });
 

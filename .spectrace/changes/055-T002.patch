@@ -1,0 +1,185 @@
+diff --git a/src/engine/render.ts b/src/engine/render.ts
+index 66bf5c7..9a00e4f 100644
+--- a/src/engine/render.ts
++++ b/src/engine/render.ts
+@@ -5,6 +5,12 @@ import { withMask } from "./clip.ts";
+ import { withEffects } from "./effects.ts";
+ import { indexById, indexElements } from "./geometry.ts";
+ import { type Ctx, linearGradient, rgba } from "./paint.ts";
++import {
++  applyCameraTransform,
++  findActiveShot,
++  isElementActiveInShot,
++  resolveShotCamera,
++} from "./shots.ts";
+ 
+ const OWN_OPACITY_KINDS = new Set<string>(["icon", "image", "text", "line"]);
+ 
+@@ -29,20 +35,33 @@ export function drawElements(
+   t: number,
+   byId: Map<string, Element> = indexElements(elements),
+ ): void {
+-  // Find all elements that act as a mask for any element in this scope
+-  const maskIds = new Set<string>();
+-  for (const el of elements) {
+-    const mask = (el as unknown as { effects?: { mask?: string } }).effects
+-      ?.mask;
+-    if (mask) maskIds.add(mask);
++  const activeShot = findActiveShot(scene.shots, t);
++  const camera = resolveShotCamera(activeShot, t);
++  const hasCameraTransform =
++    camera.x !== 0 || camera.y !== 0 || camera.zoom !== 1;
++
++  if (hasCameraTransform) {
++    ctx.save();
++    applyCameraTransform(ctx, camera, scene.width, scene.height);
+   }
+ 
+-  const dc = { scene, t, byId, drawElements };
+-  for (const el of elements) {
+-    // A hidden element is skipped from drawing (034/D4)
+-    if (el.hidden) continue;
+-    // A mask element itself is skipped instead of being drawn directly (025/D2)
+-    if (maskIds.has(el.id)) continue;
++  try {
++    // Find all elements that act as a mask for any element in this scope
++    const maskIds = new Set<string>();
++    for (const el of elements) {
++      const mask = (el as unknown as { effects?: { mask?: string } }).effects
++        ?.mask;
++      if (mask) maskIds.add(mask);
++    }
++
++    const dc = { scene, t, byId, drawElements };
++    for (const el of elements) {
++      // A hidden element is skipped from drawing (034/D4)
++      if (el.hidden) continue;
++      // An element bound to a shot is active only within the shot's window (055/D2)
++      if (!isElementActiveInShot(el, t, scene.shots)) continue;
++      // A mask element itself is skipped instead of being drawn directly (025/D2)
++      if (maskIds.has(el.id)) continue;
+ 
+     const now = animate(el, t, scene);
+     const elOpacity = (now.el as unknown as { opacity?: number }).opacity ?? 1;
+@@ -76,6 +95,11 @@ export function drawElements(
+       drawItem();
+     }
+   }
++  } finally {
++    if (hasCameraTransform) {
++      ctx.restore();
++    }
++  }
+ }
+ 
+ function drawBackground(ctx: Ctx, scene: Scene): void {
+diff --git a/src/engine/shots.ts b/src/engine/shots.ts
+new file mode 100644
+index 0000000..d47902a
+--- /dev/null
++++ b/src/engine/shots.ts
+@@ -0,0 +1,104 @@
++/**
++ * Pure functions for shot timing, activation intervals, and camera view transforms (055/D1, D2).
++ */
++import type { Element, Scene, Shot, ShotCamera } from "../model/model.ts";
++import { valueAt } from "./tracks.ts";
++
++export type ResolvedCamera = {
++  x: number;
++  y: number;
++  zoom: number;
++};
++
++/**
++ * Returns whether an element bound to a shot (or unbounded) is active at time `t`.
++ * Top-level elements without `shot` are active throughout the scene.
++ * Elements with `shot` are active within [shot.start, shot.end] + transition overlap.
++ */
++export function isElementActiveInShot(
++  el: Element,
++  t: number,
++  shots?: readonly Shot[],
++): boolean {
++  if (!el.shot) return true;
++  if (!shots || shots.length === 0) return true;
++
++  const shot = shots.find((s) => s.id === el.shot);
++  if (!shot) return false;
++
++  const transDuration = shot.transition?.duration ?? 0;
++  const start = Math.max(0, shot.start - transDuration);
++  const end = shot.end + transDuration;
++
++  return t >= start && t <= end;
++}
++
++/**
++ * Resolves camera parameters (x, y, zoom) for a given shot at time `t`.
++ */
++export function resolveShotCamera(
++  shot: Shot | undefined,
++  t: number,
++): ResolvedCamera {
++  if (!shot || !shot.camera) {
++    return { x: 0, y: 0, zoom: 1 };
++  }
++
++  const cam = shot.camera;
++  let x = cam.x ?? 0;
++  let y = cam.y ?? 0;
++  let zoom = cam.zoom ?? 1;
++
++  if (cam.tracks) {
++    if (cam.tracks.x) {
++      const vx = valueAt(cam.tracks.x, t, "number");
++      if (typeof vx === "number") x = vx;
++    }
++    if (cam.tracks.y) {
++      const vy = valueAt(cam.tracks.y, t, "number");
++      if (typeof vy === "number") y = vy;
++    }
++    if (cam.tracks.zoom) {
++      const vz = valueAt(cam.tracks.zoom, t, "number");
++      if (typeof vz === "number" && vz > 0) zoom = vz;
++    }
++  }
++
++  return { x, y, zoom };
++}
++
++/**
++ * Finds the active shot at time `t` in the scene.
++ */
++export function findActiveShot(
++  shots: readonly Shot[] | undefined,
++  t: number,
++): Shot | undefined {
++  if (!shots || shots.length === 0) return undefined;
++  return shots.find((s) => t >= s.start && t <= s.end);
++}
++
++/**
++ * Applies 2D camera view transformation around stage center:
++ * translates by scene center + camera offset, scales by camera zoom,
++ * and translates back by scene center.
++ */
++export function applyCameraTransform(
++  ctx: {
++    save: () => void;
++    translate: (x: number, y: number) => void;
++    scale: (x: number, y: number) => void;
++  },
++  camera: ResolvedCamera,
++  sceneWidth: number,
++  sceneHeight: number,
++): void {
++  if (camera.x === 0 && camera.y === 0 && camera.zoom === 1) {
++    return;
++  }
++  const cx = sceneWidth / 2;
++  const cy = sceneHeight / 2;
++  ctx.translate(cx + camera.x, cy + camera.y);
++  ctx.scale(camera.zoom, camera.zoom);
++  ctx.translate(-cx, -cy);
++}
