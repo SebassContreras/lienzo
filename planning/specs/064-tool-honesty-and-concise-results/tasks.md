@@ -35,3 +35,6 @@
 - [x] T010 [agent] [status:done] `response_format` in `scene_build`, its description, and the usage skill
       covers: D5@1
       changes: .agents/skills/lienzo-usage/SKILL.md (+3 -1), src/service/service.test.ts (+2 -1), src/service/tools/scene-build.ts (+15 -8)
+- [x] T011 [agent] [status:done] `call` in the tool harness; `service.test.ts` uses it instead of its own setup, with no assertion changed
+      covers: D7@1
+      changes: src/service/estimated-width.test.ts (+2 -2), src/service/service.test.ts (+28 -51), src/service/tools/scene-build-result.test.ts (+2 -2), src/test/tool-harness.ts (+27 -9)

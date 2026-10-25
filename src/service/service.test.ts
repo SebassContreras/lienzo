@@ -1,13 +1,5 @@
 import { existsSync } from "node:fs";
-import {
-  cp,
-  mkdir,
-  mkdtemp,
-  readdir,
-  readFile,
-  writeFile,
-} from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defineComponent } from "../components/descriptor.ts";
@@ -17,48 +9,33 @@ import { boxOf, center } from "../engine/geometry.ts";
 import { applyTracks } from "../engine/tracks.ts";
 import type { Element, Scene } from "../model/model.ts";
 import { parseScene } from "../model/schema.ts";
-import { type Ctx, createCtx } from "./ctx.ts";
+import {
+  PROJECT,
+  type ToolHarness,
+  toolHarness,
+} from "../test/tool-harness.ts";
+import { createCtx } from "./ctx.ts";
 import { fakeRenderer } from "./fake-renderer.ts";
 import { registry } from "./tools/index.ts";
 
-let ctx: Ctx;
+let h: ToolHarness;
 
 beforeEach(async () => {
-  const root = await mkdtemp(join(tmpdir(), "lienzo-service-"));
-  await cp("presets/built-in", join(root, "presets", "built-in"), {
-    recursive: true,
-  });
-  await mkdir(join(root, "presets", "animations"), { recursive: true });
-  ctx = createCtx(root, fakeRenderer());
-  await registry.call(
-    "project_create",
-    { slug: PROJECT, name: "Mi proyecto" },
-    ctx,
-  );
+  h = await toolHarness();
 });
 
-/** Every call names the test project (046/R1); tools without `project` ignore it. */
-const PROJECT = "mi-proyecto";
-
-async function call(name: string, input: unknown) {
-  const scoped =
-    input && typeof input === "object" ? { project: PROJECT, ...input } : input;
-  return registry.call(name, scoped, ctx);
-}
-
-async function ok(name: string, input: unknown) {
-  const r = await call(name, input);
-  if (!r.ok) throw new Error(`${name}: ${JSON.stringify(r.error)}`);
-  return r.value as Record<string, unknown>;
-}
+const call = (name: string, input: unknown) => h.call(name, input);
+const ok = (name: string, input: unknown) => h.ok(name, input);
 
 const sceneFiles = () =>
-  readdir(join(ctx.root, "projects", "mi-proyecto", "scenes")).catch(() => []);
+  readdir(join(h.ctx.root, "projects", "mi-proyecto", "scenes")).catch(
+    () => [],
+  );
 
 /** The file on disk, checked to open in the editor (R5). */
 async function onDisk(name: string): Promise<Scene> {
   const raw = await readFile(
-    join(ctx.root, "projects", "mi-proyecto", "scenes", `${name}.json`),
+    join(h.ctx.root, "projects", "mi-proyecto", "scenes", `${name}.json`),
     "utf8",
   );
   const parsed = parseScene(JSON.parse(raw));
@@ -168,7 +145,7 @@ describe("service tools", () => {
     await ok("scene_create", { name: "demo" });
     const { id } = await ok("element_add", { scene: "demo", kind: "rect" });
     const scenePath = join(
-      ctx.root,
+      h.ctx.root,
       "projects",
       "mi-proyecto",
       "scenes",
@@ -242,7 +219,7 @@ describe("descriptor-driven tools (R6)", () => {
 describe("animation presets (D6, R7)", () => {
   it("copies a named preset in, and reports an unknown one", async () => {
     await writeFile(
-      join(ctx.root, "presets", "animations", "spin.json"),
+      join(h.ctx.root, "presets", "animations", "spin.json"),
       JSON.stringify({
         name: "Spin",
         tracks: {
@@ -387,11 +364,11 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
   });
 
   it("gives no missing-font notice for a family installed in the project, only its estimated width (064/R4)", async () => {
-    await mkdir(join(ctx.root, "projects", PROJECT, "fonts"), {
+    await mkdir(join(h.ctx.root, "projects", PROJECT, "fonts"), {
       recursive: true,
     });
     await writeFile(
-      join(ctx.root, "projects", PROJECT, "fonts", "Montserrat-400.ttf"),
+      join(h.ctx.root, "projects", PROJECT, "fonts", "Montserrat-400.ttf"),
       "font",
     );
 
@@ -455,7 +432,7 @@ describe("ignored fields (063/R6)", () => {
 });
 
 describe("scene_preview out (058/R3)", () => {
-  const exports = () => join(ctx.root, "projects", "mi-proyecto", "exports");
+  const exports = () => join(h.ctx.root, "projects", "mi-proyecto", "exports");
 
   it("saves the PNG inside exports/ and returns its path", async () => {
     await ok("scene_create", { name: "demo" });
@@ -475,9 +452,9 @@ describe("scene_preview out (058/R3)", () => {
       code: "out_of_project",
       path: "out",
     });
-    expect(existsSync(join(ctx.root, "projects", "mi-proyecto", "x.png"))).toBe(
-      false,
-    );
+    expect(
+      existsSync(join(h.ctx.root, "projects", "mi-proyecto", "x.png")),
+    ).toBe(false);
   });
 
   it("writes nothing without `out`", async () => {
@@ -492,7 +469,7 @@ describe("scene_preview out (058/R3)", () => {
 
 describe("scene_export (010/R1)", () => {
   it("writes inside the project's exports/ and rejects an `out` outside it (046/R2)", async () => {
-    const exports = join(ctx.root, "projects", "mi-proyecto", "exports");
+    const exports = join(h.ctx.root, "projects", "mi-proyecto", "exports");
     await ok("scene_create", { name: "demo" });
     const png = await ok("scene_export", { scene: "demo", format: "png" });
     expect(png.file).toBe(join(exports, "demo.png"));
@@ -506,7 +483,7 @@ describe("scene_export (010/R1)", () => {
     await expect(readFile(gif.file as string)).resolves.toHaveLength(
       gif.bytes as number,
     );
-    for (const out of ["../escape.png", "../../../root.png", ctx.root]) {
+    for (const out of ["../escape.png", "../../../root.png", h.ctx.root]) {
       const r = await call("scene_export", {
         scene: "demo",
         format: "png",
@@ -520,7 +497,7 @@ describe("scene_export (010/R1)", () => {
   });
 
   it("falls back to WebM, and says so, when H.264 is unavailable", async () => {
-    ctx = createCtx(ctx.root, fakeRenderer("video/webm"));
+    h.ctx = createCtx(h.ctx.root, fakeRenderer("video/webm"));
     await ok("scene_create", { name: "demo" });
     const r = await ok("scene_export", {
       scene: "demo",
@@ -528,7 +505,7 @@ describe("scene_export (010/R1)", () => {
       out: "clip.mp4",
     });
     expect(r.file).toBe(
-      join(ctx.root, "projects", "mi-proyecto", "exports", "clip.webm"),
+      join(h.ctx.root, "projects", "mi-proyecto", "exports", "clip.webm"),
     );
     expect(r.type).toBe("video/webm");
     expect(r.notices).toHaveLength(1);
@@ -570,7 +547,7 @@ describe("project scope (046/R1)", () => {
 
   it("every tool that touches scenes requires `project`", async () => {
     for (const name of SCENE_TOOLS) {
-      const r = await registry.call(name, {}, ctx);
+      const r = await registry.call(name, {}, h.ctx);
       expect(r.ok ? undefined : r.error.message, name).toContain("project");
     }
     const unscoped = registry.tools

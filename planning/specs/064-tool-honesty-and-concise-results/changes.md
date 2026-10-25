@@ -15,3 +15,8 @@ Why: measuring in Node uses only the bundled fonts, so a font installed with `fo
 ## 2026-10-25 — Built
 Why: the new notice (R4) and the concise result (R6) change what older tests pinned exactly, so those tests now list the estimated-width notice and read the saved scene from disk instead of the reply; none was loosened.
 - Tasks: T001–T010 done
+
+## 2026-10-25 — One tool-test harness
+Why: `service.test.ts` kept its own copy of the setup `tool-harness.ts` now shares.
+- ADDED D7@1
+- Tasks: T011

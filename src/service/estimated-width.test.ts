@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { toolHarness } from "../test/tool-harness.ts";
+import { type ToolHarness, toolHarness } from "../test/tool-harness.ts";
 
-let ok: Awaited<ReturnType<typeof toolHarness>>["ok"];
+let ok: ToolHarness["ok"];
 
 beforeEach(async () => {
   ({ ok } = await toolHarness());
