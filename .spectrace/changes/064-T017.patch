@@ -1,0 +1,50 @@
+diff --git a/src/service/tools/scene-build-result.test.ts b/src/service/tools/scene-build-result.test.ts
+index c05b1b2..5795ba9 100644
+--- a/src/service/tools/scene-build-result.test.ts
++++ b/src/service/tools/scene-build-result.test.ts
+@@ -82,3 +82,45 @@ describe("scene_build concise result (064/R6)", () => {
+     expect(res.scene).toMatchObject({ elements: [{ id: "a" }, { id: "b" }] });
+   });
+ });
++
++const fadingCard = {
++  elements: [{ kind: "rect", id: "card", anim: { in: { kind: "fade" } } }],
++};
++
++type Slots = Record<"in" | "loop" | "out", unknown>;
++const animOf = (scene: unknown) =>
++  (scene as { elements: { anim: Slots }[] }).elements[0]?.anim;
++
++describe("inert anim slots in returned scenes (064/R7)", () => {
++  it("shows none slots as their kind alone in a detailed scene_build", async () => {
++    // Act
++    const res = await ok("scene_build", { compact: fadingCard });
++
++    // Assert
++    expect(animOf(res.scene)?.out).toEqual({ kind: "none" });
++    expect(animOf(res.scene)?.loop).toEqual({ kind: "none" });
++  });
++
++  it("keeps a real entrance whole in a detailed scene_build", async () => {
++    // Act
++    const res = await ok("scene_build", { compact: fadingCard });
++
++    // Assert
++    expect(animOf(res.scene)?.in).toMatchObject({
++      kind: "fade",
++      delay: 0,
++      duration: 0.8,
++    });
++  });
++
++  it("shows a none exit as its kind alone in scene_get", async () => {
++    // Arrange
++    await ok("scene_build", { compact: fadingCard, save: "demo" });
++
++    // Act
++    const scene = await ok("scene_get", { scene: "demo" });
++
++    // Assert
++    expect(animOf(scene)?.out).toEqual({ kind: "none" });
++  });
++});

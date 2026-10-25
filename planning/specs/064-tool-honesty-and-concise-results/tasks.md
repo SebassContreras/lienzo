@@ -19,8 +19,9 @@
       kind: test
       changes: src/service/estimated-width.test.ts (+93 -0)
 - [x] T006 [agent] [status:done] `widthIsEstimated`, `estimatedWidthNotices` and `estimated` in `layoutBoxes`
-      covers: D3@3
+      covers: D3@4
       └─ reviewed 2026-10-25: the measurer check, the notices and the top-level text marking hold; T013 extends the marking
+      └─ reviewed 2026-10-25: still holds under D3@4; T016 adds `italic`
       changes: src/editor/scene/review-section.test.tsx (+4 -2), src/engine/text-measure.ts (+11 -0), src/service/font-check.ts (+34 -6), src/service/layout.ts (+16 -2), src/service/scene-notices.ts (+18 -9), src/service/service.test.ts (+9 -3), src/service/tools/scene-build.ts (+2 -1), src/service/tools/scene-inspect-layout.ts (+3 -1), src/service/tools/scene-validate.ts (+2 -1)
 - [x] T007 [agent] [status:done] Tests: a save notice and a build notice both appear in `notices` once; `saved` is the name (fail before the fix)
       covers: R5@1
@@ -45,8 +46,20 @@
       kind: test
       changes: src/service/estimated-width.test.ts (+44 -0)
 - [x] T013 [agent] [status:done] `estimated` on subtitles and on groups with an estimated text inside
-      covers: D3@3
+      covers: D3@4
+      └─ reviewed 2026-10-25: still holds under D3@4
       changes: src/service/layout.ts (+6 -2), src/service/tools/scene-inspect-layout.ts (+2 -2)
 - [x] T014 [agent] [status:done] Stop dropping duplicate notices in `scene_build`
       covers: D4@2
       changes: src/service/tools/scene-build.ts (+2 -4)
+- [x] T016 [agent] [status:done] `italic` passed in both estimate checks
+      covers: D3@4
+      changes: src/service/font-check.ts (+13 -4), src/service/layout.ts (+2 -1)
+- [x] T017 [agent] [status:done] Tests: `scene_get` and a detailed `scene_build` show a `none` slot as `{ kind: "none" }` and keep a real one whole (fail before the fix)
+      covers: R7@1
+      kind: test
+      changes: src/service/tools/scene-build-result.test.ts (+42 -0)
+- [x] T019 [agent] [status:done] Delete the `none`-slot tests T017 added
+      covers: D5@1
+      retires: T017
+      changes: src/service/tools/scene-build-result.test.ts (+0 -42)

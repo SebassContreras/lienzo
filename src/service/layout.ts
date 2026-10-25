@@ -20,6 +20,7 @@ import type {
   TextEl,
 } from "../model/model.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
+import { measureStyleOf } from "./font-check.ts";
 
 export type LayoutDiagnostic = {
   code:
@@ -457,7 +458,7 @@ function hasEstimatedWidth(el: Element): boolean {
   if (el.kind === "group") return el.children.some(hasEstimatedWidth);
   return (
     (el.kind === "text" || el.kind === "subtitles") &&
-    widthIsEstimated({ font: el.font, size: el.size, weight: el.weight })
+    widthIsEstimated(measureStyleOf(el))
   );
 }
 

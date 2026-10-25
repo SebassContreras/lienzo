@@ -12,3 +12,4 @@ notice lists and the whole expanded scene, thousands of characters for three rec
 - R4@1: When a text's width comes from the fallback estimate (its font has no metrics), `scene_build` and `scene_validate` say so in a notice that points to `scene_preview`, and `scene_inspect_layout` marks that element's boxes `estimated: true`.
 - R5@1: `scene_build` returns a single `notices` list, holding the build notices and the save notices without duplicates.
 - R6@1: When `scene_build` saves, it returns by default only the saved name, the notices and the `id` and `kind` of each top-level element; `response_format: "detailed"` (or building without `save`) also returns the expanded scene.
+- ~~R7@1: In what `scene_get` and `scene_build` return, an `anim` slot of kind `none` shows as `{ "kind": "none" }`.~~ retired 2026-10-25 → R6

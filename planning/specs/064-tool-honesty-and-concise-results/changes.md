@@ -26,3 +26,16 @@ Why: the review after building found that a text inside a group, or a subtitles 
 - MODIFIED D3@2 → D3@3
 - MODIFIED D4@1 → D4@2
 - Tasks: T012, T013, T014; T006 and T008 still valid for the parts they built
+
+## 2026-10-25 — `use` boxes, italic, inert anim slots
+Why: the second review left two gaps (a third, an unmarked `use`, turned out not to exist: its symbol's text is already its own marked box): the estimate check did not pass `italic` like the measurer does, and an `anim` slot of kind `none` still showed its settings (e.g. an exit delay of 3) in what tools return.
+- MODIFIED D3@3 → D3@4
+- ADDED R7@1
+- ADDED D8@1
+- Tasks: T016–T018; T015 (a `use` test) dropped before it was built; T006 and T013 still valid
+
+## 2026-10-25 — Inert anim slots stay whole
+Why: building D8 showed that the scene schema requires every setting of an `anim` slot (it fills none of them on parse), so a scene returned with `{ "kind": "none" }` slots could not be passed back to `scene_inspect_layout`, `scene_validate` or any other tool. Keeping the returned scene reusable matters more than hiding inert settings, and the concise result (D5) already leaves the scene out by default. Decided with the user.
+- REMOVED R7@1
+- REMOVED D8@1
+- Tasks: T019 retires T017; T018 (blocked, nothing built) deleted

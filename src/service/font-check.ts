@@ -1,4 +1,4 @@
-import { widthIsEstimated } from "../engine/text-measure.ts";
+import { type MeasureStyle, widthIsEstimated } from "../engine/text-measure.ts";
 import type { Element, Scene } from "../model/model.ts";
 
 /** CSS generic families: keywords, never installable fonts. */
@@ -20,7 +20,7 @@ function* allElements(elements: readonly Element[]): Generator<Element> {
   }
 }
 
-type TextLike = Extract<Element, { kind: "text" | "subtitles" }>;
+export type TextLike = Extract<Element, { kind: "text" | "subtitles" }>;
 
 /** Every `text` and `subtitles` element of the scene, symbols included. */
 function* textElements(scene: Scene): Generator<TextLike> {
@@ -49,12 +49,21 @@ export function missingFonts(
   return [...missing];
 }
 
+/** The style `measureTextWidth` is called with for `el`; subtitles have no italic. */
+export function measureStyleOf(el: TextLike): MeasureStyle {
+  return {
+    font: el.font,
+    size: el.size,
+    weight: el.weight,
+    italic: el.kind === "text" ? el.italic : false,
+  };
+}
+
 /** Font families whose text width is estimated here, with no metrics, in first-seen order (064/D3). */
 export function estimatedFonts(scene: Scene): string[] {
   const estimated = new Set<string>();
   for (const el of textElements(scene)) {
-    if (widthIsEstimated({ font: el.font, size: el.size, weight: el.weight }))
-      estimated.add(el.font);
+    if (widthIsEstimated(measureStyleOf(el))) estimated.add(el.font);
   }
   return [...estimated];
 }

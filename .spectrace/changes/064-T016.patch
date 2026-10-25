@@ -1,0 +1,64 @@
+diff --git a/src/service/font-check.ts b/src/service/font-check.ts
+index bd5100e..7e58271 100644
+--- a/src/service/font-check.ts
++++ b/src/service/font-check.ts
+@@ -1,4 +1,4 @@
+-import { widthIsEstimated } from "../engine/text-measure.ts";
++import { type MeasureStyle, widthIsEstimated } from "../engine/text-measure.ts";
+ import type { Element, Scene } from "../model/model.ts";
+ 
+ /** CSS generic families: keywords, never installable fonts. */
+@@ -20,7 +20,7 @@ function* allElements(elements: readonly Element[]): Generator<Element> {
+   }
+ }
+ 
+-type TextLike = Extract<Element, { kind: "text" | "subtitles" }>;
++export type TextLike = Extract<Element, { kind: "text" | "subtitles" }>;
+ 
+ /** Every `text` and `subtitles` element of the scene, symbols included. */
+ function* textElements(scene: Scene): Generator<TextLike> {
+@@ -49,12 +49,21 @@ export function missingFonts(
+   return [...missing];
+ }
+ 
++/** The style `measureTextWidth` is called with for `el`; subtitles have no italic. */
++export function measureStyleOf(el: TextLike): MeasureStyle {
++  return {
++    font: el.font,
++    size: el.size,
++    weight: el.weight,
++    italic: el.kind === "text" ? el.italic : false,
++  };
++}
++
+ /** Font families whose text width is estimated here, with no metrics, in first-seen order (064/D3). */
+ export function estimatedFonts(scene: Scene): string[] {
+   const estimated = new Set<string>();
+   for (const el of textElements(scene)) {
+-    if (widthIsEstimated({ font: el.font, size: el.size, weight: el.weight }))
+-      estimated.add(el.font);
++    if (widthIsEstimated(measureStyleOf(el))) estimated.add(el.font);
+   }
+   return [...estimated];
+ }
+diff --git a/src/service/layout.ts b/src/service/layout.ts
+index 3385ee3..bc1dd51 100644
+--- a/src/service/layout.ts
++++ b/src/service/layout.ts
+@@ -20,6 +20,7 @@ import type {
+   TextEl,
+ } from "../model/model.ts";
+ import { resolveBackdropUnder } from "./contrast.ts";
++import { measureStyleOf } from "./font-check.ts";
+ 
+ export type LayoutDiagnostic = {
+   code:
+@@ -457,7 +458,7 @@ function hasEstimatedWidth(el: Element): boolean {
+   if (el.kind === "group") return el.children.some(hasEstimatedWidth);
+   return (
+     (el.kind === "text" || el.kind === "subtitles") &&
+-    widthIsEstimated({ font: el.font, size: el.size, weight: el.weight })
++    widthIsEstimated(measureStyleOf(el))
+   );
+ }
+ 
