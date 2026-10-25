@@ -64,3 +64,39 @@
       covers: R6@1, R8@1
       kind: test
       changes: none
+- [x] T020 [agent] [status:done] `scene_update` tool (settings patch, `null` removes, `elements`/`shots` refused)
+      covers: D10@1
+      changes: src/service/tools/index.ts (+2 -0), src/service/tools/scene-update.ts (+53 -0)
+- [x] T021 [agent] [status:done] `scene_rename` and `scene_delete` tools
+      covers: D10@1
+      changes: src/service/project-files.ts (+46 -0), src/service/tools/index.ts (+4 -0), src/service/tools/scene-delete.ts (+16 -0), src/service/tools/scene-rename.ts (+20 -0)
+- [x] T022 [agent] [status:done] `preset_save`, `preset_rename` and `preset_delete` tools on project presets
+      covers: D10@1
+      changes: src/service/tools/index.ts (+6 -0), src/service/tools/preset-delete.ts (+17 -0), src/service/tools/preset-rename.ts (+20 -0), src/service/tools/preset-save.ts (+31 -0)
+- [x] T023 [agent] [status:done] `animation_list` and `animation_save` tools
+      covers: D10@1
+      changes: src/service/project-files.ts (+3 -6), src/service/tools/animation-list.ts (+29 -0), src/service/tools/animation-save.ts (+29 -0), src/service/tools/index.ts (+4 -0)
+- [x] T024 [agent] [status:done] `project_update` tool
+      covers: D10@1
+      changes: src/model/project.ts (+3 -3), src/service/tools/index.ts (+2 -0), src/service/tools/project-update.ts (+30 -0)
+- [x] T025 [agent] [status:done] `asset_add` tool and local `file` in `font_install`
+      covers: D10@1
+      changes: src/service/asset-helpers.ts (+14 -0), src/service/project-middleware.ts (+7 -9), src/service/tools/asset-add.ts (+48 -0), src/service/tools/font-install.ts (+21 -3), src/service/tools/index.ts (+2 -0)
+- [x] T026 [agent] [status:done] `element_group` and `element_ungroup` tools
+      covers: D10@1
+      changes: src/service/tools/element-group.ts (+36 -0), src/service/tools/element-ungroup.ts (+28 -0), src/service/tools/index.ts (+4 -0)
+- [x] T027 [agent] [status:done] Tests: the new tools' behaviour and failure modes
+      covers: R10@1, R11@1, R12@1, R13@1, R14@1, R15@1, R16@1
+      kind: test
+      changes: src/service/parity-tools.test.ts (+301 -0)
+- [x] T028 [agent] [status:done] Parity test: `scene_update`, `element_group`/`element_ungroup` and `preset_save` match the editor functions
+      covers: R18@1
+      kind: test
+      changes: src/service/editor-parity.test.ts (+52 -3)
+- [x] T029 [agent] [status:done] "Revisar escena" button and diagnostics list in the editor
+      covers: D11@1
+      changes: src/editor/inspector.tsx (+2 -0), src/editor/scene/review-section.tsx (+36 -0)
+- [x] T030 [agent] [status:done] Browser check of "Revisar escena"; docs (AGENTS.md, lienzo-usage skill, README) list the new tools
+      covers: R17@1
+      kind: test
+      changes: .agents/skills/lienzo-usage/SKILL.md (+7 -2), AGENTS.md (+4 -0), README.md (+11 -4), src/editor/scene/review-section.tsx (+7 -2)

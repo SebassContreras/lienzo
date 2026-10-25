@@ -16,3 +16,11 @@ on select/text fields were not checked.
 - ADDED R9@1
 - D8@1 now implements R9 (wording of its reason corrected)
 - Tasks: T016 re-pointed to R9@1
+
+## 2026-10-25 — Tool/editor parity
+Why: a parity audit found editor actions with no tool (scene settings, rename/delete of scenes
+and presets, saving presets and animations, project edits, assets, grouping) and layout
+diagnostics the editor never shows.
+- ADDED R10@1, R11@1, R12@1, R13@1, R14@1, R15@1, R16@1, R17@1, R18@1
+- ADDED D10@1, D11@1
+- Tasks: T020–T030
