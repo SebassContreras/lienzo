@@ -38,8 +38,8 @@ export const sceneInspectLayout = defineTool({
     "outside canvas bounds, line attachments to missing IDs, and contrast issues) at given " +
     "times (default: start, middle and end of loop). Input can be a scene object or saved scene name. " +
     "Also returns `boxes`: the drawn box (top-left `x, y`, `w`, `h`) of every top-level " +
-    "element at each time, to verify placement (e.g. centred when x + w/2 = width/2). A text box marked " +
-    "`estimated: true` uses a font with no metrics here, so its width is approximate: check it with scene_preview.",
+    "element at each time, to verify placement (e.g. centred when x + w/2 = width/2). A box marked " +
+    "`estimated: true` (a text or subtitles, or a group holding one) uses a font with no metrics here, so its width is approximate: check it with scene_preview.",
   input: z.object({
     scene: z.unknown().optional(),
     name: z.string().optional(),

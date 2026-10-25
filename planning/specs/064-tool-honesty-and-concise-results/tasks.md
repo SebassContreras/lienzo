@@ -19,14 +19,16 @@
       kind: test
       changes: src/service/estimated-width.test.ts (+93 -0)
 - [x] T006 [agent] [status:done] `widthIsEstimated`, `estimatedWidthNotices` and `estimated` in `layoutBoxes`
-      covers: D3@2
+      covers: D3@3
+      └─ reviewed 2026-10-25: the measurer check, the notices and the top-level text marking hold; T013 extends the marking
       changes: src/editor/scene/review-section.test.tsx (+4 -2), src/engine/text-measure.ts (+11 -0), src/service/font-check.ts (+34 -6), src/service/layout.ts (+16 -2), src/service/scene-notices.ts (+18 -9), src/service/service.test.ts (+9 -3), src/service/tools/scene-build.ts (+2 -1), src/service/tools/scene-inspect-layout.ts (+3 -1), src/service/tools/scene-validate.ts (+2 -1)
 - [x] T007 [agent] [status:done] Tests: a save notice and a build notice both appear in `notices` once; `saved` is the name (fail before the fix)
       covers: R5@1
       kind: test
       changes: src/service/estimated-width.test.ts (+3 -21), src/service/tools/scene-build-result.test.ts (+43 -0), src/test/tool-harness.ts (+28 -0)
 - [x] T008 [agent] [status:done] One `notices` list in `scene_build`, `saved` as the name; update callers and the usage skill
-      covers: D4@1
+      covers: D4@2
+      └─ reviewed 2026-10-25: one list and `saved` as the name hold; T014 removes the dedupe
       changes: .agents/skills/lienzo-usage/SKILL.md (+4 -2), src/service/service.test.ts (+1 -1), src/service/tools/scene-build.ts (+9 -6)
 - [x] T009 [agent] [status:done] Tests: a saving build returns no scene by default and the element ids; `detailed` and a build with no save return the scene
       covers: R6@1
@@ -38,3 +40,13 @@
 - [x] T011 [agent] [status:done] `call` in the tool harness; `service.test.ts` uses it instead of its own setup, with no assertion changed
       covers: D7@1
       changes: src/service/estimated-width.test.ts (+2 -2), src/service/service.test.ts (+28 -51), src/service/tools/scene-build-result.test.ts (+2 -2), src/test/tool-harness.ts (+27 -9)
+- [x] T012 [agent] [status:done] Tests: a group holding a text in a font with no metrics, and a subtitles element in one, get `estimated: true` boxes (fail before the fix)
+      covers: R4@1
+      kind: test
+      changes: src/service/estimated-width.test.ts (+44 -0)
+- [x] T013 [agent] [status:done] `estimated` on subtitles and on groups with an estimated text inside
+      covers: D3@3
+      changes: src/service/layout.ts (+6 -2), src/service/tools/scene-inspect-layout.ts (+2 -2)
+- [x] T014 [agent] [status:done] Stop dropping duplicate notices in `scene_build`
+      covers: D4@2
+      changes: src/service/tools/scene-build.ts (+2 -4)

@@ -449,10 +449,14 @@ export function inspectLayout(
 
 export type LayoutBox = Box & { id: string; t: number; estimated?: true };
 
-/** A text whose width is the fallback estimate, so its box is approximate (064/D3). */
+/**
+ * A text or subtitles whose width is the fallback estimate, or a group holding one at any
+ * depth, so its box is approximate (064/D3).
+ */
 function hasEstimatedWidth(el: Element): boolean {
+  if (el.kind === "group") return el.children.some(hasEstimatedWidth);
   return (
-    el.kind === "text" &&
+    (el.kind === "text" || el.kind === "subtitles") &&
     widthIsEstimated({ font: el.font, size: el.size, weight: el.weight })
   );
 }

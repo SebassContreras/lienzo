@@ -20,3 +20,9 @@ Why: the new notice (R4) and the concise result (R6) change what older tests pin
 Why: `service.test.ts` kept its own copy of the setup `tool-harness.ts` now shares.
 - ADDED D7@1
 - Tasks: T011
+
+## 2026-10-25 — Estimated boxes inside groups; no notice dedupe
+Why: the review after building found that a text inside a group, or a subtitles element, was warned about but its box was not marked; and dropping duplicate notices guarded a case never seen.
+- MODIFIED D3@2 → D3@3
+- MODIFIED D4@1 → D4@2
+- Tasks: T012, T013, T014; T006 and T008 still valid for the parts they built

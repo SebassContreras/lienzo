@@ -72,4 +72,48 @@ describe("estimated text widths (064/R4)", () => {
       expect.not.objectContaining({ estimated: true }),
     ]);
   });
+
+  it("marks the box of a group holding a text with an estimated width", async () => {
+    // Arrange
+    const compact = {
+      elements: [
+        {
+          kind: "group",
+          id: "card",
+          children: [{ kind: "text", text: "Hola mundo", font: "Georgia" }],
+        },
+      ],
+    };
+    const built = await ok("scene_build", { compact });
+
+    // Act
+    const layout = await ok("scene_inspect_layout", {
+      scene: built.scene,
+      times: [0],
+    });
+
+    // Assert
+    expect(layout.boxes).toEqual([
+      expect.objectContaining({ id: "card", estimated: true }),
+    ]);
+  });
+
+  it("marks the box of subtitles with an estimated width", async () => {
+    // Arrange
+    const compact = {
+      elements: [{ kind: "subtitles", id: "subs", font: "Georgia" }],
+    };
+    const built = await ok("scene_build", { compact });
+
+    // Act
+    const layout = await ok("scene_inspect_layout", {
+      scene: built.scene,
+      times: [0],
+    });
+
+    // Assert
+    expect(layout.boxes).toEqual([
+      expect.objectContaining({ id: "subs", estimated: true }),
+    ]);
+  });
 });
