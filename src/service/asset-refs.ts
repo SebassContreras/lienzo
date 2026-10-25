@@ -4,10 +4,7 @@
  * whatever field holds it — image and 3D `src`, audio `assetId`, symbols and group children
  * alike — so a new kind needs no change here.
  */
-import { safeAssetPath } from "./asset-path.ts";
-
-/** Anchored, so a project whose slug is itself `assets` is not mistaken for the folder. */
-const UNDER_ASSETS = /^\/?(?:(?:api\/)?projects\/[^/]+\/)?assets\//;
+import { safeAssetPath, ASSETS_PREFIX as UNDER_ASSETS } from "./asset-path.ts";
 
 /** The path under `assets/` that `ref` names, or undefined when it names none. */
 function assetPathOf(ref: string): string | undefined {

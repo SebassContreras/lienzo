@@ -24,14 +24,18 @@ export function safeAssetPath(segments: readonly string[]): string | undefined {
   return decoded.join("/");
 }
 
-/** The part of an asset reference after `/assets/` (or the whole reference), split on `/`. */
+/**
+ * The prefix of an asset reference up to its `assets/` folder: `/projects/<slug>/assets/`,
+ * `/api/projects/<slug>/assets/` or `assets/`. Anchored, so a project whose slug is itself
+ * `assets` is not mistaken for the folder (063/D10).
+ */
+export const ASSETS_PREFIX = /^\/?(?:(?:api\/)?projects\/[^/]+\/)?assets\//;
+
+/** The part of an asset reference after its `assets/` prefix (or the whole reference), split on `/`. */
 export function assetSegments(ref: string): string[] {
   const normalized = ref.trim().replace(/\\/g, "/").split(/[?#]/)[0] ?? "";
-  const match = /(?:^|\/)assets\//.exec(normalized);
-  const tail = match
-    ? normalized.slice(match.index + match[0].length)
-    : normalized;
-  return tail.split("/");
+  const prefix = ASSETS_PREFIX.exec(normalized)?.[0] ?? "";
+  return normalized.slice(prefix.length).split("/");
 }
 
 /** URL of a project asset, each segment encoded on its own so subfolders keep their `/`. */

@@ -17,3 +17,7 @@ shows `scene_validate` notices.
 - R8@1: The editor shows the open scene's `scene_validate` notices, the same list the tool returns, and clicking a notice that names an element selects it.
 - R9@1: The usage skill documents duplicating (`scene_get` + `element_add`) and aligning (`scene_inspect_layout` + `element_update`) as compositions of existing tools; no new tool is added for them.
 - R10@1: Existing scenes and presets render as before, apart from the new defaults in R5; once R1–R5 hold, the skill workarounds (fades with `anim/opacity`, `@scale` on a group instead of the camera, explicit `stroke: 0`) are removed.
+
+## Follow-up (2026-10-25)
+
+- R11@1: An asset reference `/projects/<slug>/assets/<path>` or `/api/projects/<slug>/assets/<path>` resolves to `<path>` even when the slug is `assets`, in `image_trim` and in the project's asset check.

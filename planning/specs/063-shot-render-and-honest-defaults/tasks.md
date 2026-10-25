@@ -62,3 +62,10 @@
 - [x] T018 [agent] [status:done] Remove the skill workarounds and re-render the regression scenes
       covers: D9@1
       changes: none
+- [x] T019 [agent] [status:done] Regression test: a reference under a project whose slug is `assets` resolves to its path (fails before the fix)
+      covers: R11@1
+      kind: test
+      changes: src/service/asset-path.test.ts (+35 -0)
+- [x] T020 [agent] [status:done] One anchored prefix in `asset-path.ts`, used by `assetSegments` and `asset-refs.ts`
+      covers: D10@1
+      changes: src/service/asset-path.ts (+10 -6), src/service/asset-refs.ts (+1 -4)

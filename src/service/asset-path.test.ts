@@ -66,6 +66,41 @@ describe("assetSegments for a reference relative to the project", () => {
   });
 });
 
+describe("assetSegments under a project whose slug is assets (063/R11)", () => {
+  it("does not mistake the slug for the folder in a project path", () => {
+    // Arrange
+    const ref = "/projects/assets/assets/brand/a.png";
+
+    // Act
+    const segments = assetSegments(ref);
+
+    // Assert
+    expect(segments).toEqual(["brand", "a.png"]);
+  });
+
+  it("does not mistake the slug for the folder in an API URL", () => {
+    // Arrange
+    const ref = "/api/projects/assets/assets/a.png";
+
+    // Act
+    const segments = assetSegments(ref);
+
+    // Assert
+    expect(segments).toEqual(["a.png"]);
+  });
+
+  it("keeps a bare file name as it is", () => {
+    // Arrange
+    const ref = "logo.png?v=2";
+
+    // Act
+    const segments = assetSegments(ref);
+
+    // Assert
+    expect(segments).toEqual(["logo.png"]);
+  });
+});
+
 describe("projectAssetUrl", () => {
   it("encodes each segment but keeps the subfolder slashes", () => {
     expect(projectAssetUrl("acme", "brand/mi logo.png")).toBe(

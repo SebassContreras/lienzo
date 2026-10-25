@@ -15,3 +15,7 @@
 ## Sequencing
 
 D1 before D2 (transitions compose with the per-element camera); D5 before D7 (the editor shows its notices); D4 together with its render audit, and both before D9. D3 starts with its reproducing test and can run in parallel.
+
+## Follow-up (2026-10-25)
+
+- D10@1 (implements R11): `src/service/asset-path.ts` holds the one anchored prefix pattern (`/projects/<slug>/assets/`, `/api/…`, `assets/`); `assetSegments` and `asset-refs.ts` both use it, so the slug is never mistaken for the folder. Trade-off: it touches a working function — mitigated by tests of every reference form it accepts today plus the `assets` slug.
