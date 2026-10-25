@@ -15,3 +15,7 @@
 ## Sequencing
 
 D4 before D5 (both change the `scene_build` output). D1, D2 and D3 are independent.
+
+## Follow-up (2026-10-25)
+
+- D9@1 (implements R8): `resolveSceneBackground` (`src/service/compact/expand.ts`) tries, in order, a background preset, then a color, then gives up with a notice pushed to the expansion's `notices`, like every other ignored input (063/D5). A color is recognised by its prefix (`#`, `rgb(`, `hsl(`); a solid background is made by the `solid` trait's own applier, so "solid" means the same here as in the editor (no gradient, dots or light). Trade-off: CSS named colors (`black`) are not recognised; mitigation: they get the notice, which names the value, so nothing is lost silently; add them when someone asks (YAGNI). _(standard: CSS color syntax — https://developer.mozilla.org/en-US/docs/Web/CSS/color_value)_

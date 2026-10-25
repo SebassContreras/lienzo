@@ -39,3 +39,9 @@ Why: building D8 showed that the scene schema requires every setting of an `anim
 - REMOVED R7@1
 - REMOVED D8@1
 - Tasks: T019 retires T017; T018 (blocked, nothing built) deleted
+
+## 2026-10-25 — A background string that is not a preset
+Why: a real build with `background: "#111827"` drew the default navy background with dots and no notice: a string is looked up only as a preset name and an unknown one fell back silently, the same class of bug as 063/R6.
+- ADDED R8@1
+- ADDED D9@1
+- Tasks: T020, T021

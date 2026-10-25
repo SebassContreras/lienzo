@@ -13,3 +13,7 @@ notice lists and the whole expanded scene, thousands of characters for three rec
 - R5@1: `scene_build` returns a single `notices` list, holding the build notices and the save notices without duplicates.
 - R6@1: When `scene_build` saves, it returns by default only the saved name, the notices and the `id` and `kind` of each top-level element; `response_format: "detailed"` (or building without `save`) also returns the expanded scene.
 - ~~R7@1: In what `scene_get` and `scene_build` return, an `anim` slot of kind `none` shows as `{ "kind": "none" }`.~~ retired 2026-10-25 → R6
+
+## Follow-up (2026-10-25)
+
+- R8@1: In a compact scene, a `background` string that is a CSS color (`#…`, `rgb(…)`, `hsl(…)`) gives a solid background of that color; a string that is neither a background preset nor a color keeps the default background and `scene_build` returns a notice naming it.

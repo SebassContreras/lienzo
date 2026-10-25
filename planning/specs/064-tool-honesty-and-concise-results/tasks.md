@@ -63,3 +63,10 @@
       covers: D5@1
       retires: T017
       changes: src/service/tools/scene-build-result.test.ts (+0 -42)
+- [x] T020 [agent] [status:done] Regression tests: `background: "#111827"` gives a solid background of that color; an unknown name keeps the default and returns a notice naming it; a preset name still applies the preset (fail before the fix)
+      covers: R8@1
+      kind: test
+      changes: src/service/compact/background.test.ts (+52 -0)
+- [x] T021 [agent] [status:done] Color strings and the unknown-background notice in `resolveSceneBackground`; `scene_build` description and usage skill
+      covers: D9@1
+      changes: .agents/skills/lienzo-usage/SKILL.md (+4 -1), src/service/compact/expand.ts (+21 -7), src/service/tools/scene-build.ts (+2 -1)

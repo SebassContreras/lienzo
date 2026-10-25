@@ -26,6 +26,7 @@ import {
   resolveBackground,
   resolvePreset,
 } from "../../presets/resolve.ts";
+import { solid } from "../../traits/solid.ts";
 import { resolveLineConnections } from "./connections.ts";
 import { applySceneDefaults } from "./defaults.ts";
 import { expandEffects } from "./effects.ts";
@@ -83,22 +84,34 @@ function resolveSceneDimensions(size?: string | [number, number]): {
   return { width: 1080, height: 1080 };
 }
 
-/** Resolves background from preset name or partial object */
+/** A CSS color written as hex, `rgb(…)` or `hsl(…)` (064/D9); named colors are not matched. */
+const COLOR_PREFIX = /^(#|rgba?\(|hsla?\()/i;
+
+/**
+ * Resolves a background from a preset name, a color (a solid background) or a partial
+ * object; a string that is neither keeps the default and pushes a notice (064/D9).
+ */
 async function resolveSceneBackground(
   bgInput: unknown,
+  notices: string[],
   findPreset?: PresetResolver,
 ): Promise<Background> {
   const base = defaultBackground();
   if (!bgInput) return base;
 
   if (typeof bgInput === "string") {
-    if (findPreset) {
-      const recipe = await findPreset(bgInput);
-      if (recipe && recipe.kind === "background") {
-        const resolved = resolveBackground(recipe);
-        if ("background" in resolved) return resolved.background;
-      }
+    const recipe = await findPreset?.(bgInput);
+    if (recipe && recipe.kind === "background") {
+      const resolved = resolveBackground(recipe);
+      if ("background" in resolved) return resolved.background;
     }
+    if (COLOR_PREFIX.test(bgInput.trim())) {
+      solid.apply.background?.(base, { color: bgInput.trim() });
+      return base;
+    }
+    notices.push(
+      `Fondo «${bgInput}» ignorado: no es un preset de fondo ni un color; se usa el fondo por defecto`,
+    );
     return base;
   }
 
@@ -318,6 +331,7 @@ export async function expandScene(
 
   scene.background = await resolveSceneBackground(
     compact.background,
+    state.notices,
     options.findPreset,
   );
 
