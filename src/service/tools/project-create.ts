@@ -1,9 +1,6 @@
 import { z } from "zod";
-import {
-  ProjectConfigSchema,
-  ProjectManifestSchema,
-  ProjectSlugSchema,
-} from "../../model/project.ts";
+import { ProjectConfigSchema, ProjectSlugSchema } from "../../model/project.ts";
+import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
 
 export const projectCreate = defineTool({
@@ -35,7 +32,7 @@ export const projectCreate = defineTool({
       })
       .optional(),
   }),
-  output: ProjectManifestSchema,
+  output: ToolProjectSchema,
   async run({ project, name, description, palette, canvas }, ctx) {
     try {
       const config = ProjectConfigSchema.parse({
@@ -62,7 +59,7 @@ export const projectCreate = defineTool({
           : undefined,
       });
 
-      return await ctx.projects.create(project, config);
+      return asToolProject(await ctx.projects.create(project, config));
     } catch (error) {
       fail(
         "project_create_failed",

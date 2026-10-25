@@ -92,8 +92,8 @@ describe("ProjectStore & Lifecycle Tools", () => {
     const listRes = await registry.call("project_list", {}, ctx);
     expect(listRes.ok).toBe(true);
     if (listRes.ok) {
-      const items = listRes.value as Array<{ slug: string; name: string }>;
-      expect(items.some((i) => i.slug === "acme-corp")).toBe(true);
+      const items = listRes.value as Array<{ project: string; name: string }>;
+      expect(items.some((i) => i.project === "acme-corp")).toBe(true);
     }
 
     // 3. project_inspect

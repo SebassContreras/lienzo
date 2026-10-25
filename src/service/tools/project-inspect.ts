@@ -1,12 +1,10 @@
 import { z } from "zod";
-import {
-  ProjectManifestSchema,
-  ProjectSlugSchema,
-} from "../../model/project.ts";
+import { ProjectSlugSchema } from "../../model/project.ts";
+import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
 
 const ProjectDetailsSchema = z.object({
-  manifest: ProjectManifestSchema,
+  manifest: ToolProjectSchema,
   assets: z.array(z.string()),
   presets: z.array(z.string()),
   scenes: z.array(z.string()),
@@ -27,7 +25,7 @@ export const projectInspect = defineTool({
       if (!details) {
         fail("not_found", `No existe el proyecto «${project}»`, "project");
       }
-      return details;
+      return { ...details, manifest: asToolProject(details.manifest) };
     } catch (error) {
       if (
         error instanceof Error &&

@@ -3,9 +3,9 @@ import {
   BrandFontSchema,
   ColorPaletteSchema,
   ProjectCanvasDefaultsSchema,
-  ProjectManifestSchema,
   ProjectSlugSchema,
 } from "../../model/project.ts";
+import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
 
 export const projectUpdate = defineTool({
@@ -21,10 +21,10 @@ export const projectUpdate = defineTool({
     fonts: BrandFontSchema.array().optional(),
     canvas: ProjectCanvasDefaultsSchema.optional(),
   }),
-  output: ProjectManifestSchema,
+  output: ToolProjectSchema,
   async run({ project, ...config }, ctx) {
     if (!(await ctx.projects.get(project)))
       fail("not_found", `No existe el proyecto «${project}»`, "project");
-    return ctx.projects.update(project, config);
+    return asToolProject(await ctx.projects.update(project, config));
   },
 });

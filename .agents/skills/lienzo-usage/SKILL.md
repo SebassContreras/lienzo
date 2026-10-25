@@ -17,9 +17,9 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 
 ## Rules
 
-- Every scene, asset and export tool needs `project` (a slug from `project_list`); there
+- Every scene, asset and export tool needs `project` (the `project` of an entry in `project_list`); there
   is no default. Never use an asset from another project.
-- Files go only inside `projects/<slug>/` (scenes, assets, exports).
+- Files go only inside `projects/<project>/` (scenes, assets, exports).
 - One name means one thing in every tool: `project` is a project (the `project_*` tools
   too), `scene` is a saved scene's name, `data` is a whole scene object (`scene_create`,
   `scene_validate`, `scene_inspect_layout`), `recipe` a preset object, `patch` the values
@@ -59,7 +59,7 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
      shared edge or center and set `x`/`y` on each element with `element_update`.
 7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and
    `startOffset` (the shot's start) so each call appends a track. Subtitles follow the cues.
-8. **Export:** `scene_export` (`png`, `gif`, `mp4`) into `projects/<slug>/exports/`.
+8. **Export:** `scene_export` (`png`, `gif`, `mp4`) into `projects/<project>/exports/`.
 
 ## Compact scene, by example
 

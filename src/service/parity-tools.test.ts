@@ -194,13 +194,17 @@ describe("animation_save and animation_list", () => {
 });
 
 describe("project_update", () => {
-  it("changes the name and keeps the slug", async () => {
+  it("changes the name and keeps the project id", async () => {
     const manifest = await ok("project_update", {
       project: project,
       name: "Nuevo",
     });
 
-    expect([manifest.name, manifest.slug]).toEqual(["Nuevo", project]);
+    expect([manifest.name, manifest.project, "slug" in manifest]).toEqual([
+      "Nuevo",
+      project,
+      false,
+    ]);
   });
 
   it("fails on a missing project", async () => {

@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { asToolProject } from "../project-result.ts";
 import { defineTool } from "../registry.ts";
 
 const ProjectSummarySchema = z.object({
-  slug: z.string(),
+  project: z.string(),
   name: z.string(),
   description: z.string().optional(),
   palettePrimary: z.string(),
@@ -16,6 +17,6 @@ export const projectList = defineTool({
   input: z.object({}),
   output: z.array(ProjectSummarySchema),
   async run(_input, ctx) {
-    return ctx.projects.list();
+    return (await ctx.projects.list()).map(asToolProject);
   },
 });

@@ -4,7 +4,7 @@ import { fail } from "./registry.ts";
 
 /** The `project` input of every tool that touches scenes, assets or exports (046/D1). */
 export const PROJECT = ProjectSlugSchema.describe(
-  "Project slug (see project_list); scenes, assets and exports live in projects/<slug>/",
+  "Project id (`project` in project_list); scenes, assets and exports live in projects/<project>/",
 );
 
 /**

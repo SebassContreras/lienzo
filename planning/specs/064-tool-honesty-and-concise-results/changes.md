@@ -70,3 +70,9 @@ Why: an audit of every tool input found `scene` meaning a name in most tools and
 - ADDED R13@1
 - ADDED D14@1
 - Tasks: T030
+
+## 2026-10-25 — `project` in results too
+Why: after R13 the inputs said `project` but the results still said `slug`; the user asked for the same name in both.
+- ADDED R14@1
+- ADDED D15@1
+- Tasks: T031
