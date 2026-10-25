@@ -69,3 +69,4 @@ Index of every spec. `Status` and `Stage` are written only by `trace`. Grammar:
 | 062 | editor-scene-controls | done        | 052, 053, 055, 056 | —            | 62 |
 | 063 | shot-render-and-honest-defaults | done        | 055, 058, 062 | —            | 63 |
 | 064 | tool-honesty-and-concise-results | done        | 063 | —          | 64 |
+| 065 | defaults-and-easing-notices | todo        | 064 | build      | 65 |
