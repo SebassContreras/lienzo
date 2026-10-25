@@ -85,8 +85,12 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 }
 ```
 
-- `at` places an element (`"center"`, an anchor, or `{ anchor, offset }`); `fit: "canvas"`
-  fills the canvas; lines join elements with `from` / `to`.
+- `at` places an element the same way in every tool (`scene_build`, `element_add`,
+  `element_update`): `"center"` or another anchor, `{ anchor, offset: [dx, dy] }`, or a
+  point `{ x, y }` it is centred on; `fit: "canvas"` fills the canvas; lines join elements with `from` / `to`.
+- Italic text is `italic: true` (`fontStyle` is not a field and comes back as ignored).
+- Only `scene_build` and `scene_validate` (with `compact`) take the compact form;
+  `scene_create` and `scene_update` take full scenes.
 - `anim` is an entry/loop/exit shorthand; `tracks` are keyframes `[t, value, easing?]` by
   field path or `@rotate` / `@scale`, with `repeat: "loop" | "pingpong"` and `until`.
 - `origin` is the pivot for rotation and scale; `w` on `text` wraps it.

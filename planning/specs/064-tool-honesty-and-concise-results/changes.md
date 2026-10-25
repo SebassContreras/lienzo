@@ -52,3 +52,15 @@ Why: after R8, `"#111827"` drew a solid background but `{ "color": "#111827" }` 
 - ADDED D10@1
 - Tasks: T022, T023
 - `expand.test.ts` "expands background with deep merge" asserted the old look (`gradient: true` for `{ color, dots: false }`); R9 changes that requirement, so it now asserts `false`.
+
+## 2026-10-25 — Compact input in validate, clearer `at`, italic named
+Why: an agent found that only `scene_build` accepts the compact form, that a `{ x, y }` `at` fails with a bare "Invalid input", and that `fontStyle` is rejected without the skill naming `italic`.
+- ADDED R10@1, R11@1, R12@1
+- ADDED D11@1, D12@1, D13@1
+- Tasks: T024–T027
+
+## 2026-10-25 — `at` is the same in every tool
+Why: the user asked that every option be written the same way in every tool; `at` was a point in `element_add`/`element_update` and an anchor in `scene_build`. (`italic` was checked: it is the only name for italic in every tool.)
+- MODIFIED R11@1 → R11@2
+- MODIFIED D12@1 → D12@2
+- Tasks: T028, T029 retires T026; T024 re-pointed to R11@2 (its `at` test still holds)

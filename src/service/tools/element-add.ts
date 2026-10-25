@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { centerOn } from "../../engine/geometry.ts";
+import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
 import {
   defaultElement,
   type Element,
   type ElementKind,
 } from "../../model/model.ts";
 import { resolveElement } from "../../presets/resolve.ts";
+import { placeAt } from "../compact/layout.ts";
 import { findElement, insertChild } from "../element-tree.ts";
 import { COORDINATES, checkKind, patched } from "../elements.ts";
 import { trimImage } from "../image-trim.ts";
@@ -19,8 +20,10 @@ export const elementAdd = defineTool({
     "Add an element on top of a scene (or inside a `group` when `parent` is given by `id` or " +
     "`group/child` path), built from a preset (see preset_list) or from a component kind's " +
     "defaults (see component_list). `set` deep-merges field values (tracks and animPreset " +
-    "included); `at` centres it on a point, else it is centred on the scene (or the parent " +
-    "group's content area) unless `set` gives its position. " +
+    "included). " +
+    AT_RULES +
+    "It is placed in the scene (or the parent group's content area); with no `at` it is " +
+    "centred there unless `set` gives its position. " +
     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
@@ -35,7 +38,7 @@ export const elementAdd = defineTool({
       preset: z.string().min(1).optional(),
       kind: z.string().min(1).optional(),
       parent: z.string().min(1).optional(),
-      at: z.object({ x: z.number(), y: z.number() }).optional(),
+      at: AtPlacementSchema.optional(),
       set: z.record(z.string(), z.unknown()).optional(),
       trim: z.boolean().optional(),
     })
@@ -88,17 +91,17 @@ export const elementAdd = defineTool({
             "parent",
           );
         }
-        const p =
-          at ?? (placed ? undefined : { x: group.cw / 2, y: group.ch / 2 });
-        const out = p ? centerOn(added, p.x, p.y) : added;
+        const p = at ?? (placed ? undefined : "center");
+        const out = p
+          ? placeAt(added, p, { width: group.cw, height: group.ch })
+          : added;
         return {
           ...s,
           elements: insertChild(s.elements, parent, out, "parent"),
         };
       }
-      const p =
-        at ?? (placed ? undefined : { x: s.width / 2, y: s.height / 2 });
-      const out = p ? centerOn(added, p.x, p.y) : added;
+      const p = at ?? (placed ? undefined : "center");
+      const out = p ? placeAt(added, p, s) : added;
       return { ...s, elements: [...s.elements, out] };
     });
     return {

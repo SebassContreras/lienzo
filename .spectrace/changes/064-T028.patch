@@ -1,0 +1,80 @@
+diff --git a/src/service/tools/compact-input.test.ts b/src/service/tools/compact-input.test.ts
+index 3c066b3..a378b94 100644
+--- a/src/service/tools/compact-input.test.ts
++++ b/src/service/tools/compact-input.test.ts
+@@ -35,11 +35,64 @@ describe("scene_validate takes a compact scene (064/R10)", () => {
+   });
+ });
+ 
+-describe("a bad `at` names what it accepts (064/R11)", () => {
+-  it("lists the anchor and the object form", async () => {
++describe("`at` is the same in every tool (064/R11)", () => {
++  const rect = { kind: "rect", w: 200, h: 100 };
++  const built = async (at: unknown) => {
++    const res = await ok("scene_build", {
++      compact: { elements: [{ id: "r", ...rect, at }] },
++    });
++    return (res.scene as { elements: { x: number; y: number }[] }).elements[0];
++  };
++  const stored = async () => {
++    const res = await ok("scene_get", { scene: "s" });
++    const scene = (res.scene ?? res) as {
++      elements: { x: number; y: number }[];
++    };
++    return scene.elements[0];
++  };
++
++  it("centres on a point in scene_build", async () => {
++    // Act
++    const el = await built({ x: 300, y: 400 });
++
++    // Assert
++    expect(el).toMatchObject({ x: 200, y: 350 });
++  });
++
++  it.each(["center", "bottom-right", { anchor: "top", offset: [10, 20] }])(
++    "places %j in element_add and element_update as scene_build",
++    async (at) => {
++      // Arrange
++      const expected = await built(at);
++      await ok("scene_create", { name: "s" });
++
++      // Act
++      const { id } = await ok("element_add", {
++        scene: "s",
++        kind: "rect",
++        set: { w: 200, h: 100 },
++        at,
++      });
++      const added = await stored();
++      await ok("element_update", {
++        scene: "s",
++        id,
++        patch: {},
++        at: { x: 0, y: 0 },
++      });
++      await ok("element_update", { scene: "s", id, patch: {}, at });
++      const updated = await stored();
++
++      // Assert
++      expect(added).toMatchObject({ x: expected.x, y: expected.y });
++      expect(updated).toMatchObject({ x: expected.x, y: expected.y });
++    },
++  );
++
++  it("lists the three forms on a bad value", async () => {
+     // Act
+     const r = await call("scene_build", {
+-      compact: { elements: [{ kind: "text", at: { x: 10, y: 20 } }] },
++      compact: { elements: [{ kind: "text", at: [10, 20] }] },
+     });
+ 
+     // Assert
+@@ -47,6 +100,7 @@ describe("a bad `at` names what it accepts (064/R11)", () => {
+     const message = r.ok ? "" : r.error.message;
+     expect(message).toContain("center");
+     expect(message).toContain("anchor");
++    expect(message).toContain("{ x, y }");
+     expect(message).not.toContain("Invalid input");
+   });
+ });

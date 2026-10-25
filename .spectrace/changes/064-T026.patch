@@ -1,0 +1,45 @@
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index 351fb29..5083b81 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -70,13 +70,18 @@ export const CompactOriginSchema = z.union([
+ 
+ export type CompactOrigin = z.infer<typeof CompactOriginSchema>;
+ 
+-const AtPlacementSchema = z.union([
+-  AnchorNameSchema,
+-  z.object({
+-    anchor: AnchorNameSchema,
+-    offset: z.tuple([z.number(), z.number()]).optional(),
+-  }),
+-]);
++const AtPlacementSchema = z.union(
++  [
++    AnchorNameSchema,
++    z.object({
++      anchor: AnchorNameSchema,
++      offset: z.tuple([z.number(), z.number()]).optional(),
++    }),
++  ],
++  {
++    error: `\`at\` es un ancla (${AnchorNameSchema.options.join(", ")}) o { anchor, offset: [dx, dy] }; para una posición exacta usa \`x\` e \`y\``,
++  },
++);
+ 
+ export type AtPlacement = z.infer<typeof AtPlacementSchema>;
+ 
+diff --git a/src/service/tools/scene-build.ts b/src/service/tools/scene-build.ts
+index bf571e3..bf3b317 100644
+--- a/src/service/tools/scene-build.ts
++++ b/src/service/tools/scene-build.ts
+@@ -20,7 +20,9 @@ export const sceneBuild = defineTool({
+     "presets, shortcuts (at, fit, from, to, short tracks and anim), partial `effects`, and validates " +
+     'the resulting scene. `defaults: "flat"` turns off the default gradient, shadow, border and ' +
+     `border glow of ${FLAT_KINDS.join(", ")} unless the element sets them; it is applied ` +
+-    "at build time, not stored. `notices` lists what was ignored (e.g. unknown effect keys). " +
++    'at build time, not stored. `at` is an anchor name (`"center"`, `"top-left"`…) or ' +
++    "`{ anchor, offset: [dx, dy] }` (not `{ x, y }` as in element_add: set `x` and `y` instead). " +
++    "`notices` lists what was ignored (e.g. unknown effect keys). " +
+     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
+     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
+     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +

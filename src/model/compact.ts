@@ -70,13 +70,25 @@ export const CompactOriginSchema = z.union([
 
 export type CompactOrigin = z.infer<typeof CompactOriginSchema>;
 
-const AtPlacementSchema = z.union([
-  AnchorNameSchema,
-  z.object({
-    anchor: AnchorNameSchema,
-    offset: z.tuple([z.number(), z.number()]).optional(),
-  }),
-]);
+/** `at` in every tool (064/D12): an anchor, an anchor with an offset, or a point to centre on. */
+export const AtPlacementSchema = z.union(
+  [
+    AnchorNameSchema,
+    z.object({
+      anchor: AnchorNameSchema,
+      offset: z.tuple([z.number(), z.number()]).optional(),
+    }),
+    z.object({ x: z.number(), y: z.number() }),
+  ],
+  {
+    error: `\`at\` es un ancla (${AnchorNameSchema.options.join(", ")}), { anchor, offset: [dx, dy] } o un punto { x, y } en el que se centra`,
+  },
+);
+
+/** What `at` accepts, for every tool description that takes it (064/D12). */
+export const AT_RULES =
+  '`at` places the element: an anchor name (`"center"`, `"top-left"`, …), ' +
+  "`{ anchor, offset: [dx, dy] }`, or a point `{ x, y }` the element is centred on. ";
 
 export type AtPlacement = z.infer<typeof AtPlacementSchema>;
 

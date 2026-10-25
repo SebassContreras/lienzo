@@ -170,6 +170,19 @@
                           },
                           "required": ["anchor"],
                           "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "x": {
+                              "type": "number"
+                            },
+                            "y": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["x", "y"],
+                          "additionalProperties": false
                         }
                       ]
                     },
@@ -586,6 +599,19 @@
                       }
                     },
                     "required": ["anchor"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "x": {
+                        "type": "number"
+                      },
+                      "y": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["x", "y"],
                     "additionalProperties": false
                   }
                 ]

@@ -30,11 +30,7 @@ import { solid } from "../../traits/solid.ts";
 import { resolveLineConnections } from "./connections.ts";
 import { applySceneDefaults } from "./defaults.ts";
 import { expandEffects } from "./effects.ts";
-import {
-  resolveAtPlacement,
-  resolveFitCanvas,
-  resolveOrigin,
-} from "./layout.ts";
+import { placeAt, resolveFitCanvas, resolveOrigin } from "./layout.ts";
 import { normalizeTracks } from "./tracks.ts";
 
 type PresetResolver = (
@@ -393,19 +389,18 @@ export async function expandScene(
     items: Element[],
     container: { width: number; height: number },
   ) {
-    for (const el of items) {
+    for (const [i, item] of items.entries()) {
+      let el = item;
       const mutable = el as unknown as Record<string, unknown>;
       if (mutable.__fit === "canvas") {
         resolveFitCanvas(el, container);
         delete mutable.__fit;
       }
       if (mutable.__at) {
-        resolveAtPlacement(
-          el,
-          mutable.__at as import("../../model/compact.ts").AtPlacement,
-          container,
-        );
+        const at = mutable.__at as import("../../model/compact.ts").AtPlacement;
         delete mutable.__at;
+        el = placeAt(el, at, container);
+        items[i] = el;
       }
       if (el.kind === "group" && Array.isArray(el.children)) {
         const size = el as { w?: unknown; h?: unknown };

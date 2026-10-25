@@ -1,0 +1,325 @@
+diff --git a/.agents/skills/lienzo-usage/SKILL.md b/.agents/skills/lienzo-usage/SKILL.md
+index bbd5865..2f4c4af 100644
+--- a/.agents/skills/lienzo-usage/SKILL.md
++++ b/.agents/skills/lienzo-usage/SKILL.md
+@@ -85,9 +85,9 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
+ }
+ ```
+ 
+-- `at` places an element (`"center"`, an anchor, or `{ anchor, offset: [dx, dy] }`; not
+-  `{ x, y }` as in `element_add`: set `x` and `y` instead); `fit: "canvas"` fills the
+-  canvas; lines join elements with `from` / `to`.
++- `at` places an element the same way in every tool (`scene_build`, `element_add`,
++  `element_update`): `"center"` or another anchor, `{ anchor, offset: [dx, dy] }`, or a
++  point `{ x, y }` it is centred on; `fit: "canvas"` fills the canvas; lines join elements with `from` / `to`.
+ - Italic text is `italic: true` (`fontStyle` is not a field and comes back as ignored).
+ - Only `scene_build` and `scene_validate` (with `compact`) take the compact form;
+   `scene_create` and `scene_update` take full scenes.
+diff --git a/schemas/compact-scene.json b/schemas/compact-scene.json
+index 340953d..8a25c2b 100644
+--- a/schemas/compact-scene.json
++++ b/schemas/compact-scene.json
+@@ -170,6 +170,19 @@
+                           },
+                           "required": ["anchor"],
+                           "additionalProperties": false
++                        },
++                        {
++                          "type": "object",
++                          "properties": {
++                            "x": {
++                              "type": "number"
++                            },
++                            "y": {
++                              "type": "number"
++                            }
++                          },
++                          "required": ["x", "y"],
++                          "additionalProperties": false
+                         }
+                       ]
+                     },
+@@ -587,6 +600,19 @@
+                     },
+                     "required": ["anchor"],
+                     "additionalProperties": false
++                  },
++                  {
++                    "type": "object",
++                    "properties": {
++                      "x": {
++                        "type": "number"
++                      },
++                      "y": {
++                        "type": "number"
++                      }
++                    },
++                    "required": ["x", "y"],
++                    "additionalProperties": false
+                   }
+                 ]
+               },
+diff --git a/src/model/compact.ts b/src/model/compact.ts
+index 5083b81..ed57695 100644
+--- a/src/model/compact.ts
++++ b/src/model/compact.ts
+@@ -70,19 +70,26 @@ export const CompactOriginSchema = z.union([
+ 
+ export type CompactOrigin = z.infer<typeof CompactOriginSchema>;
+ 
+-const AtPlacementSchema = z.union(
++/** `at` in every tool (064/D12): an anchor, an anchor with an offset, or a point to centre on. */
++export const AtPlacementSchema = z.union(
+   [
+     AnchorNameSchema,
+     z.object({
+       anchor: AnchorNameSchema,
+       offset: z.tuple([z.number(), z.number()]).optional(),
+     }),
++    z.object({ x: z.number(), y: z.number() }),
+   ],
+   {
+-    error: `\`at\` es un ancla (${AnchorNameSchema.options.join(", ")}) o { anchor, offset: [dx, dy] }; para una posición exacta usa \`x\` e \`y\``,
++    error: `\`at\` es un ancla (${AnchorNameSchema.options.join(", ")}), { anchor, offset: [dx, dy] } o un punto { x, y } en el que se centra`,
+   },
+ );
+ 
++/** What `at` accepts, for every tool description that takes it (064/D12). */
++export const AT_RULES =
++  '`at` places the element: an anchor name (`"center"`, `"top-left"`, …), ' +
++  "`{ anchor, offset: [dx, dy] }`, or a point `{ x, y }` the element is centred on. ";
++
+ export type AtPlacement = z.infer<typeof AtPlacementSchema>;
+ 
+ const FitPlacementSchema = z.literal("canvas");
+diff --git a/src/service/compact/expand.ts b/src/service/compact/expand.ts
+index b93c07d..e4ef94a 100644
+--- a/src/service/compact/expand.ts
++++ b/src/service/compact/expand.ts
+@@ -30,11 +30,7 @@ import { solid } from "../../traits/solid.ts";
+ import { resolveLineConnections } from "./connections.ts";
+ import { applySceneDefaults } from "./defaults.ts";
+ import { expandEffects } from "./effects.ts";
+-import {
+-  resolveAtPlacement,
+-  resolveFitCanvas,
+-  resolveOrigin,
+-} from "./layout.ts";
++import { placeAt, resolveFitCanvas, resolveOrigin } from "./layout.ts";
+ import { normalizeTracks } from "./tracks.ts";
+ 
+ type PresetResolver = (
+@@ -393,19 +389,18 @@ export async function expandScene(
+     items: Element[],
+     container: { width: number; height: number },
+   ) {
+-    for (const el of items) {
++    for (const [i, item] of items.entries()) {
++      let el = item;
+       const mutable = el as unknown as Record<string, unknown>;
+       if (mutable.__fit === "canvas") {
+         resolveFitCanvas(el, container);
+         delete mutable.__fit;
+       }
+       if (mutable.__at) {
+-        resolveAtPlacement(
+-          el,
+-          mutable.__at as import("../../model/compact.ts").AtPlacement,
+-          container,
+-        );
++        const at = mutable.__at as import("../../model/compact.ts").AtPlacement;
+         delete mutable.__at;
++        el = placeAt(el, at, container);
++        items[i] = el;
+       }
+       if (el.kind === "group" && Array.isArray(el.children)) {
+         const size = el as { w?: unknown; h?: unknown };
+diff --git a/src/service/compact/layout.ts b/src/service/compact/layout.ts
+index 5a167b4..679c624 100644
+--- a/src/service/compact/layout.ts
++++ b/src/service/compact/layout.ts
+@@ -2,7 +2,7 @@
+  * Anchors and layout resolution for compact scenes (011/D3, T004).
+  * Resolves `at` placement and `fit: canvas` using element boxes and scene dimensions.
+  */
+-import { boxOf } from "../../engine/geometry.ts";
++import { boxOf, centerOn } from "../../engine/geometry.ts";
+ import type {
+   AnchorName,
+   AtPlacement,
+@@ -71,22 +71,30 @@ function resolveAnchorPosition(
+   return { x: Math.round(x), y: Math.round(y) };
+ }
+ 
+-export function resolveAtPlacement(
+-  el: Element,
++/** The point any `at` form centres an element of size `box` on (064/D12). */
++export function atCenter(
+   at: AtPlacement,
+-  container:
+-    | Pick<Scene, "width" | "height">
+-    | { width: number; height: number },
+-): void {
++  box: { w: number; h: number },
++  container: { width: number; height: number },
++): { x: number; y: number } {
++  if (typeof at === "object" && "x" in at) return { x: at.x, y: at.y };
+   const anchor: AnchorName = typeof at === "string" ? at : at.anchor;
+   const offset = typeof at === "object" && at.offset ? at.offset : [0, 0];
+-
+-  const box = boxOf(el);
+   const pos = resolveAnchorPosition(anchor, box, container);
++  return {
++    x: pos.x + offset[0] + box.w / 2,
++    y: pos.y + offset[1] + box.h / 2,
++  };
++}
+ 
+-  const mutable = el as unknown as Record<string, unknown>;
+-  mutable.x = pos.x + offset[0];
+-  mutable.y = pos.y + offset[1];
++/** Places `el` by `at` inside `container`, the same way in every tool (064/D12). */
++export function placeAt(
++  el: Element,
++  at: AtPlacement,
++  container: { width: number; height: number },
++): Element {
++  const c = atCenter(at, boxOf(el), container);
++  return centerOn(el, c.x, c.y);
+ }
+ 
+ const NAMED_ORIGINS: Record<AnchorName, { x: number; y: number }> = {
+diff --git a/src/service/tools/element-add.ts b/src/service/tools/element-add.ts
+index d23e14d..e564829 100644
+--- a/src/service/tools/element-add.ts
++++ b/src/service/tools/element-add.ts
+@@ -1,11 +1,12 @@
+ import { z } from "zod";
+-import { centerOn } from "../../engine/geometry.ts";
++import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
+ import {
+   defaultElement,
+   type Element,
+   type ElementKind,
+ } from "../../model/model.ts";
+ import { resolveElement } from "../../presets/resolve.ts";
++import { placeAt } from "../compact/layout.ts";
+ import { findElement, insertChild } from "../element-tree.ts";
+ import { COORDINATES, checkKind, patched } from "../elements.ts";
+ import { trimImage } from "../image-trim.ts";
+@@ -19,8 +20,10 @@ export const elementAdd = defineTool({
+     "Add an element on top of a scene (or inside a `group` when `parent` is given by `id` or " +
+     "`group/child` path), built from a preset (see preset_list) or from a component kind's " +
+     "defaults (see component_list). `set` deep-merges field values (tracks and animPreset " +
+-    "included); `at` centres it on a point, else it is centred on the scene (or the parent " +
+-    "group's content area) unless `set` gives its position. " +
++    "included). " +
++    AT_RULES +
++    "It is placed in the scene (or the parent group's content area); with no `at` it is " +
++    "centred there unless `set` gives its position. " +
+     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
+     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
+     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
+@@ -35,7 +38,7 @@ export const elementAdd = defineTool({
+       preset: z.string().min(1).optional(),
+       kind: z.string().min(1).optional(),
+       parent: z.string().min(1).optional(),
+-      at: z.object({ x: z.number(), y: z.number() }).optional(),
++      at: AtPlacementSchema.optional(),
+       set: z.record(z.string(), z.unknown()).optional(),
+       trim: z.boolean().optional(),
+     })
+@@ -88,17 +91,17 @@ export const elementAdd = defineTool({
+             "parent",
+           );
+         }
+-        const p =
+-          at ?? (placed ? undefined : { x: group.cw / 2, y: group.ch / 2 });
+-        const out = p ? centerOn(added, p.x, p.y) : added;
++        const p = at ?? (placed ? undefined : "center");
++        const out = p
++          ? placeAt(added, p, { width: group.cw, height: group.ch })
++          : added;
+         return {
+           ...s,
+           elements: insertChild(s.elements, parent, out, "parent"),
+         };
+       }
+-      const p =
+-        at ?? (placed ? undefined : { x: s.width / 2, y: s.height / 2 });
+-      const out = p ? centerOn(added, p.x, p.y) : added;
++      const p = at ?? (placed ? undefined : "center");
++      const out = p ? placeAt(added, p, s) : added;
+       return { ...s, elements: [...s.elements, out] };
+     });
+     return {
+diff --git a/src/service/tools/element-update.ts b/src/service/tools/element-update.ts
+index 40de3b0..e1b920d 100644
+--- a/src/service/tools/element-update.ts
++++ b/src/service/tools/element-update.ts
+@@ -1,6 +1,6 @@
+ import { z } from "zod";
+-import { centerOn } from "../../engine/geometry.ts";
+-import type { Element } from "../../model/model.ts";
++import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
++import { placeAt } from "../compact/layout.ts";
+ import { updateElement } from "../element-tree.ts";
+ import { COORDINATES, patched } from "../elements.ts";
+ import { inProject, PROJECT } from "../project-scope.ts";
+@@ -13,25 +13,24 @@ export const elementUpdate = defineTool({
+     "Change an element (at root or inside nested groups, by `id` or `group/child` path) with a " +
+     "partial patch, deep-merged: objects merge key by key, anything else (arrays, tracks' " +
+     "keyframe lists) is replaced. id and kind never change. The result is checked against the " +
+-    "kind's fields. `at` re-centres the patched element on a point and wins over an `x`/`y` in " +
+-    "the patch. " +
++    "kind's fields. " +
++    AT_RULES +
++    "It places the patched element against the scene and wins over an `x`/`y` in the patch. " +
+     COORDINATES,
+   input: z.object({
+     scene: z.string().min(1),
+     project: PROJECT,
+     id: z.string().min(1),
+     patch: z.record(z.string(), z.unknown()),
+-    at: z.object({ x: z.number(), y: z.number() }).optional(),
++    at: AtPlacementSchema.optional(),
+   }),
+   output: SceneResult,
+   run: async ({ scene, project, id, patch, at }, ctx) =>
+     editScene(await inProject(ctx, project), scene, (s) => ({
+       ...s,
+-      elements: updateElement(s.elements, id, (el) =>
+-        recentred(patched(el, patch), at),
+-      ),
++      elements: updateElement(s.elements, id, (el) => {
++        const out = patched(el, patch);
++        return at ? placeAt(out, at, s) : out;
++      }),
+     })),
+ });
+-
+-const recentred = (el: Element, at?: { x: number; y: number }) =>
+-  at ? centerOn(el, at.x, at.y) : el;
+diff --git a/src/service/tools/scene-build.ts b/src/service/tools/scene-build.ts
+index bf3b317..39667a9 100644
+--- a/src/service/tools/scene-build.ts
++++ b/src/service/tools/scene-build.ts
+@@ -1,6 +1,6 @@
+ import { z } from "zod";
+ import { SHOT_RULES } from "../../engine/shots.ts";
+-import { CompactSceneSchema } from "../../model/compact.ts";
++import { AT_RULES, CompactSceneSchema } from "../../model/compact.ts";
+ import { parseScene, SceneSchema } from "../../model/schema.ts";
+ import { slugify } from "../../presets/slug.ts";
+ import { buildCompact } from "../build-compact.ts";
+@@ -20,8 +20,8 @@ export const sceneBuild = defineTool({
+     "presets, shortcuts (at, fit, from, to, short tracks and anim), partial `effects`, and validates " +
+     'the resulting scene. `defaults: "flat"` turns off the default gradient, shadow, border and ' +
+     `border glow of ${FLAT_KINDS.join(", ")} unless the element sets them; it is applied ` +
+-    'at build time, not stored. `at` is an anchor name (`"center"`, `"top-left"`…) or ' +
+-    "`{ anchor, offset: [dx, dy] }` (not `{ x, y }` as in element_add: set `x` and `y` instead). " +
++    "at build time, not stored. " +
++    AT_RULES +
+     "`notices` lists what was ignored (e.g. unknown effect keys). " +
+     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
+     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +

@@ -1,17 +1,15 @@
 import { z } from "zod";
 import { SHOT_RULES } from "../../engine/shots.ts";
-import { CompactSceneSchema } from "../../model/compact.ts";
-import { ignoredNotice, ignoredPaths } from "../../model/ignored.ts";
+import { AT_RULES, CompactSceneSchema } from "../../model/compact.ts";
 import { parseScene, SceneSchema } from "../../model/schema.ts";
 import { slugify } from "../../presets/slug.ts";
+import { buildCompact } from "../build-compact.ts";
 import { FLAT_KINDS } from "../compact/defaults.ts";
-import { expandScene } from "../compact/expand.ts";
 import { keepAudio } from "../compact/keep-audio.ts";
-import { estimatedWidthNotices, fontNotices } from "../font-check.ts";
 import { availableFonts } from "../font-install.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
-import { checkScene, findPreset, saveScene } from "../scenes.ts";
+import { saveScene } from "../scenes.ts";
 
 export const sceneBuild = defineTool({
   name: "scene_build",
@@ -22,7 +20,9 @@ export const sceneBuild = defineTool({
     "presets, shortcuts (at, fit, from, to, short tracks and anim), partial `effects`, and validates " +
     'the resulting scene. `defaults: "flat"` turns off the default gradient, shadow, border and ' +
     `border glow of ${FLAT_KINDS.join(", ")} unless the element sets them; it is applied ` +
-    "at build time, not stored. `notices` lists what was ignored (e.g. unknown effect keys). " +
+    "at build time, not stored. " +
+    AT_RULES +
+    "`notices` lists what was ignored (e.g. unknown effect keys). " +
     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
@@ -51,41 +51,14 @@ export const sceneBuild = defineTool({
   async run({ compact, project, save, overwrite, response_format }, ctx) {
     const effectiveCtx = await inProject(ctx, project);
 
-    let expanded: ReturnType<typeof checkScene>;
-    let notices: string[];
-    try {
-      const full = await expandScene(compact, {
-        findPreset: async (name) => {
-          try {
-            const found = await findPreset(effectiveCtx, name);
-            return found.recipe;
-          } catch {
-            return undefined;
-          }
-        },
-        animLibrary: await (async () => {
-          const { animLibrary } = await import("../scenes.ts");
-          return animLibrary(effectiveCtx);
-        })(),
-      });
-      expanded = checkScene(full.scene);
-      notices = [
-        ...ignoredPaths(full.scene, expanded).map(ignoredNotice),
-        ...full.notices,
-      ];
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      fail("invalid_compact_scene", msg, "compact");
-    }
-
     const fonts = await availableFonts(ctx.fonts, project);
-    notices.push(
-      ...fontNotices(
-        expanded,
-        fonts.map((f) => f.family),
-      ),
-      ...estimatedWidthNotices(expanded),
+    const built = await buildCompact(
+      effectiveCtx,
+      compact,
+      fonts.map((f) => f.family),
     );
+    let expanded = built.scene;
+    const notices = built.notices;
 
     let saved: string | undefined;
     if (save) {

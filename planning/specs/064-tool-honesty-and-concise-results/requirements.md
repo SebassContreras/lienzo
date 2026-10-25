@@ -18,3 +18,6 @@ notice lists and the whole expanded scene, thousands of characters for three rec
 
 - R8@1: In a compact scene, a `background` string that is a CSS color (`#…`, `rgb(…)`, `hsl(…)`) gives a solid background of that color; a string that is neither a background preset nor a color keeps the default background and `scene_build` returns a notice naming it.
 - R9@1: A compact `background` object starts from a solid background: `{ "color": … }` alone draws that color with no gradient, dots or light, and each of those appears only when the object turns it on (`gradient: true`, `dots: true`, `spotlight: <n>`).
+- R10@1: `scene_validate` accepts a compact scene (`compact`, the same input `scene_build` takes) and checks it as `scene_build` would, with the same notices; the `scene_create` description says it takes a full scene and points to `scene_build` with `save` for the compact form.
+- R11@2: `at` takes the same forms in every tool that has it (`scene_build`, `element_add`, `element_update`): an anchor name, `{ anchor, offset: [dx, dy] }` or a point `{ x, y }` the element is centred on; any other value fails with a message naming the three forms and the anchor names, and each description says so.
+- R12@1: The usage skill names the italic field (`italic: true`, not `fontStyle`).

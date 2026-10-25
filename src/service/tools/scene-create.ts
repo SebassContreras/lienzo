@@ -12,7 +12,9 @@ export const sceneCreate = defineTool({
     "background, elements, mode) replace the defaults: an empty 1080x1080, 4 s, 30 fps scene. " +
     "`mode` can be 'static' (graphic post/image) or 'video' (animated video, default). " +
     "Elements may name an animation preset in `animPreset`; it is copied in. Fails if the " +
-    "name is taken unless `overwrite` is true.",
+    "name is taken unless `overwrite` is true. `scene` is a full scene: every element and " +
+    "the background whole, as scene_get returns them; for the compact form (a color as " +
+    "background, partial elements, `at`) use scene_build with `save`.",
   input: z.object({
     name: z.string().min(1),
     project: PROJECT,

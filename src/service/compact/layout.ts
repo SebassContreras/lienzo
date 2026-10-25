@@ -2,7 +2,7 @@
  * Anchors and layout resolution for compact scenes (011/D3, T004).
  * Resolves `at` placement and `fit: canvas` using element boxes and scene dimensions.
  */
-import { boxOf } from "../../engine/geometry.ts";
+import { boxOf, centerOn } from "../../engine/geometry.ts";
 import type {
   AnchorName,
   AtPlacement,
@@ -71,22 +71,30 @@ function resolveAnchorPosition(
   return { x: Math.round(x), y: Math.round(y) };
 }
 
-export function resolveAtPlacement(
-  el: Element,
+/** The point any `at` form centres an element of size `box` on (064/D12). */
+export function atCenter(
   at: AtPlacement,
-  container:
-    | Pick<Scene, "width" | "height">
-    | { width: number; height: number },
-): void {
+  box: { w: number; h: number },
+  container: { width: number; height: number },
+): { x: number; y: number } {
+  if (typeof at === "object" && "x" in at) return { x: at.x, y: at.y };
   const anchor: AnchorName = typeof at === "string" ? at : at.anchor;
   const offset = typeof at === "object" && at.offset ? at.offset : [0, 0];
-
-  const box = boxOf(el);
   const pos = resolveAnchorPosition(anchor, box, container);
+  return {
+    x: pos.x + offset[0] + box.w / 2,
+    y: pos.y + offset[1] + box.h / 2,
+  };
+}
 
-  const mutable = el as unknown as Record<string, unknown>;
-  mutable.x = pos.x + offset[0];
-  mutable.y = pos.y + offset[1];
+/** Places `el` by `at` inside `container`, the same way in every tool (064/D12). */
+export function placeAt(
+  el: Element,
+  at: AtPlacement,
+  container: { width: number; height: number },
+): Element {
+  const c = atCenter(at, boxOf(el), container);
+  return centerOn(el, c.x, c.y);
 }
 
 const NAMED_ORIGINS: Record<AnchorName, { x: number; y: number }> = {

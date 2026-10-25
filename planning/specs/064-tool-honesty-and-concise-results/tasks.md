@@ -77,3 +77,24 @@
 - [x] T023 [agent] [status:done] Background objects start from a solid background; description and usage skill
       covers: D10@1
       changes: .agents/skills/lienzo-usage/SKILL.md (+3 -3), README.md (+2 -0), src/service/compact/expand.test.ts (+3 -2), src/service/compact/expand.ts (+3 -1), src/service/tools/scene-build.ts (+2 -1)
+- [x] T024 [agent] [status:done] Tests: `scene_validate` with `compact` gives the `scene_build` notices (unknown background); both or neither input fails; a bad `at` names the accepted forms (fail before the fix)
+      covers: R10@1, R11@2
+      kind: test
+      changes: src/service/tools/compact-input.test.ts (+52 -0)
+- [x] T025 [agent] [status:done] `buildCompact` shared by `scene_build` and `scene_validate`; `scene_create` description
+      covers: D11@1
+      changes: src/service/build-compact.ts (+43 -0), src/service/tools/scene-build.ts (+8 -37), src/service/tools/scene-create.ts (+3 -1), src/service/tools/scene-validate.ts (+34 -5)
+- [x] T026 [agent] [status:done] `at` union error and `scene_build` description sentence
+      covers: D12@1
+      changes: src/model/compact.ts (+12 -7), src/service/tools/scene-build.ts (+3 -1)
+- [x] T027 [agent] [status:done] Italic field named in the usage skill
+      covers: D13@1
+      changes: .agents/skills/lienzo-usage/SKILL.md (+6 -2)
+- [x] T028 [agent] [status:done] Tests: `{ x, y }` in `scene_build` centres the element on the point; `"center"` and `{ anchor, offset }` in `element_add` and `element_update` place it as `scene_build` does; a bad `at` names the three forms (fail before the fix)
+      covers: R11@2
+      kind: test
+      changes: src/service/tools/compact-input.test.ts (+57 -3)
+- [x] T029 [agent] [status:done] One `at` schema, `atCenter` and `AT_RULES` for `scene_build`, `element_add` and `element_update`; usage skill
+      covers: D12@2
+      retires: T026
+      changes: .agents/skills/lienzo-usage/SKILL.md (+3 -3), schemas/compact-scene.json (+26 -0), src/model/compact.ts (+9 -2), src/service/compact/expand.ts (+6 -11), src/service/compact/layout.ts (+20 -12), src/service/tools/element-add.ts (+13 -10), src/service/tools/element-update.ts (+10 -11), src/service/tools/scene-build.ts (+3 -3)

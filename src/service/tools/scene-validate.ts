@@ -1,8 +1,10 @@
 import { z } from "zod";
+import { CompactSceneSchema } from "../../model/compact.ts";
 import type { Scene } from "../../model/model.ts";
+import { buildCompact } from "../build-compact.ts";
 import { availableFonts } from "../font-install.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
+import { defineTool, fail } from "../registry.ts";
 import { sceneNotices } from "../scene-notices.ts";
 import { prepareScene } from "../scenes.ts";
 import { Verdict, verdictOf } from "../verdict.ts";
@@ -14,17 +16,44 @@ export const sceneValidate = defineTool({
     "presets it names must exist). Returns the first failing path. A valid scene can " +
     "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
     "project (it would draw with a fallback; run font_install), or a text whose width is " +
-    "estimated because its font has no metrics here (check it with scene_preview).",
-  input: z.object({ scene: z.unknown(), project: PROJECT }),
+    "estimated because its font has no metrics here (check it with scene_preview). " +
+    "Pass either `scene` (a full scene) or `compact` (the compact form scene_build takes, " +
+    "checked as scene_build would build it, with the same notices).",
+  input: z.object({
+    scene: z.unknown().optional(),
+    compact: CompactSceneSchema.optional(),
+    project: PROJECT,
+  }),
   output: Verdict.extend({ notices: z.array(z.string()).optional() }),
-  run: async ({ scene, project }, ctx) => {
+  run: async ({ scene, compact, project }, ctx) => {
     const projectCtx = await inProject(ctx, project);
+    const fonts = await availableFonts(ctx.fonts, project);
+    if (compact !== undefined) {
+      let built: { notices: string[] } | undefined;
+      const verdict = await verdictOf(async () => {
+        if (scene !== undefined)
+          fail(
+            "invalid_input",
+            "Pasa `scene` o `compact`, no ambos",
+            "compact",
+          );
+        built = await buildCompact(
+          projectCtx,
+          compact,
+          fonts.map((f) => f.family),
+        );
+      });
+      return built && built.notices.length > 0
+        ? { ...verdict, notices: built.notices }
+        : verdict;
+    }
     let prepared: { scene: Scene; notices: string[] } | undefined;
     const verdict = await verdictOf(async () => {
+      if (scene === undefined)
+        fail("invalid_input", "Falta `scene` o `compact`", "compact");
       prepared = await prepareScene(projectCtx, scene);
     });
     if (!prepared) return verdict;
-    const fonts = await availableFonts(ctx.fonts, project);
     const notices = [
       ...prepared.notices,
       ...sceneNotices(
