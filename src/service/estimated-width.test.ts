@@ -32,7 +32,7 @@ describe("estimated text widths (064/R4)", () => {
     const built = await ok("scene_build", { compact: titleIn("Georgia") });
 
     // Act
-    const verdict = await ok("scene_validate", { scene: built.scene });
+    const verdict = await ok("scene_validate", { data: built.scene });
 
     // Assert
     expect(estimatedNotice(verdict.notices)).toEqual([
@@ -46,7 +46,7 @@ describe("estimated text widths (064/R4)", () => {
 
     // Act
     const layout = await ok("scene_inspect_layout", {
-      scene: built.scene,
+      data: built.scene,
       times: [0],
     });
 
@@ -62,7 +62,7 @@ describe("estimated text widths (064/R4)", () => {
 
     // Act
     const layout = await ok("scene_inspect_layout", {
-      scene: built.scene,
+      data: built.scene,
       times: [0],
     });
 
@@ -88,7 +88,7 @@ describe("estimated text widths (064/R4)", () => {
 
     // Act
     const layout = await ok("scene_inspect_layout", {
-      scene: built.scene,
+      data: built.scene,
       times: [0],
     });
 
@@ -107,7 +107,7 @@ describe("estimated text widths (064/R4)", () => {
 
     // Act
     const layout = await ok("scene_inspect_layout", {
-      scene: built.scene,
+      data: built.scene,
       times: [0],
     });
 

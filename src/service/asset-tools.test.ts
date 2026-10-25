@@ -46,7 +46,11 @@ beforeEach(async () => {
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   ctx = createCtx(root, fakeRenderer());
-  await registry.call("project_create", { slug: project, name: "Assets" }, ctx);
+  await registry.call(
+    "project_create",
+    { project: project, name: "Assets" },
+    ctx,
+  );
 });
 
 describe("asset_rename (063/R7)", () => {
@@ -107,6 +111,8 @@ describe("asset_delete (063/R7)", () => {
 
     // Assert
     expect(res).toEqual({ path: filename, usedBy: ["uses"] });
-    expect((await ok("project_inspect", { slug: project })).assets).toEqual([]);
+    expect((await ok("project_inspect", { project: project })).assets).toEqual(
+      [],
+    );
   });
 });

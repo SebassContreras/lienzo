@@ -25,7 +25,7 @@ describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
     ctx = createCtx(root, fakeRenderer());
     await registry.call(
       "project_create",
-      { slug: PROJECT, name: "Test Project" },
+      { project: PROJECT, name: "Test Project" },
       ctx,
     );
   });
@@ -126,7 +126,7 @@ describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
   it("creates, updates, and deletes shots using shot_set tool", async () => {
     await registry.call(
       "scene_create",
-      { project: PROJECT, name: "demo", duration: 10 },
+      { project: PROJECT, scene: "demo", duration: 10 },
       ctx,
     );
 

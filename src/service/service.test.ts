@@ -65,16 +65,17 @@ describe("service tools", () => {
         recipe: { name: "A", kind: "rect", traits: ["nope"] },
       }),
     ).toMatchObject({ valid: false });
-    expect(await ok("scene_validate", { scene: { width: "x" } })).toMatchObject(
-      { valid: false, path: expect.any(String) },
-    );
+    expect(await ok("scene_validate", { data: { width: "x" } })).toMatchObject({
+      valid: false,
+      path: expect.any(String),
+    });
   });
 
   it("creates, edits and reads a scene that opens in the editor", async () => {
-    await ok("scene_create", { name: "Demo" });
-    expect(await call("scene_create", { name: "Demo" })).toMatchObject({
+    await ok("scene_create", { scene: "Demo" });
+    expect(await call("scene_create", { scene: "Demo" })).toMatchObject({
       ok: false,
-      error: { code: "exists", path: "name" },
+      error: { code: "exists", path: "scene" },
     });
     const a = await ok("element_add", { scene: "demo", kind: "rect" });
     const presets = (await ok("preset_list", {})) as unknown as {
@@ -97,7 +98,7 @@ describe("service tools", () => {
     expect(scene.elements.map((e) => e.id)).toEqual([b.id, a.id]);
     expect((scene.elements[1] as Element & { x: number }).x).toBe(7);
     await ok("element_remove", { scene: "demo", id: b.id });
-    await ok("background_set", { scene: "demo", values: { color: "#123456" } });
+    await ok("background_set", { scene: "demo", patch: { color: "#123456" } });
     scene = await onDisk("demo");
     expect(scene.elements).toHaveLength(1);
     expect(scene.background.color).toBe("#123456");
@@ -109,11 +110,11 @@ describe("service tools", () => {
   });
 
   it("re-centres an updated text's box on the point given as `at` (R3)", async () => {
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
     const { id } = await ok("element_add", {
       scene: "demo",
       kind: "text",
-      set: { x: 540, y: 100, align: "center" },
+      patch: { x: 540, y: 100, align: "center" },
     });
 
     await ok("element_update", {
@@ -128,11 +129,11 @@ describe("service tools", () => {
   });
 
   it("keeps an updated element's position when no `at` is given (R3)", async () => {
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
     const { id } = await ok("element_add", {
       scene: "demo",
       kind: "rect",
-      set: { x: 20, y: 30 },
+      patch: { x: 20, y: 30 },
     });
 
     await ok("element_update", { scene: "demo", id, patch: { w: 50 } });
@@ -142,7 +143,7 @@ describe("service tools", () => {
   });
 
   it("writes nothing when an edit would make the scene invalid (R4)", async () => {
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
     const { id } = await ok("element_add", { scene: "demo", kind: "rect" });
     const scenePath = join(
       h.ctx.root,
@@ -163,8 +164,8 @@ describe("service tools", () => {
     });
     expect(await readFile(scenePath, "utf8")).toBe(before);
     const bad = await call("scene_create", {
-      name: "bad",
-      scene: { width: -1 },
+      scene: "bad",
+      data: { width: -1 },
     });
     expect(bad.ok).toBe(false);
     expect(await sceneFiles()).toEqual(["demo.json"]);
@@ -192,7 +193,7 @@ describe("descriptor-driven tools (R6)", () => {
       animatable: string[];
     }[];
     expect(kinds.find((k) => k.kind === "blob")?.animatable).toContain("x");
-    await ok("scene_create", { name: "s" });
+    await ok("scene_create", { scene: "s" });
     const { id } = await ok("element_add", { scene: "s", kind: "blob" });
     await ok("element_update", { scene: "s", id, patch: { w: 50 } });
     await ok("keyframe_set", { scene: "s", id, path: "x", t: 0, value: 0 });
@@ -230,18 +231,18 @@ describe("animation presets (D6, R7)", () => {
         },
       }),
     );
-    await ok("scene_create", { name: "s" });
+    await ok("scene_create", { scene: "s" });
     const { id } = await ok("element_add", {
       scene: "s",
       kind: "rect",
-      set: { animPreset: { name: "Spin", start: 0 } },
+      patch: { animPreset: { name: "Spin", start: 0 } },
     });
     const el = (await onDisk("s")).elements.find((e) => e.id === id);
     expect(el?.tracks?.["@rotate"]).toBeDefined();
     const r = await call("element_add", {
       scene: "s",
       kind: "rect",
-      set: { animPreset: { name: "Nope", start: 0 } },
+      patch: { animPreset: { name: "Nope", start: 0 } },
     });
     expect(r).toMatchObject({
       ok: false,
@@ -250,13 +251,13 @@ describe("animation presets (D6, R7)", () => {
   });
 
   it("inspects layout and detects out-of-bounds elements (023/D2, R3)", async () => {
-    await ok("scene_create", { name: "oob_demo" });
+    await ok("scene_create", { scene: "oob_demo" });
     await ok("element_add", {
       scene: "oob_demo",
       kind: "rect",
-      set: { x: 5000, y: 5000, w: 200, h: 200 },
+      patch: { x: 5000, y: 5000, w: 200, h: 200 },
     });
-    const result = await ok("scene_inspect_layout", { name: "oob_demo" });
+    const result = await ok("scene_inspect_layout", { scene: "oob_demo" });
     expect(result.diagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -267,15 +268,15 @@ describe("animation presets (D6, R7)", () => {
   });
 
   it("returns every top-level element's box beside the diagnostics (023/R2)", async () => {
-    await ok("scene_create", { name: "boxes" });
+    await ok("scene_create", { scene: "boxes" });
     const { id } = await ok("element_add", {
       scene: "boxes",
       kind: "rect",
-      set: { x: 10, y: 20, w: 30, h: 40 },
+      patch: { x: 10, y: 20, w: 30, h: 40 },
     });
 
     const result = await ok("scene_inspect_layout", {
-      name: "boxes",
+      scene: "boxes",
       times: [0],
     });
 
@@ -386,7 +387,7 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
       compact: { elements: [{ kind: "text", font: "Montserrat" }] },
     });
 
-    const res = await ok("scene_validate", { scene });
+    const res = await ok("scene_validate", { data: scene });
 
     expect(res).toEqual({
       valid: true,
@@ -421,7 +422,7 @@ describe("ignored fields (063/R6)", () => {
     typo.elements[0] = { ...typo.elements[0], glw: 4 };
 
     // Act
-    const res = await ok("scene_validate", { scene: typo });
+    const res = await ok("scene_validate", { data: typo });
 
     // Assert
     expect(res).toEqual({
@@ -435,7 +436,7 @@ describe("scene_preview out (058/R3)", () => {
   const exports = () => join(h.ctx.root, "projects", "mi-proyecto", "exports");
 
   it("saves the PNG inside exports/ and returns its path", async () => {
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
 
     const res = await ok("scene_preview", { scene: "demo", out: "look.png" });
 
@@ -444,7 +445,7 @@ describe("scene_preview out (058/R3)", () => {
   });
 
   it("rejects an `out` outside exports/ and writes nothing", async () => {
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
 
     const r = await call("scene_preview", { scene: "demo", out: "../x.png" });
 
@@ -458,7 +459,7 @@ describe("scene_preview out (058/R3)", () => {
   });
 
   it("writes nothing without `out`", async () => {
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
 
     const res = await ok("scene_preview", { scene: "demo" });
 
@@ -470,7 +471,7 @@ describe("scene_preview out (058/R3)", () => {
 describe("scene_export (010/R1)", () => {
   it("writes inside the project's exports/ and rejects an `out` outside it (046/R2)", async () => {
     const exports = join(h.ctx.root, "projects", "mi-proyecto", "exports");
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
     const png = await ok("scene_export", { scene: "demo", format: "png" });
     expect(png.file).toBe(join(exports, "demo.png"));
     expect(png.notices).toEqual([]);
@@ -498,7 +499,7 @@ describe("scene_export (010/R1)", () => {
 
   it("falls back to WebM, and says so, when H.264 is unavailable", async () => {
     h.ctx = createCtx(h.ctx.root, fakeRenderer("video/webm"));
-    await ok("scene_create", { name: "demo" });
+    await ok("scene_create", { scene: "demo" });
     const r = await ok("scene_export", {
       scene: "demo",
       format: "mp4",
@@ -556,13 +557,20 @@ describe("project scope (046/R1)", () => {
         (t) => "project" in (t.input as unknown as { shape: object }).shape,
       )
       .map((t) => t.name);
-    expect(unscoped.sort()).toEqual(["font_install", "font_list"]);
+    expect(unscoped.sort()).toEqual([
+      "font_install",
+      "font_list",
+      "project_create",
+      "project_delete",
+      "project_inspect",
+      "project_update",
+    ]);
   });
 
   it("edits only the named project's scene, even when another has the same name", async () => {
-    await ok("project_create", { slug: "otro", name: "Otro" });
-    await ok("scene_create", { name: "demo" });
-    await ok("scene_create", { name: "demo", project: "otro" });
+    await ok("project_create", { project: "otro", name: "Otro" });
+    await ok("scene_create", { scene: "demo" });
+    await ok("scene_create", { scene: "demo", project: "otro" });
     const { id } = await ok("element_add", {
       scene: "demo",
       project: "otro",
@@ -615,7 +623,7 @@ describe("nested element tools and group parent insertion (051/R1, R2)", () => {
       scene: "shots",
       kind: "rect",
       parent: "shot-1",
-      set: { w: 80, h: 40 },
+      patch: { w: 80, h: 40 },
     });
     const carId = added.id as string;
 
@@ -677,7 +685,7 @@ describe("nested element tools and group parent insertion (051/R1, R2)", () => {
   });
 
   it("rejects `element_add` when `parent` does not exist or is not a group and leaves the scene unchanged (051/R2)", async () => {
-    await ok("scene_create", { name: "flat" });
+    await ok("scene_create", { scene: "flat" });
     const { id: rectId } = await ok("element_add", {
       scene: "flat",
       kind: "rect",

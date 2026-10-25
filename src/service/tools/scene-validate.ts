@@ -17,26 +17,22 @@ export const sceneValidate = defineTool({
     "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
     "project (it would draw with a fallback; run font_install), or a text whose width is " +
     "estimated because its font has no metrics here (check it with scene_preview). " +
-    "Pass either `scene` (a full scene) or `compact` (the compact form scene_build takes, " +
+    "Pass either `data` (a full scene) or `compact` (the compact form scene_build takes, " +
     "checked as scene_build would build it, with the same notices).",
   input: z.object({
-    scene: z.unknown().optional(),
+    data: z.unknown().optional(),
     compact: CompactSceneSchema.optional(),
     project: PROJECT,
   }),
   output: Verdict.extend({ notices: z.array(z.string()).optional() }),
-  run: async ({ scene, compact, project }, ctx) => {
+  run: async ({ data, compact, project }, ctx) => {
     const projectCtx = await inProject(ctx, project);
     const fonts = await availableFonts(ctx.fonts, project);
     if (compact !== undefined) {
       let built: { notices: string[] } | undefined;
       const verdict = await verdictOf(async () => {
-        if (scene !== undefined)
-          fail(
-            "invalid_input",
-            "Pasa `scene` o `compact`, no ambos",
-            "compact",
-          );
+        if (data !== undefined)
+          fail("invalid_input", "Pasa `data` o `compact`, no ambos", "compact");
         built = await buildCompact(
           projectCtx,
           compact,
@@ -49,15 +45,15 @@ export const sceneValidate = defineTool({
     }
     let prepared: { scene: Scene; notices: string[] } | undefined;
     const verdict = await verdictOf(async () => {
-      if (scene === undefined)
-        fail("invalid_input", "Falta `scene` o `compact`", "compact");
-      prepared = await prepareScene(projectCtx, scene);
+      if (data === undefined)
+        fail("invalid_input", "Falta `data` o `compact`", "compact");
+      prepared = await prepareScene(projectCtx, data);
     });
     if (!prepared) return verdict;
     const notices = [
       ...prepared.notices,
       ...sceneNotices(
-        scene,
+        data,
         prepared.scene,
         fonts.map((f) => f.family),
       ).map((n) => n.message),

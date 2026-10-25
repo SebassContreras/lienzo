@@ -117,8 +117,8 @@ describe("scene_generate_speech duration (060/R2)", () => {
       listModels: async () => [],
     };
     ctx.tts = tts;
-    await registry.call("project_create", { slug: "p", name: "P" }, ctx);
-    await registry.call("scene_create", { project: "p", name: "s" }, ctx);
+    await registry.call("project_create", { project: "p", name: "P" }, ctx);
+    await registry.call("scene_create", { project: "p", scene: "s" }, ctx);
     const res = await registry.call(
       "scene_generate_speech",
       { project: "p", scene: "s", script: "Hola", provider: "local" },

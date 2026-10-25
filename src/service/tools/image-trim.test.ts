@@ -34,8 +34,8 @@ async function setup(probe: ImageProbe) {
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   ctx = createCtx(root, fakeRenderer(), undefined, probe);
-  await call("project_create", { slug: PROJECT, name: "Mi proyecto" });
-  await call("scene_create", { project: PROJECT, name: SCENE });
+  await call("project_create", { project: PROJECT, name: "Mi proyecto" });
+  await call("scene_create", { project: PROJECT, scene: SCENE });
 }
 
 function call(name: string, input: Record<string, unknown>) {
@@ -47,7 +47,7 @@ async function addImage(src: string, kind = "image"): Promise<string> {
   const r = await call("element_add", {
     scene: SCENE,
     kind,
-    set: { x: 100, y: 50, w: 200, h: 100, src, aspect: 2 },
+    patch: { x: 100, y: 50, w: 200, h: 100, src, aspect: 2 },
   });
   if (!r.ok) throw new Error(JSON.stringify(r.error));
   return (r.value as { id: string }).id;
@@ -133,7 +133,7 @@ describe("image_trim", () => {
       scene: SCENE,
       kind: "image",
       parent: groupId,
-      set: {
+      patch: {
         x: 100,
         y: 50,
         w: 200,
@@ -167,7 +167,7 @@ describe("element_add with trim", () => {
     const r = await call("element_add", {
       scene: SCENE,
       kind: "image",
-      set: { src: "assets/logo.png", aspect: 2 },
+      patch: { src: "assets/logo.png", aspect: 2 },
       trim: true,
     });
 
@@ -179,7 +179,7 @@ describe("element_add with trim", () => {
     const r = await call("element_add", {
       scene: SCENE,
       kind: "image",
-      set: { src: "assets/broken.png" },
+      patch: { src: "assets/broken.png" },
       trim: true,
     });
 

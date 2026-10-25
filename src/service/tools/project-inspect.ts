@@ -18,14 +18,14 @@ export const projectInspect = defineTool({
     "Inspect a project workspace: returns full manifest, brand guide, and inventory of " +
     "local assets, presets, and scenes.",
   input: z.object({
-    slug: ProjectSlugSchema,
+    project: ProjectSlugSchema,
   }),
   output: ProjectDetailsSchema,
-  async run({ slug }, ctx) {
+  async run({ project }, ctx) {
     try {
-      const details = await ctx.projects.get(slug);
+      const details = await ctx.projects.get(project);
       if (!details) {
-        fail("not_found", `No existe el proyecto «${slug}»`, "slug");
+        fail("not_found", `No existe el proyecto «${project}»`, "project");
       }
       return details;
     } catch (error) {
@@ -33,12 +33,12 @@ export const projectInspect = defineTool({
         error instanceof Error &&
         error.message.includes("No existe el proyecto")
       ) {
-        fail("not_found", error.message, "slug");
+        fail("not_found", error.message, "project");
       }
       fail(
         "inspect_failed",
         String(error instanceof Error ? error.message : error),
-        "slug",
+        "project",
       );
     }
   },

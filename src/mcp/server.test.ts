@@ -20,7 +20,7 @@ beforeEach(async () => {
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   ctx = createCtx(root, fakeRenderer());
-  await registry.call("project_create", { slug: "p", name: "P" }, ctx);
+  await registry.call("project_create", { project: "p", name: "P" }, ctx);
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await createMcpServer(registry, ctx).connect(serverSide);
   client = new Client({ name: "test", version: "0" });
@@ -76,7 +76,7 @@ describe("lienzo MCP server", () => {
   });
 
   it("gives the same result as the CLI for the same input (R1)", async () => {
-    await mcp("scene_create", { name: "demo", project: "p" });
+    await mcp("scene_create", { scene: "demo", project: "p" });
     const viaMcp = await mcp("scene_get", { scene: "demo", project: "p" });
     const viaCli = await cli([
       "scene_get",
@@ -113,7 +113,7 @@ describe("lienzo MCP server", () => {
   });
 
   it("returns scene_preview as image content (010/R2)", async () => {
-    await mcp("scene_create", { name: "demo", project: "p" });
+    await mcp("scene_create", { scene: "demo", project: "p" });
     const r = await client.callTool({
       name: "scene_preview",
       arguments: { scene: "demo", project: "p" },
@@ -125,7 +125,7 @@ describe("lienzo MCP server", () => {
   });
 
   it("returns scene_preview with `out` as image then its file (058/R3)", async () => {
-    await mcp("scene_create", { name: "demo", project: "p" });
+    await mcp("scene_create", { scene: "demo", project: "p" });
     const r = await client.callTool({
       name: "scene_preview",
       arguments: { scene: "demo", project: "p", out: "look.png" },

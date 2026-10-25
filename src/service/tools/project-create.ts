@@ -9,10 +9,10 @@ import { defineTool, fail } from "../registry.ts";
 export const projectCreate = defineTool({
   name: "project_create",
   description:
-    "Create a new isolated project workspace in projects/<slug>/ with its brand guide, " +
+    "Create a new isolated project workspace in projects/<project>/ with its brand guide, " +
     "color palette, and directories for assets, presets, and scenes.",
   input: z.object({
-    slug: ProjectSlugSchema,
+    project: ProjectSlugSchema,
     name: z.string().min(1, "El nombre del proyecto es obligatorio"),
     description: z.string().optional(),
     palette: z
@@ -36,7 +36,7 @@ export const projectCreate = defineTool({
       .optional(),
   }),
   output: ProjectManifestSchema,
-  async run({ slug, name, description, palette, canvas }, ctx) {
+  async run({ project, name, description, palette, canvas }, ctx) {
     try {
       const config = ProjectConfigSchema.parse({
         name,
@@ -62,12 +62,12 @@ export const projectCreate = defineTool({
           : undefined,
       });
 
-      return await ctx.projects.create(slug, config);
+      return await ctx.projects.create(project, config);
     } catch (error) {
       fail(
         "project_create_failed",
         String(error instanceof Error ? error.message : error),
-        "slug",
+        "project",
       );
     }
   },

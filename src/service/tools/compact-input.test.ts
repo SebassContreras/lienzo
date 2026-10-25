@@ -24,7 +24,7 @@ describe("scene_validate takes a compact scene (064/R10)", () => {
   it("fails when both or neither input is given", async () => {
     // Act
     const both = await ok("scene_validate", {
-      scene: {},
+      data: {},
       compact: { elements: [] },
     });
     const neither = await ok("scene_validate", {});
@@ -64,13 +64,13 @@ describe("`at` is the same in every tool (064/R11)", () => {
     async (at) => {
       // Arrange
       const expected = await built(at);
-      await ok("scene_create", { name: "s" });
+      await ok("scene_create", { scene: "s" });
 
       // Act
       const { id } = await ok("element_add", {
         scene: "s",
         kind: "rect",
-        set: { w: 200, h: 100 },
+        patch: { w: 200, h: 100 },
         at,
       });
       const added = await stored();

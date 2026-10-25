@@ -36,8 +36,12 @@ beforeEach(async () => {
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   ctx = createCtx(root, fakeRenderer());
-  await registry.call("project_create", { slug: project, name: "Parity" }, ctx);
-  await ok("scene_create", { name: "s" });
+  await registry.call(
+    "project_create",
+    { project: project, name: "Parity" },
+    ctx,
+  );
+  await ok("scene_create", { scene: "s" });
 });
 
 describe("editor and tools write the same JSON", () => {

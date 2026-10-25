@@ -64,3 +64,9 @@ Why: the user asked that every option be written the same way in every tool; `at
 - MODIFIED R11@1 → R11@2
 - MODIFIED D12@1 → D12@2
 - Tasks: T028, T029 retires T026; T024 re-pointed to R11@2 (its `at` test still holds)
+
+## 2026-10-25 — One name per meaning across tools
+Why: an audit of every tool input found `scene` meaning a name in most tools and an object in two, `name`/`slug` where others say `scene`/`project`, and `set`/`values`/`patch` for the same merge; the user chose to unify without aliases.
+- ADDED R13@1
+- ADDED D14@1
+- Tasks: T030

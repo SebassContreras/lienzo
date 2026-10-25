@@ -40,7 +40,7 @@ describe("Brand constraining and asset guardrails", () => {
     const res = await registry.call(
       "scene_create",
       {
-        name: "story-post",
+        scene: "story-post",
         project: "brand-x",
       },
       ctx,
@@ -68,7 +68,7 @@ describe("Brand constraining and asset guardrails", () => {
     await registry.call(
       "scene_create",
       {
-        name: "hero-scene",
+        scene: "hero-scene",
         project: "brand-x",
       },
       ctx,
@@ -81,7 +81,7 @@ describe("Brand constraining and asset guardrails", () => {
         scene: "hero-scene",
         project: "brand-x",
         kind: "image",
-        set: { src: "assets/unapproved-foreign-image.png" },
+        patch: { src: "assets/unapproved-foreign-image.png" },
       },
       ctx,
     );
@@ -107,7 +107,7 @@ describe("Brand constraining and asset guardrails", () => {
         scene: "hero-scene",
         project: "brand-x",
         kind: "image",
-        set: { src: "assets/brand-logo.png" },
+        patch: { src: "assets/brand-logo.png" },
       },
       ctx,
     );

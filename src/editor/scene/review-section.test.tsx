@@ -28,10 +28,10 @@ async function toolNotices(scene: Scene): Promise<unknown> {
   const root = await mkdtemp(join(tmpdir(), "lienzo-review-"));
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   const ctx = createCtx(root, fakeRenderer());
-  await registry.call("project_create", { slug: "p", name: "P" }, ctx);
+  await registry.call("project_create", { project: "p", name: "P" }, ctx);
   const res = await registry.call(
     "scene_validate",
-    { project: "p", scene },
+    { project: "p", data: scene },
     ctx,
   );
   return res.ok ? (res.value as { notices?: string[] }).notices : res.error;

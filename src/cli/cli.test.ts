@@ -36,7 +36,7 @@ beforeEach(async () => {
 });
 
 /** Runs a command line in-process and captures what it prints. */
-const files: Record<string, string> = { "demo.json": '{"name":"de-archivo"}' };
+const files: Record<string, string> = { "demo.json": '{"scene":"de-archivo"}' };
 
 async function cli(argv: string[], stdin = "") {
   let stdout = "";
@@ -90,15 +90,15 @@ describe("lienzo CLI", () => {
     await ok(["component_list"]);
     await ok(["preset_list"]);
     await ok(["preset_validate", "--json", JSON.stringify({ recipe })]);
-    await ok(["project_create", "--slug", "p", "--name", "P"]);
+    await ok(["project_create", "--project", "p", "--name", "P"]);
     await ok(
       ["scene_create", "--project", "p", "--json", "-"],
-      '{"name":"demo"}',
+      '{"scene":"demo"}',
     );
     await ok(["scene_create", "--project", "p", "--json", "@demo.json"]);
     await ok(["scene_list", "--project", "p"]);
     await ok(["scene_get", "--project", "p", "--scene", "demo"]);
-    await ok(["scene_validate", "--project", "p", "--json", '{"scene":{}}']);
+    await ok(["scene_validate", "--project", "p", "--json", '{"data":{}}']);
     const { id } = await ok([
       "element_add",
       "--project",
@@ -157,7 +157,7 @@ describe("lienzo CLI", () => {
       "--project",
       "p",
       "--json",
-      '{"scene":"demo","values":{}}',
+      '{"scene":"demo","patch":{}}',
     ]);
     await ok([
       "keyframe_set",
@@ -187,10 +187,16 @@ describe("lienzo CLI", () => {
       "--t",
       "0",
     ]);
-    await ok(["project_create", "--slug", "test-proj", "--name", "Test Proj"]);
+    await ok([
+      "project_create",
+      "--project",
+      "test-proj",
+      "--name",
+      "Test Proj",
+    ]);
     await ok(["project_list"]);
-    await ok(["project_inspect", "--slug", "test-proj"]);
-    await ok(["project_delete", "--slug", "test-proj"]);
+    await ok(["project_inspect", "--project", "test-proj"]);
+    await ok(["project_delete", "--project", "test-proj"]);
     await ok([
       "scene_generate_speech",
       "--project",
@@ -211,7 +217,7 @@ describe("lienzo CLI", () => {
       "--t",
       "1",
     ]);
-    await ok(["scene_inspect_layout", "--project", "p", "--name", "demo"]);
+    await ok(["scene_inspect_layout", "--project", "p", "--scene", "demo"]);
     await ok([
       "scene_build",
       "--project",
@@ -244,7 +250,7 @@ describe("lienzo CLI", () => {
     };
     const image = (await ok(
       ["element_add", "--project", "p", "--json", "-"],
-      '{"scene":"demo","kind":"image","set":{"src":"assets/logo.png"}}',
+      '{"scene":"demo","kind":"image","patch":{"src":"assets/logo.png"}}',
     )) as { id: string };
     await ok([
       "image_trim",
@@ -322,7 +328,7 @@ describe("lienzo CLI", () => {
       "--to",
       "demo2",
     ]);
-    await ok(["scene_delete", "--project", "p", "--name", "demo2"]);
+    await ok(["scene_delete", "--project", "p", "--scene", "demo2"]);
     await ok([
       "preset_save",
       "--project",
@@ -340,9 +346,9 @@ describe("lienzo CLI", () => {
       "otro",
     ]);
     await ok(["preset_delete", "--project", "p", "--name", "otro"]);
-    await ok(["animation_save", "--json", '{"preset":{"name":"Salto"}}']);
+    await ok(["animation_save", "--json", '{"recipe":{"name":"Salto"}}']);
     await ok(["animation_list"]);
-    await ok(["project_update", "--slug", "p", "--name", "P2"]);
+    await ok(["project_update", "--project", "p", "--name", "P2"]);
     const logo = join(tmpdir(), `lienzo-cli-logo-${process.pid}.png`);
     await writeFile(logo, "png");
     const added = (await ok([

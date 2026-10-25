@@ -12,9 +12,9 @@ export const projectUpdate = defineTool({
   name: "project_update",
   description:
     "Change a project's name, description, palette, brand fonts or canvas defaults, as the " +
-    "editor's brand dialog does. Each field given replaces the stored one; the slug never changes.",
+    "editor's brand dialog does. Each field given replaces the stored one; the `project` id never changes.",
   input: z.object({
-    slug: ProjectSlugSchema,
+    project: ProjectSlugSchema,
     name: z.string().min(1).optional(),
     description: z.string().optional(),
     palette: ColorPaletteSchema.optional(),
@@ -22,9 +22,9 @@ export const projectUpdate = defineTool({
     canvas: ProjectCanvasDefaultsSchema.optional(),
   }),
   output: ProjectManifestSchema,
-  async run({ slug, ...config }, ctx) {
-    if (!(await ctx.projects.get(slug)))
-      fail("not_found", `No existe el proyecto «${slug}»`, "slug");
-    return ctx.projects.update(slug, config);
+  async run({ project, ...config }, ctx) {
+    if (!(await ctx.projects.get(project)))
+      fail("not_found", `No existe el proyecto «${project}»`, "project");
+    return ctx.projects.update(project, config);
   },
 });

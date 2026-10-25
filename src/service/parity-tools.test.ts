@@ -45,8 +45,8 @@ beforeEach(async () => {
   });
   await mkdir(join(root, "presets", "animations"), { recursive: true });
   ctx = createCtx(root, fakeRenderer());
-  await ok("project_create", { slug: project, name: "Tools" });
-  await ok("scene_create", { project, name: "s" });
+  await ok("project_create", { project: project, name: "Tools" });
+  await ok("scene_create", { project, scene: "s" });
 });
 
 describe("scene_update", () => {
@@ -114,7 +114,7 @@ describe("scene_rename and scene_delete", () => {
   });
 
   it("refuses a rename onto a taken name", async () => {
-    await ok("scene_create", { project, name: "t" });
+    await ok("scene_create", { project, scene: "t" });
 
     expect(
       await errorCode("scene_rename", { project, from: "s", to: "t" }),
@@ -122,13 +122,13 @@ describe("scene_rename and scene_delete", () => {
   });
 
   it("deletes a scene", async () => {
-    await ok("scene_delete", { project, name: "s" });
+    await ok("scene_delete", { project, scene: "s" });
 
     expect(await errorCode("scene_get", { project, scene: "s" })).toBeDefined();
   });
 
   it("fails to delete a missing scene", async () => {
-    expect(await errorCode("scene_delete", { project, name: "nope" })).toBe(
+    expect(await errorCode("scene_delete", { project, scene: "nope" })).toBe(
       "not_found",
     );
   });
@@ -177,7 +177,7 @@ describe("preset_save, preset_rename and preset_delete", () => {
 describe("animation_save and animation_list", () => {
   it("lists an animation once saved", async () => {
     await ok("animation_save", {
-      preset: { name: "Salto", category: "Mías", anim: {} },
+      recipe: { name: "Salto", category: "Mías", anim: {} },
     });
 
     const { animations } = await ok("animation_list", {});
@@ -187,7 +187,7 @@ describe("animation_save and animation_list", () => {
   });
 
   it("refuses an animation without a name", async () => {
-    expect(await errorCode("animation_save", { preset: {} })).toBe(
+    expect(await errorCode("animation_save", { recipe: {} })).toBe(
       "invalid_animation",
     );
   });
@@ -196,7 +196,7 @@ describe("animation_save and animation_list", () => {
 describe("project_update", () => {
   it("changes the name and keeps the slug", async () => {
     const manifest = await ok("project_update", {
-      slug: project,
+      project: project,
       name: "Nuevo",
     });
 
@@ -204,9 +204,9 @@ describe("project_update", () => {
   });
 
   it("fails on a missing project", async () => {
-    expect(await errorCode("project_update", { slug: "nope", name: "x" })).toBe(
-      "not_found",
-    );
+    expect(
+      await errorCode("project_update", { project: "nope", name: "x" }),
+    ).toBe("not_found");
   });
 });
 

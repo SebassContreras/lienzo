@@ -1,0 +1,1291 @@
+diff --git a/.agents/skills/lienzo-usage/SKILL.md b/.agents/skills/lienzo-usage/SKILL.md
+index 2f4c4af..fa2f617 100644
+--- a/.agents/skills/lienzo-usage/SKILL.md
++++ b/.agents/skills/lienzo-usage/SKILL.md
+@@ -20,6 +20,10 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
+ - Every scene, asset and export tool needs `project` (a slug from `project_list`); there
+   is no default. Never use an asset from another project.
+ - Files go only inside `projects/<slug>/` (scenes, assets, exports).
++- One name means one thing in every tool: `project` is a project (the `project_*` tools
++  too), `scene` is a saved scene's name, `data` is a whole scene object (`scene_create`,
++  `scene_validate`, `scene_inspect_layout`), `recipe` a preset object, `patch` the values
++  merged onto an element, scene or background, `id` an element, `at` a placement.
+ - Write scenes in compact form with `scene_build`; use the element tools for small edits
+   to a saved scene.
+ 
+@@ -50,7 +54,7 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
+    Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
+    `animation_save`.
+    - **Duplicate** (no tool of its own): `scene_get`, copy the element, then `element_add`
+-     with a new `id` and the position shifted (`x`/`y`).
++     with its fields in `patch`, a new `id` and the position shifted (`x`/`y`).
+    - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
+      shared edge or center and set `x`/`y` on each element with `element_update`.
+ 7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and
+diff --git a/src/cli/cli.test.ts b/src/cli/cli.test.ts
+index 5b1b72a..b9dee6b 100644
+--- a/src/cli/cli.test.ts
++++ b/src/cli/cli.test.ts
+@@ -36,7 +36,7 @@ beforeEach(async () => {
+ });
+ 
+ /** Runs a command line in-process and captures what it prints. */
+-const files: Record<string, string> = { "demo.json": '{"name":"de-archivo"}' };
++const files: Record<string, string> = { "demo.json": '{"scene":"de-archivo"}' };
+ 
+ async function cli(argv: string[], stdin = "") {
+   let stdout = "";
+@@ -90,15 +90,15 @@ describe("lienzo CLI", () => {
+     await ok(["component_list"]);
+     await ok(["preset_list"]);
+     await ok(["preset_validate", "--json", JSON.stringify({ recipe })]);
+-    await ok(["project_create", "--slug", "p", "--name", "P"]);
++    await ok(["project_create", "--project", "p", "--name", "P"]);
+     await ok(
+       ["scene_create", "--project", "p", "--json", "-"],
+-      '{"name":"demo"}',
++      '{"scene":"demo"}',
+     );
+     await ok(["scene_create", "--project", "p", "--json", "@demo.json"]);
+     await ok(["scene_list", "--project", "p"]);
+     await ok(["scene_get", "--project", "p", "--scene", "demo"]);
+-    await ok(["scene_validate", "--project", "p", "--json", '{"scene":{}}']);
++    await ok(["scene_validate", "--project", "p", "--json", '{"data":{}}']);
+     const { id } = await ok([
+       "element_add",
+       "--project",
+@@ -157,7 +157,7 @@ describe("lienzo CLI", () => {
+       "--project",
+       "p",
+       "--json",
+-      '{"scene":"demo","values":{}}',
++      '{"scene":"demo","patch":{}}',
+     ]);
+     await ok([
+       "keyframe_set",
+@@ -187,10 +187,16 @@ describe("lienzo CLI", () => {
+       "--t",
+       "0",
+     ]);
+-    await ok(["project_create", "--slug", "test-proj", "--name", "Test Proj"]);
++    await ok([
++      "project_create",
++      "--project",
++      "test-proj",
++      "--name",
++      "Test Proj",
++    ]);
+     await ok(["project_list"]);
+-    await ok(["project_inspect", "--slug", "test-proj"]);
+-    await ok(["project_delete", "--slug", "test-proj"]);
++    await ok(["project_inspect", "--project", "test-proj"]);
++    await ok(["project_delete", "--project", "test-proj"]);
+     await ok([
+       "scene_generate_speech",
+       "--project",
+@@ -211,7 +217,7 @@ describe("lienzo CLI", () => {
+       "--t",
+       "1",
+     ]);
+-    await ok(["scene_inspect_layout", "--project", "p", "--name", "demo"]);
++    await ok(["scene_inspect_layout", "--project", "p", "--scene", "demo"]);
+     await ok([
+       "scene_build",
+       "--project",
+@@ -244,7 +250,7 @@ describe("lienzo CLI", () => {
+     };
+     const image = (await ok(
+       ["element_add", "--project", "p", "--json", "-"],
+-      '{"scene":"demo","kind":"image","set":{"src":"assets/logo.png"}}',
++      '{"scene":"demo","kind":"image","patch":{"src":"assets/logo.png"}}',
+     )) as { id: string };
+     await ok([
+       "image_trim",
+@@ -322,7 +328,7 @@ describe("lienzo CLI", () => {
+       "--to",
+       "demo2",
+     ]);
+-    await ok(["scene_delete", "--project", "p", "--name", "demo2"]);
++    await ok(["scene_delete", "--project", "p", "--scene", "demo2"]);
+     await ok([
+       "preset_save",
+       "--project",
+@@ -340,9 +346,9 @@ describe("lienzo CLI", () => {
+       "otro",
+     ]);
+     await ok(["preset_delete", "--project", "p", "--name", "otro"]);
+-    await ok(["animation_save", "--json", '{"preset":{"name":"Salto"}}']);
++    await ok(["animation_save", "--json", '{"recipe":{"name":"Salto"}}']);
+     await ok(["animation_list"]);
+-    await ok(["project_update", "--slug", "p", "--name", "P2"]);
++    await ok(["project_update", "--project", "p", "--name", "P2"]);
+     const logo = join(tmpdir(), `lienzo-cli-logo-${process.pid}.png`);
+     await writeFile(logo, "png");
+     const added = (await ok([
+diff --git a/src/editor/scene/review-section.test.tsx b/src/editor/scene/review-section.test.tsx
+index e2fe500..2f0de53 100644
+--- a/src/editor/scene/review-section.test.tsx
++++ b/src/editor/scene/review-section.test.tsx
+@@ -28,10 +28,10 @@ async function toolNotices(scene: Scene): Promise<unknown> {
+   const root = await mkdtemp(join(tmpdir(), "lienzo-review-"));
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+   const ctx = createCtx(root, fakeRenderer());
+-  await registry.call("project_create", { slug: "p", name: "P" }, ctx);
++  await registry.call("project_create", { project: "p", name: "P" }, ctx);
+   const res = await registry.call(
+     "scene_validate",
+-    { project: "p", scene },
++    { project: "p", data: scene },
+     ctx,
+   );
+   return res.ok ? (res.value as { notices?: string[] }).notices : res.error;
+diff --git a/src/mcp/server.test.ts b/src/mcp/server.test.ts
+index 003d806..c16165a 100644
+--- a/src/mcp/server.test.ts
++++ b/src/mcp/server.test.ts
+@@ -20,7 +20,7 @@ beforeEach(async () => {
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+   ctx = createCtx(root, fakeRenderer());
+-  await registry.call("project_create", { slug: "p", name: "P" }, ctx);
++  await registry.call("project_create", { project: "p", name: "P" }, ctx);
+   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+   await createMcpServer(registry, ctx).connect(serverSide);
+   client = new Client({ name: "test", version: "0" });
+@@ -76,7 +76,7 @@ describe("lienzo MCP server", () => {
+   });
+ 
+   it("gives the same result as the CLI for the same input (R1)", async () => {
+-    await mcp("scene_create", { name: "demo", project: "p" });
++    await mcp("scene_create", { scene: "demo", project: "p" });
+     const viaMcp = await mcp("scene_get", { scene: "demo", project: "p" });
+     const viaCli = await cli([
+       "scene_get",
+@@ -113,7 +113,7 @@ describe("lienzo MCP server", () => {
+   });
+ 
+   it("returns scene_preview as image content (010/R2)", async () => {
+-    await mcp("scene_create", { name: "demo", project: "p" });
++    await mcp("scene_create", { scene: "demo", project: "p" });
+     const r = await client.callTool({
+       name: "scene_preview",
+       arguments: { scene: "demo", project: "p" },
+@@ -125,7 +125,7 @@ describe("lienzo MCP server", () => {
+   });
+ 
+   it("returns scene_preview with `out` as image then its file (058/R3)", async () => {
+-    await mcp("scene_create", { name: "demo", project: "p" });
++    await mcp("scene_create", { scene: "demo", project: "p" });
+     const r = await client.callTool({
+       name: "scene_preview",
+       arguments: { scene: "demo", project: "p", out: "look.png" },
+diff --git a/src/service/asset-tools.test.ts b/src/service/asset-tools.test.ts
+index 256ce4b..11d1dbc 100644
+--- a/src/service/asset-tools.test.ts
++++ b/src/service/asset-tools.test.ts
+@@ -46,7 +46,11 @@ beforeEach(async () => {
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+   ctx = createCtx(root, fakeRenderer());
+-  await registry.call("project_create", { slug: project, name: "Assets" }, ctx);
++  await registry.call(
++    "project_create",
++    { project: project, name: "Assets" },
++    ctx,
++  );
+ });
+ 
+ describe("asset_rename (063/R7)", () => {
+@@ -107,6 +111,8 @@ describe("asset_delete (063/R7)", () => {
+ 
+     // Assert
+     expect(res).toEqual({ path: filename, usedBy: ["uses"] });
+-    expect((await ok("project_inspect", { slug: project })).assets).toEqual([]);
++    expect((await ok("project_inspect", { project: project })).assets).toEqual(
++      [],
++    );
+   });
+ });
+diff --git a/src/service/brand-constraining.test.ts b/src/service/brand-constraining.test.ts
+index 9ae966e..090101e 100644
+--- a/src/service/brand-constraining.test.ts
++++ b/src/service/brand-constraining.test.ts
+@@ -40,7 +40,7 @@ describe("Brand constraining and asset guardrails", () => {
+     const res = await registry.call(
+       "scene_create",
+       {
+-        name: "story-post",
++        scene: "story-post",
+         project: "brand-x",
+       },
+       ctx,
+@@ -68,7 +68,7 @@ describe("Brand constraining and asset guardrails", () => {
+     await registry.call(
+       "scene_create",
+       {
+-        name: "hero-scene",
++        scene: "hero-scene",
+         project: "brand-x",
+       },
+       ctx,
+@@ -81,7 +81,7 @@ describe("Brand constraining and asset guardrails", () => {
+         scene: "hero-scene",
+         project: "brand-x",
+         kind: "image",
+-        set: { src: "assets/unapproved-foreign-image.png" },
++        patch: { src: "assets/unapproved-foreign-image.png" },
+       },
+       ctx,
+     );
+@@ -107,7 +107,7 @@ describe("Brand constraining and asset guardrails", () => {
+         scene: "hero-scene",
+         project: "brand-x",
+         kind: "image",
+-        set: { src: "assets/brand-logo.png" },
++        patch: { src: "assets/brand-logo.png" },
+       },
+       ctx,
+     );
+diff --git a/src/service/editor-parity.test.ts b/src/service/editor-parity.test.ts
+index e02f391..1ae2495 100644
+--- a/src/service/editor-parity.test.ts
++++ b/src/service/editor-parity.test.ts
+@@ -36,8 +36,12 @@ beforeEach(async () => {
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+   ctx = createCtx(root, fakeRenderer());
+-  await registry.call("project_create", { slug: project, name: "Parity" }, ctx);
+-  await ok("scene_create", { name: "s" });
++  await registry.call(
++    "project_create",
++    { project: project, name: "Parity" },
++    ctx,
++  );
++  await ok("scene_create", { scene: "s" });
+ });
+ 
+ describe("editor and tools write the same JSON", () => {
+diff --git a/src/service/estimated-width.test.ts b/src/service/estimated-width.test.ts
+index 6b70424..328eda6 100644
+--- a/src/service/estimated-width.test.ts
++++ b/src/service/estimated-width.test.ts
+@@ -32,7 +32,7 @@ describe("estimated text widths (064/R4)", () => {
+     const built = await ok("scene_build", { compact: titleIn("Georgia") });
+ 
+     // Act
+-    const verdict = await ok("scene_validate", { scene: built.scene });
++    const verdict = await ok("scene_validate", { data: built.scene });
+ 
+     // Assert
+     expect(estimatedNotice(verdict.notices)).toEqual([
+@@ -46,7 +46,7 @@ describe("estimated text widths (064/R4)", () => {
+ 
+     // Act
+     const layout = await ok("scene_inspect_layout", {
+-      scene: built.scene,
++      data: built.scene,
+       times: [0],
+     });
+ 
+@@ -62,7 +62,7 @@ describe("estimated text widths (064/R4)", () => {
+ 
+     // Act
+     const layout = await ok("scene_inspect_layout", {
+-      scene: built.scene,
++      data: built.scene,
+       times: [0],
+     });
+ 
+@@ -88,7 +88,7 @@ describe("estimated text widths (064/R4)", () => {
+ 
+     // Act
+     const layout = await ok("scene_inspect_layout", {
+-      scene: built.scene,
++      data: built.scene,
+       times: [0],
+     });
+ 
+@@ -107,7 +107,7 @@ describe("estimated text widths (064/R4)", () => {
+ 
+     // Act
+     const layout = await ok("scene_inspect_layout", {
+-      scene: built.scene,
++      data: built.scene,
+       times: [0],
+     });
+ 
+diff --git a/src/service/parity-tools.test.ts b/src/service/parity-tools.test.ts
+index bc6252c..66f64ef 100644
+--- a/src/service/parity-tools.test.ts
++++ b/src/service/parity-tools.test.ts
+@@ -45,8 +45,8 @@ beforeEach(async () => {
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+   ctx = createCtx(root, fakeRenderer());
+-  await ok("project_create", { slug: project, name: "Tools" });
+-  await ok("scene_create", { project, name: "s" });
++  await ok("project_create", { project: project, name: "Tools" });
++  await ok("scene_create", { project, scene: "s" });
+ });
+ 
+ describe("scene_update", () => {
+@@ -114,7 +114,7 @@ describe("scene_rename and scene_delete", () => {
+   });
+ 
+   it("refuses a rename onto a taken name", async () => {
+-    await ok("scene_create", { project, name: "t" });
++    await ok("scene_create", { project, scene: "t" });
+ 
+     expect(
+       await errorCode("scene_rename", { project, from: "s", to: "t" }),
+@@ -122,13 +122,13 @@ describe("scene_rename and scene_delete", () => {
+   });
+ 
+   it("deletes a scene", async () => {
+-    await ok("scene_delete", { project, name: "s" });
++    await ok("scene_delete", { project, scene: "s" });
+ 
+     expect(await errorCode("scene_get", { project, scene: "s" })).toBeDefined();
+   });
+ 
+   it("fails to delete a missing scene", async () => {
+-    expect(await errorCode("scene_delete", { project, name: "nope" })).toBe(
++    expect(await errorCode("scene_delete", { project, scene: "nope" })).toBe(
+       "not_found",
+     );
+   });
+@@ -177,7 +177,7 @@ describe("preset_save, preset_rename and preset_delete", () => {
+ describe("animation_save and animation_list", () => {
+   it("lists an animation once saved", async () => {
+     await ok("animation_save", {
+-      preset: { name: "Salto", category: "Mías", anim: {} },
++      recipe: { name: "Salto", category: "Mías", anim: {} },
+     });
+ 
+     const { animations } = await ok("animation_list", {});
+@@ -187,7 +187,7 @@ describe("animation_save and animation_list", () => {
+   });
+ 
+   it("refuses an animation without a name", async () => {
+-    expect(await errorCode("animation_save", { preset: {} })).toBe(
++    expect(await errorCode("animation_save", { recipe: {} })).toBe(
+       "invalid_animation",
+     );
+   });
+@@ -196,7 +196,7 @@ describe("animation_save and animation_list", () => {
+ describe("project_update", () => {
+   it("changes the name and keeps the slug", async () => {
+     const manifest = await ok("project_update", {
+-      slug: project,
++      project: project,
+       name: "Nuevo",
+     });
+ 
+@@ -204,9 +204,9 @@ describe("project_update", () => {
+   });
+ 
+   it("fails on a missing project", async () => {
+-    expect(await errorCode("project_update", { slug: "nope", name: "x" })).toBe(
+-      "not_found",
+-    );
++    expect(
++      await errorCode("project_update", { project: "nope", name: "x" }),
++    ).toBe("not_found");
+   });
+ });
+ 
+diff --git a/src/service/project-tools.test.ts b/src/service/project-tools.test.ts
+index 560c350..ff7ad83 100644
+--- a/src/service/project-tools.test.ts
++++ b/src/service/project-tools.test.ts
+@@ -80,7 +80,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
+     const createRes = await registry.call(
+       "project_create",
+       {
+-        slug: "acme-corp",
++        project: "acme-corp",
+         name: "Acme Corp",
+         palette: { primary: "#0055ff" },
+       },
+@@ -99,7 +99,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
+     // 3. project_inspect
+     const inspectRes = await registry.call(
+       "project_inspect",
+-      { slug: "acme-corp" },
++      { project: "acme-corp" },
+       ctx,
+     );
+     expect(inspectRes.ok).toBe(true);
+@@ -111,7 +111,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
+     // 4. project_delete
+     const deleteRes = await registry.call(
+       "project_delete",
+-      { slug: "acme-corp" },
++      { project: "acme-corp" },
+       ctx,
+     );
+     expect(deleteRes.ok).toBe(true);
+@@ -119,7 +119,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
+     // Inspect non-existing
+     const missingRes = await registry.call(
+       "project_inspect",
+-      { slug: "acme-corp" },
++      { project: "acme-corp" },
+       ctx,
+     );
+     expect(missingRes.ok).toBe(false);
+diff --git a/src/service/renderer.test.ts b/src/service/renderer.test.ts
+index 456f9a4..43b3adc 100644
+--- a/src/service/renderer.test.ts
++++ b/src/service/renderer.test.ts
+@@ -42,14 +42,14 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
+     });
+     await mkdir(join(root, "presets", "animations"), { recursive: true });
+     ctx = createCtx(root);
+-    await registry.call("project_create", { slug: "p", name: "P" }, ctx);
++    await registry.call("project_create", { project: "p", name: "P" }, ctx);
+     editor = await openApp(APP_ROOT, "");
+     demo = (await inPage(
+       `(await import("/src/test/fixtures/sample-scene.ts")).demoScene()`,
+     )) as Scene;
+     const r = await registry.call(
+       "scene_create",
+-      { name: "demo", project: "p", scene: demo },
++      { scene: "demo", project: "p", data: demo },
+       ctx,
+     );
+     expect(r.ok).toBe(true);
+diff --git a/src/service/service.test.ts b/src/service/service.test.ts
+index ebc6046..3bbec48 100644
+--- a/src/service/service.test.ts
++++ b/src/service/service.test.ts
+@@ -65,16 +65,17 @@ describe("service tools", () => {
+         recipe: { name: "A", kind: "rect", traits: ["nope"] },
+       }),
+     ).toMatchObject({ valid: false });
+-    expect(await ok("scene_validate", { scene: { width: "x" } })).toMatchObject(
+-      { valid: false, path: expect.any(String) },
+-    );
++    expect(await ok("scene_validate", { data: { width: "x" } })).toMatchObject({
++      valid: false,
++      path: expect.any(String),
++    });
+   });
+ 
+   it("creates, edits and reads a scene that opens in the editor", async () => {
+-    await ok("scene_create", { name: "Demo" });
+-    expect(await call("scene_create", { name: "Demo" })).toMatchObject({
++    await ok("scene_create", { scene: "Demo" });
++    expect(await call("scene_create", { scene: "Demo" })).toMatchObject({
+       ok: false,
+-      error: { code: "exists", path: "name" },
++      error: { code: "exists", path: "scene" },
+     });
+     const a = await ok("element_add", { scene: "demo", kind: "rect" });
+     const presets = (await ok("preset_list", {})) as unknown as {
+@@ -97,7 +98,7 @@ describe("service tools", () => {
+     expect(scene.elements.map((e) => e.id)).toEqual([b.id, a.id]);
+     expect((scene.elements[1] as Element & { x: number }).x).toBe(7);
+     await ok("element_remove", { scene: "demo", id: b.id });
+-    await ok("background_set", { scene: "demo", values: { color: "#123456" } });
++    await ok("background_set", { scene: "demo", patch: { color: "#123456" } });
+     scene = await onDisk("demo");
+     expect(scene.elements).toHaveLength(1);
+     expect(scene.background.color).toBe("#123456");
+@@ -109,11 +110,11 @@ describe("service tools", () => {
+   });
+ 
+   it("re-centres an updated text's box on the point given as `at` (R3)", async () => {
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+     const { id } = await ok("element_add", {
+       scene: "demo",
+       kind: "text",
+-      set: { x: 540, y: 100, align: "center" },
++      patch: { x: 540, y: 100, align: "center" },
+     });
+ 
+     await ok("element_update", {
+@@ -128,11 +129,11 @@ describe("service tools", () => {
+   });
+ 
+   it("keeps an updated element's position when no `at` is given (R3)", async () => {
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+     const { id } = await ok("element_add", {
+       scene: "demo",
+       kind: "rect",
+-      set: { x: 20, y: 30 },
++      patch: { x: 20, y: 30 },
+     });
+ 
+     await ok("element_update", { scene: "demo", id, patch: { w: 50 } });
+@@ -142,7 +143,7 @@ describe("service tools", () => {
+   });
+ 
+   it("writes nothing when an edit would make the scene invalid (R4)", async () => {
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+     const { id } = await ok("element_add", { scene: "demo", kind: "rect" });
+     const scenePath = join(
+       h.ctx.root,
+@@ -163,8 +164,8 @@ describe("service tools", () => {
+     });
+     expect(await readFile(scenePath, "utf8")).toBe(before);
+     const bad = await call("scene_create", {
+-      name: "bad",
+-      scene: { width: -1 },
++      scene: "bad",
++      data: { width: -1 },
+     });
+     expect(bad.ok).toBe(false);
+     expect(await sceneFiles()).toEqual(["demo.json"]);
+@@ -192,7 +193,7 @@ describe("descriptor-driven tools (R6)", () => {
+       animatable: string[];
+     }[];
+     expect(kinds.find((k) => k.kind === "blob")?.animatable).toContain("x");
+-    await ok("scene_create", { name: "s" });
++    await ok("scene_create", { scene: "s" });
+     const { id } = await ok("element_add", { scene: "s", kind: "blob" });
+     await ok("element_update", { scene: "s", id, patch: { w: 50 } });
+     await ok("keyframe_set", { scene: "s", id, path: "x", t: 0, value: 0 });
+@@ -230,18 +231,18 @@ describe("animation presets (D6, R7)", () => {
+         },
+       }),
+     );
+-    await ok("scene_create", { name: "s" });
++    await ok("scene_create", { scene: "s" });
+     const { id } = await ok("element_add", {
+       scene: "s",
+       kind: "rect",
+-      set: { animPreset: { name: "Spin", start: 0 } },
++      patch: { animPreset: { name: "Spin", start: 0 } },
+     });
+     const el = (await onDisk("s")).elements.find((e) => e.id === id);
+     expect(el?.tracks?.["@rotate"]).toBeDefined();
+     const r = await call("element_add", {
+       scene: "s",
+       kind: "rect",
+-      set: { animPreset: { name: "Nope", start: 0 } },
++      patch: { animPreset: { name: "Nope", start: 0 } },
+     });
+     expect(r).toMatchObject({
+       ok: false,
+@@ -250,13 +251,13 @@ describe("animation presets (D6, R7)", () => {
+   });
+ 
+   it("inspects layout and detects out-of-bounds elements (023/D2, R3)", async () => {
+-    await ok("scene_create", { name: "oob_demo" });
++    await ok("scene_create", { scene: "oob_demo" });
+     await ok("element_add", {
+       scene: "oob_demo",
+       kind: "rect",
+-      set: { x: 5000, y: 5000, w: 200, h: 200 },
++      patch: { x: 5000, y: 5000, w: 200, h: 200 },
+     });
+-    const result = await ok("scene_inspect_layout", { name: "oob_demo" });
++    const result = await ok("scene_inspect_layout", { scene: "oob_demo" });
+     expect(result.diagnostics).toEqual(
+       expect.arrayContaining([
+         expect.objectContaining({
+@@ -267,15 +268,15 @@ describe("animation presets (D6, R7)", () => {
+   });
+ 
+   it("returns every top-level element's box beside the diagnostics (023/R2)", async () => {
+-    await ok("scene_create", { name: "boxes" });
++    await ok("scene_create", { scene: "boxes" });
+     const { id } = await ok("element_add", {
+       scene: "boxes",
+       kind: "rect",
+-      set: { x: 10, y: 20, w: 30, h: 40 },
++      patch: { x: 10, y: 20, w: 30, h: 40 },
+     });
+ 
+     const result = await ok("scene_inspect_layout", {
+-      name: "boxes",
++      scene: "boxes",
+       times: [0],
+     });
+ 
+@@ -386,7 +387,7 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
+       compact: { elements: [{ kind: "text", font: "Montserrat" }] },
+     });
+ 
+-    const res = await ok("scene_validate", { scene });
++    const res = await ok("scene_validate", { data: scene });
+ 
+     expect(res).toEqual({
+       valid: true,
+@@ -421,7 +422,7 @@ describe("ignored fields (063/R6)", () => {
+     typo.elements[0] = { ...typo.elements[0], glw: 4 };
+ 
+     // Act
+-    const res = await ok("scene_validate", { scene: typo });
++    const res = await ok("scene_validate", { data: typo });
+ 
+     // Assert
+     expect(res).toEqual({
+@@ -435,7 +436,7 @@ describe("scene_preview out (058/R3)", () => {
+   const exports = () => join(h.ctx.root, "projects", "mi-proyecto", "exports");
+ 
+   it("saves the PNG inside exports/ and returns its path", async () => {
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+ 
+     const res = await ok("scene_preview", { scene: "demo", out: "look.png" });
+ 
+@@ -444,7 +445,7 @@ describe("scene_preview out (058/R3)", () => {
+   });
+ 
+   it("rejects an `out` outside exports/ and writes nothing", async () => {
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+ 
+     const r = await call("scene_preview", { scene: "demo", out: "../x.png" });
+ 
+@@ -458,7 +459,7 @@ describe("scene_preview out (058/R3)", () => {
+   });
+ 
+   it("writes nothing without `out`", async () => {
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+ 
+     const res = await ok("scene_preview", { scene: "demo" });
+ 
+@@ -470,7 +471,7 @@ describe("scene_preview out (058/R3)", () => {
+ describe("scene_export (010/R1)", () => {
+   it("writes inside the project's exports/ and rejects an `out` outside it (046/R2)", async () => {
+     const exports = join(h.ctx.root, "projects", "mi-proyecto", "exports");
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+     const png = await ok("scene_export", { scene: "demo", format: "png" });
+     expect(png.file).toBe(join(exports, "demo.png"));
+     expect(png.notices).toEqual([]);
+@@ -498,7 +499,7 @@ describe("scene_export (010/R1)", () => {
+ 
+   it("falls back to WebM, and says so, when H.264 is unavailable", async () => {
+     h.ctx = createCtx(h.ctx.root, fakeRenderer("video/webm"));
+-    await ok("scene_create", { name: "demo" });
++    await ok("scene_create", { scene: "demo" });
+     const r = await ok("scene_export", {
+       scene: "demo",
+       format: "mp4",
+@@ -556,13 +557,20 @@ describe("project scope (046/R1)", () => {
+         (t) => "project" in (t.input as unknown as { shape: object }).shape,
+       )
+       .map((t) => t.name);
+-    expect(unscoped.sort()).toEqual(["font_install", "font_list"]);
++    expect(unscoped.sort()).toEqual([
++      "font_install",
++      "font_list",
++      "project_create",
++      "project_delete",
++      "project_inspect",
++      "project_update",
++    ]);
+   });
+ 
+   it("edits only the named project's scene, even when another has the same name", async () => {
+-    await ok("project_create", { slug: "otro", name: "Otro" });
+-    await ok("scene_create", { name: "demo" });
+-    await ok("scene_create", { name: "demo", project: "otro" });
++    await ok("project_create", { project: "otro", name: "Otro" });
++    await ok("scene_create", { scene: "demo" });
++    await ok("scene_create", { scene: "demo", project: "otro" });
+     const { id } = await ok("element_add", {
+       scene: "demo",
+       project: "otro",
+@@ -615,7 +623,7 @@ describe("nested element tools and group parent insertion (051/R1, R2)", () => {
+       scene: "shots",
+       kind: "rect",
+       parent: "shot-1",
+-      set: { w: 80, h: 40 },
++      patch: { w: 80, h: 40 },
+     });
+     const carId = added.id as string;
+ 
+@@ -677,7 +685,7 @@ describe("nested element tools and group parent insertion (051/R1, R2)", () => {
+   });
+ 
+   it("rejects `element_add` when `parent` does not exist or is not a group and leaves the scene unchanged (051/R2)", async () => {
+-    await ok("scene_create", { name: "flat" });
++    await ok("scene_create", { scene: "flat" });
+     const { id: rectId } = await ok("element_add", {
+       scene: "flat",
+       kind: "rect",
+diff --git a/src/service/shots.test.ts b/src/service/shots.test.ts
+index ff31e34..3685ac6 100644
+--- a/src/service/shots.test.ts
++++ b/src/service/shots.test.ts
+@@ -25,7 +25,7 @@ describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
+     ctx = createCtx(root, fakeRenderer());
+     await registry.call(
+       "project_create",
+-      { slug: PROJECT, name: "Test Project" },
++      { project: PROJECT, name: "Test Project" },
+       ctx,
+     );
+   });
+@@ -126,7 +126,7 @@ describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
+   it("creates, updates, and deletes shots using shot_set tool", async () => {
+     await registry.call(
+       "scene_create",
+-      { project: PROJECT, name: "demo", duration: 10 },
++      { project: PROJECT, scene: "demo", duration: 10 },
+       ctx,
+     );
+ 
+diff --git a/src/service/tools/animation-save.ts b/src/service/tools/animation-save.ts
+index 9123cad..5f02ed9 100644
+--- a/src/service/tools/animation-save.ts
++++ b/src/service/tools/animation-save.ts
+@@ -8,17 +8,17 @@ import { defineTool, fail } from "../registry.ts";
+ export const animationSave = defineTool({
+   name: "animation_save",
+   description:
+-    "Save an animation preset ({ name, category?, anim?, tracks? }, checked as the editor's " +
++    "Save an animation preset given in `recipe` ({ name, category?, anim?, tracks? }, checked as the editor's " +
+     "import checks it) into presets/animations/, as the animation library does. The file is " +
+     "named after `file`, else the preset's name; fails when it exists unless `overwrite` is true.",
+   input: z.object({
+-    preset: z.unknown(),
++    recipe: z.unknown(),
+     file: z.string().min(1).optional(),
+     overwrite: z.boolean().optional(),
+   }),
+   output: z.object({ animation: z.string() }),
+-  async run({ preset, file, overwrite }, ctx) {
+-    const parsed = parseAnimPreset(preset);
++  async run({ recipe, file, overwrite }, ctx) {
++    const parsed = parseAnimPreset(recipe);
+     if (!parsed.ok) fail("invalid_animation", parsed.error, parsed.path);
+     const dir = join(ctx.root, "presets", "animations");
+     const name = file ?? parsed.value.name;
+diff --git a/src/service/tools/background-set.ts b/src/service/tools/background-set.ts
+index e1126fb..0f96aa8 100644
+--- a/src/service/tools/background-set.ts
++++ b/src/service/tools/background-set.ts
+@@ -9,21 +9,21 @@ export const backgroundSet = defineTool({
+   name: "background_set",
+   description:
+     "Set a scene's background from a background preset (see preset_list, kind " +
+-    "`background`) and/or `values` (color, color2, gradient, angle, dots, dotColor, " +
++    "`background`) and/or `patch` (color, color2, gradient, angle, dots, dotColor, " +
+     "dotGap, spotlight, spotlightColor) merged over it or over the current background.",
+   input: z
+     .object({
+       scene: z.string().min(1),
+       project: PROJECT,
+       preset: z.string().min(1).optional(),
+-      values: z.record(z.string(), z.unknown()).optional(),
++      patch: z.record(z.string(), z.unknown()).optional(),
+     })
+-    .refine((i) => i.preset !== undefined || i.values !== undefined, {
++    .refine((i) => i.preset !== undefined || i.patch !== undefined, {
+       message: "Indica un preset o valores",
+       path: ["preset"],
+     }),
+   output: SceneResult,
+-  async run({ scene, project, preset, values }, ctx) {
++  async run({ scene, project, preset, patch }, ctx) {
+     const projectCtx = await inProject(ctx, project);
+     let base: Background | undefined;
+     if (preset !== undefined) {
+@@ -35,8 +35,8 @@ export const backgroundSet = defineTool({
+     }
+     return editScene(projectCtx, scene, (s) => {
+       const background = structuredClone(base ?? s.background);
+-      if (values)
+-        deepMerge(background as unknown as Record<string, unknown>, values);
++      if (patch)
++        deepMerge(background as unknown as Record<string, unknown>, patch);
+       return { ...s, background };
+     });
+   },
+diff --git a/src/service/tools/compact-input.test.ts b/src/service/tools/compact-input.test.ts
+index a378b94..7e0f6c5 100644
+--- a/src/service/tools/compact-input.test.ts
++++ b/src/service/tools/compact-input.test.ts
+@@ -24,7 +24,7 @@ describe("scene_validate takes a compact scene (064/R10)", () => {
+   it("fails when both or neither input is given", async () => {
+     // Act
+     const both = await ok("scene_validate", {
+-      scene: {},
++      data: {},
+       compact: { elements: [] },
+     });
+     const neither = await ok("scene_validate", {});
+@@ -64,13 +64,13 @@ describe("`at` is the same in every tool (064/R11)", () => {
+     async (at) => {
+       // Arrange
+       const expected = await built(at);
+-      await ok("scene_create", { name: "s" });
++      await ok("scene_create", { scene: "s" });
+ 
+       // Act
+       const { id } = await ok("element_add", {
+         scene: "s",
+         kind: "rect",
+-        set: { w: 200, h: 100 },
++        patch: { w: 200, h: 100 },
+         at,
+       });
+       const added = await stored();
+diff --git a/src/service/tools/element-add.ts b/src/service/tools/element-add.ts
+index e564829..40ecb71 100644
+--- a/src/service/tools/element-add.ts
++++ b/src/service/tools/element-add.ts
+@@ -19,11 +19,11 @@ export const elementAdd = defineTool({
+   description:
+     "Add an element on top of a scene (or inside a `group` when `parent` is given by `id` or " +
+     "`group/child` path), built from a preset (see preset_list) or from a component kind's " +
+-    "defaults (see component_list). `set` deep-merges field values (tracks and animPreset " +
++    "defaults (see component_list). `patch` deep-merges field values (tracks and animPreset " +
+     "included). " +
+     AT_RULES +
+     "It is placed in the scene (or the parent group's content area); with no `at` it is " +
+-    "centred there unless `set` gives its position. " +
++    "centred there unless `patch` gives its position. " +
+     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
+     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
+     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
+@@ -39,7 +39,7 @@ export const elementAdd = defineTool({
+       kind: z.string().min(1).optional(),
+       parent: z.string().min(1).optional(),
+       at: AtPlacementSchema.optional(),
+-      set: z.record(z.string(), z.unknown()).optional(),
++      patch: z.record(z.string(), z.unknown()).optional(),
+       trim: z.boolean().optional(),
+     })
+     .refine((i) => (i.preset === undefined) !== (i.kind === undefined), {
+@@ -47,14 +47,14 @@ export const elementAdd = defineTool({
+       path: ["preset"],
+     }),
+   output: SceneResult.extend({ id: z.string() }),
+-  async run({ scene, project, preset, kind, parent, at, set, trim }, ctx) {
++  async run({ scene, project, preset, kind, parent, at, patch, trim }, ctx) {
+     const effectiveCtx = await inProject(ctx, project);
+ 
+     const notices: string[] = [];
+-    if (set) {
++    if (patch) {
+       const assetKeys = ["src", "assetId", "image", "audio"];
+       for (const key of assetKeys) {
+-        const val = set[key];
++        const val = patch[key];
+         if (typeof val === "string" && val.length > 0) {
+           const check = await ctx.projects.checkAsset(
+             effectiveCtx.project,
+@@ -76,11 +76,11 @@ export const elementAdd = defineTool({
+       checkKind(kind as string);
+       el = defaultElement(kind as ElementKind);
+     }
+-    if (set) el = patched(el, set);
++    if (patch) el = patched(el, patch);
+     // trimmed before the scene is opened, so a failure adds nothing (049/D4)
+     if (trim) el = await trimImage(effectiveCtx, el, "trim");
+     const added = el;
+-    const placed = set && ["x", "y", "a", "b"].some((k) => k in set);
++    const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
+     const result = await editScene(effectiveCtx, scene, (s) => {
+       if (parent !== undefined) {
+         const group = findElement(s.elements, parent, "parent");
+diff --git a/src/service/tools/image-trim.test.ts b/src/service/tools/image-trim.test.ts
+index 4d9129e..5fd725d 100644
+--- a/src/service/tools/image-trim.test.ts
++++ b/src/service/tools/image-trim.test.ts
+@@ -34,8 +34,8 @@ async function setup(probe: ImageProbe) {
+   });
+   await mkdir(join(root, "presets", "animations"), { recursive: true });
+   ctx = createCtx(root, fakeRenderer(), undefined, probe);
+-  await call("project_create", { slug: PROJECT, name: "Mi proyecto" });
+-  await call("scene_create", { project: PROJECT, name: SCENE });
++  await call("project_create", { project: PROJECT, name: "Mi proyecto" });
++  await call("scene_create", { project: PROJECT, scene: SCENE });
+ }
+ 
+ function call(name: string, input: Record<string, unknown>) {
+@@ -47,7 +47,7 @@ async function addImage(src: string, kind = "image"): Promise<string> {
+   const r = await call("element_add", {
+     scene: SCENE,
+     kind,
+-    set: { x: 100, y: 50, w: 200, h: 100, src, aspect: 2 },
++    patch: { x: 100, y: 50, w: 200, h: 100, src, aspect: 2 },
+   });
+   if (!r.ok) throw new Error(JSON.stringify(r.error));
+   return (r.value as { id: string }).id;
+@@ -133,7 +133,7 @@ describe("image_trim", () => {
+       scene: SCENE,
+       kind: "image",
+       parent: groupId,
+-      set: {
++      patch: {
+         x: 100,
+         y: 50,
+         w: 200,
+@@ -167,7 +167,7 @@ describe("element_add with trim", () => {
+     const r = await call("element_add", {
+       scene: SCENE,
+       kind: "image",
+-      set: { src: "assets/logo.png", aspect: 2 },
++      patch: { src: "assets/logo.png", aspect: 2 },
+       trim: true,
+     });
+ 
+@@ -179,7 +179,7 @@ describe("element_add with trim", () => {
+     const r = await call("element_add", {
+       scene: SCENE,
+       kind: "image",
+-      set: { src: "assets/broken.png" },
++      patch: { src: "assets/broken.png" },
+       trim: true,
+     });
+ 
+diff --git a/src/service/tools/project-create.ts b/src/service/tools/project-create.ts
+index 28aa5e4..457fd36 100644
+--- a/src/service/tools/project-create.ts
++++ b/src/service/tools/project-create.ts
+@@ -9,10 +9,10 @@ import { defineTool, fail } from "../registry.ts";
+ export const projectCreate = defineTool({
+   name: "project_create",
+   description:
+-    "Create a new isolated project workspace in projects/<slug>/ with its brand guide, " +
++    "Create a new isolated project workspace in projects/<project>/ with its brand guide, " +
+     "color palette, and directories for assets, presets, and scenes.",
+   input: z.object({
+-    slug: ProjectSlugSchema,
++    project: ProjectSlugSchema,
+     name: z.string().min(1, "El nombre del proyecto es obligatorio"),
+     description: z.string().optional(),
+     palette: z
+@@ -36,7 +36,7 @@ export const projectCreate = defineTool({
+       .optional(),
+   }),
+   output: ProjectManifestSchema,
+-  async run({ slug, name, description, palette, canvas }, ctx) {
++  async run({ project, name, description, palette, canvas }, ctx) {
+     try {
+       const config = ProjectConfigSchema.parse({
+         name,
+@@ -62,12 +62,12 @@ export const projectCreate = defineTool({
+           : undefined,
+       });
+ 
+-      return await ctx.projects.create(slug, config);
++      return await ctx.projects.create(project, config);
+     } catch (error) {
+       fail(
+         "project_create_failed",
+         String(error instanceof Error ? error.message : error),
+-        "slug",
++        "project",
+       );
+     }
+   },
+diff --git a/src/service/tools/project-delete.ts b/src/service/tools/project-delete.ts
+index abc96a4..18512a5 100644
+--- a/src/service/tools/project-delete.ts
++++ b/src/service/tools/project-delete.ts
+@@ -5,32 +5,32 @@ import { defineTool, fail } from "../registry.ts";
+ export const projectDelete = defineTool({
+   name: "project_delete",
+   description:
+-    "Delete an existing project workspace cleanly from projects/<slug>/.",
++    "Delete an existing project workspace cleanly from projects/<project>/.",
+   input: z.object({
+-    slug: ProjectSlugSchema,
++    project: ProjectSlugSchema,
+   }),
+   output: z.object({
+     ok: z.boolean(),
+-    slug: z.string(),
++    project: z.string(),
+   }),
+-  async run({ slug }, ctx) {
++  async run({ project }, ctx) {
+     try {
+-      const deleted = await ctx.projects.delete(slug);
++      const deleted = await ctx.projects.delete(project);
+       if (!deleted) {
+-        fail("not_found", `No existe el proyecto «${slug}»`, "slug");
++        fail("not_found", `No existe el proyecto «${project}»`, "project");
+       }
+-      return { ok: true, slug };
++      return { ok: true, project };
+     } catch (error) {
+       if (
+         error instanceof Error &&
+         error.message.includes("No existe el proyecto")
+       ) {
+-        fail("not_found", error.message, "slug");
++        fail("not_found", error.message, "project");
+       }
+       fail(
+         "delete_failed",
+         String(error instanceof Error ? error.message : error),
+-        "slug",
++        "project",
+       );
+     }
+   },
+diff --git a/src/service/tools/project-inspect.ts b/src/service/tools/project-inspect.ts
+index 5a1984d..130aa9a 100644
+--- a/src/service/tools/project-inspect.ts
++++ b/src/service/tools/project-inspect.ts
+@@ -18,14 +18,14 @@ export const projectInspect = defineTool({
+     "Inspect a project workspace: returns full manifest, brand guide, and inventory of " +
+     "local assets, presets, and scenes.",
+   input: z.object({
+-    slug: ProjectSlugSchema,
++    project: ProjectSlugSchema,
+   }),
+   output: ProjectDetailsSchema,
+-  async run({ slug }, ctx) {
++  async run({ project }, ctx) {
+     try {
+-      const details = await ctx.projects.get(slug);
++      const details = await ctx.projects.get(project);
+       if (!details) {
+-        fail("not_found", `No existe el proyecto «${slug}»`, "slug");
++        fail("not_found", `No existe el proyecto «${project}»`, "project");
+       }
+       return details;
+     } catch (error) {
+@@ -33,12 +33,12 @@ export const projectInspect = defineTool({
+         error instanceof Error &&
+         error.message.includes("No existe el proyecto")
+       ) {
+-        fail("not_found", error.message, "slug");
++        fail("not_found", error.message, "project");
+       }
+       fail(
+         "inspect_failed",
+         String(error instanceof Error ? error.message : error),
+-        "slug",
++        "project",
+       );
+     }
+   },
+diff --git a/src/service/tools/project-update.ts b/src/service/tools/project-update.ts
+index 69c8bae..c5c330f 100644
+--- a/src/service/tools/project-update.ts
++++ b/src/service/tools/project-update.ts
+@@ -12,9 +12,9 @@ export const projectUpdate = defineTool({
+   name: "project_update",
+   description:
+     "Change a project's name, description, palette, brand fonts or canvas defaults, as the " +
+-    "editor's brand dialog does. Each field given replaces the stored one; the slug never changes.",
++    "editor's brand dialog does. Each field given replaces the stored one; the `project` id never changes.",
+   input: z.object({
+-    slug: ProjectSlugSchema,
++    project: ProjectSlugSchema,
+     name: z.string().min(1).optional(),
+     description: z.string().optional(),
+     palette: ColorPaletteSchema.optional(),
+@@ -22,9 +22,9 @@ export const projectUpdate = defineTool({
+     canvas: ProjectCanvasDefaultsSchema.optional(),
+   }),
+   output: ProjectManifestSchema,
+-  async run({ slug, ...config }, ctx) {
+-    if (!(await ctx.projects.get(slug)))
+-      fail("not_found", `No existe el proyecto «${slug}»`, "slug");
+-    return ctx.projects.update(slug, config);
++  async run({ project, ...config }, ctx) {
++    if (!(await ctx.projects.get(project)))
++      fail("not_found", `No existe el proyecto «${project}»`, "project");
++    return ctx.projects.update(project, config);
+   },
+ });
+diff --git a/src/service/tools/scene-create.ts b/src/service/tools/scene-create.ts
+index 4e37ddd..c18f995 100644
+--- a/src/service/tools/scene-create.ts
++++ b/src/service/tools/scene-create.ts
+@@ -8,26 +8,26 @@ import { SceneResult, saveScene } from "../scenes.ts";
+ export const sceneCreate = defineTool({
+   name: "scene_create",
+   description:
+-    "Create a scene in the project's scenes/. Fields given in `scene` (width, height, duration, fps, " +
++    "Create scene `scene` in the project's scenes/. Fields given in `data` (width, height, duration, fps, " +
+     "background, elements, mode) replace the defaults: an empty 1080x1080, 4 s, 30 fps scene. " +
+     "`mode` can be 'static' (graphic post/image) or 'video' (animated video, default). " +
+     "Elements may name an animation preset in `animPreset`; it is copied in. Fails if the " +
+-    "name is taken unless `overwrite` is true. `scene` is a full scene: every element and " +
++    "name is taken unless `overwrite` is true. `data` is a full scene: every element and " +
+     "the background whole, as scene_get returns them; for the compact form (a color as " +
+     "background, partial elements, `at`) use scene_build with `save`.",
+   input: z.object({
+-    name: z.string().min(1),
++    scene: z.string().min(1),
+     project: PROJECT,
+     mode: z.enum(["static", "video"]).optional(),
+-    scene: z.record(z.string(), z.unknown()).optional(),
++    data: z.record(z.string(), z.unknown()).optional(),
+     overwrite: z.boolean().optional(),
+   }),
+   output: SceneResult,
+-  async run({ name, project, mode, scene, overwrite }, ctx) {
++  async run({ scene, project, mode, data, overwrite }, ctx) {
+     const effectiveCtx = await inProject(ctx, project);
+ 
+-    if (!overwrite && (await effectiveCtx.store.readScene(name)) !== undefined)
+-      fail("exists", `Ya existe la escena «${slugify(name)}»`, "name");
++    if (!overwrite && (await effectiveCtx.store.readScene(scene)) !== undefined)
++      fail("exists", `Ya existe la escena «${slugify(scene)}»`, "scene");
+ 
+     let defaults = defaultScene();
+     const p = await ctx.projects.get(effectiveCtx.project);
+@@ -45,7 +45,7 @@ export const sceneCreate = defineTool({
+       };
+     }
+ 
+-    const sceneData = { ...defaults, ...(mode ? { mode } : {}), ...scene };
+-    return saveScene(effectiveCtx, name, sceneData);
++    const sceneData = { ...defaults, ...(mode ? { mode } : {}), ...data };
++    return saveScene(effectiveCtx, scene, sceneData);
+   },
+ });
+diff --git a/src/service/tools/scene-delete.ts b/src/service/tools/scene-delete.ts
+index 49e0614..8d82e62 100644
+--- a/src/service/tools/scene-delete.ts
++++ b/src/service/tools/scene-delete.ts
+@@ -7,10 +7,10 @@ export const sceneDelete = defineTool({
+   name: "scene_delete",
+   description:
+     "Delete a scene from the project's scenes/, as the editor's Escenas tab does.",
+-  input: z.object({ project: PROJECT, name: z.string().min(1) }),
++  input: z.object({ project: PROJECT, scene: z.string().min(1) }),
+   output: z.object({ ok: z.literal(true) }),
+-  async run({ project, name }, ctx) {
+-    await removeIn(await inProject(ctx, project), "scenes", name);
++  async run({ project, scene }, ctx) {
++    await removeIn(await inProject(ctx, project), "scenes", scene);
+     return { ok: true as const };
+   },
+ });
+diff --git a/src/service/tools/scene-inspect-layout.ts b/src/service/tools/scene-inspect-layout.ts
+index 6fa36df..eb1468e 100644
+--- a/src/service/tools/scene-inspect-layout.ts
++++ b/src/service/tools/scene-inspect-layout.ts
+@@ -36,13 +36,13 @@ export const sceneInspectLayout = defineTool({
+   description:
+     "Analyse layout and spatial diagnostics of a scene (text overlaps, elements " +
+     "outside canvas bounds, line attachments to missing IDs, and contrast issues) at given " +
+-    "times (default: start, middle and end of loop). Input can be a scene object or saved scene name. " +
++    "times (default: start, middle and end of loop). Pass a saved scene name in `scene` or a whole scene object in `data`. " +
+     "Also returns `boxes`: the drawn box (top-left `x, y`, `w`, `h`) of every top-level " +
+     "element at each time, to verify placement (e.g. centred when x + w/2 = width/2). A box marked " +
+     "`estimated: true` (a text or subtitles, or a group holding one) uses a font with no metrics here, so its width is approximate: check it with scene_preview.",
+   input: z.object({
+-    scene: z.unknown().optional(),
+-    name: z.string().optional(),
++    scene: z.string().min(1).optional(),
++    data: z.unknown().optional(),
+     project: PROJECT,
+     times: z.array(z.number().min(0)).optional(),
+   }),
+@@ -50,17 +50,16 @@ export const sceneInspectLayout = defineTool({
+     diagnostics: z.array(DiagnosticSchema),
+     boxes: z.array(BoxSchema),
+   }),
+-  async run({ scene: sceneInput, name, project, times }, ctx) {
++  async run({ scene: saved, data, project, times }, ctx) {
+     const projectCtx = await inProject(ctx, project);
+-    const saved = typeof sceneInput === "string" ? sceneInput : name;
+     const scene =
+-      sceneInput !== undefined && typeof sceneInput !== "string"
+-        ? checkScene(sceneInput)
++      data !== undefined
++        ? checkScene(data)
+         : saved
+           ? await openScene(projectCtx, saved)
+           : fail(
+               "invalid_input",
+-              "Debe proporcionar una escena ('scene') o el nombre de una escena guardada ('name')",
++              "Debe proporcionar el nombre de una escena guardada ('scene') o una escena completa ('data')",
+               "scene",
+             );
+     return {
+diff --git a/src/service/tools/scene-validate.ts b/src/service/tools/scene-validate.ts
+index a5bc680..628b988 100644
+--- a/src/service/tools/scene-validate.ts
++++ b/src/service/tools/scene-validate.ts
+@@ -17,26 +17,22 @@ export const sceneValidate = defineTool({
+     "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
+     "project (it would draw with a fallback; run font_install), or a text whose width is " +
+     "estimated because its font has no metrics here (check it with scene_preview). " +
+-    "Pass either `scene` (a full scene) or `compact` (the compact form scene_build takes, " +
++    "Pass either `data` (a full scene) or `compact` (the compact form scene_build takes, " +
+     "checked as scene_build would build it, with the same notices).",
+   input: z.object({
+-    scene: z.unknown().optional(),
++    data: z.unknown().optional(),
+     compact: CompactSceneSchema.optional(),
+     project: PROJECT,
+   }),
+   output: Verdict.extend({ notices: z.array(z.string()).optional() }),
+-  run: async ({ scene, compact, project }, ctx) => {
++  run: async ({ data, compact, project }, ctx) => {
+     const projectCtx = await inProject(ctx, project);
+     const fonts = await availableFonts(ctx.fonts, project);
+     if (compact !== undefined) {
+       let built: { notices: string[] } | undefined;
+       const verdict = await verdictOf(async () => {
+-        if (scene !== undefined)
+-          fail(
+-            "invalid_input",
+-            "Pasa `scene` o `compact`, no ambos",
+-            "compact",
+-          );
++        if (data !== undefined)
++          fail("invalid_input", "Pasa `data` o `compact`, no ambos", "compact");
+         built = await buildCompact(
+           projectCtx,
+           compact,
+@@ -49,15 +45,15 @@ export const sceneValidate = defineTool({
+     }
+     let prepared: { scene: Scene; notices: string[] } | undefined;
+     const verdict = await verdictOf(async () => {
+-      if (scene === undefined)
+-        fail("invalid_input", "Falta `scene` o `compact`", "compact");
+-      prepared = await prepareScene(projectCtx, scene);
++      if (data === undefined)
++        fail("invalid_input", "Falta `data` o `compact`", "compact");
++      prepared = await prepareScene(projectCtx, data);
+     });
+     if (!prepared) return verdict;
+     const notices = [
+       ...prepared.notices,
+       ...sceneNotices(
+-        scene,
++        data,
+         prepared.scene,
+         fonts.map((f) => f.family),
+       ).map((n) => n.message),
+diff --git a/src/service/tts/audio-duration.test.ts b/src/service/tts/audio-duration.test.ts
+index 3d111ee..3029af5 100644
+--- a/src/service/tts/audio-duration.test.ts
++++ b/src/service/tts/audio-duration.test.ts
+@@ -117,8 +117,8 @@ describe("scene_generate_speech duration (060/R2)", () => {
+       listModels: async () => [],
+     };
+     ctx.tts = tts;
+-    await registry.call("project_create", { slug: "p", name: "P" }, ctx);
+-    await registry.call("scene_create", { project: "p", name: "s" }, ctx);
++    await registry.call("project_create", { project: "p", name: "P" }, ctx);
++    await registry.call("scene_create", { project: "p", scene: "s" }, ctx);
+     const res = await registry.call(
+       "scene_generate_speech",
+       { project: "p", scene: "s", script: "Hola", provider: "local" },
+diff --git a/src/test/tool-harness.ts b/src/test/tool-harness.ts
+index b629e27..943a409 100644
+--- a/src/test/tool-harness.ts
++++ b/src/test/tool-harness.ts
+@@ -39,7 +39,7 @@ export async function toolHarness() {
+   };
+   await registry.call(
+     "project_create",
+-    { slug: PROJECT, name: "Mi proyecto" },
++    { project: PROJECT, name: "Mi proyecto" },
+     harness.ctx,
+   );
+   return harness;

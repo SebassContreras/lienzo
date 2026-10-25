@@ -39,7 +39,7 @@ export async function toolHarness() {
   };
   await registry.call(
     "project_create",
-    { slug: PROJECT, name: "Mi proyecto" },
+    { project: PROJECT, name: "Mi proyecto" },
     harness.ctx,
   );
   return harness;

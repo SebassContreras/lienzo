@@ -80,7 +80,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
     const createRes = await registry.call(
       "project_create",
       {
-        slug: "acme-corp",
+        project: "acme-corp",
         name: "Acme Corp",
         palette: { primary: "#0055ff" },
       },
@@ -99,7 +99,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
     // 3. project_inspect
     const inspectRes = await registry.call(
       "project_inspect",
-      { slug: "acme-corp" },
+      { project: "acme-corp" },
       ctx,
     );
     expect(inspectRes.ok).toBe(true);
@@ -111,7 +111,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
     // 4. project_delete
     const deleteRes = await registry.call(
       "project_delete",
-      { slug: "acme-corp" },
+      { project: "acme-corp" },
       ctx,
     );
     expect(deleteRes.ok).toBe(true);
@@ -119,7 +119,7 @@ describe("ProjectStore & Lifecycle Tools", () => {
     // Inspect non-existing
     const missingRes = await registry.call(
       "project_inspect",
-      { slug: "acme-corp" },
+      { project: "acme-corp" },
       ctx,
     );
     expect(missingRes.ok).toBe(false);

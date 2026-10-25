@@ -42,14 +42,14 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
     });
     await mkdir(join(root, "presets", "animations"), { recursive: true });
     ctx = createCtx(root);
-    await registry.call("project_create", { slug: "p", name: "P" }, ctx);
+    await registry.call("project_create", { project: "p", name: "P" }, ctx);
     editor = await openApp(APP_ROOT, "");
     demo = (await inPage(
       `(await import("/src/test/fixtures/sample-scene.ts")).demoScene()`,
     )) as Scene;
     const r = await registry.call(
       "scene_create",
-      { name: "demo", project: "p", scene: demo },
+      { scene: "demo", project: "p", data: demo },
       ctx,
     );
     expect(r.ok).toBe(true);

@@ -36,13 +36,13 @@ export const sceneInspectLayout = defineTool({
   description:
     "Analyse layout and spatial diagnostics of a scene (text overlaps, elements " +
     "outside canvas bounds, line attachments to missing IDs, and contrast issues) at given " +
-    "times (default: start, middle and end of loop). Input can be a scene object or saved scene name. " +
+    "times (default: start, middle and end of loop). Pass a saved scene name in `scene` or a whole scene object in `data`. " +
     "Also returns `boxes`: the drawn box (top-left `x, y`, `w`, `h`) of every top-level " +
     "element at each time, to verify placement (e.g. centred when x + w/2 = width/2). A box marked " +
     "`estimated: true` (a text or subtitles, or a group holding one) uses a font with no metrics here, so its width is approximate: check it with scene_preview.",
   input: z.object({
-    scene: z.unknown().optional(),
-    name: z.string().optional(),
+    scene: z.string().min(1).optional(),
+    data: z.unknown().optional(),
     project: PROJECT,
     times: z.array(z.number().min(0)).optional(),
   }),
@@ -50,17 +50,16 @@ export const sceneInspectLayout = defineTool({
     diagnostics: z.array(DiagnosticSchema),
     boxes: z.array(BoxSchema),
   }),
-  async run({ scene: sceneInput, name, project, times }, ctx) {
+  async run({ scene: saved, data, project, times }, ctx) {
     const projectCtx = await inProject(ctx, project);
-    const saved = typeof sceneInput === "string" ? sceneInput : name;
     const scene =
-      sceneInput !== undefined && typeof sceneInput !== "string"
-        ? checkScene(sceneInput)
+      data !== undefined
+        ? checkScene(data)
         : saved
           ? await openScene(projectCtx, saved)
           : fail(
               "invalid_input",
-              "Debe proporcionar una escena ('scene') o el nombre de una escena guardada ('name')",
+              "Debe proporcionar el nombre de una escena guardada ('scene') o una escena completa ('data')",
               "scene",
             );
     return {

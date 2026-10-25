@@ -20,6 +20,10 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 - Every scene, asset and export tool needs `project` (a slug from `project_list`); there
   is no default. Never use an asset from another project.
 - Files go only inside `projects/<slug>/` (scenes, assets, exports).
+- One name means one thing in every tool: `project` is a project (the `project_*` tools
+  too), `scene` is a saved scene's name, `data` is a whole scene object (`scene_create`,
+  `scene_validate`, `scene_inspect_layout`), `recipe` a preset object, `patch` the values
+  merged onto an element, scene or background, `id` an element, `at` a placement.
 - Write scenes in compact form with `scene_build`; use the element tools for small edits
   to a saved scene.
 
@@ -50,7 +54,7 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
    Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
    `animation_save`.
    - **Duplicate** (no tool of its own): `scene_get`, copy the element, then `element_add`
-     with a new `id` and the position shifted (`x`/`y`).
+     with its fields in `patch`, a new `id` and the position shifted (`x`/`y`).
    - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
      shared edge or center and set `x`/`y` on each element with `element_update`.
 7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and

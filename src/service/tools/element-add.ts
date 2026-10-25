@@ -19,11 +19,11 @@ export const elementAdd = defineTool({
   description:
     "Add an element on top of a scene (or inside a `group` when `parent` is given by `id` or " +
     "`group/child` path), built from a preset (see preset_list) or from a component kind's " +
-    "defaults (see component_list). `set` deep-merges field values (tracks and animPreset " +
+    "defaults (see component_list). `patch` deep-merges field values (tracks and animPreset " +
     "included). " +
     AT_RULES +
     "It is placed in the scene (or the parent group's content area); with no `at` it is " +
-    "centred there unless `set` gives its position. " +
+    "centred there unless `patch` gives its position. " +
     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
@@ -39,7 +39,7 @@ export const elementAdd = defineTool({
       kind: z.string().min(1).optional(),
       parent: z.string().min(1).optional(),
       at: AtPlacementSchema.optional(),
-      set: z.record(z.string(), z.unknown()).optional(),
+      patch: z.record(z.string(), z.unknown()).optional(),
       trim: z.boolean().optional(),
     })
     .refine((i) => (i.preset === undefined) !== (i.kind === undefined), {
@@ -47,14 +47,14 @@ export const elementAdd = defineTool({
       path: ["preset"],
     }),
   output: SceneResult.extend({ id: z.string() }),
-  async run({ scene, project, preset, kind, parent, at, set, trim }, ctx) {
+  async run({ scene, project, preset, kind, parent, at, patch, trim }, ctx) {
     const effectiveCtx = await inProject(ctx, project);
 
     const notices: string[] = [];
-    if (set) {
+    if (patch) {
       const assetKeys = ["src", "assetId", "image", "audio"];
       for (const key of assetKeys) {
-        const val = set[key];
+        const val = patch[key];
         if (typeof val === "string" && val.length > 0) {
           const check = await ctx.projects.checkAsset(
             effectiveCtx.project,
@@ -76,11 +76,11 @@ export const elementAdd = defineTool({
       checkKind(kind as string);
       el = defaultElement(kind as ElementKind);
     }
-    if (set) el = patched(el, set);
+    if (patch) el = patched(el, patch);
     // trimmed before the scene is opened, so a failure adds nothing (049/D4)
     if (trim) el = await trimImage(effectiveCtx, el, "trim");
     const added = el;
-    const placed = set && ["x", "y", "a", "b"].some((k) => k in set);
+    const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
     const result = await editScene(effectiveCtx, scene, (s) => {
       if (parent !== undefined) {
         const group = findElement(s.elements, parent, "parent");

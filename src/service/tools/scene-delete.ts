@@ -7,10 +7,10 @@ export const sceneDelete = defineTool({
   name: "scene_delete",
   description:
     "Delete a scene from the project's scenes/, as the editor's Escenas tab does.",
-  input: z.object({ project: PROJECT, name: z.string().min(1) }),
+  input: z.object({ project: PROJECT, scene: z.string().min(1) }),
   output: z.object({ ok: z.literal(true) }),
-  async run({ project, name }, ctx) {
-    await removeIn(await inProject(ctx, project), "scenes", name);
+  async run({ project, scene }, ctx) {
+    await removeIn(await inProject(ctx, project), "scenes", scene);
     return { ok: true as const };
   },
 });
