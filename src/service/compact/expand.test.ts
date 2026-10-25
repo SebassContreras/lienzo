@@ -22,7 +22,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(scene2.height).toBe(600);
   });
 
-  it("expands background with deep merge", async () => {
+  it("expands background with deep merge onto a solid background (064/R9)", async () => {
     const compact: CompactScene = {
       background: {
         color: "#123456",
@@ -33,7 +33,8 @@ describe("expandScene pure expansion (011/T002)", () => {
     const { scene } = await expandScene(compact);
     expect(scene.background.color).toBe("#123456");
     expect(scene.background.dots).toBe(false);
-    expect(scene.background.gradient).toBe(true);
+    // 064/R9: an object starts solid, so the gradient is off unless it turns it on
+    expect(scene.background.gradient).toBe(false);
   });
 
   it("builds an element from preset with deep-merged fields", async () => {

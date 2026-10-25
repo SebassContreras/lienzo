@@ -90,9 +90,9 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 - `anim` is an entry/loop/exit shorthand; `tracks` are keyframes `[t, value, easing?]` by
   field path or `@rotate` / `@scale`, with `repeat: "loop" | "pingpong"` and `until`.
 - `origin` is the pivot for rotation and scale; `w` on `text` wraps it.
-- `background` is a background preset name, a color (`"#0b1020"`: solid, no gradient or
-  dots) or a partial object (`{ "color": … }` keeps the default gradient and dots); any
-  other string comes back as a notice.
+- `background` is a background preset name, a color (`"#0b1020"`: solid, no gradient,
+  dots or light) or an object that starts solid and adds only what it turns on
+  (`{ "color": …, "dots": true }`); any other string comes back as a notice.
 - Shots: an element with `shot` only shows during that shot, and only it moves with that
   shot's camera (groups included, applied once); elements with no `shot` (subtitles, logos)
   never move. `transition` `fade` / `slide` / `zoom` plays over `duration` before the

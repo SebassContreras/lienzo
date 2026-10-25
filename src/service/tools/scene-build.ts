@@ -17,7 +17,8 @@ export const sceneBuild = defineTool({
   name: "scene_build",
   description:
     "Build a full scene from a compact description. Expands size, background (a background " +
-    "preset name, a color such as `#111827` for a solid background, or a partial object), " +
+    "preset name, a color such as `#111827` for a solid background, or an object such as " +
+    "`{ color, dots: true }` that starts solid and turns on only what it names), " +
     "presets, shortcuts (at, fit, from, to, short tracks and anim), partial `effects`, and validates " +
     'the resulting scene. `defaults: "flat"` turns off the default gradient, shadow, border and ' +
     `border glow of ${FLAT_KINDS.join(", ")} unless the element sets them; it is applied ` +

@@ -70,3 +70,10 @@
 - [x] T021 [agent] [status:done] Color strings and the unknown-background notice in `resolveSceneBackground`; `scene_build` description and usage skill
       covers: D9@1
       changes: .agents/skills/lienzo-usage/SKILL.md (+4 -1), src/service/compact/expand.ts (+21 -7), src/service/tools/scene-build.ts (+2 -1)
+- [x] T022 [agent] [status:done] Tests: `{ color }` gives a solid background; `{ color, dots: true }` adds only the dots (fail before the fix)
+      covers: R9@1
+      kind: test
+      changes: src/service/compact/background.test.ts (+30 -0)
+- [x] T023 [agent] [status:done] Background objects start from a solid background; description and usage skill
+      covers: D10@1
+      changes: .agents/skills/lienzo-usage/SKILL.md (+3 -3), README.md (+2 -0), src/service/compact/expand.test.ts (+3 -2), src/service/compact/expand.ts (+3 -1), src/service/tools/scene-build.ts (+2 -1)

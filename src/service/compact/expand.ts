@@ -89,7 +89,8 @@ const COLOR_PREFIX = /^(#|rgba?\(|hsla?\()/i;
 
 /**
  * Resolves a background from a preset name, a color (a solid background) or a partial
- * object; a string that is neither keeps the default and pushes a notice (064/D9).
+ * object merged onto a solid background (064/D10); a string that is neither keeps the
+ * default and pushes a notice (064/D9).
  */
 async function resolveSceneBackground(
   bgInput: unknown,
@@ -116,6 +117,7 @@ async function resolveSceneBackground(
   }
 
   if (typeof bgInput === "object" && bgInput !== null) {
+    solid.apply.background?.(base, { color: base.color });
     deepMerge(
       base as unknown as Record<string, unknown>,
       bgInput as Record<string, unknown>,

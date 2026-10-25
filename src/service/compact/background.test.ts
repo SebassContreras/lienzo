@@ -50,3 +50,33 @@ describe("compact background strings (064/R8)", () => {
     expect(res.notices).toEqual([]);
   });
 });
+
+const buildObject = (background: object) =>
+  ok("scene_build", { compact: { background, elements: [] } });
+
+describe("compact background objects (064/R9)", () => {
+  it("makes a solid background from a color alone", async () => {
+    // Act
+    const res = await buildObject({ color: "#111827" });
+
+    // Assert
+    expect(res.scene).toMatchObject({
+      background: {
+        color: "#111827",
+        gradient: false,
+        dots: false,
+        spotlight: 0,
+      },
+    });
+  });
+
+  it("adds only the looks the object turns on", async () => {
+    // Act
+    const res = await buildObject({ color: "#111827", dots: true });
+
+    // Assert
+    expect(res.scene).toMatchObject({
+      background: { dots: true, gradient: false, spotlight: 0 },
+    });
+  });
+});

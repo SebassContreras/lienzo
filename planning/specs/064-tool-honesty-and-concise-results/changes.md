@@ -45,3 +45,10 @@ Why: a real build with `background: "#111827"` drew the default navy background 
 - ADDED R8@1
 - ADDED D9@1
 - Tasks: T020, T021
+
+## 2026-10-25 — A background object starts solid
+Why: after R8, `"#111827"` drew a solid background but `{ "color": "#111827" }` kept the default gradient, dots and light; the user chose to make both mean the same.
+- ADDED R9@1
+- ADDED D10@1
+- Tasks: T022, T023
+- `expand.test.ts` "expands background with deep merge" asserted the old look (`gradient: true` for `{ color, dots: false }`); R9 changes that requirement, so it now asserts `false`.

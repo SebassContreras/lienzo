@@ -175,6 +175,8 @@ The same options work in compact scenes (`scene_build`) and through the element 
 - **Particles:** direction and gravity for falling particles, fractional or `0` speed.
 - **Effects and flat style:** partial `effects` (blur, blend, mask…) on any element;
   `defaults: "flat"` turns off the default gradient, shadow, border and border glow of shapes and paths.
+- **Background:** a background preset name, a color (`"#111827"`, solid) or an object that
+  starts solid and adds only what it turns on (`{ "color": "#050b1a", "spotlight": 0.5 }`).
 - **Voice and audio:** `scene_generate_speech` with `asTrack: true` and `startOffset`
   appends one voice track per shot instead of replacing `scene.audio`; `scene_build` keeps
   existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not

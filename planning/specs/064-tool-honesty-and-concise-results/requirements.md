@@ -17,3 +17,4 @@ notice lists and the whole expanded scene, thousands of characters for three rec
 ## Follow-up (2026-10-25)
 
 - R8@1: In a compact scene, a `background` string that is a CSS color (`#…`, `rgb(…)`, `hsl(…)`) gives a solid background of that color; a string that is neither a background preset nor a color keeps the default background and `scene_build` returns a notice naming it.
+- R9@1: A compact `background` object starts from a solid background: `{ "color": … }` alone draws that color with no gradient, dots or light, and each of those appears only when the object turns it on (`gradient: true`, `dots: true`, `spotlight: <n>`).
