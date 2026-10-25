@@ -11,10 +11,11 @@ export const FLAT_SHAPE_PATCH = {
   fill: { gradient: false },
   shadow: { enabled: false },
   border: { width: 0 },
+  borderGlow: { enabled: false },
 };
 
 /** Shapes and paths: `flat` paths drop their stroke too, which lives in `border` (063/D4). */
-const FLAT_KINDS: readonly string[] = [...SHAPE_KINDS, "path"];
+export const FLAT_KINDS: readonly string[] = [...SHAPE_KINDS, "path"];
 
 export function applySceneDefaults(
   el: Element,

@@ -174,7 +174,7 @@ The same options work in compact scenes (`scene_build`) and through the element 
   group `clip`; radial and multi-stop fills (`fill.type`, `fill.stops`).
 - **Particles:** direction and gravity for falling particles, fractional or `0` speed.
 - **Effects and flat style:** partial `effects` (blur, blend, mask…) on any element;
-  `defaults: "flat"` turns off the default gradient, shadow and border of shapes.
+  `defaults: "flat"` turns off the default gradient, shadow, border and border glow of shapes and paths.
 - **Voice and audio:** `scene_generate_speech` with `asTrack: true` and `startOffset`
   appends one voice track per shot instead of replacing `scene.audio`; `scene_build` keeps
   existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not

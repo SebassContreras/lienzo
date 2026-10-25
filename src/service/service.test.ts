@@ -323,8 +323,9 @@ describe("animation presets (D6, R7)", () => {
       save: "compact_built_demo",
     });
 
-    expect(res.scene).toBeDefined();
-    expect(res.saved).toMatchObject({ scene: "compact_built_demo" });
+    // A saving build is concise by default (064/R6); the scene is read from disk below
+    expect(res.elements).toEqual([{ id: "my-rect", kind: "rect" }]);
+    expect(res.saved).toBe("compact_built_demo");
     const savedDisk = await onDisk("compact_built_demo");
     const firstEl = savedDisk.elements[0] as Extract<
       Scene["elements"][number],
@@ -381,10 +382,11 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
 
     expect(res.notices).toEqual([
       expect.stringContaining("«Montserrat» no está instalada"),
+      expect.stringContaining("«Montserrat» es una estimación"),
     ]);
   });
 
-  it("gives no font notice for a family installed in the project", async () => {
+  it("gives no missing-font notice for a family installed in the project, only its estimated width (064/R4)", async () => {
     await mkdir(join(ctx.root, "projects", PROJECT, "fonts"), {
       recursive: true,
     });
@@ -397,7 +399,9 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
       compact: { elements: [{ kind: "text", font: "Montserrat" }] },
     });
 
-    expect(res.notices).toEqual([]);
+    expect(res.notices).toEqual([
+      expect.stringContaining("«Montserrat» es una estimación"),
+    ]);
   });
 
   it("keeps scene_validate valid while it warns about the font", async () => {
@@ -409,7 +413,10 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
 
     expect(res).toEqual({
       valid: true,
-      notices: [expect.stringContaining("«Montserrat»")],
+      notices: [
+        expect.stringContaining("«Montserrat» no está instalada"),
+        expect.stringContaining("«Montserrat» es una estimación"),
+      ],
     });
   });
 });

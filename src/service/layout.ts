@@ -11,6 +11,7 @@ import {
 import { type Box, boxesTouch, boxOf, placeChild } from "../engine/geometry.ts";
 import { resolveLine } from "../engine/lines.ts";
 import { isElementActiveInShot } from "../engine/shots.ts";
+import { widthIsEstimated } from "../engine/text-measure.ts";
 import type {
   Element,
   GroupEl,
@@ -446,7 +447,15 @@ export function inspectLayout(
   });
 }
 
-export type LayoutBox = Box & { id: string; t: number };
+export type LayoutBox = Box & { id: string; t: number; estimated?: true };
+
+/** A text whose width is the fallback estimate, so its box is approximate (064/D3). */
+function hasEstimatedWidth(el: Element): boolean {
+  return (
+    el.kind === "text" &&
+    widthIsEstimated({ font: el.font, size: el.size, weight: el.weight })
+  );
+}
 
 /**
  * The drawn box of every top-level element at each time, so an agent can
@@ -459,6 +468,11 @@ export function layoutBoxes(
   return times.flatMap((t) =>
     placedElementsAt(scene, t)
       .filter((item) => !item.parentGroup)
-      .map(({ el, box }) => ({ id: el.id, t, ...box })),
+      .map(({ el, box }) => ({
+        id: el.id,
+        t,
+        ...box,
+        ...(hasEstimatedWidth(el) ? { estimated: true as const } : {}),
+      })),
   );
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SHOT_RULES } from "../../engine/shots.ts";
 import { ShotCameraSchema, ShotTransitionSchema } from "../../model/schema.ts";
 import { removeShot, setShot } from "../../model/shots.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
@@ -11,7 +12,8 @@ export const shotSet = defineTool({
     "Create, update, or remove a shot in a scene. Specify `id`, `start`, and `end` " +
     "to create or update a shot; pass `remove: true` to delete it. Optional `name`, `transition` " +
     "({ kind: 'cut'|'fade'|'slide'|'zoom', duration: number }), and `camera` ({ x, y, zoom, tracks }) " +
-    "configure cut pacing and camera movement.",
+    "configure cut pacing and camera movement. " +
+    SHOT_RULES,
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,

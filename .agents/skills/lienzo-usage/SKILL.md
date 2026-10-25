@@ -32,12 +32,16 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
    `preset_get`, `font_list` (then `font_install` for a Google font you need).
 3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
-   `notices` without writing anything. Read the notices (ignored keys, missing fonts).
+   `notices` without writing anything. Read the notices (ignored keys, missing fonts, text
+   widths estimated for a font with no metrics: check those with `scene_preview`).
 4. **Check:** `scene_inspect_layout` (overlaps, out of canvas, contrast, drawn boxes) at
    the times that matter; `scene_preview` at a time `t` to look at a frame (`out` saves the
    PNG in `exports/`).
 5. **Save:** `scene_build` with `save: "<name>"` (`overwrite: true` to replace; the stored
-   audio is kept unless you pass `audioTracks`).
+   audio is kept unless you pass `audioTracks`). `saved` is the scene name and every notice,
+   build and save, is in the one `notices` list. A saving build answers short: `saved`,
+   `notices` and the `id`/`kind` of each top-level element; pass `response_format:
+   "detailed"` (or call `scene_get`) when you need the expanded scene.
 6. **Edit:** `element_update` / `element_add` (`parent` to insert in a group) /
    `element_move` / `element_remove`, `keyframe_set` / `keyframe_remove`, `background_set`,
    `shot_set`, `image_trim`, `element_group` / `element_ungroup`. Targets are an `id` or a

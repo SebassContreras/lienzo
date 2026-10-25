@@ -192,6 +192,17 @@ function fallbackMeasureWidth(text: string, style: MeasureStyle): number {
 }
 
 /**
+ * Whether `measureTextWidth` falls back to the estimate for `style`: no canvas and no font
+ * tables (064/D3). Mirrors its branches, so the two never disagree.
+ */
+export function widthIsEstimated(style: MeasureStyle): boolean {
+  return (
+    !getBrowserContext() &&
+    !loadFontSync(style.font, style.weight, style.italic)
+  );
+}
+
+/**
  * Returns accurate width for a single line of text.
  */
 export function measureTextWidth(text: string, style: MeasureStyle): number {

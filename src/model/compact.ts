@@ -144,7 +144,7 @@ const CompactEffectsSchema = z.looseObject(
   ),
 );
 
-/** Scene-level style defaults (058/D4); `flat` turns off shape gradients, shadows and borders. */
+/** Scene-level style defaults (058/D4); `flat` turns off shape gradients, shadows, borders and border glows. */
 const SceneDefaultsSchema = z.enum(["flat"]);
 
 export type SceneDefaults = z.infer<typeof SceneDefaultsSchema>;

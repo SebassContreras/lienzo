@@ -13,7 +13,8 @@ export const sceneValidate = defineTool({
     "Check a whole scene without saving it, as the editor would open it (animation " +
     "presets it names must exist). Returns the first failing path. A valid scene can " +
     "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
-    "project (it would draw with a fallback; run font_install).",
+    "project (it would draw with a fallback; run font_install), or a text whose width is " +
+    "estimated because its font has no metrics here (check it with scene_preview).",
   input: z.object({ scene: z.unknown(), project: PROJECT }),
   output: Verdict.extend({ notices: z.array(z.string()).optional() }),
   run: async ({ scene, project }, ctx) => {

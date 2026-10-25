@@ -5,6 +5,12 @@ import type { Element, Scene, Shot } from "../model/model.ts";
 import type { Ctx } from "./paint.ts";
 import { valueAt } from "./tracks.ts";
 
+/** How shots behave, for tool descriptions (064/D2): the window `isElementActiveInShot` opens and the per-element camera. */
+export const SHOT_RULES =
+  "A shot's transition runs before its `start` (entering) and after its `end` (leaving), " +
+  "over its `duration`; its camera moves only the elements bound to that shot (`shot` on the " +
+  "element), never elements with no shot such as subtitles or logos.";
+
 export type ResolvedCamera = {
   x: number;
   y: number;

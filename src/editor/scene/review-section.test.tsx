@@ -50,7 +50,8 @@ describe("editor notices (063/R8)", () => {
     const shown = [...document.querySelectorAll(".notice")].map(
       (n) => n.textContent,
     );
-    expect(shown).toHaveLength(1);
+    // jsdom has no canvas, so the width is estimated here too (064/R4): missing font + estimate
+    expect(shown).toHaveLength(2);
     expect(shown).toEqual(expected);
   });
 
@@ -66,7 +67,8 @@ describe("editor notices (063/R8)", () => {
     );
 
     // Act
-    fireEvent.click(screen.getByTitle("Seleccionar el elemento"));
+    const [missingFont] = screen.getAllByTitle("Seleccionar el elemento");
+    fireEvent.click(missingFont as HTMLElement);
 
     // Assert
     expect(onSelect).toHaveBeenCalledWith("title");

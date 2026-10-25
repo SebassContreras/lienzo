@@ -1,3 +1,4 @@
+import { widthIsEstimated } from "../engine/text-measure.ts";
 import type { Element, Scene } from "../model/model.ts";
 
 /** CSS generic families: keywords, never installable fonts. */
@@ -19,6 +20,19 @@ function* allElements(elements: readonly Element[]): Generator<Element> {
   }
 }
 
+type TextLike = Extract<Element, { kind: "text" | "subtitles" }>;
+
+/** Every `text` and `subtitles` element of the scene, symbols included. */
+function* textElements(scene: Scene): Generator<TextLike> {
+  const roots = [
+    ...scene.elements,
+    ...Object.values(scene.symbols ?? {}).flatMap((s) => s.children),
+  ];
+  for (const el of allElements(roots)) {
+    if (el.kind === "text" || el.kind === "subtitles") yield el;
+  }
+}
+
 /**
  * Font families used by `text` and `subtitles` elements that aren't in `installed`, in
  * first-seen order (060/D5). Case-insensitive, as CSS matches family names. Pure.
@@ -29,15 +43,29 @@ export function missingFonts(
 ): string[] {
   const known = new Set([...installed, ...GENERIC].map((f) => f.toLowerCase()));
   const missing = new Set<string>();
-  const roots = [
-    ...scene.elements,
-    ...Object.values(scene.symbols ?? {}).flatMap((s) => s.children),
-  ];
-  for (const el of allElements(roots)) {
-    if (el.kind !== "text" && el.kind !== "subtitles") continue;
+  for (const el of textElements(scene)) {
     if (!known.has(el.font.toLowerCase())) missing.add(el.font);
   }
   return [...missing];
+}
+
+/** Font families whose text width is estimated here, with no metrics, in first-seen order (064/D3). */
+export function estimatedFonts(scene: Scene): string[] {
+  const estimated = new Set<string>();
+  for (const el of textElements(scene)) {
+    if (widthIsEstimated({ font: el.font, size: el.size, weight: el.weight }))
+      estimated.add(el.font);
+  }
+  return [...estimated];
+}
+
+/** One warning per family measured by the estimate, naming how to check it (064/D3). */
+export function estimatedWidthNotices(scene: Scene): string[] {
+  return estimatedFonts(scene).map(
+    (family) =>
+      `El ancho del texto en «${family}» es una estimación (no hay métricas de esa fuente); ` +
+      "compruébalo con scene_preview, no con scene_inspect_layout",
+  );
 }
 
 /** One warning per missing family, naming the fix (060/D6). */

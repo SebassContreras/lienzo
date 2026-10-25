@@ -1,11 +1,16 @@
 /**
- * What `scene_validate` warns about beyond validity (063/D7): fields the schema ignored and
- * fonts that are not installed. Pure and free of Node imports, so the tool and the editor's
+ * What `scene_validate` warns about beyond validity (063/D7): fields the schema ignored,
+ * fonts that are not installed and text widths that are estimated (064/D3). Pure and free of Node imports, so the tool and the editor's
  * "Revisión" section build the very same list.
  */
 import { ignoredNotice, ignoredPaths } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
-import { fontNotices, missingFonts } from "./font-check.ts";
+import {
+  estimatedFonts,
+  estimatedWidthNotices,
+  fontNotices,
+  missingFonts,
+} from "./font-check.ts";
 
 /** One warning; `elementId` names the top-level element it is about, when there is one. */
 export type SceneNotice = { message: string; elementId?: string };
@@ -34,10 +39,14 @@ export function sceneNotices(
         index === undefined ? undefined : scene.elements[Number(index)]?.id,
     };
   });
-  const messages = fontNotices(scene, installed);
-  const fonts = missingFonts(scene, installed).map((family, i) => ({
-    message: messages[i] as string,
-    elementId: scene.elements.find((el) => usesFont(el, family))?.id,
-  }));
-  return [...ignored, ...fonts];
+  const byFamily = (families: string[], messages: string[]) =>
+    families.map((family, i) => ({
+      message: messages[i] as string,
+      elementId: scene.elements.find((el) => usesFont(el, family))?.id,
+    }));
+  return [
+    ...ignored,
+    ...byFamily(missingFonts(scene, installed), fontNotices(scene, installed)),
+    ...byFamily(estimatedFonts(scene), estimatedWidthNotices(scene)),
+  ];
 }

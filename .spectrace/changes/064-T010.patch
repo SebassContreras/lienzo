@@ -1,0 +1,81 @@
+diff --git a/.agents/skills/lienzo-usage/SKILL.md b/.agents/skills/lienzo-usage/SKILL.md
+index 4328819..c01ac58 100644
+--- a/.agents/skills/lienzo-usage/SKILL.md
++++ b/.agents/skills/lienzo-usage/SKILL.md
+@@ -39,7 +39,9 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
+    PNG in `exports/`).
+ 5. **Save:** `scene_build` with `save: "<name>"` (`overwrite: true` to replace; the stored
+    audio is kept unless you pass `audioTracks`). `saved` is the scene name and every notice,
+-   build and save, is in the one `notices` list.
++   build and save, is in the one `notices` list. A saving build answers short: `saved`,
++   `notices` and the `id`/`kind` of each top-level element; pass `response_format:
++   "detailed"` (or call `scene_get`) when you need the expanded scene.
+ 6. **Edit:** `element_update` / `element_add` (`parent` to insert in a group) /
+    `element_move` / `element_remove`, `keyframe_set` / `keyframe_remove`, `background_set`,
+    `shot_set`, `image_trim`, `element_group` / `element_ungroup`. Targets are an `id` or a
+diff --git a/src/service/service.test.ts b/src/service/service.test.ts
+index 099378c..df05f94 100644
+--- a/src/service/service.test.ts
++++ b/src/service/service.test.ts
+@@ -323,7 +323,8 @@ describe("animation presets (D6, R7)", () => {
+       save: "compact_built_demo",
+     });
+ 
+-    expect(res.scene).toBeDefined();
++    // A saving build is concise by default (064/R6); the scene is read from disk below
++    expect(res.elements).toEqual([{ id: "my-rect", kind: "rect" }]);
+     expect(res.saved).toBe("compact_built_demo");
+     const savedDisk = await onDisk("compact_built_demo");
+     const firstEl = savedDisk.elements[0] as Extract<
+diff --git a/src/service/tools/scene-build.ts b/src/service/tools/scene-build.ts
+index af668e6..e7452f4 100644
+--- a/src/service/tools/scene-build.ts
++++ b/src/service/tools/scene-build.ts
+@@ -26,7 +26,8 @@ export const sceneBuild = defineTool({
+     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
+     "order) give radial and multi-stop gradients when `fill.gradient` is on. " +
+     "`audioTracks: [{assetId, startOffset?, volume?, …}]` sets the scene's audio tracks. " +
+-    "If `save` is provided, the scene is saved under that name (returned in `saved`; every notice, build and save, is in `notices`); fails if the name exists unless `overwrite` is true. " +
++    "If `save` is provided, the scene is saved under that name (returned in `saved`; every notice, build and save, is in `notices`) " +
++    'and, unless `response_format: "detailed"`, only the `id` and `kind` of each top-level element come back instead of the scene (scene_get reads it); fails if the name exists unless `overwrite` is true. ' +
+     "Overwriting keeps the stored scene's audio (with a notice) unless `audioTracks` is given (`[]` clears it). " +
+     "A notice also names any text or subtitles font that is not installed (run font_install). " +
+     SHOT_RULES,
+@@ -35,13 +36,17 @@ export const sceneBuild = defineTool({
+     project: PROJECT,
+     save: z.string().optional(),
+     overwrite: z.boolean().optional(),
++    response_format: z.enum(["concise", "detailed"]).optional(),
+   }),
+   output: z.object({
+-    scene: SceneSchema,
++    scene: SceneSchema.optional(),
++    elements: z
++      .array(z.object({ id: z.string(), kind: z.string() }))
++      .optional(),
+     saved: z.string().optional(),
+     notices: z.array(z.string()),
+   }),
+-  async run({ compact, project, save, overwrite }, ctx) {
++  async run({ compact, project, save, overwrite, response_format }, ctx) {
+     const effectiveCtx = await inProject(ctx, project);
+ 
+     let expanded: ReturnType<typeof checkScene>;
+@@ -100,10 +105,12 @@ export const sceneBuild = defineTool({
+     }
+ 
+     // One list (064/D4): the save repeats checks the build already reported
+-    return {
+-      scene: expanded,
+-      saved,
+-      notices: [...new Set(notices)],
+-    };
++    const unique = [...new Set(notices)];
++    // Concise by default once saved (064/D5): scene_get gives the full scene
++    if (saved && response_format !== "detailed") {
++      const elements = expanded.elements.map(({ id, kind }) => ({ id, kind }));
++      return { saved, elements, notices: unique };
++    }
++    return { scene: expanded, saved, notices: unique };
+   },
+ });
