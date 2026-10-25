@@ -8,7 +8,9 @@ import {
   writeAsset,
 } from "./asset-helpers.ts";
 import { safeAssetPath } from "./asset-path.ts";
+import { deleteAsset, renameAsset } from "./project-assets.ts";
 import type { ProjectStore } from "./project-store.ts";
+import { ToolFailure } from "./registry.ts";
 
 export async function handleProjectApi(
   store: ProjectStore,
@@ -169,6 +171,26 @@ export async function handleProjectApi(
         return;
       }
 
+      // POST /api/projects/<slug>/assets/rename?from=&to= -> move it, rewriting scenes (063/D6)
+      if (
+        segments.length === 3 &&
+        segments[2] === "rename" &&
+        method === "POST"
+      ) {
+        const from = url.searchParams.get("from") ?? "";
+        const to = url.searchParams.get("to") ?? "";
+        jsonReply(200, await renameAsset(store, slug, from, to));
+        return;
+      }
+
+      // DELETE /api/projects/<slug>/assets?path=&force=1 -> delete it unless a scene uses it (063/D6)
+      if (segments.length === 2 && method === "DELETE") {
+        const assetPath = url.searchParams.get("path") ?? "";
+        const force = url.searchParams.get("force") === "1";
+        jsonReply(200, await deleteAsset(store, slug, assetPath, force));
+        return;
+      }
+
       // GET /api/projects/<slug>/assets/<path...> -> serve project asset, subfolders too (044/D2)
       if (segments.length >= 3 && method === "GET") {
         const assetPath = safeAssetPath(segments.slice(2));
@@ -197,6 +219,7 @@ export async function handleProjectApi(
     jsonReply(404, { error: "Ruta no encontrada" });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    jsonReply(400, { error: message });
+    const code = error instanceof ToolFailure ? error.error.code : undefined;
+    jsonReply(400, { error: message, code });
   }
 }

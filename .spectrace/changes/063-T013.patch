@@ -1,0 +1,194 @@
+diff --git a/src/editor/sidebar/project-assets-tab.tsx b/src/editor/sidebar/project-assets-tab.tsx
+index acd9719..1cbd7ce 100644
+--- a/src/editor/sidebar/project-assets-tab.tsx
++++ b/src/editor/sidebar/project-assets-tab.tsx
+@@ -1,4 +1,11 @@
+-import { FileType, Folder, Loader2, Upload } from "lucide-react";
++import {
++  FileType,
++  Folder,
++  Loader2,
++  Pencil,
++  Trash2,
++  Upload,
++} from "lucide-react";
+ import {
+   type ChangeEvent,
+   type CSSProperties,
+@@ -7,6 +14,7 @@ import {
+   useRef,
+   useState,
+ } from "react";
++import { deleteProjectAsset, renameProjectAsset } from "../../presets/store.ts";
+ import { projectAssetUrl, safeAssetPath } from "../../service/asset-path.ts";
+ import { ASSET_MIME } from "../stage.tsx";
+ import { assetFileName, assetFolderView } from "./asset-folders.ts";
+@@ -134,6 +142,35 @@ export function ProjectAssetsTab({
+     }
+   };
+ 
++  /** Renames or moves an asset; scenes using it follow (063/D6). */
++  const handleRename = async (asset: string) => {
++    const to = window.prompt("Nueva ruta dentro de assets/", asset)?.trim();
++    if (!to || to === asset) return;
++    try {
++      await renameProjectAsset(asset, to, projectSlug);
++      setStatus(`Recurso renombrado a «${to}»`);
++      fetchAssets();
++    } catch (e: unknown) {
++      setStatus(`Error al renombrar: ${e instanceof Error ? e.message : e}`);
++    }
++  };
++
++  /** Deletes an asset, asking again when a scene still uses it (063/D6). */
++  const handleDelete = async (asset: string) => {
++    if (!window.confirm(`¿Borrar el recurso «${asset}»?`)) return;
++    try {
++      const { inUse } = await deleteProjectAsset(asset, projectSlug);
++      if (inUse) {
++        if (!window.confirm(`${inUse}. ¿Borrarlo igual?`)) return;
++        await deleteProjectAsset(asset, projectSlug, true);
++      }
++      setStatus(`Recurso «${asset}» borrado`);
++      fetchAssets();
++    } catch (e: unknown) {
++      setStatus(`Error al borrar: ${e instanceof Error ? e.message : e}`);
++    }
++  };
++
+   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (file) handleUpload(file);
+@@ -328,6 +365,22 @@ export function ProjectAssetsTab({
+                   )}
+                 </div>
+                 <span style={labelStyle}>{assetFileName(asset)}</span>
++                <div className="item-actions">
++                  <button
++                    type="button"
++                    title="Renombrar o mover"
++                    onClick={() => handleRename(asset)}
++                  >
++                    <Pencil size={12} />
++                  </button>
++                  <button
++                    type="button"
++                    title="Borrar"
++                    onClick={() => handleDelete(asset)}
++                  >
++                    <Trash2 size={12} />
++                  </button>
++                </div>
+               </div>
+             );
+           })}
+diff --git a/src/presets/store.ts b/src/presets/store.ts
+index f8b3e77..31f8acc 100644
+--- a/src/presets/store.ts
++++ b/src/presets/store.ts
+@@ -210,6 +210,55 @@ async function call(url: string, method: string): Promise<void> {
+   );
+ }
+ 
++/** Calls a project asset route; a refusal comes back with the server's message and code. */
++async function assetCall(
++  url: string,
++  method: string,
++): Promise<{ error?: string; code?: string }> {
++  const res = await fetch(url, { method });
++  if (res.ok) return {};
++  return (await res
++    .json()
++    .catch(() => ({ error: `${url}: ${res.status}` }))) as {
++    error?: string;
++    code?: string;
++  };
++}
++
++const assetsRoute = (projectSlug: string) =>
++  `/api/projects/${encodeURIComponent(projectSlug)}/assets`;
++
++/** Renames or moves a project asset; the server rewrites the scenes that use it (063/D6). */
++export async function renameProjectAsset(
++  from: string,
++  to: string,
++  projectSlug = "mi-proyecto",
++): Promise<void> {
++  const { error } = await assetCall(
++    `${assetsRoute(projectSlug)}/rename?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
++    "POST",
++  );
++  if (error) throw new Error(error);
++}
++
++/**
++ * Deletes a project asset. Without `force` a scene still using it makes the server refuse;
++ * that refusal comes back as `inUse` (the message naming the scenes) instead of an error.
++ */
++export async function deleteProjectAsset(
++  path: string,
++  projectSlug = "mi-proyecto",
++  force = false,
++): Promise<{ inUse?: string }> {
++  const { error, code } = await assetCall(
++    `${assetsRoute(projectSlug)}?path=${encodeURIComponent(path)}${force ? "&force=1" : ""}`,
++    "DELETE",
++  );
++  if (code === "in_use") return { inUse: error };
++  if (error) throw new Error(error);
++  return {};
++}
++
+ export type StoreKind = "presets" | "animations" | "voices" | "scenes";
+ 
+ /** Removes a stored preset or scene by its file name. */
+diff --git a/src/service/project-middleware.ts b/src/service/project-middleware.ts
+index 388223b..54beb33 100644
+--- a/src/service/project-middleware.ts
++++ b/src/service/project-middleware.ts
+@@ -8,7 +8,9 @@ import {
+   writeAsset,
+ } from "./asset-helpers.ts";
+ import { safeAssetPath } from "./asset-path.ts";
++import { deleteAsset, renameAsset } from "./project-assets.ts";
+ import type { ProjectStore } from "./project-store.ts";
++import { ToolFailure } from "./registry.ts";
+ 
+ export async function handleProjectApi(
+   store: ProjectStore,
+@@ -169,6 +171,26 @@ export async function handleProjectApi(
+         return;
+       }
+ 
++      // POST /api/projects/<slug>/assets/rename?from=&to= -> move it, rewriting scenes (063/D6)
++      if (
++        segments.length === 3 &&
++        segments[2] === "rename" &&
++        method === "POST"
++      ) {
++        const from = url.searchParams.get("from") ?? "";
++        const to = url.searchParams.get("to") ?? "";
++        jsonReply(200, await renameAsset(store, slug, from, to));
++        return;
++      }
++
++      // DELETE /api/projects/<slug>/assets?path=&force=1 -> delete it unless a scene uses it (063/D6)
++      if (segments.length === 2 && method === "DELETE") {
++        const assetPath = url.searchParams.get("path") ?? "";
++        const force = url.searchParams.get("force") === "1";
++        jsonReply(200, await deleteAsset(store, slug, assetPath, force));
++        return;
++      }
++
+       // GET /api/projects/<slug>/assets/<path...> -> serve project asset, subfolders too (044/D2)
+       if (segments.length >= 3 && method === "GET") {
+         const assetPath = safeAssetPath(segments.slice(2));
+@@ -197,6 +219,7 @@ export async function handleProjectApi(
+     jsonReply(404, { error: "Ruta no encontrada" });
+   } catch (error) {
+     const message = error instanceof Error ? error.message : String(error);
+-    jsonReply(400, { error: message });
++    const code = error instanceof ToolFailure ? error.error.code : undefined;
++    jsonReply(400, { error: message, code });
+   }
+ }

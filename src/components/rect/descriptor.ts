@@ -33,7 +33,7 @@ export function shapeFields(w: number, h: number) {
         gradient: true,
         color2: "#0b1630",
         angle: 90,
-        opacity: 0.9,
+        opacity: 1,
       },
       "Fondo",
     ),

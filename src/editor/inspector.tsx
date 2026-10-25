@@ -280,8 +280,14 @@ export function SceneInspector({
   onEditSymbol,
   symbolMode = false,
   time,
+  fonts = [],
+  onSelect,
 }: {
   scene: Scene;
+  /** Usable font families, for the "Revisión" notices (063/D7). */
+  fonts?: readonly string[];
+  /** Selects an element named by a notice. */
+  onSelect?: (id: string) => void;
   onChange: (s: Scene) => void;
   /** Opens a symbol for editing; the section is hidden without it (062/D4). */
   onEditSymbol?: (name: string) => void;
@@ -428,7 +434,7 @@ export function SceneInspector({
         <ShotsSection scene={scene} onChange={onChange} time={time} />
       )}
       {onEditSymbol && <SymbolsSection scene={scene} onEdit={onEditSymbol} />}
-      <ReviewSection scene={scene} />
+      <ReviewSection scene={scene} fonts={fonts} onSelect={onSelect} />
       <Section title="Fondo" ref={backgroundRef}>
         <Color
           label="Color"

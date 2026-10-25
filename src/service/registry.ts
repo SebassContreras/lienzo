@@ -4,6 +4,7 @@
  * `run(input, ctx)`. The CLI (008) and the MCP server (009) only list and call these.
  */
 import type { z } from "zod";
+import { ignoredNotice, ignoredPaths } from "../model/ignored.ts";
 import type { Ctx } from "./ctx.ts";
 
 /** What a failed call reports: `path` names the failing input or scene path ("" for none). */
@@ -45,6 +46,19 @@ export function defineTool<I extends z.ZodType, O extends z.ZodType>(
 }
 
 /**
+ * The input keys the schema dropped, put first in the output's `notices` when the tool
+ * reports any, so a misspelled field is never lost silently (063/D5).
+ */
+function withIgnored(value: unknown, input: unknown, parsed: unknown): unknown {
+  const notices = (value as { notices?: unknown } | null)?.notices;
+  if (!Array.isArray(notices)) return value;
+  const ignored = ignoredPaths(input, parsed).map(ignoredNotice);
+  return ignored.length
+    ? { ...(value as object), notices: [...ignored, ...notices] }
+    : value;
+}
+
+/**
  * Runs `tool` on `input`: the input is parsed first, a `ToolFailure` becomes an error result,
  * and the output is parsed so callers only ever see what the schema promises.
  */
@@ -69,7 +83,7 @@ async function callTool(
   }
   try {
     const value = tool.output.parse(await tool.run(parsed.data, ctx));
-    return { ok: true, value };
+    return { ok: true, value: withIgnored(value, input, parsed.data) };
   } catch (error) {
     if (error instanceof ToolFailure) return { ok: false, error: error.error };
     throw error;

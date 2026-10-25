@@ -210,6 +210,55 @@ async function call(url: string, method: string): Promise<void> {
   );
 }
 
+/** Calls a project asset route; a refusal comes back with the server's message and code. */
+async function assetCall(
+  url: string,
+  method: string,
+): Promise<{ error?: string; code?: string }> {
+  const res = await fetch(url, { method });
+  if (res.ok) return {};
+  return (await res
+    .json()
+    .catch(() => ({ error: `${url}: ${res.status}` }))) as {
+    error?: string;
+    code?: string;
+  };
+}
+
+const assetsRoute = (projectSlug: string) =>
+  `/api/projects/${encodeURIComponent(projectSlug)}/assets`;
+
+/** Renames or moves a project asset; the server rewrites the scenes that use it (063/D6). */
+export async function renameProjectAsset(
+  from: string,
+  to: string,
+  projectSlug = "mi-proyecto",
+): Promise<void> {
+  const { error } = await assetCall(
+    `${assetsRoute(projectSlug)}/rename?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    "POST",
+  );
+  if (error) throw new Error(error);
+}
+
+/**
+ * Deletes a project asset. Without `force` a scene still using it makes the server refuse;
+ * that refusal comes back as `inUse` (the message naming the scenes) instead of an error.
+ */
+export async function deleteProjectAsset(
+  path: string,
+  projectSlug = "mi-proyecto",
+  force = false,
+): Promise<{ inUse?: string }> {
+  const { error, code } = await assetCall(
+    `${assetsRoute(projectSlug)}?path=${encodeURIComponent(path)}${force ? "&force=1" : ""}`,
+    "DELETE",
+  );
+  if (code === "in_use") return { inUse: error };
+  if (error) throw new Error(error);
+  return {};
+}
+
 export type StoreKind = "presets" | "animations" | "voices" | "scenes";
 
 /** Removes a stored preset or scene by its file name. */

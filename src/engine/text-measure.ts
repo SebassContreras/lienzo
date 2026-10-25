@@ -81,10 +81,14 @@ export function loadFontSync(
       return null;
     }
 
-    // Dynamic require so browser bundles are unaffected
-    const path = require("node:path");
-    const fs = require("node:fs");
-    const pkgJsonPath = require.resolve(`@fontsource/${pkgName}/package.json`);
+    // Built-in lookup instead of a static import, so browser bundles are unaffected; an ES
+    // module has no global `require`, so one is made for this file (063/D3)
+    const path = process.getBuiltinModule("node:path");
+    const fs = process.getBuiltinModule("node:fs");
+    const { createRequire } = process.getBuiltinModule("node:module");
+    const pkgJsonPath = createRequire(import.meta.url).resolve(
+      `@fontsource/${pkgName}/package.json`,
+    );
     const filesDir = path.join(path.dirname(pkgJsonPath), "files");
 
     // Look for matching woff or ttf

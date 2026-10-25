@@ -27,7 +27,8 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 
 1. **Project:** `project_list`, or `project_create`. `project_inspect` lists its assets,
    scenes, presets and brand; `project_update` changes the brand, `asset_add` copies a local
-   file into `assets/`.
+   file into `assets/`, `asset_rename` moves one (scenes follow) and `asset_delete` removes
+   one (refused while a scene uses it, unless `force`).
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
    `preset_get`, `font_list` (then `font_install` for a Google font you need).
 3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
@@ -44,6 +45,10 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
    through `scene_update`; `scene_rename` / `scene_delete` manage the files.
    Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
    `animation_save`.
+   - **Duplicate** (no tool of its own): `scene_get`, copy the element, then `element_add`
+     with a new `id` and the position shifted (`x`/`y`).
+   - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
+     shared edge or center and set `x`/`y` on each element with `element_update`.
 7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and
    `startOffset` (the shot's start) so each call appends a track. Subtitles follow the cues.
 8. **Export:** `scene_export` (`png`, `gif`, `mp4`) into `projects/<slug>/exports/`.
@@ -81,7 +86,13 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 - `anim` is an entry/loop/exit shorthand; `tracks` are keyframes `[t, value, easing?]` by
   field path or `@rotate` / `@scale`, with `repeat: "loop" | "pingpong"` and `until`.
 - `origin` is the pivot for rotation and scale; `w` on `text` wraps it.
-- Shots: an element with `shot` only shows during that shot; the camera moves the shot.
+- Shots: an element with `shot` only shows during that shot, and only it moves with that
+  shot's camera (groups included, applied once); elements with no `shot` (subtitles, logos)
+  never move. `transition` `fade` / `slide` / `zoom` plays over `duration` before the
+  shot's `start` and after its `end`; consecutive shots overlap there.
+- Defaults: shapes fill at `fill.opacity: 1`; a `path` has no stroke unless you set
+  `border.width` (a `"draw"` entrance gives it 3). Unknown keys come back as notices,
+  named by path.
 - Shapes: `polygon` `fit: "box"`, `path` `mode: "layers"`, group `clip`, fills with
   `fill.type: "radial"` or `fill.stops`. Partial `effects` merge with the defaults.
 - `audioTracks: [{ assetId, startOffset?, volume? }]` sets the audio.

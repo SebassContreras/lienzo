@@ -50,9 +50,12 @@ describe("path layers (057/R1)", () => {
   });
 
   it("falls back to the element's fill and stroke for a shape without its own", () => {
+    // paths have no stroke by default since 063, so this one asks for one
+    const plain = defaultElement("path") as PathEl;
     const el = pathEl({
       mode: "layers",
       shapes: [{ d: SQUARE, stroke: "#123456" }, { d: TRIANGLE }],
+      border: { ...plain.border, width: 3 },
     });
 
     const fills = fillsOf(el);

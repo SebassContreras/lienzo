@@ -345,7 +345,25 @@ describe("lienzo CLI", () => {
     await ok(["project_update", "--slug", "p", "--name", "P2"]);
     const logo = join(tmpdir(), `lienzo-cli-logo-${process.pid}.png`);
     await writeFile(logo, "png");
-    await ok(["asset_add", "--project", "p", "--file", logo]);
+    const added = (await ok([
+      "asset_add",
+      "--project",
+      "p",
+      "--file",
+      logo,
+    ])) as {
+      filename: string;
+    };
+    await ok([
+      "asset_rename",
+      "--project",
+      "p",
+      "--from",
+      added.filename,
+      "--to",
+      "logo.png",
+    ]);
+    await ok(["asset_delete", "--project", "p", "--path", "logo.png"]);
     await ok(["font_list"]);
     // Google Fonts is the network boundary: a recorded css2 answer and fake files.
     const css = await readFile(

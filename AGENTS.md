@@ -57,6 +57,11 @@ What exists today:
   Patch, `scene_rename`/`scene_delete`, `preset_save`/`_rename`/`_delete`, `animation_list`/
   `_save`, `project_update`, `asset_add`, `element_group`/`_ungroup`), built on the editor's
   own helpers; the editor's "Revisión" section calls `inspectLayout` in the browser
+- Shot rendering (063): each shot-bound top-level element is drawn through `withShotView`
+  (`src/engine/shots.ts`): its own shot's transition (`shotTransitionAt`) and camera, once;
+  elements with no `shot` never move. Unknown input keys become notices (`ignoredPaths`, in
+  the tool registry and `sceneNotices`); `asset_rename`/`asset_delete` share
+  `src/service/project-assets.ts` with the assets tab
 - Compact extras: partial `effects`, `defaults: "flat"` (build time only), `audioTracks`;
   `notices` lists what was ignored and missing fonts (058, 060). Speech `asTrack: true`
   appends an `audioTracks` entry at `startOffset` (060)

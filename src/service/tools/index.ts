@@ -6,6 +6,8 @@ import { createRegistry, type Tool } from "../registry.ts";
 import { animationList } from "./animation-list.ts";
 import { animationSave } from "./animation-save.ts";
 import { assetAdd } from "./asset-add.ts";
+import { assetDelete } from "./asset-delete.ts";
+import { assetRename } from "./asset-rename.ts";
 import { backgroundSet } from "./background-set.ts";
 import { componentList } from "./component-list.ts";
 import { elementAdd } from "./element-add.ts";
@@ -78,6 +80,8 @@ const TOOLS: readonly Tool[] = [
   elementUngroup,
   imageTrim,
   assetAdd,
+  assetRename,
+  assetDelete,
   backgroundSet,
   keyframeSet,
   keyframeRemove,

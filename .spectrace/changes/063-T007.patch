@@ -1,0 +1,220 @@
+diff --git a/src/presets/__snapshots__/render-audit.test.ts.snap b/src/presets/__snapshots__/render-audit.test.ts.snap
+new file mode 100644
+index 0000000..86709eb
+--- /dev/null
++++ b/src/presets/__snapshots__/render-audit.test.ts.snap
+@@ -0,0 +1,147 @@
++// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
++
++exports[`render audit (063/R10) > built-in preset 01-tarjeta-neon.json renders as recorded 1`] = `"541540f346d4"`;
++
++exports[`render audit (063/R10) > built-in preset 02-tarjeta-glass.json renders as recorded 1`] = `"96d3953ffaa1"`;
++
++exports[`render audit (063/R10) > built-in preset 03-tarjeta-borde-animado.json renders as recorded 1`] = `"5dd335fbad17"`;
++
++exports[`render audit (063/R10) > built-in preset 04-pill.json renders as recorded 1`] = `"1eec9dde8c95"`;
++
++exports[`render audit (063/R10) > built-in preset 05-boton-cta.json renders as recorded 1`] = `"cd6c1aa9ff55"`;
++
++exports[`render audit (063/R10) > built-in preset 06-titulo.json renders as recorded 1`] = `"b353d9408fd9"`;
++
++exports[`render audit (063/R10) > built-in preset 07-titulo-degradado.json renders as recorded 1`] = `"952dea9f2d6f"`;
++
++exports[`render audit (063/R10) > built-in preset 08-parrafo.json renders as recorded 1`] = `"11fa28197c78"`;
++
++exports[`render audit (063/R10) > built-in preset 09-manuscrito.json renders as recorded 1`] = `"040e3c979f9e"`;
++
++exports[`render audit (063/R10) > built-in preset 10-pixel.json renders as recorded 1`] = `"4772e5cd00fa"`;
++
++exports[`render audit (063/R10) > built-in preset 11-conexion-con-pulsos.json renders as recorded 1`] = `"d74ade6382ef"`;
++
++exports[`render audit (063/R10) > built-in preset 12-hormigas.json renders as recorded 1`] = `"19fdc6cdb4f4"`;
++
++exports[`render audit (063/R10) > built-in preset 13-cometa-curvo.json renders as recorded 1`] = `"f27afa108d63"`;
++
++exports[`render audit (063/R10) > built-in preset 14-tarjeta-con-icono.json renders as recorded 1`] = `"f0581dc3831b"`;
++
++exports[`render audit (063/R10) > built-in preset 15-icono-con-fondo.json renders as recorded 1`] = `"22b35aafd929"`;
++
++exports[`render audit (063/R10) > built-in preset 16-avatar-circular.json renders as recorded 1`] = `"bd7b6ef38d79"`;
++
++exports[`render audit (063/R10) > built-in preset 17-logo-imagen.json renders as recorded 1`] = `"85442db1f35e"`;
++
++exports[`render audit (063/R10) > built-in preset 18-constelacion.json renders as recorded 1`] = `"d51b7d835743"`;
++
++exports[`render audit (063/R10) > built-in preset 19-polvo-flotante.json renders as recorded 1`] = `"8c245bae73fb"`;
++
++exports[`render audit (063/R10) > built-in preset 20-red-densa.json renders as recorded 1`] = `"5e7bdf676f2c"`;
++
++exports[`render audit (063/R10) > built-in preset 21-chispas.json renders as recorded 1`] = `"25095f8a04b1"`;
++
++exports[`render audit (063/R10) > built-in preset 22-iconos-flotantes.json renders as recorded 1`] = `"9b4464cdc9ec"`;
++
++exports[`render audit (063/R10) > built-in preset 23-cubo-giratorio.json renders as recorded 1`] = `"2ece8cfbaf28"`;
++
++exports[`render audit (063/R10) > built-in preset 24-logo-3d.json renders as recorded 1`] = `"9af301f746fa"`;
++
++exports[`render audit (063/R10) > built-in preset 25-hexagono.json renders as recorded 1`] = `"9a98e7b5f48d"`;
++
++exports[`render audit (063/R10) > built-in preset 26-estrella.json renders as recorded 1`] = `"c71deb0ad2da"`;
++
++exports[`render audit (063/R10) > built-in preset 27-flecha-bloque.json renders as recorded 1`] = `"455b2c9edb30"`;
++
++exports[`render audit (063/R10) > built-in preset 28-badge-nuevo.json renders as recorded 1`] = `"419c43ba177a"`;
++
++exports[`render audit (063/R10) > built-in preset 29-barra-progreso.json renders as recorded 1`] = `"772a0200e666"`;
++
++exports[`render audit (063/R10) > built-in preset 30-anillo-progreso.json renders as recorded 1`] = `"312299cc4c1d"`;
++
++exports[`render audit (063/R10) > built-in preset 31-contador.json renders as recorded 1`] = `"212279a8187d"`;
++
++exports[`render audit (063/R10) > built-in preset 32-burbuja-chat.json renders as recorded 1`] = `"bef05e879c12"`;
++
++exports[`render audit (063/R10) > built-in preset 33-pasos.json renders as recorded 1`] = `"daf41c50d974"`;
++
++exports[`render audit (063/R10) > built-in preset 34-lista-checks.json renders as recorded 1`] = `"6a7e6bb77eb8"`;
++
++exports[`render audit (063/R10) > built-in preset 35-tabla-precios.json renders as recorded 1`] = `"b8f49f76981b"`;
++
++exports[`render audit (063/R10) > built-in preset 36-bloque-codigo.json renders as recorded 1`] = `"1c2cea602004"`;
++
++exports[`render audit (063/R10) > built-in preset 37-grafico-barras.json renders as recorded 1`] = `"ca8d5a32f35d"`;
++
++exports[`render audit (063/R10) > built-in preset 38-grafico-donut.json renders as recorded 1`] = `"eb1c5d41bcbd"`;
++
++exports[`render audit (063/R10) > built-in preset 39-ventana-navegador.json renders as recorded 1`] = `"ac4aa252b812"`;
++
++exports[`render audit (063/R10) > built-in preset 40-ventana-terminal.json renders as recorded 1`] = `"a9517ecf82f8"`;
++
++exports[`render audit (063/R10) > built-in preset 41-movil-chat.json renders as recorded 1`] = `"3b80aad5000c"`;
++
++exports[`render audit (063/R10) > built-in preset 42-corazon-trazado.json renders as recorded 1`] = `"95c97b4f5371"`;
++
++exports[`render audit (063/R10) > built-in preset 43-forma-morphing.json renders as recorded 1`] = `"5653e1bcc814"`;
++
++exports[`render audit (063/R10) > built-in preset 44-subtitulos-virales.json renders as recorded 1`] = `"7fd0f0dd6924"`;
++
++exports[`render audit (063/R10) > built-in preset fondo-01-azul-noche.json renders as recorded 1`] = `"background"`;
++
++exports[`render audit (063/R10) > built-in preset fondo-02-negro-liso.json renders as recorded 1`] = `"background"`;
++
++exports[`render audit (063/R10) > built-in preset fondo-03-degradado-violeta.json renders as recorded 1`] = `"background"`;
++
++exports[`render audit (063/R10) > built-in preset fondo-04-puntos-sobre-gris.json renders as recorded 1`] = `"background"`;
++
++exports[`render audit (063/R10) > built-in preset fondo-05-foco-central.json renders as recorded 1`] = `"background"`;
++
++exports[`render audit (063/R10) > default arrow element renders as recorded 1`] = `"455b2c9edb30"`;
++
++exports[`render audit (063/R10) > default badge element renders as recorded 1`] = `"419c43ba177a"`;
++
++exports[`render audit (063/R10) > default bubble element renders as recorded 1`] = `"bef05e879c12"`;
++
++exports[`render audit (063/R10) > default chart element renders as recorded 1`] = `"10c1b0d68e8a"`;
++
++exports[`render audit (063/R10) > default code element renders as recorded 1`] = `"a8d6afd74bd4"`;
++
++exports[`render audit (063/R10) > default counter element renders as recorded 1`] = `"173cfc3251d7"`;
++
++exports[`render audit (063/R10) > default ellipse element renders as recorded 1`] = `"8c8d746b0257"`;
++
++exports[`render audit (063/R10) > default group element renders as recorded 1`] = `"8237f2e476a9"`;
++
++exports[`render audit (063/R10) > default icon element renders as recorded 1`] = `"628cbd3da259"`;
++
++exports[`render audit (063/R10) > default image element renders as recorded 1`] = `"194d305b079c"`;
++
++exports[`render audit (063/R10) > default line element renders as recorded 1`] = `"d74ade6382ef"`;
++
++exports[`render audit (063/R10) > default list element renders as recorded 1`] = `"67c48c7d7fb8"`;
++
++exports[`render audit (063/R10) > default particles element renders as recorded 1`] = `"b05da5d0ea60"`;
++
++exports[`render audit (063/R10) > default path element renders as recorded 1`] = `"4759cffd94aa"`;
++
++exports[`render audit (063/R10) > default polygon element renders as recorded 1`] = `"9a98e7b5f48d"`;
++
++exports[`render audit (063/R10) > default progress element renders as recorded 1`] = `"af5644ee5553"`;
++
++exports[`render audit (063/R10) > default rect element renders as recorded 1`] = `"432462152a7c"`;
++
++exports[`render audit (063/R10) > default star element renders as recorded 1`] = `"ac1ee578712a"`;
++
++exports[`render audit (063/R10) > default steps element renders as recorded 1`] = `"f04fcce6b31a"`;
++
++exports[`render audit (063/R10) > default subtitles element renders as recorded 1`] = `"cd1d1f2a99c7"`;
++
++exports[`render audit (063/R10) > default table element renders as recorded 1`] = `"35208afcce34"`;
++
++exports[`render audit (063/R10) > default text element renders as recorded 1`] = `"3f1fa3879a54"`;
++
++exports[`render audit (063/R10) > default three element renders as recorded 1`] = `"2ece8cfbaf28"`;
++
++exports[`render audit (063/R10) > default use element renders as recorded 1`] = `"8256578a136e"`;
+diff --git a/src/presets/render-audit.test.ts b/src/presets/render-audit.test.ts
+new file mode 100644
+index 0000000..7015b26
+--- /dev/null
++++ b/src/presets/render-audit.test.ts
+@@ -0,0 +1,61 @@
++import { createHash } from "node:crypto";
++import { readdirSync, readFileSync } from "node:fs";
++import { describe, expect, it } from "vitest";
++import { KINDS } from "../components/index.ts";
++import type { Ctx } from "../engine/paint.ts";
++import { drawScene } from "../engine/render.ts";
++import { defaultElement, defaultScene, type Element } from "../model/model.ts";
++import type { PresetRecipe } from "../model/preset.ts";
++import { installCanvasFakes, RecordingCtx } from "../test/recording-ctx.ts";
++import { resolvePreset } from "./resolve.ts";
++
++installCanvasFakes();
++
++const BUILT_IN = "presets/built-in";
++const presetFiles = readdirSync(BUILT_IN).filter((f) => f.endsWith(".json"));
++
++/** A short fingerprint of every draw call: equal fingerprints mean equal pixels. */
++function renderFingerprint(el: Element): string {
++  const ctx = new RecordingCtx();
++  drawScene(ctx as unknown as Ctx, { ...defaultScene(), elements: [el] }, 1);
++  return createHash("sha1")
++    .update(ctx.log.join("\n"))
++    .digest("hex")
++    .slice(0, 12);
++}
++
++function presetElement(file: string): Element | undefined {
++  const recipe = JSON.parse(
++    readFileSync(`${BUILT_IN}/${file}`, "utf8"),
++  ) as PresetRecipe;
++  const resolved = resolvePreset(recipe);
++  return "element" in resolved ? resolved.element : undefined;
++}
++
++/**
++ * Render audit (063/R10): a change in how a built-in preset or a default element looks shows
++ * up as a snapshot diff, so look changes are always deliberate (update with `-u`).
++ */
++describe("render audit (063/R10)", () => {
++  it.each(presetFiles)("built-in preset %s renders as recorded", (file) => {
++    // Arrange
++    const el = presetElement(file);
++
++    // Act
++    const fingerprint = el ? renderFingerprint(el) : "background";
++
++    // Assert
++    expect(fingerprint).toMatchSnapshot();
++  });
++
++  it.each([...KINDS])("default %s element renders as recorded", (kind) => {
++    // Arrange
++    const el = defaultElement(kind);
++
++    // Act
++    const fingerprint = renderFingerprint(el);
++
++    // Assert
++    expect(fingerprint).toMatchSnapshot();
++  });
++});

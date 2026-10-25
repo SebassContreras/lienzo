@@ -1189,3 +1189,16 @@ code {
   font-size: 13px;
   cursor: pointer;
 }
+
+/* "Revisión" notices; a clickable one selects its element (063/D7) */
+button.hint.notice {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+button.hint.notice:hover {
+  text-decoration: underline;
+}

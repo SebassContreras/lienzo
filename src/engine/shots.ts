@@ -1,7 +1,8 @@
 /**
  * Pure functions for shot timing, activation intervals, and camera view transforms (055/D1, D2).
  */
-import type { Element, Shot } from "../model/model.ts";
+import type { Element, Scene, Shot } from "../model/model.ts";
+import type { Ctx } from "./paint.ts";
 import { valueAt } from "./tracks.ts";
 
 export type ResolvedCamera = {
@@ -68,17 +69,6 @@ export function resolveShotCamera(
 }
 
 /**
- * Finds the active shot at time `t` in the scene.
- */
-export function findActiveShot(
-  shots: readonly Shot[] | undefined,
-  t: number,
-): Shot | undefined {
-  if (!shots || shots.length === 0) return undefined;
-  return shots.find((s) => t >= s.start && t <= s.end);
-}
-
-/**
  * Applies 2D camera view transformation around stage center:
  * translates by scene center + camera offset, scales by camera zoom,
  * and translates back by scene center.
@@ -102,3 +92,72 @@ export function applyCameraTransform(
   ctx.scale(camera.zoom, camera.zoom);
   ctx.translate(-cx, -cy);
 }
+
+export type TransitionView = { alpha: number; dx: number; scale: number };
+
+const NO_TRANSITION: TransitionView = { alpha: 1, dx: 0, scale: 1 };
+
+/**
+ * What a shot's own transition does to it at `t`, inside the window `isElementActiveInShot`
+ * opens: it enters over `[start − d, start]` and leaves over `[end, end + d]`. `fade` drives
+ * alpha, `slide` comes in from the right and leaves to the left, `zoom` grows from 0.8 while
+ * fading (063/D2, after Remotion's presentations).
+ */
+export function shotTransitionAt(
+  shot: Shot,
+  t: number,
+  sceneWidth: number,
+): TransitionView {
+  const kind = shot.transition?.kind ?? "cut";
+  const d = shot.transition?.duration ?? 0;
+  if (kind === "cut" || d <= 0) return NO_TRANSITION;
+  const entering = t < shot.start;
+  const shown = entering
+    ? clamp01((t - (shot.start - d)) / d)
+    : clamp01(1 - (t - shot.end) / d);
+  if (kind === "fade") return { ...NO_TRANSITION, alpha: shown };
+  if (kind === "zoom") return { alpha: shown, dx: 0, scale: 0.8 + 0.2 * shown };
+  const away = sceneWidth * (1 - shown);
+  return { ...NO_TRANSITION, dx: entering ? away : -away };
+}
+
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/** Wraps one element's draw in what its shot does to it on screen (063/D1). */
+export type ShotView = (
+  ctx: Ctx,
+  el: Element,
+  scene: Scene,
+  t: number,
+  draw: () => void,
+) => void;
+
+/**
+ * Applies an element's own shot transition and camera around its draw. Elements with no
+ * `shot` are drawn as they are, so overlays such as subtitles and logos stay put (063/D1, D2).
+ */
+export const withShotView: ShotView = (ctx, el, scene, t, draw) => {
+  const shot = el.shot ? scene.shots?.find((s) => s.id === el.shot) : undefined;
+  if (!shot) {
+    draw();
+    return;
+  }
+  const { alpha, dx, scale } = shotTransitionAt(shot, t, scene.width);
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.translate(dx, 0);
+  applyCameraTransform(
+    ctx,
+    { x: 0, y: 0, zoom: scale },
+    scene.width,
+    scene.height,
+  );
+  applyCameraTransform(
+    ctx,
+    resolveShotCamera(shot, t),
+    scene.width,
+    scene.height,
+  );
+  draw();
+  ctx.restore();
+};

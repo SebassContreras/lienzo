@@ -13,10 +13,13 @@ export const FLAT_SHAPE_PATCH = {
   border: { width: 0 },
 };
 
+/** Shapes and paths: `flat` paths drop their stroke too, which lives in `border` (063/D4). */
+const FLAT_KINDS: readonly string[] = [...SHAPE_KINDS, "path"];
+
 export function applySceneDefaults(
   el: Element,
   defaults: SceneDefaults | undefined,
 ): void {
-  if (defaults !== "flat" || !SHAPE_KINDS.includes(el.kind)) return;
+  if (defaults !== "flat" || !FLAT_KINDS.includes(el.kind)) return;
   deepMerge(el as unknown as Record<string, unknown>, FLAT_SHAPE_PATCH);
 }

@@ -1,0 +1,123 @@
+diff --git a/src/model/ignored.ts b/src/model/ignored.ts
+new file mode 100644
+index 0000000..4bc7382
+--- /dev/null
++++ b/src/model/ignored.ts
+@@ -0,0 +1,32 @@
++/**
++ * Keys the schema dropped (063/D5): Zod objects strip unknown keys silently, so the raw input
++ * is walked next to the parsed value and every key present only in the input is listed by
++ * its path (`elements.3.glw`). Plain data in, plain data out — no Zod internals.
++ */
++export function ignoredPaths(
++  input: unknown,
++  parsed: unknown,
++  prefix = "",
++): string[] {
++  if (Array.isArray(input) && Array.isArray(parsed)) {
++    return input.flatMap((item, i) =>
++      ignoredPaths(item, parsed[i], join(prefix, String(i))),
++    );
++  }
++  if (!isRecord(input) || !isRecord(parsed)) return [];
++  return Object.keys(input).flatMap((key) =>
++    key in parsed
++      ? ignoredPaths(input[key], parsed[key], join(prefix, key))
++      : [join(prefix, key)],
++  );
++}
++
++const join = (prefix: string, key: string) =>
++  prefix ? `${prefix}.${key}` : key;
++
++const isRecord = (v: unknown): v is Record<string, unknown> =>
++  typeof v === "object" && v !== null && !Array.isArray(v);
++
++/** The notice for one ignored key. */
++export const ignoredNotice = (path: string) =>
++  `Campo desconocido ignorado: ${path}`;
+diff --git a/src/service/scenes.ts b/src/service/scenes.ts
+index 33611fa..c749efe 100644
+--- a/src/service/scenes.ts
++++ b/src/service/scenes.ts
+@@ -4,6 +4,7 @@
+  */
+ import { z } from "zod";
+ import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
++import { ignoredNotice, ignoredPaths } from "../model/ignored.ts";
+ import type { Element, Scene } from "../model/model.ts";
+ import type { PresetRecipe } from "../model/preset.ts";
+ import { parseScene } from "../model/schema.ts";
+@@ -78,7 +79,11 @@ export async function prepareScene(
+       missing,
+     );
+   const expanded = expandAnimPresets(scene, library);
+-  return { scene: checkScene(expanded.scene), notices: expanded.notices };
++  const ignored = ignoredPaths(data, scene).map(ignoredNotice);
++  return {
++    scene: checkScene(expanded.scene),
++    notices: [...ignored, ...expanded.notices],
++  };
+ }
+ 
+ /** What a tool that writes a scene answers: the file it wrote and what a preset skipped. */
+diff --git a/src/service/tools/scene-build.ts b/src/service/tools/scene-build.ts
+index 1bd285f..b7239b7 100644
+--- a/src/service/tools/scene-build.ts
++++ b/src/service/tools/scene-build.ts
+@@ -1,5 +1,6 @@
+ import { z } from "zod";
+ import { CompactSceneSchema } from "../../model/compact.ts";
++import { ignoredNotice, ignoredPaths } from "../../model/ignored.ts";
+ import { parseScene, SceneSchema } from "../../model/schema.ts";
+ import { slugify } from "../../presets/slug.ts";
+ import { expandScene } from "../compact/expand.ts";
+@@ -58,7 +59,10 @@ export const sceneBuild = defineTool({
+         })(),
+       });
+       expanded = checkScene(full.scene);
+-      notices = full.notices;
++      notices = [
++        ...ignoredPaths(full.scene, expanded).map(ignoredNotice),
++        ...full.notices,
++      ];
+     } catch (err: unknown) {
+       const msg = err instanceof Error ? err.message : String(err);
+       fail("invalid_compact_scene", msg, "compact");
+diff --git a/src/service/tools/scene-validate.ts b/src/service/tools/scene-validate.ts
+index 8a28c64..47cf940 100644
+--- a/src/service/tools/scene-validate.ts
++++ b/src/service/tools/scene-validate.ts
+@@ -12,22 +12,25 @@ export const sceneValidate = defineTool({
+   description:
+     "Check a whole scene without saving it, as the editor would open it (animation " +
+     "presets it names must exist). Returns the first failing path. A valid scene can " +
+-    "still carry `notices`: e.g. a text or subtitles font that is not installed in the " +
++    "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
+     "project (it would draw with a fallback; run font_install).",
+   input: z.object({ scene: z.unknown(), project: PROJECT }),
+   output: Verdict.extend({ notices: z.array(z.string()).optional() }),
+   run: async ({ scene, project }, ctx) => {
+     const projectCtx = await inProject(ctx, project);
+-    let prepared: Scene | undefined;
++    let prepared: { scene: Scene; notices: string[] } | undefined;
+     const verdict = await verdictOf(async () => {
+-      prepared = (await prepareScene(projectCtx, scene)).scene;
++      prepared = await prepareScene(projectCtx, scene);
+     });
+     if (!prepared) return verdict;
+     const fonts = await availableFonts(ctx.fonts, project);
+-    const notices = fontNotices(
+-      prepared,
+-      fonts.map((f) => f.family),
+-    );
++    const notices = [
++      ...prepared.notices,
++      ...fontNotices(
++        prepared.scene,
++        fonts.map((f) => f.family),
++      ),
++    ];
+     return notices.length > 0 ? { ...verdict, notices } : verdict;
+   },
+ });

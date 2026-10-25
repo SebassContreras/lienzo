@@ -2,6 +2,7 @@
  * Pure scene expansion from compact representation (011/D2, D3, D4, D6, R1-R9).
  */
 
+import { ensureDrawOnStroke } from "../../components/path/draw-on.ts";
 import type { AnimPreset } from "../../model/anim-preset.ts";
 import type {
   CompactElement,
@@ -230,6 +231,9 @@ async function buildElement(
       (element as unknown as Record<string, unknown>).anim = normalized;
     }
   }
+  // an explicit stroke width, even 0, wins over the draw-on default (063/D4)
+  const border = overrides.border as { width?: unknown } | undefined;
+  if (border?.width === undefined) ensureDrawOnStroke(element);
 
   if (animPreset !== undefined) {
     if (typeof animPreset === "string") {

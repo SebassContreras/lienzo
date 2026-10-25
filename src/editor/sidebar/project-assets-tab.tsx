@@ -1,4 +1,11 @@
-import { FileType, Folder, Loader2, Upload } from "lucide-react";
+import {
+  FileType,
+  Folder,
+  Loader2,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import {
   type ChangeEvent,
   type CSSProperties,
@@ -7,6 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { deleteProjectAsset, renameProjectAsset } from "../../presets/store.ts";
 import { projectAssetUrl, safeAssetPath } from "../../service/asset-path.ts";
 import { ASSET_MIME } from "../stage.tsx";
 import { assetFileName, assetFolderView } from "./asset-folders.ts";
@@ -131,6 +139,35 @@ export function ProjectAssetsTab({
       setStatus(`Error al subir: ${e instanceof Error ? e.message : e}`);
     } finally {
       setUploading(false);
+    }
+  };
+
+  /** Renames or moves an asset; scenes using it follow (063/D6). */
+  const handleRename = async (asset: string) => {
+    const to = window.prompt("Nueva ruta dentro de assets/", asset)?.trim();
+    if (!to || to === asset) return;
+    try {
+      await renameProjectAsset(asset, to, projectSlug);
+      setStatus(`Recurso renombrado a «${to}»`);
+      fetchAssets();
+    } catch (e: unknown) {
+      setStatus(`Error al renombrar: ${e instanceof Error ? e.message : e}`);
+    }
+  };
+
+  /** Deletes an asset, asking again when a scene still uses it (063/D6). */
+  const handleDelete = async (asset: string) => {
+    if (!window.confirm(`¿Borrar el recurso «${asset}»?`)) return;
+    try {
+      const { inUse } = await deleteProjectAsset(asset, projectSlug);
+      if (inUse) {
+        if (!window.confirm(`${inUse}. ¿Borrarlo igual?`)) return;
+        await deleteProjectAsset(asset, projectSlug, true);
+      }
+      setStatus(`Recurso «${asset}» borrado`);
+      fetchAssets();
+    } catch (e: unknown) {
+      setStatus(`Error al borrar: ${e instanceof Error ? e.message : e}`);
     }
   };
 
@@ -328,6 +365,22 @@ export function ProjectAssetsTab({
                   )}
                 </div>
                 <span style={labelStyle}>{assetFileName(asset)}</span>
+                <div className="item-actions">
+                  <button
+                    type="button"
+                    title="Renombrar o mover"
+                    onClick={() => handleRename(asset)}
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    title="Borrar"
+                    onClick={() => handleDelete(asset)}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
             );
           })}

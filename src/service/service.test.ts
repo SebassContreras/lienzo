@@ -414,6 +414,39 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
   });
 });
 
+describe("ignored fields (063/R6)", () => {
+  it("warns about a misspelled element key in scene_build", async () => {
+    // Arrange
+    const compact = { elements: [{ kind: "rect" }, { kind: "rect", glw: 4 }] };
+
+    // Act
+    const res = await ok("scene_build", { compact });
+
+    // Assert
+    expect(res.notices).toEqual([
+      "Campo desconocido ignorado: compact.elements.1.glw",
+    ]);
+  });
+
+  it("warns about a misspelled element key in scene_validate", async () => {
+    // Arrange
+    const { scene } = await ok("scene_build", {
+      compact: { elements: [{ kind: "rect" }] },
+    });
+    const typo = scene as { elements: Record<string, unknown>[] };
+    typo.elements[0] = { ...typo.elements[0], glw: 4 };
+
+    // Act
+    const res = await ok("scene_validate", { scene: typo });
+
+    // Assert
+    expect(res).toEqual({
+      valid: true,
+      notices: ["Campo desconocido ignorado: elements.0.glw"],
+    });
+  });
+});
+
 describe("scene_preview out (058/R3)", () => {
   const exports = () => join(ctx.root, "projects", "mi-proyecto", "exports");
 
@@ -524,6 +557,8 @@ describe("project scope (046/R1)", () => {
     "preset_rename",
     "preset_delete",
     "asset_add",
+    "asset_rename",
+    "asset_delete",
   ];
 
   it("every tool that touches scenes requires `project`", async () => {

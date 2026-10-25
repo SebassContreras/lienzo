@@ -1,0 +1,125 @@
+diff --git a/src/model/ignored.test.ts b/src/model/ignored.test.ts
+new file mode 100644
+index 0000000..be27bd2
+--- /dev/null
++++ b/src/model/ignored.test.ts
+@@ -0,0 +1,34 @@
++import { describe, expect, it } from "vitest";
++import { goldenScenes } from "../test/golden-scenes.ts";
++import { ignoredPaths } from "./ignored.ts";
++import { parseScene } from "./schema.ts";
++
++describe("ignoredPaths (063/R6)", () => {
++  it("names a key the parsed value dropped by its full path", () => {
++    // Arrange
++    const input = {
++      elements: [{ kind: "rect" }, { kind: "group", children: [{ glw: 1 }] }],
++    };
++    const parsed = {
++      elements: [{ kind: "rect" }, { kind: "group", children: [{}] }],
++    };
++
++    // Act
++    const paths = ignoredPaths(input, parsed);
++
++    // Assert
++    expect(paths).toEqual(["elements.1.children.0.glw"]);
++  });
++
++  it("finds nothing ignored in a scene that already parses cleanly", () => {
++    // Arrange
++    const scene = goldenScenes().kinds;
++    const parsed = parseScene(scene);
++
++    // Act
++    const paths = parsed.ok ? ignoredPaths(scene, parsed.value) : ["unparsed"];
++
++    // Assert
++    expect(paths).toEqual([]);
++  });
++});
+diff --git a/src/service/registry.ts b/src/service/registry.ts
+index e1f280a..099949d 100644
+--- a/src/service/registry.ts
++++ b/src/service/registry.ts
+@@ -4,6 +4,7 @@
+  * `run(input, ctx)`. The CLI (008) and the MCP server (009) only list and call these.
+  */
+ import type { z } from "zod";
++import { ignoredNotice, ignoredPaths } from "../model/ignored.ts";
+ import type { Ctx } from "./ctx.ts";
+ 
+ /** What a failed call reports: `path` names the failing input or scene path ("" for none). */
+@@ -44,6 +45,19 @@ export function defineTool<I extends z.ZodType, O extends z.ZodType>(
+   return tool;
+ }
+ 
++/**
++ * The input keys the schema dropped, put first in the output's `notices` when the tool
++ * reports any, so a misspelled field is never lost silently (063/D5).
++ */
++function withIgnored(value: unknown, input: unknown, parsed: unknown): unknown {
++  const notices = (value as { notices?: unknown } | null)?.notices;
++  if (!Array.isArray(notices)) return value;
++  const ignored = ignoredPaths(input, parsed).map(ignoredNotice);
++  return ignored.length
++    ? { ...(value as object), notices: [...ignored, ...notices] }
++    : value;
++}
++
+ /**
+  * Runs `tool` on `input`: the input is parsed first, a `ToolFailure` becomes an error result,
+  * and the output is parsed so callers only ever see what the schema promises.
+@@ -69,7 +83,7 @@ async function callTool(
+   }
+   try {
+     const value = tool.output.parse(await tool.run(parsed.data, ctx));
+-    return { ok: true, value };
++    return { ok: true, value: withIgnored(value, input, parsed.data) };
+   } catch (error) {
+     if (error instanceof ToolFailure) return { ok: false, error: error.error };
+     throw error;
+diff --git a/src/service/service.test.ts b/src/service/service.test.ts
+index 154fa67..11f1c8e 100644
+--- a/src/service/service.test.ts
++++ b/src/service/service.test.ts
+@@ -414,6 +414,39 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
+   });
+ });
+ 
++describe("ignored fields (063/R6)", () => {
++  it("warns about a misspelled element key in scene_build", async () => {
++    // Arrange
++    const compact = { elements: [{ kind: "rect" }, { kind: "rect", glw: 4 }] };
++
++    // Act
++    const res = await ok("scene_build", { compact });
++
++    // Assert
++    expect(res.notices).toEqual([
++      "Campo desconocido ignorado: compact.elements.1.glw",
++    ]);
++  });
++
++  it("warns about a misspelled element key in scene_validate", async () => {
++    // Arrange
++    const { scene } = await ok("scene_build", {
++      compact: { elements: [{ kind: "rect" }] },
++    });
++    const typo = scene as { elements: Record<string, unknown>[] };
++    typo.elements[0] = { ...typo.elements[0], glw: 4 };
++
++    // Act
++    const res = await ok("scene_validate", { scene: typo });
++
++    // Assert
++    expect(res).toEqual({
++      valid: true,
++      notices: ["Campo desconocido ignorado: elements.0.glw"],
++    });
++  });
++});
++
+ describe("scene_preview out (058/R3)", () => {
+   const exports = () => join(ctx.root, "projects", "mi-proyecto", "exports");
+ 

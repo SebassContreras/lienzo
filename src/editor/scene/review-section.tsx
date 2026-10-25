@@ -1,15 +1,30 @@
 /**
  * The scene inspector's "Revisión" section: the open scene's `scene_inspect_layout` diagnostics,
  * computed in the browser by the same `inspectLayout` (062/D11). Text is measured with canvas
- * here, so results are orientative next to the tool's.
+ * here, so results are orientative next to the tool's. "Avisos" lists the same notices as
+ * `scene_validate`, from the same `sceneNotices`; clicking one selects its element (063/D7).
  */
 import { ScanSearch } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Scene } from "../../model/model.ts";
 import { inspectLayout, type LayoutDiagnostic } from "../../service/layout.ts";
+import { sceneNotices } from "../../service/scene-notices.ts";
 import { Section } from "../controls.tsx";
 
-export function ReviewSection({ scene }: { scene: Scene }) {
+export function ReviewSection({
+  scene,
+  fonts,
+  onSelect,
+}: {
+  scene: Scene;
+  /** The usable font families, as the editor loaded them. */
+  fonts: readonly string[];
+  onSelect?: (id: string) => void;
+}) {
+  const notices = useMemo(
+    () => sceneNotices(scene, scene, fonts),
+    [scene, fonts],
+  );
   const [review, setReview] = useState<{
     scene: Scene;
     found: LayoutDiagnostic[];
@@ -18,6 +33,24 @@ export function ReviewSection({ scene }: { scene: Scene }) {
   const found = review?.scene === scene ? review.found : undefined;
   return (
     <Section title="Revisión">
+      {notices.length > 0 && <div className="hint">Avisos</div>}
+      {notices.map((n) =>
+        n.elementId && onSelect ? (
+          <button
+            type="button"
+            key={n.message}
+            className="hint notice"
+            title="Seleccionar el elemento"
+            onClick={() => onSelect(n.elementId as string)}
+          >
+            {n.message}
+          </button>
+        ) : (
+          <div key={n.message} className="hint notice">
+            {n.message}
+          </div>
+        ),
+      )}
       <button
         type="button"
         title="Busca solapes de texto, elementos fuera del lienzo, conexiones rotas y bajo contraste"

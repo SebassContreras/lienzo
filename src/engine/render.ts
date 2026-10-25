@@ -5,12 +5,7 @@ import { withMask } from "./clip.ts";
 import { withEffects } from "./effects.ts";
 import { indexById, indexElements } from "./geometry.ts";
 import { type Ctx, linearGradient, rgba } from "./paint.ts";
-import {
-  applyCameraTransform,
-  findActiveShot,
-  isElementActiveInShot,
-  resolveShotCamera,
-} from "./shots.ts";
+import { isElementActiveInShot, type ShotView, withShotView } from "./shots.ts";
 
 const OWN_OPACITY_KINDS = new Set<string>(["icon", "image", "text", "line"]);
 
@@ -20,13 +15,15 @@ const OWN_OPACITY_KINDS = new Set<string>(["icon", "image", "text", "line"]);
  */
 export function drawScene(ctx: Ctx, scene: Scene, t: number): void {
   drawBackground(ctx, scene);
-  drawElements(ctx, scene.elements, scene, t, indexById(scene));
+  drawElements(ctx, scene.elements, scene, t, indexById(scene), withShotView);
 }
 
 /**
  * Draws elements in order. `byId` resolves line attachments in the same coordinate space as
  * `elements` (the scene's, or a group's content space).
  * A mask clips an element (or group) and the mask element itself is not drawn (025/D2).
+ * `view` wraps each element's draw; only the top level passes the shot view, so a group's
+ * children are never transformed by the camera a second time (063/D1).
  */
 export function drawElements(
   ctx: Ctx,
@@ -34,72 +31,58 @@ export function drawElements(
   scene: Scene,
   t: number,
   byId: Map<string, Element> = indexElements(elements),
+  view: ShotView = (_ctx, _el, _scene, _t, draw) => draw(),
 ): void {
-  const activeShot = findActiveShot(scene.shots, t);
-  const camera = resolveShotCamera(activeShot, t);
-  const hasCameraTransform =
-    camera.x !== 0 || camera.y !== 0 || camera.zoom !== 1;
-
-  if (hasCameraTransform) {
-    ctx.save();
-    applyCameraTransform(ctx, camera, scene.width, scene.height);
+  // Find all elements that act as a mask for any element in this scope
+  const maskIds = new Set<string>();
+  for (const el of elements) {
+    const mask = (el as unknown as { effects?: { mask?: string } }).effects
+      ?.mask;
+    if (mask) maskIds.add(mask);
   }
 
-  try {
-    // Find all elements that act as a mask for any element in this scope
-    const maskIds = new Set<string>();
-    for (const el of elements) {
-      const mask = (el as unknown as { effects?: { mask?: string } }).effects
-        ?.mask;
-      if (mask) maskIds.add(mask);
+  const dc = { scene, t, byId, drawElements };
+  for (const el of elements) {
+    // A hidden element is skipped from drawing (034/D4)
+    if (el.hidden) continue;
+    // An element bound to a shot is active only within the shot's window (055/D2)
+    if (!isElementActiveInShot(el, t, scene.shots)) continue;
+    // A mask element itself is skipped instead of being drawn directly (025/D2)
+    if (maskIds.has(el.id)) continue;
+
+    const now = animate(el, t, scene);
+    const elOpacity = (now.el as unknown as { opacity?: number }).opacity ?? 1;
+    if (elOpacity <= 0) continue;
+
+    if (!OWN_OPACITY_KINDS.has(el.kind) && elOpacity < 1) {
+      now.transform.alpha *= elOpacity;
     }
 
-    const dc = { scene, t, byId, drawElements };
-    for (const el of elements) {
-      // A hidden element is skipped from drawing (034/D4)
-      if (el.hidden) continue;
-      // An element bound to a shot is active only within the shot's window (055/D2)
-      if (!isElementActiveInShot(el, t, scene.shots)) continue;
-      // A mask element itself is skipped instead of being drawn directly (025/D2)
-      if (maskIds.has(el.id)) continue;
-
-      const now = animate(el, t, scene);
-      const elOpacity =
-        (now.el as unknown as { opacity?: number }).opacity ?? 1;
-      if (elOpacity <= 0) continue;
-
-      if (!OWN_OPACITY_KINDS.has(el.kind) && elOpacity < 1) {
-        now.transform.alpha *= elOpacity;
+    const fx = (
+      now.el as unknown as {
+        effects?: {
+          blur?: number;
+          blend?: import("../components/fields/effects.ts").BlendMode;
+          mask?: string;
+        };
       }
+    ).effects;
 
-      const fx = (
-        now.el as unknown as {
-          effects?: {
-            blur?: number;
-            blend?: import("../components/fields/effects.ts").BlendMode;
-            mask?: string;
-          };
-        }
-      ).effects;
+    const drawItem = () => {
+      withEffects(ctx, fx, () => {
+        descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
+      });
+    };
 
-      const drawItem = () => {
-        withEffects(ctx, fx, () => {
-          descriptorOf(el.kind)?.draw(ctx, now.el as never, now.transform, dc);
-        });
-      };
-
-      const maskTarget = fx?.mask ? byId.get(fx.mask) : undefined;
+    const maskTarget = fx?.mask ? byId.get(fx.mask) : undefined;
+    view(ctx, el, scene, t, () => {
       if (maskTarget) {
         const maskNow = animate(maskTarget, t, scene);
         withMask(ctx, maskNow.el, maskNow.transform, drawItem);
       } else {
         drawItem();
       }
-    }
-  } finally {
-    if (hasCameraTransform) {
-      ctx.restore();
-    }
+    });
   }
 }
 

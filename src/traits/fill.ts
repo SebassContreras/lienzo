@@ -9,7 +9,7 @@ export const fill = defineTrait({
     color2: "#0b1630",
     gradient: true,
     angle: 90,
-    opacity: 0.9,
+    opacity: 1,
   },
   apply: {
     shape: (el, p) => {

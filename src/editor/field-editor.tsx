@@ -15,6 +15,7 @@ import {
 import { type ReactNode, useState } from "react";
 import { descriptorOf } from "../components/index.ts";
 import { ANCHORS } from "../components/line/descriptor.ts";
+import { ensureDrawOnStroke } from "../components/path/draw-on.ts";
 import type { ThreeEl } from "../components/three/descriptor.ts";
 import { lateSlots } from "../engine/anim.ts";
 import { imageSize } from "../engine/assets.ts";
@@ -84,7 +85,12 @@ function AnimKindPicker({ el, item, value, label, change }: WidgetProps) {
       label={label}
       value={value as string}
       options={field.options as readonly (readonly [string, string])[]}
-      onChange={(v) => change((d) => writeField(d, path, field, v))}
+      onChange={(v) =>
+        change((d) => {
+          writeField(d, path, field, v);
+          ensureDrawOnStroke(d);
+        })
+      }
     />
   );
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CompactSceneSchema } from "../../model/compact.ts";
+import { ignoredNotice, ignoredPaths } from "../../model/ignored.ts";
 import { parseScene, SceneSchema } from "../../model/schema.ts";
 import { slugify } from "../../presets/slug.ts";
 import { expandScene } from "../compact/expand.ts";
@@ -58,7 +59,10 @@ export const sceneBuild = defineTool({
         })(),
       });
       expanded = checkScene(full.scene);
-      notices = full.notices;
+      notices = [
+        ...ignoredPaths(full.scene, expanded).map(ignoredNotice),
+        ...full.notices,
+      ];
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       fail("invalid_compact_scene", msg, "compact");

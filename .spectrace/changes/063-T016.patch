@@ -1,0 +1,80 @@
+diff --git a/src/editor/scene/review-section.test.tsx b/src/editor/scene/review-section.test.tsx
+new file mode 100644
+index 0000000..1b35296
+--- /dev/null
++++ b/src/editor/scene/review-section.test.tsx
+@@ -0,0 +1,74 @@
++// @vitest-environment jsdom
++import { mkdir, mkdtemp } from "node:fs/promises";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { cleanup, fireEvent, render, screen } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import type { TextEl } from "../../components/text/descriptor.ts";
++import { defaultElement, defaultScene, type Scene } from "../../model/model.ts";
++import { createCtx } from "../../service/ctx.ts";
++import { fakeRenderer } from "../../service/fake-renderer.ts";
++import { registry } from "../../service/tools/index.ts";
++import { ReviewSection } from "./review-section.tsx";
++
++afterEach(cleanup);
++
++/** A scene with one text drawn in a font no project installs. */
++function sceneWithMissingFont(): Scene {
++  const text = {
++    ...(defaultElement("text") as TextEl),
++    id: "title",
++    font: "Montserrat",
++  };
++  return { ...defaultScene(), elements: [text] };
++}
++
++/** What `scene_validate` answers for `scene` in a fresh project. */
++async function toolNotices(scene: Scene): Promise<unknown> {
++  const root = await mkdtemp(join(tmpdir(), "lienzo-review-"));
++  await mkdir(join(root, "presets", "animations"), { recursive: true });
++  const ctx = createCtx(root, fakeRenderer());
++  await registry.call("project_create", { slug: "p", name: "P" }, ctx);
++  const res = await registry.call(
++    "scene_validate",
++    { project: "p", scene },
++    ctx,
++  );
++  return res.ok ? (res.value as { notices?: string[] }).notices : res.error;
++}
++
++describe("editor notices (063/R8)", () => {
++  it("lists the same notices scene_validate returns", async () => {
++    // Arrange
++    const scene = sceneWithMissingFont();
++    const expected = await toolNotices(scene);
++
++    // Act
++    render(<ReviewSection scene={scene} fonts={["Inter"]} />);
++
++    // Assert
++    const shown = [...document.querySelectorAll(".notice")].map(
++      (n) => n.textContent,
++    );
++    expect(shown).toHaveLength(1);
++    expect(shown).toEqual(expected);
++  });
++
++  it("selects the element a notice names when it is clicked", () => {
++    // Arrange
++    const onSelect = vi.fn();
++    render(
++      <ReviewSection
++        scene={sceneWithMissingFont()}
++        fonts={["Inter"]}
++        onSelect={onSelect}
++      />,
++    );
++
++    // Act
++    fireEvent.click(screen.getByTitle("Seleccionar el elemento"));
++
++    // Assert
++    expect(onSelect).toHaveBeenCalledWith("title");
++  });
++});

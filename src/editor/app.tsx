@@ -10,7 +10,7 @@ import {
   Undo2,
   Upload,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COMPONENTS, createElement } from "../components/index.ts";
 import { imageSize } from "../engine/assets.ts";
 import { loadFonts, missingFonts } from "../engine/fonts.ts";
@@ -210,6 +210,7 @@ export function App() {
   >();
   /** Fonts the active project can use (045/D3); the inspector's picker lists them. */
   const [fonts, setFonts] = useState<ResolvedFont[]>([]);
+  const fontFamilies = useMemo(() => fonts.map((f) => f.family), [fonts]);
   const fontsRef = useRef(fonts);
   const [isTtsOpen, setIsTtsOpen] = useState(false);
   const [activeVoicePreset, setActiveVoicePreset] =
@@ -1255,6 +1256,8 @@ export function App() {
               onEditSymbol={symbolEdit || jointOn ? undefined : editSymbol}
               symbolMode={symbolEdit !== null}
               time={playhead}
+              fonts={fontFamilies}
+              onSelect={(id) => setSelection([id])}
               focusBackground={backgroundFocus}
               onSaveBackground={(name) =>
                 presetChange(
