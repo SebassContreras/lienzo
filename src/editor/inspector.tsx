@@ -28,6 +28,7 @@ import {
 import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";
+import { ReviewSection } from "./scene/review-section.tsx";
 import { ShotsSection } from "./scene/shots-section.tsx";
 import { SymbolsSection } from "./scene/symbols-section.tsx";
 import { OriginPicker } from "./widgets/origin-picker.tsx";
@@ -427,6 +428,7 @@ export function SceneInspector({
         <ShotsSection scene={scene} onChange={onChange} time={time} />
       )}
       {onEditSymbol && <SymbolsSection scene={scene} onEdit={onEditSymbol} />}
+      <ReviewSection scene={scene} />
       <Section title="Fondo" ref={backgroundRef}>
         <Color
           label="Color"

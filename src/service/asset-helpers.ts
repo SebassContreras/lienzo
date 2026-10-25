@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export const ASSET_TYPES: Record<string, string> = {
   png: "image/png",
@@ -26,4 +28,16 @@ export function hashBuffer(data: Buffer, length = 16): string {
 export function normalizeExtension(ext: string): string {
   const clean = ext.trim().toLowerCase().replace(/^\./, "");
   return clean === "jpeg" ? "jpg" : clean;
+}
+
+/** Writes `data` as `<hash>.<ext>` in `dir` (content-addressed, as uploads are) and returns the name. */
+export async function writeAsset(
+  dir: string,
+  data: Buffer,
+  ext: string,
+): Promise<string> {
+  const filename = `${hashBuffer(data)}.${ext}`;
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, filename), data);
+  return filename;
 }

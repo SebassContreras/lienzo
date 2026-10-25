@@ -1,11 +1,11 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import {
   ASSET_TYPES,
-  hashBuffer,
   MAX_ASSET_BYTES,
   normalizeExtension,
+  writeAsset,
 } from "./asset-helpers.ts";
 import { safeAssetPath } from "./asset-path.ts";
 import type { ProjectStore } from "./project-store.ts";
@@ -158,13 +158,11 @@ export async function handleProjectApi(
           chunks.push(chunk as Buffer);
         }
 
-        const data = Buffer.concat(chunks);
-        const hash = hashBuffer(data);
-        const filename = `${hash}.${ext}`;
-        const assetsDir = store.resolvePath(slug, "assets");
-
-        await mkdir(assetsDir, { recursive: true });
-        await writeFile(join(assetsDir, filename), data);
+        const filename = await writeAsset(
+          store.resolvePath(slug, "assets"),
+          Buffer.concat(chunks),
+          ext,
+        );
 
         const relativePath = `/projects/${slug}/assets/${filename}`;
         jsonReply(201, { path: relativePath, filename });

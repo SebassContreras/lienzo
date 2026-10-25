@@ -1,0 +1,187 @@
+diff --git a/src/service/asset-helpers.ts b/src/service/asset-helpers.ts
+index df0ae12..c5a8d12 100644
+--- a/src/service/asset-helpers.ts
++++ b/src/service/asset-helpers.ts
+@@ -1,4 +1,6 @@
+ import { createHash } from "node:crypto";
++import { mkdir, writeFile } from "node:fs/promises";
++import { join } from "node:path";
+ 
+ export const ASSET_TYPES: Record<string, string> = {
+   png: "image/png",
+@@ -27,3 +29,15 @@ export function normalizeExtension(ext: string): string {
+   const clean = ext.trim().toLowerCase().replace(/^\./, "");
+   return clean === "jpeg" ? "jpg" : clean;
+ }
++
++/** Writes `data` as `<hash>.<ext>` in `dir` (content-addressed, as uploads are) and returns the name. */
++export async function writeAsset(
++  dir: string,
++  data: Buffer,
++  ext: string,
++): Promise<string> {
++  const filename = `${hashBuffer(data)}.${ext}`;
++  await mkdir(dir, { recursive: true });
++  await writeFile(join(dir, filename), data);
++  return filename;
++}
+diff --git a/src/service/project-middleware.ts b/src/service/project-middleware.ts
+index 2cccb08..388223b 100644
+--- a/src/service/project-middleware.ts
++++ b/src/service/project-middleware.ts
+@@ -1,11 +1,11 @@
+-import { mkdir, readFile, writeFile } from "node:fs/promises";
++import { readFile } from "node:fs/promises";
+ import type { IncomingMessage, ServerResponse } from "node:http";
+ import { join } from "node:path";
+ import {
+   ASSET_TYPES,
+-  hashBuffer,
+   MAX_ASSET_BYTES,
+   normalizeExtension,
++  writeAsset,
+ } from "./asset-helpers.ts";
+ import { safeAssetPath } from "./asset-path.ts";
+ import type { ProjectStore } from "./project-store.ts";
+@@ -158,13 +158,11 @@ export async function handleProjectApi(
+           chunks.push(chunk as Buffer);
+         }
+ 
+-        const data = Buffer.concat(chunks);
+-        const hash = hashBuffer(data);
+-        const filename = `${hash}.${ext}`;
+-        const assetsDir = store.resolvePath(slug, "assets");
+-
+-        await mkdir(assetsDir, { recursive: true });
+-        await writeFile(join(assetsDir, filename), data);
++        const filename = await writeAsset(
++          store.resolvePath(slug, "assets"),
++          Buffer.concat(chunks),
++          ext,
++        );
+ 
+         const relativePath = `/projects/${slug}/assets/${filename}`;
+         jsonReply(201, { path: relativePath, filename });
+diff --git a/src/service/tools/asset-add.ts b/src/service/tools/asset-add.ts
+new file mode 100644
+index 0000000..3f092cd
+--- /dev/null
++++ b/src/service/tools/asset-add.ts
+@@ -0,0 +1,48 @@
++import { readFile, stat } from "node:fs/promises";
++import { extname, join, resolve } from "node:path";
++import { z } from "zod";
++import {
++  ASSET_TYPES,
++  MAX_ASSET_BYTES,
++  normalizeExtension,
++  writeAsset,
++} from "../asset-helpers.ts";
++import { safeAssetPath } from "../asset-path.ts";
++import { inProject, PROJECT } from "../project-scope.ts";
++import { defineTool, fail } from "../registry.ts";
++
++export const assetAdd = defineTool({
++  name: "asset_add",
++  description:
++    "Copy a local file (`file`, a path on this machine) into the project's assets/, or into " +
++    "`folder` inside it, named by its content hash as the editor's upload names it. Accepts " +
++    "png, jpg, svg, webp, glb, mp3, wav, aac, ogg, ttf, otf, woff and woff2 up to 20 MB. " +
++    "Returns the `src` to use in an image, audio or 3D element.",
++  input: z.object({
++    project: PROJECT,
++    file: z.string().min(1),
++    folder: z.string().optional(),
++  }),
++  output: z.object({ src: z.string(), filename: z.string() }),
++  async run({ project, file, folder }, ctx) {
++    const pctx = await inProject(ctx, project);
++    const ext = normalizeExtension(extname(file));
++    if (!ASSET_TYPES[ext])
++      fail("unsupported_type", `Formato no soportado: «${ext}»`, "file");
++    const sub = folder ? safeAssetPath(folder.split("/")) : "";
++    if (sub === undefined)
++      fail("invalid_folder", `Carpeta no válida «${folder}»`, "folder");
++    const path = resolve(file);
++    const size = await stat(path).then(
++      (s) => s.size,
++      () => -1,
++    );
++    if (size < 0) fail("not_found", `No existe el archivo «${file}»`, "file");
++    if (size > MAX_ASSET_BYTES)
++      fail("too_large", "Archivo demasiado grande (máx 20MB)", "file");
++    const dir = join(pctx.projects.resolvePath(project, "assets"), sub);
++    const filename = await writeAsset(dir, await readFile(path), ext);
++    const rel = sub ? `${sub}/${filename}` : filename;
++    return { src: `/projects/${project}/assets/${rel}`, filename: rel };
++  },
++});
+diff --git a/src/service/tools/font-install.ts b/src/service/tools/font-install.ts
+index d2fe645..bfd554d 100644
+--- a/src/service/tools/font-install.ts
++++ b/src/service/tools/font-install.ts
+@@ -1,23 +1,41 @@
++import { readFile } from "node:fs/promises";
++import { extname } from "node:path";
+ import { z } from "zod";
+ import { ProjectSlugSchema } from "../../model/project.ts";
+-import { installGoogleFont } from "../font-install.ts";
++import { installGoogleFont, saveFont } from "../font-install.ts";
+ import { defineTool, fail } from "../registry.ts";
+ 
+ export const fontInstall = defineTool({
+   name: "font_install",
+   description:
+     "Download a Google Fonts family as woff2 into fonts/ (global) or, with `project`, into " +
+-    "projects/<slug>/fonts/. Scenes then use it by its family name.",
++    "projects/<slug>/fonts/. With `file` (a local ttf, otf, woff or woff2), installs that file " +
++    "instead, as the editor's font upload does, under `family` and the first of `weights`. " +
++    "Scenes then use it by its family name.",
+   input: z.object({
+     family: z.string().min(1),
+     weights: z.array(z.number().int().min(100).max(900)).min(1).default([400]),
+     project: ProjectSlugSchema.optional(),
++    file: z.string().min(1).optional(),
+   }),
+   output: z.array(
+     z.object({ family: z.string(), weight: z.number(), file: z.string() }),
+   ),
+-  async run({ family, weights, project }, ctx) {
++  async run({ family, weights, project, file }, ctx) {
+     try {
++      if (file)
++        return [
++          await saveFont(
++            ctx.fonts,
++            {
++              family,
++              weight: weights[0] ?? 400,
++              ext: extname(file).slice(1),
++              project,
++            },
++            await readFile(file),
++          ),
++        ];
+       return await installGoogleFont(
+         ctx.fonts,
+         { family, weights, project },
+diff --git a/src/service/tools/index.ts b/src/service/tools/index.ts
+index 8f505e9..d2e7c4c 100644
+--- a/src/service/tools/index.ts
++++ b/src/service/tools/index.ts
+@@ -5,6 +5,7 @@
+ import { createRegistry, type Tool } from "../registry.ts";
+ import { animationList } from "./animation-list.ts";
+ import { animationSave } from "./animation-save.ts";
++import { assetAdd } from "./asset-add.ts";
+ import { backgroundSet } from "./background-set.ts";
+ import { componentList } from "./component-list.ts";
+ import { elementAdd } from "./element-add.ts";
+@@ -72,6 +73,7 @@ const TOOLS: readonly Tool[] = [
+   elementRemove,
+   elementMove,
+   imageTrim,
++  assetAdd,
+   backgroundSet,
+   keyframeSet,
+   keyframeRemove,

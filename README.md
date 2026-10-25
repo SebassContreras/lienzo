@@ -192,13 +192,20 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
 
 `pnpm lienzo --help` (or the MCP tool list) shows each one with its input. By area:
 
-- Projects: `project_list`, `project_create`, `project_inspect`, `project_delete`
-- Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_validate`,
+- Projects: `project_list`, `project_create`, `project_inspect`, `project_update`,
+  `project_delete`, `asset_add`
+- Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_update`,
+  `scene_rename`, `scene_delete`, `scene_validate`,
   `scene_inspect_layout`, `scene_preview`, `scene_export`, `scene_generate_speech`
 - Elements: `element_add`, `element_update`, `element_move`, `element_remove`,
+  `element_group`, `element_ungroup`,
   `image_trim`, `keyframe_set`, `keyframe_remove`, `background_set`, `shot_set`
-- Catalog: `component_list`, `preset_list`, `preset_get`, `preset_validate`, `font_list`,
-  `font_install`
+- Catalog: `component_list`, `preset_list`, `preset_get`, `preset_validate`, `preset_save`,
+  `preset_rename`, `preset_delete`, `animation_list`, `animation_save`, `font_list`,
+  `font_install` (a Google family, or a local `file`)
+
+Everything the editor saves has a tool, and the editor's "Revisión" section runs the same
+layout check as `scene_inspect_layout`.
 
 ## Shortcuts
 

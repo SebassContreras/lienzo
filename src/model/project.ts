@@ -19,7 +19,7 @@ export const ProjectSlugSchema = z
     "El identificador debe contener solo letras minúsculas, números y guiones",
   );
 
-const ColorPaletteSchema = z.object({
+export const ColorPaletteSchema = z.object({
   primary: z.string().min(1, "El color primario es obligatorio"),
   secondary: z.string().optional(),
   accent: z.string().optional(),
@@ -31,13 +31,13 @@ const ColorPaletteSchema = z.object({
 
 export type ColorPalette = z.infer<typeof ColorPaletteSchema>;
 
-const BrandFontSchema = z.object({
+export const BrandFontSchema = z.object({
   family: z.string().min(1, "La familia tipográfica es obligatoria"),
   role: z.enum(["heading", "body", "accent", "mono"]).default("body"),
   weights: z.array(z.number()).default([400]),
 });
 
-const ProjectCanvasDefaultsSchema = z.object({
+export const ProjectCanvasDefaultsSchema = z.object({
   width: z.number().int().positive().default(1080),
   height: z.number().int().positive().default(1080),
   fps: z.number().int().positive().default(30),

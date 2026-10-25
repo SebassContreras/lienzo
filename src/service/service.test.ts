@@ -515,6 +515,15 @@ describe("project scope (046/R1)", () => {
     "keyframe_remove",
     "shot_set",
     "image_trim",
+    "scene_update",
+    "scene_rename",
+    "scene_delete",
+    "element_group",
+    "element_ungroup",
+    "preset_save",
+    "preset_rename",
+    "preset_delete",
+    "asset_add",
   ];
 
   it("every tool that touches scenes requires `project`", async () => {

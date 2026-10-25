@@ -53,6 +53,10 @@ What exists today:
   a wrap width `w`, and Node-side text measurement uses real glyph metrics (054)
 - Shots: `scene.shots` (cut windows, transitions, camera) and `el.shot` bindings; edited by
   `shot_set` (055). Symbols: `scene.symbols` drawn by the `use` kind with `overrides` (056)
+- Tool/editor parity (062): every editor save has a tool (`scene_update` with JSON Merge
+  Patch, `scene_rename`/`scene_delete`, `preset_save`/`_rename`/`_delete`, `animation_list`/
+  `_save`, `project_update`, `asset_add`, `element_group`/`_ungroup`), built on the editor's
+  own helpers; the editor's "Revisión" section calls `inspectLayout` in the browser
 - Compact extras: partial `effects`, `defaults: "flat"` (build time only), `audioTracks`;
   `notices` lists what was ignored and missing fonts (058, 060). Speech `asTrack: true`
   appends an `audioTracks` entry at `startOffset` (060)

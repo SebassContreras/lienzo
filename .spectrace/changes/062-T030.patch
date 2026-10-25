@@ -1,0 +1,96 @@
+diff --git a/.agents/skills/lienzo-usage/SKILL.md b/.agents/skills/lienzo-usage/SKILL.md
+index cf763e2..b80faeb 100644
+--- a/.agents/skills/lienzo-usage/SKILL.md
++++ b/.agents/skills/lienzo-usage/SKILL.md
+@@ -26,7 +26,8 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
+ ## Workflow
+ 
+ 1. **Project:** `project_list`, or `project_create`. `project_inspect` lists its assets,
+-   scenes, presets and brand.
++   scenes, presets and brand; `project_update` changes the brand, `asset_add` copies a local
++   file into `assets/`.
+ 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
+    `preset_get`, `font_list` (then `font_install` for a Google font you need).
+ 3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
+@@ -38,7 +39,11 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
+    audio is kept unless you pass `audioTracks`).
+ 6. **Edit:** `element_update` / `element_add` (`parent` to insert in a group) /
+    `element_move` / `element_remove`, `keyframe_set` / `keyframe_remove`, `background_set`,
+-   `shot_set`, `image_trim`. Targets are an `id` or a `group/child` path.
++   `shot_set`, `image_trim`, `element_group` / `element_ungroup`. Targets are an `id` or a
++   `group/child` path. Scene settings (size, duration, fps, mode, audio tracks, symbols) go
++   through `scene_update`; `scene_rename` / `scene_delete` manage the files.
++   Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
++   `animation_save`.
+ 7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and
+    `startOffset` (the shot's start) so each call appends a track. Subtitles follow the cues.
+ 8. **Export:** `scene_export` (`png`, `gif`, `mp4`) into `projects/<slug>/exports/`.
+diff --git a/AGENTS.md b/AGENTS.md
+index 0bf7922..5ea338e 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -53,6 +53,10 @@ What exists today:
+   a wrap width `w`, and Node-side text measurement uses real glyph metrics (054)
+ - Shots: `scene.shots` (cut windows, transitions, camera) and `el.shot` bindings; edited by
+   `shot_set` (055). Symbols: `scene.symbols` drawn by the `use` kind with `overrides` (056)
++- Tool/editor parity (062): every editor save has a tool (`scene_update` with JSON Merge
++  Patch, `scene_rename`/`scene_delete`, `preset_save`/`_rename`/`_delete`, `animation_list`/
++  `_save`, `project_update`, `asset_add`, `element_group`/`_ungroup`), built on the editor's
++  own helpers; the editor's "Revisión" section calls `inspectLayout` in the browser
+ - Compact extras: partial `effects`, `defaults: "flat"` (build time only), `audioTracks`;
+   `notices` lists what was ignored and missing fonts (058, 060). Speech `asTrack: true`
+   appends an `audioTracks` entry at `startOffset` (060)
+diff --git a/README.md b/README.md
+index 5126fb0..7b30a8d 100644
+--- a/README.md
++++ b/README.md
+@@ -192,13 +192,20 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
+ 
+ `pnpm lienzo --help` (or the MCP tool list) shows each one with its input. By area:
+ 
+-- Projects: `project_list`, `project_create`, `project_inspect`, `project_delete`
+-- Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_validate`,
++- Projects: `project_list`, `project_create`, `project_inspect`, `project_update`,
++  `project_delete`, `asset_add`
++- Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_update`,
++  `scene_rename`, `scene_delete`, `scene_validate`,
+   `scene_inspect_layout`, `scene_preview`, `scene_export`, `scene_generate_speech`
+ - Elements: `element_add`, `element_update`, `element_move`, `element_remove`,
++  `element_group`, `element_ungroup`,
+   `image_trim`, `keyframe_set`, `keyframe_remove`, `background_set`, `shot_set`
+-- Catalog: `component_list`, `preset_list`, `preset_get`, `preset_validate`, `font_list`,
+-  `font_install`
++- Catalog: `component_list`, `preset_list`, `preset_get`, `preset_validate`, `preset_save`,
++  `preset_rename`, `preset_delete`, `animation_list`, `animation_save`, `font_list`,
++  `font_install` (a Google family, or a local `file`)
++
++Everything the editor saves has a tool, and the editor's "Revisión" section runs the same
++layout check as `scene_inspect_layout`.
+ 
+ ## Shortcuts
+ 
+diff --git a/src/editor/scene/review-section.tsx b/src/editor/scene/review-section.tsx
+index d58fe49..61b0ea8 100644
+--- a/src/editor/scene/review-section.tsx
++++ b/src/editor/scene/review-section.tsx
+@@ -10,13 +10,18 @@ import { inspectLayout, type LayoutDiagnostic } from "../../service/layout.ts";
+ import { Section } from "../controls.tsx";
+ 
+ export function ReviewSection({ scene }: { scene: Scene }) {
+-  const [found, setFound] = useState<LayoutDiagnostic[]>();
++  const [review, setReview] = useState<{
++    scene: Scene;
++    found: LayoutDiagnostic[];
++  }>();
++  /** A review of an older version of the scene is no longer shown. */
++  const found = review?.scene === scene ? review.found : undefined;
+   return (
+     <Section title="Revisión">
+       <button
+         type="button"
+         title="Busca solapes de texto, elementos fuera del lienzo, conexiones rotas y bajo contraste"
+-        onClick={() => setFound(inspectLayout(scene))}
++        onClick={() => setReview({ scene, found: inspectLayout(scene) })}
+       >
+         <ScanSearch size={14} /> Revisar escena
+       </button>

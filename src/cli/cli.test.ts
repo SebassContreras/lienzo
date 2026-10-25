@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -268,6 +268,84 @@ describe("lienzo CLI", () => {
       "--end",
       "2",
     ]);
+    await ok([
+      "scene_update",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--json",
+      '{"patch":{"duration":3}}',
+    ]);
+    const a = await ok([
+      "element_add",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--kind",
+      "rect",
+    ]);
+    const b = await ok([
+      "element_add",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--kind",
+      "rect",
+    ]);
+    const group = await ok([
+      "element_group",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--json",
+      JSON.stringify({ ids: [a.id, b.id] }),
+    ]);
+    await ok([
+      "element_ungroup",
+      "--project",
+      "p",
+      "--scene",
+      "demo",
+      "--id",
+      group.id,
+    ]);
+    await ok([
+      "scene_rename",
+      "--project",
+      "p",
+      "--from",
+      "demo",
+      "--to",
+      "demo2",
+    ]);
+    await ok(["scene_delete", "--project", "p", "--name", "demo2"]);
+    await ok([
+      "preset_save",
+      "--project",
+      "p",
+      "--json",
+      JSON.stringify({ recipe: (recipe as { recipe: unknown }).recipe }),
+    ]);
+    await ok([
+      "preset_rename",
+      "--project",
+      "p",
+      "--from",
+      "Tarjeta neón",
+      "--to",
+      "otro",
+    ]);
+    await ok(["preset_delete", "--project", "p", "--name", "otro"]);
+    await ok(["animation_save", "--json", '{"preset":{"name":"Salto"}}']);
+    await ok(["animation_list"]);
+    await ok(["project_update", "--slug", "p", "--name", "P2"]);
+    const logo = join(tmpdir(), `lienzo-cli-logo-${process.pid}.png`);
+    await writeFile(logo, "png");
+    await ok(["asset_add", "--project", "p", "--file", logo]);
     await ok(["font_list"]);
     // Google Fonts is the network boundary: a recorded css2 answer and fake files.
     const css = await readFile(

@@ -26,7 +26,8 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 ## Workflow
 
 1. **Project:** `project_list`, or `project_create`. `project_inspect` lists its assets,
-   scenes, presets and brand.
+   scenes, presets and brand; `project_update` changes the brand, `asset_add` copies a local
+   file into `assets/`.
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
    `preset_get`, `font_list` (then `font_install` for a Google font you need).
 3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
@@ -38,7 +39,11 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
    audio is kept unless you pass `audioTracks`).
 6. **Edit:** `element_update` / `element_add` (`parent` to insert in a group) /
    `element_move` / `element_remove`, `keyframe_set` / `keyframe_remove`, `background_set`,
-   `shot_set`, `image_trim`. Targets are an `id` or a `group/child` path.
+   `shot_set`, `image_trim`, `element_group` / `element_ungroup`. Targets are an `id` or a
+   `group/child` path. Scene settings (size, duration, fps, mode, audio tracks, symbols) go
+   through `scene_update`; `scene_rename` / `scene_delete` manage the files.
+   Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
+   `animation_save`.
 7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and
    `startOffset` (the shot's start) so each call appends a track. Subtitles follow the cues.
 8. **Export:** `scene_export` (`png`, `gif`, `mp4`) into `projects/<slug>/exports/`.
