@@ -25,13 +25,13 @@ What exists today:
 - Time is applied only by `animate(el, t, scene)` (`src/engine/animate.ts`) before a component
   draws; components get the result as a transform (A24)
 - Looping animations use whole cycles per loop (A6)
-- Presets in `presets/`, and project workspaces in `projects/<slug>/` containing `project.json`,
+- Presets in `presets/`, and project workspaces in `projects/<project>/` containing `project.json`,
   `scenes/`, `assets/`, `presets/`, and `exports/`; no database (A7, spec 040)
 - The default workspace template is `projects/mi-proyecto/`, which is the only project tracked in Git
 - Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
 - Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10)
 - Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
-  (global) and `projects/<slug>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
+  (global) and `projects/<project>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
   loaded with `FontFace` by `src/engine/fonts.ts` in the editor and the `?render` route;
   Google Fonts only through `src/service/google-fonts.ts` (`font_install`) (A12@2, spec 045)
 - pnpm only (A13); Biome + Vitest (A14); lint, typecheck and test run locally
@@ -77,10 +77,13 @@ What exists today:
   `src/presets/anim-presets.ts` (A26, spec 019)
 - Descriptors also drive compact JSON (`src/model/compact.ts`, A23, spec 011); 3D = three.js
   in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
+- Tool parameter names (064/R13, R14): one name per meaning in every input and result —
+  `project` (never `slug`), `scene` (a saved scene's name), `data` (a whole scene object),
+  `recipe` (a preset object), `patch` (values merged in), `id` (an element), `at` (placement)
 - Tools: one registry in `src/service/` (007); logic lives only in tools, CLI and MCP are thin
   adapters (A20); names are `snake_case` noun_verb (`scene_export`). Every tool that reads or
   writes a scene, an asset or an export takes a required `project` and runs on
-  `projects/<slug>/` (`inProject` in `src/service/project-scope.ts`, 046); only a
+  `projects/<project>/` (`inProject` in `src/service/project-scope.ts`, 046); only a
   `ProjectCtx` reaches scenes, so the compiler rejects scene access without a project.
   `pnpm lienzo <tool>` (`src/cli/`, 008) runs
   any of them under `tsx` — top-level scalar fields as flags, the rest in `--json` (inline,
@@ -98,7 +101,7 @@ What exists today:
   first render, reused within a process, closed by `ctx.dispose()` — the CLI disposes after
   every command, the MCP server when stdin ends. Tests pass `fakeRenderer()` unless they
   need a real browser (`renderer.test.ts`, skipped when none is installed). `scene_export`
-  writes only inside `projects/<slug>/exports/`
+  writes only inside `projects/<project>/exports/`
 - Speech (TTS): adapters in `src/service/tts/` (OpenRouter, local Kokoro-compatible server);
   env variables (`.env.example`) are read in Node only. The editor reaches OpenRouter through
   the dev server's `/api/tts/speech` (`src/service/tts-proxy.ts`), which adds the key, so no
@@ -149,9 +152,9 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
 ## Rules for agents
 
 - **Project Boundary & Isolation (Strict Boundary)**: All scenes, generated speech audio, images,
-  and exports MUST be saved within the target project (`projects/<slug>/`). Never write scenes,
+  and exports MUST be saved within the target project (`projects/<project>/`). Never write scenes,
   assets or exports to the repository root. Every scene, asset and export tool requires
-  `project`; there is no default project (`project_list` lists the slugs).
+  `project`; there is no default project (`project_list` lists them by `project`).
   NEVER borrow or mix assets between different projects; foreign asset references are strictly prohibited.
 - To add a component: add a descriptor folder `src/components/<kind>/` with `descriptor.ts`
   (fields built from `src/components/fields/`, composing the shared groups; sections; the

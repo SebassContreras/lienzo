@@ -28,12 +28,12 @@ the canvas, edit them live, and export PNG, GIF or MP4.
 - **Backgrounds:** the "Fondo" button (or a click on an empty part of the canvas) opens the
   background settings: color or gradient, dots, spotlight. The "Fondos" library section
   applies a background preset (undoable); "Guardar fondo como preset" saves yours.
-- **Scenes & Workspaces:** scenes are JSON files residing inside project workspaces (`projects/<slug>/scenes/`).
+- **Scenes & Workspaces:** scenes are JSON files residing inside project workspaces (`projects/<project>/scenes/`).
   The "Escenas" sidebar tab shows each saved scene of the active project with a thumbnail to
   open, rename, duplicate, export or delete it, and imports scenes from `.json` files.
 - **Validation:** an imported preset or scene is checked before anything is written; an
   invalid file is rejected with the exact path that is wrong (e.g. `elements.1.fill.color`).
-- **Files:** presets and project workspaces (`projects/<slug>/` containing scenes, local assets and exports)
+- **Files:** presets and project workspaces (`projects/<project>/` containing scenes, local assets and exports)
   are plain files you can version with the repo. `projects/mi-proyecto/` serves as the committed default project.
 - **Export:** PNG (current frame), looping GIF, and MP4 (WebM when the browser cannot
   encode H.264).
@@ -96,7 +96,7 @@ so rerun it after every pull or the server lists an older set of tools):
 }
 ```
 
-Tools read and write the files of this repo (`projects/<slug>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (a slug from `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
+Tools read and write the files of this repo (`projects/<project>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (the `project` of an entry in `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
 
 To remove the transparent margin of a PNG, call `image_trim` on an image element, or pass `trim: true` to `element_add`; the asset file is not changed, only the element's `crop`. In the editor, the same trim is the **Recortar transparencia** button of an image, and double-clicking an image opens its manual crop handles.
 
