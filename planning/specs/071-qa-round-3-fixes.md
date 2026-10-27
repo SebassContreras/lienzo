@@ -40,4 +40,5 @@ The third QA run found 19 of the 069 problems fixed, 1 partly fixed, 3 still ope
 - [x] 071/T005 [agent] Counter default count-up track — covers R5, D5
 - [x] 071/T006 [agent] Kokoro voice pre-check (research endpoint first) — covers R6, D6
 - [x] 071/T007 [agent] Regression tests for the stale-server items; QA note — covers R7, D7
-- [ ] 071/T008 [agent] Verify: typecheck, lint, tests, replay the QA cases with the CLI and a preview at t=4 — covers R1–R7
+- [x] 071/T008 [agent] Verify: typecheck, lint, tests, replay the QA cases with the CLI and a preview at t=4 — covers R1–R7
+      verified: `pnpm typecheck`, biome on the touched files, `pnpm test` (1184 tests, 145 files); replayed with `pnpm lienzo` on a scratch project: grouping a card with `tracks.x` [100→400] keeps it at x 400 on the canvas at t=4 (child track 0→300), the grouped counter of s2 shows in a real `scene_preview` at t=4, a new counter gets the 0→1 `progress` track, `keyframe_set` on another element no longer repeats a missing-icon notice; Kokoro voice check covered by adapter tests (no live server here)
