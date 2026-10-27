@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { withCountUp } from "../../components/counter/count-up.ts";
 import { boxOf } from "../../engine/geometry.ts";
 import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
 import { mapElementsDeep } from "../../model/element-walk.ts";
@@ -83,6 +84,10 @@ export const elementAdd = defineTool({
     if (at && hasPositionTrack(added)) notices.push(trackOverridesAt(added.id));
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
     const result = await editScene(effectiveCtx, scene, (s) => {
+      const fresh =
+        preset === undefined
+          ? withCountUp(added, patch ?? {}, s.duration)
+          : added;
       mapElementsDeep(s.elements, (e) => {
         if (e.id === added.id)
           fail("duplicate_id", `Ya hay un elemento «${added.id}»`, "patch.id");
@@ -99,15 +104,15 @@ export const elementAdd = defineTool({
         }
         const p = at ?? (placed ? undefined : "center");
         const out = p
-          ? placeAt(added, p, { width: group.cw, height: group.ch })
-          : added;
+          ? placeAt(fresh, p, { width: group.cw, height: group.ch })
+          : fresh;
         return {
           ...s,
           elements: insertChild(s.elements, parent, out, "parent"),
         };
       }
       const p = at ?? (placed ? undefined : "center");
-      const out = p ? placeAt(added, p, s) : added;
+      const out = p ? placeAt(fresh, p, s) : fresh;
       const b = boxOf(out);
       if (b.x < 0 || b.y < 0 || b.x + b.w > s.width || b.y + b.h > s.height)
         notices.push(

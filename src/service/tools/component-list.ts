@@ -7,8 +7,9 @@ import { defineTool } from "../registry.ts";
 /** Defaults a newcomer trips on, told with the kind (069/D14). */
 const NOTES: Record<string, string> = {
   counter:
-    "Shows its final value (`to`) because `progress` defaults to 1; to count up, keyframe " +
-    "`progress` from 0 to 1 (compact: `tracks: { progress: [[0, 0], [2, 1]] }`).",
+    "element_add and scene_build give a new counter a `progress` track from 0 to 1 over the " +
+    "first 1.5 s (less in a shorter scene), so it counts up; a `progress` value or track of " +
+    "your own replaces it (compact: `tracks: { progress: [[0, 0], [2, 1]] }`).",
   image:
     "Given a project asset `src` and no `aspect`, element_add and scene_build read the " +
     "picture's own proportion and size `h` (or `w`) to it.",

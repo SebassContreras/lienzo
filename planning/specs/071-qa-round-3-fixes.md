@@ -37,7 +37,7 @@ The third QA run found 19 of the 069 problems fixed, 1 partly fixed, 3 still ope
       found: the grouped counter is drawn at t=4 (regression test in shots-render.test.ts); not a render bug, so the notice now warns about layer order
 - [x] 071/T003 [agent] Resource notices only for changed elements — covers R3, D3
 - [x] 071/T004 [agent] shape_overlap diagnostic — covers R4, D4
-- [ ] 071/T005 [agent] Counter default count-up track — covers R5, D5
+- [x] 071/T005 [agent] Counter default count-up track — covers R5, D5
 - [ ] 071/T006 [agent] Kokoro voice pre-check (research endpoint first) — covers R6, D6
 - [ ] 071/T007 [agent] Regression tests for the stale-server items; QA note — covers R7, D7
 - [ ] 071/T008 [agent] Verify: typecheck, lint, tests, replay the QA cases with the CLI and a preview at t=4 — covers R1–R7

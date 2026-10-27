@@ -118,9 +118,9 @@ describe("grouped children of different shots (071/D2)", () => {
     const ctx = new RecordingCtx();
     const texts: string[] = [];
     const fillText = ctx.fillText.bind(ctx);
-    ctx.fillText = ((text: string, ...rest: never[]) => {
+    ctx.fillText = ((text: string, x: number, y: number) => {
       texts.push(text);
-      fillText(text, ...rest);
+      fillText(text, x, y);
     }) as typeof ctx.fillText;
     drawScene(ctx as unknown as Ctx, scene, t);
     return texts;
