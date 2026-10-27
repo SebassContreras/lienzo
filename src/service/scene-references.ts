@@ -7,7 +7,7 @@ import { ICON_NAMES } from "../engine/icon-set.ts";
 import { mapElementsDeep } from "../model/element-walk.ts";
 import { closestKey } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
-import { fail } from "./registry.ts";
+import { failAll, type Problem } from "./registry.ts";
 import { changedSince, placedElements } from "./scene-changes.ts";
 
 const fold = (name: string) => name.toLowerCase().replace(/[-_\s]/g, "");
@@ -42,38 +42,49 @@ export function withCanonicalIcons(scene: Scene): Scene {
 const list = (items: readonly string[]) =>
   items.length > 0 ? items.map((i) => `«${i}»`).join(", ") : "ninguno";
 
-/** Fails on the first changed element naming a shot, icon or line target `scene` lacks. */
-export function checkReferences(scene: Scene, previous?: Scene): void {
+type Dangling = Problem & { code: string };
+
+/** Every changed element's reference to a shot, icon or line target `scene` lacks. */
+export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
   const shots = (scene.shots ?? []).map((sh) => sh.id);
   const placed = placedElements(scene);
   const ids = new Set(placed.map(({ el }) => el.id));
   const changed = changedSince(previous);
+  const out: Dangling[] = [];
   for (const { el, path } of placed.filter(({ el }) => changed(el))) {
     if (el.shot !== undefined && !shots.includes(el.shot))
-      fail(
-        "unknown_shot",
-        `«${el.id}» está ligado a la toma «${el.shot}», que no existe (tomas: ${list(shots)}; créala con shot_set)`,
-        `${path}.shot`,
-      );
+      out.push({
+        code: "unknown_shot",
+        message: `«${el.id}» está ligado a la toma «${el.shot}», que no existe (tomas: ${list(shots)}; créala con shot_set)`,
+        path: `${path}.shot`,
+      });
     if (el.kind === "icon" && !BY_FOLDED.has(fold(el.icon))) {
       const near = closestKey(el.icon, ICON_NAMES);
-      fail(
-        "unknown_icon",
-        `«${el.id}»: no existe el icono «${el.icon}»` +
+      out.push({
+        code: "unknown_icon",
+        message:
+          `«${el.id}»: no existe el icono «${el.icon}»` +
           (near ? `; ¿querías «${near}»?` : "") +
           " (nombres de lucide, p. ej. «Star», «ArrowRight»; véase lucide.dev/icons)",
-        `${path}.icon`,
-      );
+        path: `${path}.icon`,
+      });
     }
     if (el.kind === "line")
       for (const end of ["a", "b"] as const) {
         const attach = el[end].attach;
         if (attach && !ids.has(attach))
-          fail(
-            "unknown_target",
-            `«${el.id}»: el extremo ${end === "a" ? "inicial (from)" : "final (to)"} se conecta a «${attach}», que no existe (ids: ${list([...ids].filter((id) => id !== el.id))})`,
-            `${path}.${end}.attach`,
-          );
+          out.push({
+            code: "unknown_target",
+            message: `«${el.id}»: el extremo ${end === "a" ? "inicial (from)" : "final (to)"} se conecta a «${attach}», que no existe (ids: ${list([...ids].filter((id) => id !== el.id))})`,
+            path: `${path}.${end}.attach`,
+          });
       }
   }
+  return out;
+}
+
+/** Fails listing every dangling reference of a changed element (074/D1). */
+export function checkReferences(scene: Scene, previous?: Scene): void {
+  const found = danglingReferences(scene, previous);
+  if (found[0]) failAll(found[0].code, found);
 }

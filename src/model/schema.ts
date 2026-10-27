@@ -159,7 +159,13 @@ const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
 /** A failure's `path` is the first failing issue's ("elements.2.fill.color"; "" at the root). */
 export type Parsed<T> =
   | { ok: true; value: T }
-  | { ok: false; error: string; path: string };
+  | {
+      ok: false;
+      error: string;
+      path: string;
+      /** Every failing issue, by path (074/D9). */
+      issues: { path: string; message: string }[];
+    };
 
 /** "elements.2.fill.color: …" — each issue with the path that failed. */
 function describe(error: z.ZodError): string {
@@ -179,6 +185,10 @@ export function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
         ok: false,
         error: describe(r.error),
         path: r.error.issues[0]?.path.map(String).join(".") ?? "",
+        issues: r.error.issues.map((i) => ({
+          path: i.path.map(String).join("."),
+          message: i.message,
+        })),
       };
 }
 

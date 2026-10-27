@@ -245,11 +245,11 @@ describe("animation presets (D6, R7)", () => {
     const r = await call("element_add", {
       scene: "s",
       kind: "rect",
-      patch: { animPreset: { name: "Nope", start: 0 } },
+      patch: { id: "bad", animPreset: { name: "Nope", start: 0 } },
     });
     expect(r).toMatchObject({
       ok: false,
-      error: { code: "unknown_anim_preset", path: "elements.1.animPreset" },
+      error: { code: "unknown_anim_preset", path: "elements.bad.animPreset" },
     });
   });
 

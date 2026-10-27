@@ -7,8 +7,19 @@ import type { z } from "zod";
 import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Ctx } from "./ctx.ts";
 
-/** What a failed call reports: `path` names the failing input or scene path ("" for none). */
-export type ToolError = { code: string; message: string; path: string };
+/** One problem with an input: the path it is at and what is wrong. */
+export type Problem = { path: string; message: string };
+
+/**
+ * What a failed call reports: `path` names the failing input or scene path ("" for none);
+ * `errors`, when a check found several problems, lists each one (074/D9).
+ */
+export type ToolError = {
+  code: string;
+  message: string;
+  path: string;
+  errors?: Problem[];
+};
 
 type ToolResult<O> = { ok: true; value: O } | { ok: false; error: ToolError };
 
@@ -33,6 +44,37 @@ export class ToolFailure extends Error {
 /** Fails the running tool. Messages are Spanish (A16). */
 export function fail(code: string, message: string, path = ""): never {
   throw new ToolFailure({ code, message, path });
+}
+
+const line = ({ path, message }: Problem) =>
+  path ? `${path}: ${message}` : message;
+
+/** Fails with every problem in `problems` (at least one): the first one's path, all listed. */
+export function failAll(code: string, problems: readonly Problem[]): never {
+  const [first] = problems;
+  throw new ToolFailure({
+    code,
+    message: problems.map(line).join("\n"),
+    path: first?.path ?? "",
+    ...(problems.length > 1 ? { errors: [...problems] } : {}),
+  });
+}
+
+/** The problems `check` fails with, or none: each ToolFailure becomes its `errors` (or itself). */
+export function problemsOf(check: () => void):
+  | {
+      code: string;
+      problems: Problem[];
+    }
+  | undefined {
+  try {
+    check();
+    return undefined;
+  } catch (error) {
+    if (!(error instanceof ToolFailure)) throw error;
+    const { code, path, message, errors } = error.error;
+    return { code, problems: errors ?? [{ path, message }] };
+  }
 }
 
 const NAME = /^[a-z]+(_[a-z]+)+$/;

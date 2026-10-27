@@ -5,6 +5,7 @@ import { buildCompact } from "../build-compact.ts";
 import { availableFonts, measureInstalledFonts } from "../font-install.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
+import { sceneFromData } from "../scene-defaults.ts";
 import { sceneNotices } from "../scene-notices.ts";
 import { resourceNotices } from "../scene-resources.ts";
 import { prepareScene } from "../scenes.ts";
@@ -14,11 +15,14 @@ export const sceneValidate = defineTool({
   name: "scene_validate",
   description:
     "Check a whole scene without saving it, as the editor would open it (animation " +
-    "presets it names must exist, and shots must end within the scene and not overlap). Returns the first failing path. A valid scene can " +
+    "presets it names must exist, shots must end within the scene and not overlap, and shots, icons " +
+    "and line targets an element names must exist). Returns every problem in `errors` (the first " +
+    "one also in `path`/`message`); paths name an element by the `id` you gave, else by its index. A valid scene can " +
     "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
     "project (it would draw with a fallback; run font_install), or a text whose width is " +
     "estimated because its font has no metrics here (check it with scene_preview). " +
-    "Pass either `data` (a full scene) or `compact` (the compact form scene_build takes, " +
+    "Pass either `data` (a scene as scene_get returns it; missing scene fields take the project's " +
+    "canvas and an element's missing fields its kind's defaults) or `compact` (the compact form scene_build takes, " +
     "checked as scene_build would build it, with the same notices).",
   input: z.object({
     data: z.unknown().optional(),
@@ -49,7 +53,11 @@ export const sceneValidate = defineTool({
     const verdict = await verdictOf(async () => {
       if (data === undefined)
         fail("invalid_input", "Falta `data` o `compact`", "compact");
-      prepared = await prepareScene(projectCtx, data);
+      const whole =
+        typeof data === "object" && data !== null && !Array.isArray(data)
+          ? await sceneFromData(projectCtx, data as Record<string, unknown>)
+          : data;
+      prepared = await prepareScene(projectCtx, whole, undefined, data);
     });
     if (!prepared) return verdict;
     const notices = [

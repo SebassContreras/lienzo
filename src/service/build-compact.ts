@@ -6,19 +6,18 @@ import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
 import { withFileAspects } from "./image-aspect.ts";
-import { fail, ToolFailure } from "./registry.ts";
+import { fail, failAll, ToolFailure } from "./registry.ts";
 
 const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
 import { sceneDefaults } from "./scene-defaults.ts";
-import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
+import { withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import {
   animLibrary,
-  checkAnimPresets,
   checkScene,
-  checkShots,
+  checkSceneRules,
   findPreset,
 } from "./scenes.ts";
 
@@ -48,18 +47,20 @@ export async function buildCompact(
       base: await sceneDefaults(ctx),
     });
     scene = withCanonicalIcons(
-      checkScene({
-        ...full.scene,
-        elements: await withFileAspects(
-          ctx,
-          full.scene.elements,
-          compact.elements ?? [],
-        ),
-      }),
+      checkScene(
+        {
+          ...full.scene,
+          elements: await withFileAspects(
+            ctx,
+            full.scene.elements,
+            compact.elements ?? [],
+          ),
+        },
+        "",
+        compact,
+      ),
     );
-    checkAnimPresets(scene, library);
-    checkShots(scene);
-    checkReferences(scene);
+    checkSceneRules(scene, library, { given: compact });
     notices = [
       ...ignoredFields(full.scene, scene).map(ignoredNotice),
       ...full.notices,
@@ -67,8 +68,16 @@ export async function buildCompact(
     ];
   } catch (err: unknown) {
     // the failing path is the compact one: elements keep their index (069/D12)
-    if (err instanceof ToolFailure)
-      fail(err.error.code, err.error.message, join("compact", err.error.path));
+    if (err instanceof ToolFailure) {
+      const { code, path, message, errors } = err.error;
+      failAll(
+        code,
+        (errors ?? [{ path, message }]).map((p) => ({
+          path: join("compact", p.path),
+          message: p.message,
+        })),
+      );
+    }
     const msg = err instanceof Error ? err.message : String(err);
     const path = /^([\w.]+): /.exec(msg)?.[1] ?? "";
     fail("invalid_compact_scene", msg, join("compact", path));

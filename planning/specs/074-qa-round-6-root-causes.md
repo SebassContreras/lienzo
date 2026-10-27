@@ -139,7 +139,7 @@ contract test that walks the tools with the same wrong inputs.
 - [x] 074/T007 [agent] Compact `from`/`to` per kind — covers R7, D7
 - [x] 074/T008 [agent] Camera tracks short form in `shot_set`, scene-time note and notice — covers R8, D8
 - [x] 074/T009 [agent] Preset recipes: strict keys, typed `set` — covers R1, D14
-- [ ] 074/T010 [agent] `scene_validate`: every error, partial elements, id-or-index paths — covers R9, D9
+- [x] 074/T010 [agent] `scene_validate`: every error, partial elements, id-or-index paths — covers R9, D9
 - [ ] 074/T011 [agent] `element_group` id and all bad ids; `element_move` range; easing options; keyframe times; effects field hint — covers R10, R13, D10, D13
 - [ ] 074/T012 [agent] Long text wraps when placed — covers R11, D11
 - [ ] 074/T013 [agent] Sparse `scene_get` — covers R12, D12

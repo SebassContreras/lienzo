@@ -110,7 +110,7 @@ describe("preset schema", () => {
       kind: "rect",
       traits: ["no-such-trait"],
     });
-    expect(unknown).toEqual({
+    expect(unknown).toMatchObject({
       ok: false,
       path: "traits.0",
       error: expect.stringContaining(

@@ -179,3 +179,37 @@ it("rejects a recipe with a key recipes do not have (074/R1)", async () => {
     message: expect.stringContaining("values"),
   });
 });
+
+it("validates a scene given as data with one partial text (074/R9)", async () => {
+  const out = await value("scene_validate", {
+    data: { elements: [{ id: "t", kind: "text", text: "Hola" }] },
+  });
+
+  expect(out).toMatchObject({ valid: true });
+});
+
+it("reports every problem of a scene, not only the first (074/R9)", async () => {
+  const out = await value("scene_validate", {
+    compact: {
+      duration: 6,
+      shots: [
+        { id: "s1", start: 0, end: 4 },
+        { id: "s2", start: 3, end: 6 },
+      ],
+      elements: [{ kind: "rect", shot: "s9" }],
+    },
+  });
+
+  expect(out.errors).toEqual([
+    expect.objectContaining({ path: "compact.shots" }),
+    expect.objectContaining({ path: "compact.elements.0.shot" }),
+  ]);
+});
+
+it("names an element given without id by its index in errors (074/R9)", async () => {
+  const out = await value("scene_validate", {
+    compact: { elements: [{ kind: "rect", shot: "nope" }] },
+  });
+
+  expect(out).toMatchObject({ path: "compact.elements.0.shot" });
+});

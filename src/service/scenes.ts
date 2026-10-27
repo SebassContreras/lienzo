@@ -14,15 +14,15 @@ import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
 import { withCanonicalAssets } from "./asset-refs.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
-import { fail } from "./registry.ts";
+import { fail, failAll, problemsOf } from "./registry.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
 
 /**
  * `path` with its leading `elements.N(.children.M)*` indices replaced by the element's id
- * path (`elements.g/child.w`), as other errors name elements (073/D3). Kept as is where an
- * index has no element with an id.
+ * path (`elements.g/child.w`), as other errors name elements (073/D3). `data` is the input
+ * as the caller gave it, so an element it gave no id keeps its index (074/D9).
  */
 export function idPath(data: unknown, path: string): string {
   const parts = path.split(".");
@@ -43,13 +43,47 @@ export function idPath(data: unknown, path: string): string {
   return ["elements", ids.join("/"), ...parts.slice(i)].join(".");
 }
 
-/** `data` as a scene, or a failure naming the first failing path under `prefix`. */
-export function checkScene(data: unknown, prefix = ""): Scene {
+const under = (prefix: string, path: string) =>
+  [prefix, path].filter(Boolean).join(".");
+
+/**
+ * `data` as a scene, or a failure listing every failing path under `prefix`, elements named
+ * as `given` (the caller's input) names them.
+ */
+export function checkScene(data: unknown, prefix = "", given = data): Scene {
   const parsed = parseScene(data);
   if (parsed.ok) return parsed.value;
-  const named = idPath(data, parsed.path);
-  const path = [prefix, named].filter(Boolean).join(".");
-  return fail("invalid_scene", parsed.error.replace(parsed.path, named), path);
+  return failAll(
+    "invalid_scene",
+    parsed.issues.map((i) => ({
+      path: under(prefix, idPath(given, i.path)),
+      message: i.message,
+    })),
+  );
+}
+
+/**
+ * Fails listing every rule a parsed scene breaks (074/D9): animation presets missing from
+ * `library`, shots out of the scene or overlapping, dangling references of changed elements.
+ */
+export function checkSceneRules(
+  scene: Scene,
+  library: readonly AnimPreset[],
+  { previous, given = scene }: { previous?: Scene; given?: unknown } = {},
+): void {
+  const failed = [
+    () => checkAnimPresets(scene, library),
+    () => checkShots(scene),
+    () => checkReferences(scene, previous),
+  ].flatMap((check) => problemsOf(check) ?? []);
+  const [first] = failed;
+  if (!first) return;
+  failAll(
+    first.code,
+    failed.flatMap(({ problems }) =>
+      problems.map((p) => ({ ...p, path: idPath(given, p.path) })),
+    ),
+  );
 }
 
 /** The stored scene `name`, checked. */
@@ -123,12 +157,11 @@ export async function prepareScene(
   ctx: Ctx,
   data: unknown,
   previous?: Scene,
+  given: unknown = data,
 ): Promise<{ scene: Scene; notices: string[] }> {
-  const scene = withCanonicalIcons(checkScene(data));
+  const scene = withCanonicalIcons(checkScene(data, "", given));
   const library = await animLibrary(ctx);
-  checkAnimPresets(scene, library);
-  checkShots(scene);
-  checkReferences(scene, previous);
+  checkSceneRules(scene, library, { previous, given });
   const expanded = expandAnimPresets(scene, library);
   return { scene: checkScene(expanded.scene), notices: expanded.notices };
 }
