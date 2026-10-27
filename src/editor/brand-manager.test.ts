@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { parseProjectManifest } from "../model/project.ts";
-import { slugify } from "./dialogs/brand-manager-dialog.tsx";
+import { projectSlug } from "../presets/slug.ts";
 
 describe("Brand Manager workflow and validation", () => {
-  it("generates URL-safe slugs with slugify", () => {
-    expect(slugify("Acme Studios")).toBe("acme-studios");
-    expect(slugify("Diseño & Animación 2026!")).toBe("diseno-animacion-2026");
-    expect(slugify("---Brand---Test---")).toBe("brand-test");
-    expect(slugify("Café con Leche")).toBe("cafe-con-leche");
+  it("generates URL-safe slugs with projectSlug", () => {
+    expect(projectSlug("Acme Studios")).toBe("acme-studios");
+    expect(projectSlug("Diseño & Animación 2026!")).toBe(
+      "diseno-animacion-2026",
+    );
+    expect(projectSlug("---Brand---Test---")).toBe("brand-test");
+    expect(projectSlug("Café con Leche")).toBe("cafe-con-leche");
   });
 
   it("validates full brand configuration with palette and canvas defaults", () => {

@@ -98,3 +98,13 @@ it("runs a preset counter's count-up from the start of its shot in element_add (
     elements: [{ tracks: { progress: [{ t: 3 }, { t: 5 }] } }],
   });
 });
+
+it("renames a preset to a slug with its accents folded (074/R6)", async () => {
+  await value("preset_save", {
+    recipe: { name: "Caja", kind: "rect", traits: [] },
+  });
+
+  const out = await value("preset_rename", { from: "Caja", to: "Caja Ámbar" });
+
+  expect(out.preset).toBe("caja-ambar");
+});

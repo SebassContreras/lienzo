@@ -5,6 +5,7 @@ import type {
   ProjectCanvasDefaults,
 } from "../../model/project.ts";
 import { PROJECT_SLUG_REGEX } from "../../model/project.ts";
+import { projectSlug } from "../../presets/slug.ts";
 import type { ProjectDetails } from "../../service/project-store.ts";
 import { BrandAssetManager } from "../brand/brand-asset-manager.tsx";
 import { BrandFontManager } from "../brand/brand-font-manager.tsx";
@@ -27,15 +28,6 @@ export type BrandManagerDialogProps = {
   onFontsChanged?: () => void;
   setStatus: (msg: string) => void;
 };
-
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export function BrandManagerDialog({
   isOpen,
@@ -129,7 +121,7 @@ export function BrandManagerDialog({
   const handleNameChange = (val: string) => {
     setName(val);
     if (mode === "create" && slugAuto) {
-      setSlug(slugify(val));
+      setSlug(projectSlug(val));
     }
   };
 

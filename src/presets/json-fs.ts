@@ -12,7 +12,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { join } from "node:path";
-import { slugify } from "./slug.ts";
+import { legacySlug, slugify } from "./slug.ts";
 
 export type JsonItem = { name: string; data: unknown };
 
@@ -29,6 +29,14 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** Where `name` is stored: its slug's file, else one written under the pre-074 slug (074/D6). */
+async function storedFileOf(dir: string, name: string): Promise<string> {
+  const path = fileOf(dir, name);
+  if (await exists(path)) return path;
+  const legacy = join(dir, `${legacySlug(name)}.json`);
+  return (await exists(legacy)) ? legacy : path;
 }
 
 const write = (path: string, data: unknown) =>
@@ -51,7 +59,7 @@ export async function readJson(
   dir: string,
   name: string,
 ): Promise<unknown | undefined> {
-  const path = fileOf(dir, name);
+  const path = await storedFileOf(dir, name);
   if (!(await exists(path))) return undefined;
   return JSON.parse(await readFile(path, "utf8"));
 }
@@ -70,7 +78,7 @@ export async function writeJson(
 
 /** Removes `name`'s file; false when there was none. */
 export async function removeJson(dir: string, name: string): Promise<boolean> {
-  const path = fileOf(dir, name);
+  const path = await storedFileOf(dir, name);
   if (!(await exists(path))) return false;
   await unlink(path);
   return true;
@@ -83,7 +91,7 @@ export async function renameJson(
   to: string,
 ): Promise<{ name: string } | { error: RenameError }> {
   if (!to.trim()) return { error: "empty name" };
-  const source = fileOf(dir, from);
+  const source = await storedFileOf(dir, from);
   const target = fileOf(dir, to);
   if (!(await exists(source))) return { error: "not found" };
   if (source !== target && (await exists(target))) {
