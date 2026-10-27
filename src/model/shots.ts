@@ -6,8 +6,19 @@ import { resolveShotCamera } from "../engine/shots.ts";
 import { keyframeAt, withKeyframe } from "../engine/tracks.ts";
 import { deepMerge } from "../presets/resolve.ts";
 import { mapElementsDeep } from "./element-walk.ts";
-import type { Element, Shot, ShotCamera, ShotTransition } from "./model.ts";
-import { shiftTracks, shotOrigin } from "./shot-timing.ts";
+import type {
+  Element,
+  Scene,
+  Shot,
+  ShotCamera,
+  ShotTransition,
+} from "./model.ts";
+import {
+  rebindShot,
+  shiftElementTracks,
+  shiftTracks,
+  shotOrigin,
+} from "./shot-timing.ts";
 import {
   type Tracks,
   trackEntry,
@@ -75,7 +86,7 @@ export function setShot(shots: readonly Shot[], patch: ShotPatch): ShotsResult {
   return { shots: next };
 }
 
-/** Removes the shot `id`; elements bound to it keep their `shot` field. */
+/** Removes the shot `id` from `shots`; `removeShotIn` also unbinds its elements. */
 export function removeShot(shots: readonly Shot[], id: string): ShotsResult {
   if (!shots.some((sh) => sh.id === id)) {
     return {
@@ -163,19 +174,81 @@ export function shotProblem(
   return undefined;
 }
 
-/** `elements` with no element (at any depth) bound to shot `id`, and the ids it unbound (069/D4). */
-export function unbindShot(
-  elements: readonly Element[],
-  id: string,
-): { elements: Element[]; unbound: string[] } {
+/** A scene edit of its shots, and the elements whose tracks moved with them (075/D2). */
+export type SceneShotsResult =
+  | {
+      scene: Scene;
+      moved: { id: string; delta: number }[];
+      unbound: string[];
+    }
+  | { error: ShotError };
+
+const withShots = (scene: Scene, shots: Shot[]): Scene => ({
+  ...scene,
+  shots: shots.length > 0 ? shots : undefined,
+});
+
+/**
+ * `scene` with shot `patch.id` created or updated, as `shot_set` and the editor's shots section
+ * do: the shots must fit the scene (069/D5), and a new `start` moves the shot's camera keys and
+ * the tracks of the elements bound to it (075/R2). A `camera` in the patch is taken as given.
+ */
+export function setShotIn(scene: Scene, patch: ShotPatch): SceneShotsResult {
+  const shots = scene.shots ?? [];
+  const old = shots.find((sh) => sh.id === patch.id);
+  const delta = old && patch.start !== undefined ? patch.start - old.start : 0;
+  const carried = shots.map((sh) =>
+    sh === old && delta !== 0 && sh.camera?.tracks
+      ? {
+          ...sh,
+          camera: {
+            ...sh.camera,
+            tracks: shiftTracks(sh.camera.tracks, delta),
+          },
+        }
+      : sh,
+  );
+  const result = setShot(carried, patch);
+  if ("error" in result) return result;
+  const problem = shotProblem(result.shots, scene.duration);
+  if (problem) return { error: problem };
+  const moved: { id: string; delta: number }[] = [];
+  const elements =
+    delta === 0
+      ? scene.elements
+      : mapElementsDeep(scene.elements, (el) => {
+          if (el.shot !== patch.id) return el;
+          moved.push({ id: el.id, delta });
+          return shiftElementTracks(el, delta);
+        });
+  return {
+    scene: withShots({ ...scene, elements }, result.shots),
+    moved,
+    unbound: [],
+  };
+}
+
+/**
+ * `scene` without shot `id`; the elements bound to it (at any depth) are unbound, their tracks
+ * moved back to the scene's origin (069/D4, 075/R3).
+ */
+export function removeShotIn(scene: Scene, id: string): SceneShotsResult {
+  const result = removeShot(scene.shots ?? [], id);
+  if ("error" in result) return result;
+  const moved: { id: string; delta: number }[] = [];
   const unbound: string[] = [];
-  const out = mapElementsDeep(elements, (el) => {
+  const elements = mapElementsDeep(scene.elements, (el) => {
     if (el.shot !== id) return el;
+    const rebound = rebindShot(el, undefined, scene.shots);
     unbound.push(el.id);
-    const { shot: _shot, ...rest } = el;
-    return rest as Element;
+    moved.push({ id: el.id, delta: rebound.delta });
+    return rebound.el;
   });
-  return { elements: out, unbound };
+  return {
+    scene: withShots({ ...scene, elements }, result.shots),
+    moved,
+    unbound,
+  };
 }
 
 /**

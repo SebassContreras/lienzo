@@ -186,3 +186,59 @@ it("element_update moves an element's tracks with the shot it is rebound to (075
     value: { elements: [{ id: "r", tracks: { x: [{ t: 4 }] } }] },
   });
 });
+
+it("shot_set moves the tracks of its elements and its camera keys with a new start (075/R2)", async () => {
+  await call("element_update", { scene: "s", id: "r", patch: { shot: "s1" } });
+  await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 1,
+    value: 50,
+  });
+  await call("shot_set", {
+    scene: "s",
+    id: "s1",
+    camera: {
+      tracks: {
+        zoom: [
+          [0, 1],
+          [2, 1.2],
+        ],
+      },
+    },
+  });
+
+  const r = await call("shot_set", { scene: "s", id: "s1", start: 2, end: 4 });
+  const scene = await call("scene_get", { scene: "s", full: true });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«r» \+2s/)] },
+  });
+  expect(scene).toMatchObject({
+    value: {
+      elements: [{ tracks: { x: [{ t: 3 }] } }],
+      shots: [{ camera: { tracks: { zoom: [{ t: 2 }, { t: 4 }] } } }],
+    },
+  });
+});
+
+it("shot_set remove moves the unbound elements' tracks back to the scene's start (075/R3)", async () => {
+  await call("shot_set", { scene: "s", id: "s2", start: 3, end: 5 });
+  await call("element_update", { scene: "s", id: "r", patch: { shot: "s2" } });
+  await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 4,
+    value: 50,
+  });
+
+  await call("shot_set", { scene: "s", id: "s2", remove: true });
+  const scene = await call("scene_get", { scene: "s", full: true });
+
+  expect(scene).toMatchObject({
+    value: { elements: [{ tracks: { x: [{ t: 1 }] } }] },
+  });
+});

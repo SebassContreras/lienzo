@@ -8,7 +8,12 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { groupElements, ungroupElement } from "../engine/groups.ts";
 import type { Element, Scene } from "../model/model.ts";
-import { setShot, toggleCameraKey } from "../model/shots.ts";
+import {
+  removeShotIn,
+  setShot,
+  setShotIn,
+  toggleCameraKey,
+} from "../model/shots.ts";
 import { trackEntry, trackKeys } from "../model/track.ts";
 import { recipeFromElement } from "../presets/diff.ts";
 import { resolveOrigin } from "./compact/layout.ts";
@@ -50,10 +55,47 @@ describe("editor and tools write the same JSON", () => {
     const before = await saved();
     const patch = { id: "a", end: 3, camera: { zoom: 1.5 } };
 
-    const fromEditor = setShot(before.shots ?? [], patch);
+    const fromEditor = setShotIn(before, patch);
     await ok("shot_set", { scene: "s", ...patch });
 
-    expect(fromEditor).toEqual({ shots: (await saved()).shots });
+    expect(fromEditor).toMatchObject({ scene: await saved() });
+  });
+
+  it("a shot moved in the editor moves its elements' tracks as shot_set does (075/R2)", async () => {
+    await ok("shot_set", { scene: "s", id: "a", start: 0, end: 2 });
+    await ok("element_add", {
+      scene: "s",
+      kind: "rect",
+      patch: { id: "r", shot: "a" },
+    });
+    await ok("keyframe_set", {
+      scene: "s",
+      id: "r",
+      path: "x",
+      t: 1,
+      value: 50,
+    });
+    const before = await saved();
+
+    const fromEditor = setShotIn(before, { id: "a", start: 1, end: 3 });
+    await ok("shot_set", { scene: "s", id: "a", start: 1, end: 3 });
+
+    expect(fromEditor).toMatchObject({ scene: await saved() });
+  });
+
+  it("a shot removed in the editor unbinds its elements as shot_set does (075/R3)", async () => {
+    await ok("shot_set", { scene: "s", id: "a", start: 1, end: 3 });
+    await ok("element_add", {
+      scene: "s",
+      kind: "rect",
+      patch: { id: "r", shot: "a" },
+    });
+    const before = await saved();
+
+    const fromEditor = removeShotIn(before, "a");
+    await ok("shot_set", { scene: "s", id: "a", remove: true });
+
+    expect(fromEditor).toMatchObject({ scene: await saved(), unbound: ["r"] });
   });
 
   it("a camera keyframe set in the Tomas section matches shot_set", async () => {

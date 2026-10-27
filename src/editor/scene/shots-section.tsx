@@ -7,10 +7,10 @@ import type { Scene, Shot, ShotTransition } from "../../model/model.ts";
 import {
   type CameraAxis,
   cameraValuePatch,
-  removeShot,
+  removeShotIn,
+  type SceneShotsResult,
   type ShotPatch,
-  type ShotsResult,
-  setShot,
+  setShotIn,
   toggleCameraKey,
 } from "../../model/shots.ts";
 import { trackKeys } from "../../model/track.ts";
@@ -107,18 +107,16 @@ export function ShotsSection({
 }) {
   const [error, setError] = useState("");
   const shots = scene.shots ?? [];
-  const apply = (result: ShotsResult) => {
+  // the same scene edits as shot_set: shots fit the scene, tracks move with them (075/D2)
+  const apply = (result: SceneShotsResult) => {
     if ("error" in result) {
       setError(result.error.message);
       return;
     }
     setError("");
-    onChange({
-      ...scene,
-      shots: result.shots.length > 0 ? result.shots : undefined,
-    });
+    onChange(result.scene);
   };
-  const patch = (p: ShotPatch) => apply(setShot(shots, p));
+  const patch = (p: ShotPatch) => apply(setShotIn(scene, p));
   const add = () => {
     const start = Math.min(shots.at(-1)?.end ?? 0, scene.duration);
     const end = Math.min(scene.duration, start + 2);
@@ -138,7 +136,7 @@ export function ShotsSection({
             <button
               type="button"
               title="Eliminar toma"
-              onClick={() => apply(removeShot(shots, shot.id))}
+              onClick={() => apply(removeShotIn(scene, shot.id))}
             >
               <Trash2 size={14} />
             </button>
