@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { boxOf } from "../../engine/geometry.ts";
 import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
 import {
   defaultElement,
@@ -8,7 +9,7 @@ import {
 import { resolveElement } from "../../presets/resolve.ts";
 import { applyImplied } from "../compact/implied.ts";
 import { placeAt } from "../compact/layout.ts";
-import { findElement, insertChild } from "../element-tree.ts";
+import { findElement, insertChild, mapElementsDeep } from "../element-tree.ts";
 import { COORDINATES, checkKind, patched } from "../elements.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
@@ -30,7 +31,8 @@ export const elementAdd = defineTool({
     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
     "order) give radial and multi-stop gradients when `fill.gradient` is on. " +
     "`trim: true` on an image crops it to its visible pixels first (see image_trim). " +
-    "Returns the new element's id. " +
+    "Returns the new element's id (`patch.id` names it; fails if taken) and a notice when it leaves " +
+    "the canvas. " +
     COORDINATES,
   input: z
     .object({
@@ -83,9 +85,15 @@ export const elementAdd = defineTool({
     }
     // trimmed before the scene is opened, so a failure adds nothing (049/D4)
     if (trim) el = await trimImage(effectiveCtx, el, "trim");
+    if (typeof patch?.id === "string" && patch.id) el = { ...el, id: patch.id };
     const added = el;
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
     const result = await editScene(effectiveCtx, scene, (s) => {
+      mapElementsDeep(s.elements, (e) => {
+        if (e.id === added.id)
+          fail("duplicate_id", `Ya hay un elemento «${added.id}»`, "patch.id");
+        return e;
+      });
       if (parent !== undefined) {
         const group = findElement(s.elements, parent, "parent");
         if (group.kind !== "group") {
@@ -106,6 +114,15 @@ export const elementAdd = defineTool({
       }
       const p = at ?? (placed ? undefined : "center");
       const out = p ? placeAt(added, p, s) : added;
+      const b = boxOf(out);
+      if (b.x < 0 || b.y < 0 || b.x + b.w > s.width || b.y + b.h > s.height)
+        notices.push(
+          `«${out.id}» se sale del lienzo (${s.width}x${s.height}): su caja es x ${b.x}, y ${b.y}, ` +
+            `${b.w}x${b.h}` +
+            (out.kind === "text"
+              ? "; da `w` al texto para que haga salto de línea"
+              : ""),
+        );
       return { ...s, elements: [...s.elements, out] };
     });
     return {

@@ -104,3 +104,39 @@ describe("`at` is the same in every tool (064/R11)", () => {
     expect(message).not.toContain("Invalid input");
   });
 });
+
+describe("element_add feedback (068)", () => {
+  beforeEach(async () => {
+    await ok("scene_create", { scene: "s" });
+  });
+
+  it("names an element that leaves the canvas (R4)", async () => {
+    // Act
+    const res = await ok("element_add", {
+      scene: "s",
+      kind: "rect",
+      patch: { w: 1400, h: 100 },
+    });
+
+    // Assert
+    expect((res.notices as string[]).join()).toContain("se sale del lienzo");
+  });
+
+  it("takes patch.id, and fails when it is taken (R5)", async () => {
+    // Act
+    const first = await ok("element_add", {
+      scene: "s",
+      kind: "rect",
+      patch: { id: "orb" },
+    });
+    const again = await call("element_add", {
+      scene: "s",
+      kind: "rect",
+      patch: { id: "orb" },
+    });
+
+    // Assert
+    expect(first.id).toBe("orb");
+    expect(again.ok ? "" : again.error.code).toBe("duplicate_id");
+  });
+});
