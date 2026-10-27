@@ -72,6 +72,25 @@ describe("asset_rename (063/R7)", () => {
     );
   });
 
+  it("follows an image given the bare filename asset_add returns (074/R5)", async () => {
+    // Arrange
+    const file = join(root, "logo.png");
+    await writeFile(file, PNG_1X1);
+    const { filename } = await ok("asset_add", { file });
+    await ok("scene_build", {
+      compact: { elements: [{ kind: "image", src: filename }] },
+      save: "bare",
+    });
+
+    // Act
+    await ok("asset_rename", { from: filename, to: "logos/acme.png" });
+
+    // Assert
+    expect((await sceneSrc("bare")).src).toBe(
+      `/projects/${project}/assets/logos/acme.png`,
+    );
+  });
+
   it("refuses a target that already exists", async () => {
     // Arrange
     const filename = await sceneUsingLogo();

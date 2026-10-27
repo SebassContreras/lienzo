@@ -5,11 +5,9 @@
  */
 import { descriptorOf } from "../components/index.ts";
 import type { Scene } from "../model/model.ts";
+import { EXTERNAL_REF } from "./asset-refs.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { allElements, changedSince, idsOf } from "./scene-changes.ts";
-
-/** References that are not project files: web and inline images. */
-const EXTERNAL = /^(?:https?:|data:|blob:)/i;
 
 /**
  * One notice per asset reference of a changed element that would draw as a placeholder, and
@@ -40,7 +38,7 @@ export async function resourceNotices(
     if (!changed(el)) continue;
     const refs = descriptorOf(el.kind)?.assets?.(el as never) ?? [];
     for (const ref of refs) {
-      if (!ref || EXTERNAL.test(ref)) continue;
+      if (!ref || EXTERNAL_REF.test(ref)) continue;
       const check = await ctx.projects.checkAsset(ctx.project, ref);
       if (!check.ok && check.warning)
         notices.add(`«${el.id}»: ${check.warning}; se dibuja un marcador`);

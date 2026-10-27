@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
+import { mapElementsDeep } from "../model/element-walk.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parseScene } from "../model/schema.ts";
@@ -11,6 +12,7 @@ import { shotProblem } from "../model/shots.ts";
 import { expandAnimPresets } from "../presets/anim-presets.ts";
 import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
+import { withCanonicalAssets } from "./asset-refs.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
 import { fail } from "./registry.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
@@ -149,7 +151,14 @@ export async function saveScene(
   data: unknown,
   previous?: Scene,
 ): Promise<SceneResult> {
-  const { scene, notices } = await prepareScene(ctx, data, previous);
+  const prepared = await prepareScene(ctx, data, previous);
+  const { notices } = prepared;
+  const scene = {
+    ...prepared.scene,
+    elements: mapElementsDeep(prepared.scene.elements, (el) =>
+      withCanonicalAssets(el, ctx.project),
+    ),
+  };
   notices.push(...(await resourceNotices(ctx, scene, previous)));
   return { scene: await ctx.store.writeScene(name, scene), notices };
 }
