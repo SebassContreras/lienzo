@@ -35,7 +35,7 @@ The third QA run found 19 of the 069 problems fixed, 1 partly fixed, 3 still ope
 - [x] 071/T001 [agent] Position tracks follow group/ungroup/move — covers R1, D1
 - [x] 071/T002 [agent] Reproduce grouped child in shot; fix or document — covers R2, D2
       found: the grouped counter is drawn at t=4 (regression test in shots-render.test.ts); not a render bug, so the notice now warns about layer order
-- [ ] 071/T003 [agent] Resource notices only for changed elements — covers R3, D3
+- [x] 071/T003 [agent] Resource notices only for changed elements — covers R3, D3
 - [ ] 071/T004 [agent] shape_overlap diagnostic — covers R4, D4
 - [ ] 071/T005 [agent] Counter default count-up track — covers R5, D5
 - [ ] 071/T006 [agent] Kokoro voice pre-check (research endpoint first) — covers R6, D6

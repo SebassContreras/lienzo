@@ -98,14 +98,18 @@ export const SceneResult = z.object({
 
 export type SceneResult = z.infer<typeof SceneResult>;
 
-/** Writes `data` as scene `name` once it is valid; nothing is written otherwise (R4). */
+/**
+ * Writes `data` as scene `name` once it is valid; nothing is written otherwise (R4). With the
+ * `previous` scene, resource notices are only about what changed (071/D3).
+ */
 export async function saveScene(
   ctx: ProjectCtx,
   name: string,
   data: unknown,
+  previous?: Scene,
 ): Promise<SceneResult> {
   const { scene, notices } = await prepareScene(ctx, data);
-  notices.push(...(await resourceNotices(ctx, scene)));
+  notices.push(...(await resourceNotices(ctx, scene, previous)));
   return { scene: await ctx.store.writeScene(name, scene), notices };
 }
 
@@ -115,7 +119,8 @@ export async function editScene(
   name: string,
   edit: (scene: Scene) => Scene,
 ): Promise<SceneResult> {
-  return saveScene(ctx, name, edit(await openScene(ctx, name)));
+  const previous = await openScene(ctx, name);
+  return saveScene(ctx, name, edit(previous), previous);
 }
 
 export type FoundPreset = {

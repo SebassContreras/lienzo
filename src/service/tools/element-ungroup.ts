@@ -23,6 +23,6 @@ export const elementUngroup = defineTool({
     if (target?.kind !== "group")
       fail("not_a_group", `«${id}» no es un grupo de primer nivel`, "id");
     const { scene: flat, ids } = ungroupElement(current, id);
-    return { ...(await saveScene(pctx, scene, flat)), ids };
+    return { ...(await saveScene(pctx, scene, flat, current)), ids };
   },
 });

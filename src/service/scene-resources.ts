@@ -1,7 +1,7 @@
 /**
  * Resources a scene names but cannot draw (069/D8): an icon name lucide lacks, an asset the
- * project lacks (both drawn as placeholders) and a line end attached to no element, so every
- * scene write says so.
+ * project lacks (both drawn as placeholders) and a line end attached to no element, so a
+ * scene write says so for what it changed (071/D3).
  */
 import { descriptorOf } from "../components/index.ts";
 import { ICON_NAMES } from "../engine/icon-set.ts";
@@ -27,26 +27,40 @@ function allElements(scene: Scene): Element[] {
   return out;
 }
 
-/** One notice per icon name or asset reference of `scene` that would draw as a placeholder. */
+/**
+ * One notice per icon name or asset reference of `scene` that would draw as a placeholder.
+ * Given the `previous` scene, only elements it lacks or that differ from it are checked, plus
+ * line ends whose element was there before, so a write only reports what it changed.
+ */
 export async function resourceNotices(
   ctx: ProjectCtx,
   scene: Scene,
+  previous?: Scene,
 ): Promise<string[]> {
   const notices = new Set<string>();
   const elements = allElements(scene);
   const ids = new Set(elements.map((el) => el.id));
+  const before = new Map(
+    previous
+      ? allElements(previous).map((el) => [el.id, JSON.stringify(el)])
+      : [],
+  );
+  const touched = (el: Element) =>
+    !previous || before.get(el.id) !== JSON.stringify(el);
   for (const el of elements) {
+    const changed = touched(el);
     if (el.kind === "line")
       for (const [end, label] of [
         ["a", "inicial (from)"],
         ["b", "final (to)"],
       ] as const) {
         const attach = el[end].attach;
-        if (attach && !ids.has(attach))
+        if (attach && !ids.has(attach) && (changed || before.has(attach)))
           notices.add(
             `«${el.id}»: el extremo ${label} se conecta a «${attach}», que no existe; queda suelto`,
           );
       }
+    if (!changed) continue;
     if (el.kind === "icon" && !ICONS.has(el.icon))
       notices.add(
         `«${el.id}»: no existe el icono «${el.icon}» (nombres de lucide en PascalCase, p. ej. «Wrench»); se dibuja vacío`,

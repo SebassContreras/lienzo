@@ -55,7 +55,7 @@ export const elementGroup = defineTool({
       notices.push(
         `Los elementos son de tomas distintas (${shots.map((s) => s || "sin toma").join(", ")}): el grupo no queda en ninguna; cada hijo solo se ve en su toma, sin su transición ni su cámara, y en el orden de capas del grupo, así que un hijo puede quedar tapado por otro`,
       );
-    const result = await saveScene(pctx, scene, saved);
+    const result = await saveScene(pctx, scene, saved, current);
     return {
       ...result,
       notices: [...notices, ...result.notices],

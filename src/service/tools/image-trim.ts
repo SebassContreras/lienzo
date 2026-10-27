@@ -24,9 +24,14 @@ export const imageTrim = defineTool({
     const s = await openScene(pctx, scene);
     const el = findElement(s.elements, id);
     const trimmed = await trimImage(pctx, el);
-    return saveScene(pctx, scene, {
-      ...s,
-      elements: updateElement(s.elements, id, () => trimmed),
-    });
+    return saveScene(
+      pctx,
+      scene,
+      {
+        ...s,
+        elements: updateElement(s.elements, id, () => trimmed),
+      },
+      s,
+    );
   },
 });
