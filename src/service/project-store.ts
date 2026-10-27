@@ -165,7 +165,9 @@ export function createProjectStore(root: string): ProjectStore {
 
       const [assets, presets, scenes] = await Promise.all([
         listAssets(),
-        listDir("presets"),
+        listDir("presets").then((files) =>
+          files.filter((f) => f.endsWith(".json")),
+        ),
         listDir("scenes"),
       ]);
 

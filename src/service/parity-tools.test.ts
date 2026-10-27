@@ -182,7 +182,7 @@ describe("animation_save and animation_list", () => {
 
     const { animations } = await ok("animation_list", {});
     expect(animations).toEqual([
-      { file: "salto", name: "Salto", category: "Mías" },
+      { file: "salto", name: "Salto", category: "Mías", source: "global" },
     ]);
   });
 

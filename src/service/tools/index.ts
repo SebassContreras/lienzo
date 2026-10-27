@@ -3,6 +3,7 @@
  * A new tool is a file here plus one line in `TOOLS`.
  */
 import { createRegistry, type Tool } from "../registry.ts";
+import { animationDelete } from "./animation-delete.ts";
 import { animationList } from "./animation-list.ts";
 import { animationSave } from "./animation-save.ts";
 import { assetAdd } from "./asset-add.ts";
@@ -56,6 +57,7 @@ const TOOLS: readonly Tool[] = [
   presetDelete,
   animationList,
   animationSave,
+  animationDelete,
   projectList,
   projectInspect,
   projectCreate,

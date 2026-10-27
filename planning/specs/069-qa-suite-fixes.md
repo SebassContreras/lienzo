@@ -51,7 +51,7 @@ A first-time QA run of all 43 tools (scratch project `qa-suite`) found 22 proble
 - [x] 069/T001 [agent] CSS colors and value bounds (colors, `w`/`h`, `dotGap`, keyframe values) — covers R1, R5, D1, D2
 - [x] 069/T002 [agent] Partial canvas in project_update; font notices and bundled weights — covers R2, R10, D3, D10
 - [x] 069/T003 [agent] Shots: unbind on remove, unknown shot in layout, end and overlap checks — covers R3, R8, D4, D5
-- [ ] 069/T004 [agent] Animation and preset tools by project, animation_delete, recipe defaults, project_inspect presets — covers R4, R15, R16, D6
+- [x] 069/T004 [agent] Animation and preset tools by project, animation_delete, recipe defaults, project_inspect presets — covers R4, R15, R16, D6
 - [ ] 069/T005 [agent] Patch notices in element_update and background_set — covers R6, D7
 - [ ] 069/T006 [agent] Missing resource notices, line connections, image check in asset_add — covers R7, D8
 - [ ] 069/T007 [agent] Time checks in export/preview; name and extension notices; group shot notice — covers R9, R18, R19, D9, D13

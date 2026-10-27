@@ -124,7 +124,7 @@ const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
     name: z.string().min(1),
     category: z.string().optional(),
     kind: z.lazy(() => z.enum([...KINDS, "background"])),
-    traits: z.array(traitUse),
+    traits: z.array(traitUse).default([]),
     set: z.record(z.string(), z.unknown()).optional(),
   })
   .superRefine((recipe, ctx) => {

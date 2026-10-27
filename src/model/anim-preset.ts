@@ -23,10 +23,22 @@ export type AnimPreset = {
 /** Every kind is accepted, as in scenes: what an element cannot play is skipped on apply. */
 const slots = anim(ALL_ANIMS).fields;
 
+/** A slot given in part takes the field defaults for the rest (069/D6). */
+const slot = (f: (typeof slots)["in" | "loop" | "out"]) =>
+  z
+    .preprocess(
+      (v) =>
+        v && typeof v === "object" && !Array.isArray(v)
+          ? { ...structuredClone(f.default), ...v }
+          : v,
+      f.schema,
+    )
+    .optional();
+
 const AnimSlotsSchema = z.object({
-  in: slots.in.schema.optional(),
-  loop: slots.loop.schema.optional(),
-  out: slots.out.schema.optional(),
+  in: slot(slots.in),
+  loop: slot(slots.loop),
+  out: slot(slots.out),
 }) as unknown as z.ZodType<AnimSlots>;
 
 const AnimPresetSchema: z.ZodType<AnimPreset> = z.object({

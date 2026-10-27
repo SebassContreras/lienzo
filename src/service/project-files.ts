@@ -2,8 +2,10 @@
  * Rename and delete for a project's JSON folders (scenes, presets), over the same
  * `json-fs.ts` operations the editor's tabs reach through the dev server (062/D10).
  */
+import { join } from "node:path";
 import { removeJson, renameJson } from "../presets/json-fs.ts";
-import type { ProjectCtx } from "./ctx.ts";
+import type { Ctx, ProjectCtx } from "./ctx.ts";
+import { inProject } from "./project-scope.ts";
 import { fail } from "./registry.ts";
 
 export type ProjectFolder = "scenes" | "presets";
@@ -16,6 +18,19 @@ const RENAME_ERRORS = {
   "not found": ["not_found", "No existe", "from"],
   "name taken": ["exists", "Ya existe", "to"],
 } as const;
+
+/**
+ * Where animation presets are written (069/D6): the project's `presets/animations/` when
+ * `project` is given, else the global `presets/animations/`.
+ */
+export async function animationsDir(
+  ctx: Ctx,
+  project: string | undefined,
+): Promise<string> {
+  return project
+    ? join(folderOf(await inProject(ctx, project), "presets"), "animations")
+    : join(ctx.root, "presets", "animations");
+}
 
 /** Renames `from` to `to` in `folder` and returns the new slug. */
 export async function renameIn(

@@ -1,14 +1,16 @@
 import { z } from "zod";
 import type { PresetRecipe } from "../../model/preset.ts";
 import { asRecipe } from "../../presets/store.ts";
+import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
 
 export const presetList = defineTool({
   name: "preset_list",
   description:
-    "List every element and background preset, built-in first, then the user's. " +
+    "List every element and background preset, built-in first, then the user's; with " +
+    "`project`, the user's are that project's presets/. " +
     "Use a preset's name with element_add or background_set.",
-  input: z.object({}),
+  input: z.object({ project: PROJECT.optional() }),
   output: z.array(
     z.object({
       name: z.string(),
@@ -18,8 +20,9 @@ export const presetList = defineTool({
       category: z.string().optional(),
     }),
   ),
-  async run(_input, ctx) {
-    return (await ctx.store.presets()).map((p) => {
+  async run({ project }, ctx) {
+    const store = project ? (await inProject(ctx, project)).store : ctx.store;
+    return (await store.presets()).map((p) => {
       const r = asRecipe(p.data as PresetRecipe);
       return {
         name: r.name,

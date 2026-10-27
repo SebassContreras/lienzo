@@ -579,8 +579,13 @@ describe("project scope (046/R1)", () => {
       )
       .map((t) => t.name);
     expect(unscoped.sort()).toEqual([
+      "animation_delete",
+      "animation_list",
+      "animation_save",
       "font_install",
       "font_list",
+      "preset_get",
+      "preset_list",
       "project_create",
       "project_delete",
       "project_inspect",
