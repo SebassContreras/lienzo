@@ -80,6 +80,10 @@ export class OpenRouterTtsAdapter implements TtsService {
       } catch {
         // Fallback to text status
       }
+      if (response.status === 401 || response.status === 403) {
+        errorMsg +=
+          '. Revisa OPENROUTER_API_KEY o usa `provider: "kokoro"`, que no necesita clave';
+      }
       throw new Error(errorMsg);
     }
 

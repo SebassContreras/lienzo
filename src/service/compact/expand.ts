@@ -47,6 +47,8 @@ type ExpandState = {
   findPreset?: PresetResolver;
   defaults?: SceneDefaults;
   notices: string[];
+  /** The scene's symbols, so a `use` with no size takes its symbol's (056). */
+  symbols?: Scene["symbols"];
 };
 
 /** Parses size specification (e.g. "1080x1080", "1920x1080", "story", or [w, h]) */
@@ -210,6 +212,9 @@ async function buildElement(
     ...overrides
   } = raw as Record<string, unknown>;
 
+  // only "canvas" is the placement shortcut; any other `fit` is the kind's own field (polygon `box`)
+  if (fit !== undefined && fit !== "canvas") overrides.fit = fit;
+
   if (overrides.id) {
     element.id = String(overrides.id);
   }
@@ -266,9 +271,16 @@ async function buildElement(
     );
   }
 
+  if (element.kind === "use") {
+    const symbol = state.symbols?.[element.symbol];
+    if (symbol && overrides.w === undefined) element.w = symbol.w;
+    if (symbol && overrides.h === undefined) element.h = symbol.h;
+  }
+
   // Preserve placement hints for the post-layout pass
   if (at) (element as unknown as Record<string, unknown>).__at = at;
-  if (fit) (element as unknown as Record<string, unknown>).__fit = fit;
+  if (fit === "canvas")
+    (element as unknown as Record<string, unknown>).__fit = fit;
   if (from) (element as unknown as Record<string, unknown>).from = from;
   if (to) (element as unknown as Record<string, unknown>).to = to;
 
@@ -369,6 +381,7 @@ export async function expandScene(
     }
   }
 
+  state.symbols = scene.symbols;
   for (const [i, rawEl] of (compact.elements ?? []).entries()) {
     const el = await buildElement(rawEl, state, `elements.${i}`);
 
