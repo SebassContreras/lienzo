@@ -8,7 +8,10 @@ full field list, with the paths keyframes can animate, comes from the `component
 Shared by every kind: position and size (`x`, `y`, `w`, `h` where the kind has a box),
 `opacity`, entry / loop / exit animations (`anim.in`, `anim.loop`, `anim.out`), keyframe
 tracks (`tracks`, by field path or the `@rotate` / `@scale` channels) and a transform origin.
-Most kinds also offer glow and shadow.
+Most kinds also offer glow and shadow. A top-level element may bind to a shot (`shot`): it
+shows only during that shot, and its tracks are timed from the shot's start, so they move
+when the element changes shot or the shot moves (`element_update`, `shot_set`, the editor's
+**Toma** and **Tomas**).
 
 ## `rect`
 
@@ -30,24 +33,31 @@ case or kebab-case (`star` → `Star`); an unknown name fails.
 
 **Imagen.** A PNG, JPG, SVG or WebP from the project's `assets/`: size (aspect kept by
 default), corners, border, shadow, and a non-destructive `crop` (manual handles, or
-**Recortar transparencia** / `image_trim` to cut the transparent margin).
+**Recortar transparencia** / `image_trim` to cut the transparent margin). `src` is the
+`src` `asset_add` returns, or the path inside `assets/` (`logos/acme.png`), stored with
+the project prefix so `asset_rename` keeps it pointing at the file; with no `aspect`, the
+picture's own proportion sizes it.
 
 ## `group`
 
 **Grupo.** Holds other elements that move, resize, duplicate and animate as one; an optional
 frame and body, `stagger` between children's animations, and `clip` to clip the children to
-the group's box (with `radius`).
+the group's box (with `radius`). `element_group` takes the new group's `id`; a group of
+elements of one shot takes that shot.
 
 ## `text`
 
 **Texto.** Text with font, size, weight, color or gradient, line height, letter spacing,
 alignment inside its box, and glow. With a box width `w` it wraps at word boundaries
-and aligns inside that width.
+and aligns inside that width; with no `w`, a text placed by `at` that would be wider than
+the canvas margins gets that width. The text goes in `text` and its size in `size`.
 
 ## `line`
 
 **Línea.** A connector whose ends attach to elements so it follows them: curve (`bend`),
-arrows, glow, and animated flow (light pulses, marching ants, comet).
+arrows, glow, and animated flow (light pulses, marching ants, comet). In compact scenes
+`from` / `to` name the elements it joins; an end attached to an id the scene lacks fails,
+and removing the element it joins leaves that end loose (with a notice).
 
 ## `particles`
 
@@ -87,7 +97,8 @@ thickness and an optional number.
 **Contador.** A number that counts from `from` to `to` as `progress` goes 0 → 1, with
 decimals and a thousands separator. A counter added by `element_add` or `scene_build` with no `progress`
 of its own gets a 0 → 1 track over 1.5 s from the start of its shot (or of the scene),
-capped by the shot's end.
+capped by the shot's end; the «Contador animado» preset's own track also starts at its
+shot's start. In compact scenes `from` / `to` are its numbers (`to: 1500`).
 
 ## `bubble`
 
@@ -117,7 +128,8 @@ in over time (`typed`).
 ## `chart`
 
 **Gráfico.** A data chart (bars and other types, with a palette) that grows in with
-`progress`; axis and donut `hole` options.
+`progress`; axis and donut `hole` options. A chart preset's `progress` track starts at its
+shot's start.
 
 ## `path`
 

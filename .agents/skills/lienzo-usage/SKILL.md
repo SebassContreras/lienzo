@@ -15,7 +15,8 @@ The MCP tools and the CLI are the same registry: `mcp__lienzo__scene_build` is
 reference; this skill is the workflow. The server runs the code it started with. Its MCP `instructions` name that commit: if it is
 not `git rev-parse --short HEAD`, or a tool or input named here is missing, the server is
 stale: run `pnpm build:cli` (for `dist/cli.js`) and restart it before trusting a result.
-Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
+A failed call lists every problem in `errors`; paths name an element by the id you gave
+(`elements.a.w`, `elements.g/child.w`), else by its index (`compact.elements.0.shot`).
 
 ## Rules
 
@@ -72,11 +73,14 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
    global library). `preset_list` / `preset_get` take `project` to see the project's presets;
    a recipe may omit `traits`, and an animation's `anim.in`/`loop`/`out` may be partial.
    Patches with a key the kind lacks, or an `id`/`kind` (they never change), come back as
-   notices. Removing a shot unbinds its elements (named in `notices`); a shot must end
+   notices. Removing a shot unbinds its elements (named in `notices`) and moves their
+   tracks back to the scene's start; removing an element leaves a line attached to it
+   loose (named in `notices`). A shot must end
    within the scene and not overlap another, and the same rule rejects a `scene_update` that
    shortens `duration` past a shot, a `scene_build` and a `scene_validate`.
-   - **Duplicate** (no tool of its own): `scene_get`, copy the element, then `element_add`
-     with its fields in `patch`, a new `id` and the position shifted (`x`/`y`).
+   - **Duplicate** (no tool of its own): `scene_get`, copy the element (its sparse form is
+     enough), then `element_add` with its `kind` and fields in `patch`, a new `id` and the
+     position shifted (`x`/`y`).
    - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
      shared edge or center and set `x`/`y` on each element with `element_update`.
 7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and
@@ -150,7 +154,7 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
   (and the camera keys) by the difference, with a notice; tracks given in the same patch
   are kept as given. `scene_validate` and every write list schema and rule problems
   together in `errors`.
-- Preset recipes are `{ name, kind, category?, traits, set? }` (no other keys; `set` values
+- Preset recipes are `{ name, kind, category?, traits?, set? }` (no other keys; `set` values
   are checked as the element's fields); `preset_get` shows real ones. Names become file
   names with accents folded (`Caja Ámbar` → `caja-ambar`).
 - `origin` is the pivot for rotation and scale; `w` on `text` wraps it.
@@ -164,7 +168,8 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
   shot's `start` and after its `end`; consecutive shots overlap there.
 - Defaults: shapes fill at `fill.opacity: 1`; a `path` has no stroke unless you set
   `border.width` (a `"draw"` entrance gives it 3). Unknown keys come back as notices,
-  named by path, with the field they likely meant (`fontSize` → `size`).
+  named by path, with the field they likely meant (`fontSize` → `size`, `content` →
+  `text`); an element field given under `effects` (`glow`) names the element field to use.
 - Shapes: `polygon` `fit: "box"`, `path` `mode: "layers"`, group `clip`, fills with
   `fill.type: "radial"` (it reaches the edge of an ellipse, polygon or star, the farthest
   corner of a rect) or `fill.stops` (ordered by `at`). A fill given only `color` is flat;
@@ -178,4 +183,6 @@ The full schema is `schemas/compact-scene.json`; component fields are in
 ## In the editor
 
 `pnpm dev` (http://localhost:5173) opens the same scenes. The editor edits shots, symbols, track
-`repeat`/`until` and `origin` too, writing the same JSON as the tools.
+`repeat`/`until` and `origin` too, writing the same JSON as the tools: its **Toma** picker
+moves an element's tracks with its shot as `element_update` does, and its **Tomas** section
+moves and removes shots through the same rules as `shot_set`.

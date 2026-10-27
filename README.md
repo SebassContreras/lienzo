@@ -127,8 +127,9 @@ How the tools behave, in short:
 - **Shot windows:** a shot shows its elements over `[start, end)`. At a cut the instant
   belongs to the shot that starts there, in `scene_preview`, export and
   `scene_inspect_layout` alike; the scene's last instant stays with the shot ending there.
-- **Error paths:** a failed scene write names elements by id (`elements.a.w`,
-  `elements.g/child.w`), not by their index.
+- **Error paths:** a failed scene write lists every problem in `errors` (schema and rules
+  together) and names an element by the id you gave (`elements.a.w`,
+  `elements.g/child.w`), else by its index (`compact.elements.0.shot`).
 - **Layout check:** `scene_inspect_layout` reports text and shape overlaps (two shapes of
   about the same size count, a card holding smaller content does not), out-of-canvas boxes
   (a group's box includes children animated out of it, unless the group clips), contrast
@@ -221,7 +222,10 @@ The same options work in compact scenes (`scene_build`) and through the element 
   existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not
   installed (`font_install`, which stores Google fonts as ttf so their text is measured);
   until then they draw in Inter.
-- **Checking a scene:** `scene_validate` (unknown keys name the field they likely meant),
+- **Size:** `size` is `"WxH"`, `[w, h]`, a ratio (`"9:16"`, `"4:5"`, `"1:1"`, `"16:9"`) or a
+  format (`"Story"`); what a compact scene leaves out comes from the project's canvas.
+- **Checking a scene:** `scene_validate` (every problem in `errors`; unknown keys name the
+  field they likely meant),
   `scene_inspect_layout` (overlaps, out of canvas, contrast, drawn boxes as the shot camera
   shows them) and `scene_preview` (`out` also saves the PNG in `exports/`).
 
