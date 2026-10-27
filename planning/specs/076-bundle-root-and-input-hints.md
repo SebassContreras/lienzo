@@ -52,4 +52,5 @@ belongs, and `project_create` takes `name` alone.
 - [x] 076/T002 [agent] Misplaced-key hint in `callTool`; `content → text` alias — covers R2, R3, D2, D3
 - [x] 076/T003 [agent] `project_create` with `name` alone — covers R4, D4
 - [x] 076/T004 [agent] Docs and descriptions — covers R5, D5
-- [ ] 076/T005 [agent] Verify: typecheck, lint on touched files, tests, `pnpm build:cli` and `node dist/cli.js scene_preview`, replay R2–R4 with `pnpm lienzo` — covers R1, R2, R3, R4, R5
+- [x] 076/T005 [agent] Verify: typecheck, lint on touched files, tests, `pnpm build:cli` and `node dist/cli.js scene_preview`, replay R2–R4 with `pnpm lienzo` — covers R1, R2, R3, R4, R5
+      verified: `pnpm typecheck`, biome on the 7 touched source files, `pnpm test` (1273 tests, 154 files); `pnpm build:cli`, then with `node dist/cli.js` on scratch projects `qa-076` and `cafe-norte` (deleted after): `scene_preview` returns a PNG (image/png, 511 KB base64) where the QA note got `Cannot resolve entry module ../vite.config.ts`; `scene_build` with `elements`/`size` at the top level answers «¿van dentro de «compact»?»; `content`/`fontSize` suggest «text»/«size»; `project_create { name: "Café Norte" }` makes `cafe-norte` — found: nothing new
