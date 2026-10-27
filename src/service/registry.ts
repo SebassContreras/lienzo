@@ -56,7 +56,7 @@ export function failAll(code: string, problems: readonly Problem[]): never {
     code,
     message: problems.map(line).join("\n"),
     path: first?.path ?? "",
-    ...(problems.length > 1 ? { errors: [...problems] } : {}),
+    errors: [...problems],
   });
 }
 

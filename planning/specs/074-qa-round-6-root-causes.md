@@ -146,4 +146,12 @@ contract test that walks the tools with the same wrong inputs.
 - [x] 074/T014 [agent] Descriptions: recipes, animation models, defaults — covers R14, D15
 - [x] 074/T015 [agent] Contract test across tools — covers R15, D16
 - [x] 074/T016 [agent] Docs: AGENTS.md QA line and usage skill for 074 — covers R1, R3, R12
+- [x] 074/T018 [agent] A failing path is named once in the message, and messages do not name a generated id — covers R9, D9
+      found: the replay of a loose line printed `compact.elements.0.b.attach: elements.0.b.attach: elements.0.b.attach: «qx5dhck8»: …`
 - [ ] 074/T017 [agent] Verify: typecheck, lint on touched files, tests, every round-6 case replayed with `pnpm lienzo` — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15
+
+## Changes
+- 2026-10-27: 074/D1 puts `checkReferences` in `src/service/scene-references.ts` (with `canonicalIcon`), not in `scenes.ts`, and the "changed element" test in `src/service/scene-changes.ts`, shared with `resourceNotices`. Why: SRP; `scenes.ts` already reads, writes and checks. Work: T003.
+- 2026-10-27: 074/D9 runs the rules through one `checkSceneRules` (anim presets, shots, references) used by `prepareScene` and `buildCompact`; schema errors still stop before the rules, which need a parsed scene. Why: one place for "every problem". Work: T010.
+- 2026-10-27: 074/D13 names every field of the element whose name holds the `effects` key (`borderGlow, bgGlow` for `glow` on a rect). Why: a rect has no `glow` field of its own. Work: T011.
+- 2026-10-27: Reference messages drop the element id; the path names the element. Why: a compact element given no id has a generated one. Work: T018.

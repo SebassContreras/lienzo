@@ -365,3 +365,18 @@ it("takes a sparse scene_get result back into scene_create (074/R12)", async () 
 
   expect(r).toMatchObject({ ok: true });
 });
+
+it("names a failing path once in the message (074/R9)", async () => {
+  const r = await call("scene_build", {
+    compact: { elements: [{ kind: "line", to: "nope" }] },
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      message: expect.stringMatching(
+        /^compact\.elements\.0\.b\.attach: El extremo/,
+      ),
+    },
+  });
+});

@@ -55,7 +55,7 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
     if (el.shot !== undefined && !shots.includes(el.shot))
       out.push({
         code: "unknown_shot",
-        message: `«${el.id}» está ligado a la toma «${el.shot}», que no existe (tomas: ${list(shots)}; créala con shot_set)`,
+        message: `Está ligado a la toma «${el.shot}», que no existe (tomas: ${list(shots)}; créala con shot_set)`,
         path: `${path}.shot`,
       });
     if (el.kind === "icon" && !BY_FOLDED.has(fold(el.icon))) {
@@ -63,7 +63,7 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
       out.push({
         code: "unknown_icon",
         message:
-          `«${el.id}»: no existe el icono «${el.icon}»` +
+          `No existe el icono «${el.icon}»` +
           (near ? `; ¿querías «${near}»?` : "") +
           " (nombres de lucide, p. ej. «Star», «ArrowRight»; véase lucide.dev/icons)",
         path: `${path}.icon`,
@@ -75,7 +75,7 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
         if (attach && !ids.has(attach))
           out.push({
             code: "unknown_target",
-            message: `«${el.id}»: el extremo ${end === "a" ? "inicial (from)" : "final (to)"} se conecta a «${attach}», que no existe (ids: ${list([...ids].filter((id) => id !== el.id))})`,
+            message: `El extremo ${end === "a" ? "inicial (from)" : "final (to)"} se conecta a «${attach}», que no existe (ids: ${list([...ids].filter((id) => id !== el.id))})`,
             path: `${path}.${end}.attach`,
           });
       }
