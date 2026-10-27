@@ -14,6 +14,7 @@ import type {
   ShotTransition,
 } from "./model.ts";
 import {
+  hasKeys,
   rebindShot,
   shiftElementTracks,
   shiftTracks,
@@ -237,7 +238,7 @@ export function setShotIn(scene: Scene, patch: ShotPatch): SceneShotsResult {
       ? scene.elements
       : mapElementsDeep(scene.elements, (el) => {
           if (el.shot !== patch.id) return el;
-          moved.push({ id: el.id, delta });
+          if (hasKeys(el)) moved.push({ id: el.id, delta });
           return shiftElementTracks(el, delta);
         });
   return {

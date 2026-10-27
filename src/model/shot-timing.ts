@@ -68,9 +68,20 @@ export function shiftElementTracks(el: Element, delta: number): Element {
   return out as Element;
 }
 
+/** Whether `el` or anything inside it has a keyframe (080/D12): only then can a move show. */
+export function hasKeys(el: Element): boolean {
+  let found = false;
+  mapElementsDeep([el], (e) => {
+    if (e.tracks && Object.keys(e.tracks).length > 0) found = true;
+    return e;
+  });
+  return found;
+}
+
 /**
  * `el` bound to shot `to` (unbound when undefined), its tracks (children's included) moved
- * from its old shot's origin to the new one's. `delta` is how far they moved.
+ * from its old shot's origin to the new one's. `delta` is how far they moved: 0 when it has
+ * no keyframes, so no notice names it (080/D12).
  */
 export function rebindShot(
   el: Element,
@@ -81,7 +92,7 @@ export function rebindShot(
   const { shot: _old, ...rest } = shiftElementTracks(el, delta);
   return {
     el: (to === undefined ? rest : { ...rest, shot: to }) as Element,
-    delta,
+    delta: hasKeys(el) ? delta : 0,
   };
 }
 

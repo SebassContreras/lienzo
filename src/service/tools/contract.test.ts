@@ -972,3 +972,16 @@ it("element_update suggests the nested paths a misspelled key means (080/R10)", 
     },
   });
 });
+
+// 080/R12: the moved-tracks notice names only elements whose keyframes moved
+it("element_update rebinding an element with no tracks gives no moved notice (080/R12)", async () => {
+  await call("shot_set", { scene: "s", id: "s2", start: 2, end: 4 });
+
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { shot: "s2" },
+  });
+
+  expect(r).toMatchObject({ ok: true, value: { notices: [] } });
+});
