@@ -1,6 +1,6 @@
 # Architecture
 
-Project-wide decisions. Grammar: `.spectrace/format.md`.
+Project-wide decisions.
 
 These decisions come from the canvas prototype the user validated on 2026-10-07 ("that is
 exactly what I wanted").

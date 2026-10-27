@@ -33,3 +33,7 @@ create, edit and export scenes.
 - Brand kits and templates.
 - Accounts, cloud hosting, collaboration, publishing to social networks.
 - Audio.
+
+## Docs
+- README.md — what it is, install, usage
+- AGENTS.md — how agents work in this repo

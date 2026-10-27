@@ -1,9 +1,0 @@
-diff --git a/src/components/text/draw.ts b/src/components/text/draw.ts
-index a4b81da..e04b4cd 100644
---- a/src/components/text/draw.ts
-+++ b/src/components/text/draw.ts
-@@ -1,3 +1,4 @@
-+// Free text drawing with support for auto-wrapping and box width alignment (054/D2, D3).
- import type { AnimState } from "../../engine/anim.ts";
- import { fontString, textLayout } from "../../engine/geometry.ts";
- import {
