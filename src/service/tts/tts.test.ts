@@ -49,6 +49,19 @@ describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
     }
   });
 
+  it("points a rejected key to OPENROUTER_API_KEY and kokoro", async () => {
+    const rejecting = async () => new Response("", { status: 401 });
+    const adapter = new OpenRouterTtsAdapter(
+      "sk-bad",
+      "https://example.com",
+      rejecting as unknown as typeof fetch,
+    );
+
+    await expect(
+      adapter.synthesizeSpeech({ text: "Hola", voice: "alloy" }),
+    ).rejects.toThrow(/OPENROUTER_API_KEY.*kokoro/);
+  });
+
   it("goes through the dev-server proxy without a key or Authorization (046/R4)", async () => {
     const origEnv = process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_API_KEY;

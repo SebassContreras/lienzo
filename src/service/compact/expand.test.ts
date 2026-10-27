@@ -661,3 +661,27 @@ describe("expandScene pure expansion (011/T002)", () => {
     });
   });
 });
+
+describe("compact fit and use sizing", () => {
+  it("keeps a polygon's fit: box as its own field, with no notice", async () => {
+    const { scene, notices } = await expandScene({
+      elements: [{ kind: "polygon", sides: 3, w: 300, h: 200, fit: "box" }],
+    });
+
+    expect(scene.elements[0]).toMatchObject({ fit: "box" });
+    expect(notices.join()).not.toContain("__fit");
+  });
+
+  it("sizes a use from its symbol unless w/h are given", async () => {
+    const { scene } = await expandScene({
+      symbols: { chip: { w: 200, h: 80, children: [] } },
+      elements: [
+        { kind: "use", symbol: "chip" },
+        { kind: "use", symbol: "chip", w: 50 },
+      ],
+    });
+
+    expect(scene.elements[0]).toMatchObject({ w: 200, h: 80 });
+    expect(scene.elements[1]).toMatchObject({ w: 50, h: 80 });
+  });
+});

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { defaultScene } from "../../model/model.ts";
+import type { SubtitlesEl } from "../../components/subtitles/descriptor.ts";
+import { defaultElement, defaultScene } from "../../model/model.ts";
 import { expandScene } from "./expand.ts";
 import { keepAudio } from "./keep-audio.ts";
 
@@ -40,5 +41,61 @@ describe("keepAudio (060/R3)", () => {
     const built = defaultScene();
 
     expect(keepAudio(built, undefined, {})).toEqual({ scene: built });
+  });
+});
+
+describe("keepAudio keeps the subtitle cues", () => {
+  const cues = [{ start: 0, end: 1, text: "hola" }];
+  const subtitles = { ...(defaultElement("subtitles") as SubtitlesEl), cues };
+  const previous = {
+    ...defaultScene(),
+    audioTracks: [voice],
+    elements: [subtitles],
+  };
+
+  it("adds the stored subtitles when the build has none", () => {
+    const kept = keepAudio(defaultScene(), previous, { elements: [] });
+
+    expect(kept.scene.elements).toEqual([subtitles]);
+    expect(kept.notice).toContain("1 subtítulo(s)");
+  });
+
+  it("fills a built subtitles element given no cues", () => {
+    const built = {
+      ...defaultScene(),
+      elements: [defaultElement("subtitles")],
+    };
+
+    const kept = keepAudio(built, previous, {
+      elements: [{ kind: "subtitles" }],
+    });
+
+    expect((kept.scene.elements[0] as SubtitlesEl).cues).toEqual(cues);
+  });
+
+  it("leaves the cues the input gives untouched", () => {
+    const own = [{ start: 0, end: 2, text: "nuevo" }];
+    const built = {
+      ...defaultScene(),
+      elements: [
+        { ...(defaultElement("subtitles") as SubtitlesEl), cues: own },
+      ],
+    };
+
+    const kept = keepAudio(built, previous, {
+      elements: [{ kind: "subtitles", cues: own }],
+    });
+
+    expect((kept.scene.elements[0] as SubtitlesEl).cues).toEqual(own);
+    expect(kept.notice).not.toContain("subtítulo");
+  });
+
+  it("drops the stored cues along with the audio when audioTracks: [] is given", () => {
+    const kept = keepAudio(defaultScene(), previous, {
+      audioTracks: [],
+      elements: [],
+    });
+
+    expect(kept.scene.elements).toEqual([]);
   });
 });
