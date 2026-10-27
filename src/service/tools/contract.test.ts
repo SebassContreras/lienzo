@@ -906,3 +906,18 @@ it("scene_build of a missing preset lists presets (080/R7)", async () => {
     ),
   );
 });
+
+// 080/R8: an animation recipe is strict on its keys, as a preset recipe
+it("animation_save fails on an unknown recipe key, naming it (080/R8)", async () => {
+  const r = await call("animation_save", {
+    recipe: { name: "Aparece", foo: 1, anim: { in: { kind: "fade" } } },
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      code: "invalid_animation",
+      message: expect.stringContaining("foo"),
+    },
+  });
+});

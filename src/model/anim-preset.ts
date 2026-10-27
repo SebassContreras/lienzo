@@ -41,12 +41,15 @@ const AnimSlotsSchema = z.object({
   out: slot(slots.out),
 }) as unknown as z.ZodType<AnimSlots>;
 
-const AnimPresetSchema: z.ZodType<AnimPreset> = z.object({
-  name: z.string().min(1),
-  category: z.string().optional(),
-  anim: AnimSlotsSchema.optional(),
-  tracks: TracksSchema.optional(),
-});
+/** Strict on its keys, as a preset recipe (074/D14): a misplaced key fails (080/D8). */
+const AnimPresetSchema: z.ZodType<AnimPreset> = z
+  .object({
+    name: z.string().min(1),
+    category: z.string().optional(),
+    anim: AnimSlotsSchema.optional(),
+    tracks: TracksSchema.optional(),
+  })
+  .strict();
 
 export const parseAnimPreset = (data: unknown): Parsed<AnimPreset> =>
   parseWith(AnimPresetSchema, data);
