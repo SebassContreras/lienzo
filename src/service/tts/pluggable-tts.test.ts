@@ -316,3 +316,45 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
     });
   });
 });
+
+describe("local voice check (071/D6)", () => {
+  it("fails an unknown voice with the server's voices and never posts", async () => {
+    const methods: string[] = [];
+    const fakeFetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
+      methods.push(init?.method ?? "GET");
+      return Response.json({ voices: ["ef_dora", "em_alex"] });
+    };
+    const adapter = new LocalTtsAdapter(
+      undefined,
+      fakeFetch as unknown as typeof fetch,
+    );
+
+    const said = adapter.synthesizeSpeech({ text: "Hola", voice: "zz_nadie" });
+
+    await expect(said).rejects.toThrow(
+      "La voz «zz_nadie» no está en la lista; voces: ef_dora, em_alex",
+    );
+    expect(methods).toEqual(["GET"]);
+  });
+
+  it("leaves the server's raw text out when it rejects an unknown voice", async () => {
+    const fakeFetch = async (_input: RequestInfo | URL, init?: RequestInit) =>
+      init?.method === "POST"
+        ? Response.json(
+            { detail: "Request ID: Root=1-abc; https://huggingface.co/x" },
+            { status: 400 },
+          )
+        : new Response("", { status: 404 });
+    const adapter = new LocalTtsAdapter(
+      undefined,
+      fakeFetch as unknown as typeof fetch,
+    );
+
+    const said = adapter.synthesizeSpeech({ text: "Hola", voice: "zz_nadie" });
+
+    await expect(said).rejects.toThrow(
+      /^Error del servicio local TTS \(400\): La voz «zz_nadie»/,
+    );
+    await expect(said).rejects.not.toThrow("Request ID");
+  });
+});

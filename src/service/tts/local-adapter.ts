@@ -84,12 +84,33 @@ const KNOWN_VOICES = POPULAR_LOCAL_TTS_MODELS.flatMap((m) =>
  * When `voice` names a voice no local model lists, the list to pick from (069/D12); a Kokoro
  * mix (`af_bella+af_sky(0.5)`) is checked part by part.
  */
-export function unknownVoiceHint(voice: string): string {
+export function unknownVoiceHint(
+  voice: string,
+  known: readonly string[] = KNOWN_VOICES,
+): string {
   const parts = voice.split("+").map((p) => p.replace(/\(.*\)$/, "").trim());
-  const unknown = parts.filter((p) => !KNOWN_VOICES.includes(p));
+  const unknown = parts.filter((p) => !known.includes(p));
   return unknown.length === 0
     ? ""
-    : `. La voz «${unknown.join("», «")}» no está en la lista; voces: ${KNOWN_VOICES.join(", ")}`;
+    : `La voz «${unknown.join("», «")}» no está en la lista; voces: ${known.join(", ")}`;
+}
+
+/**
+ * The voice ids a Kokoro-FastAPI server lists at `GET /v1/audio/voices` (`{ voices: [...] }`,
+ * names or `{ id }`/`{ name }`), next to its speech endpoint; undefined when it lists none.
+ */
+function parseVoices(body: unknown): string[] | undefined {
+  const voices = (body as { voices?: unknown })?.voices;
+  if (!Array.isArray(voices)) return undefined;
+  const ids = voices
+    .map((v) =>
+      typeof v === "string"
+        ? v
+        : ((v as { id?: unknown; name?: unknown })?.id ??
+          (v as { name?: unknown })?.name),
+    )
+    .filter((v): v is string => typeof v === "string");
+  return ids.length > 0 ? ids : undefined;
 }
 
 /**
@@ -102,6 +123,22 @@ export class LocalTtsAdapter implements TtsService {
     private readonly baseUrl?: string,
     private readonly fetchFn: typeof fetch = globalThis.fetch.bind(globalThis),
   ) {}
+
+  /** The server's voices, asked once per speech endpoint (071/D6). */
+  private readonly voices = new Map<string, Promise<string[] | undefined>>();
+
+  private serverVoices(endpoint: string): Promise<string[] | undefined> {
+    if (!/\/speech\/?$/.test(endpoint)) return Promise.resolve(undefined);
+    let list = this.voices.get(endpoint);
+    if (!list) {
+      const url = endpoint.replace(/\/speech\/?$/, "/voices");
+      list = this.fetchFn(url, { method: "GET" })
+        .then(async (r) => (r.ok ? parseVoices(await r.json()) : undefined))
+        .catch(() => undefined);
+      this.voices.set(endpoint, list);
+    }
+    return list;
+  }
 
   async listModels(): Promise<TtsModel[]> {
     return POPULAR_LOCAL_TTS_MODELS;
@@ -119,6 +156,10 @@ export class LocalTtsAdapter implements TtsService {
     const voice = resolveLocalTtsVoice(request.voice);
     const responseFormat = request.format || "mp3";
     const speed = request.speed ?? 1.0;
+    // an unknown voice fails here, before the server's own error (071/D6)
+    const listed = await this.serverVoices(endpoint);
+    const hint = listed ? unknownVoiceHint(voice, listed) : "";
+    if (hint) throw new Error(hint);
 
     const payload = {
       model,
@@ -169,7 +210,13 @@ export class LocalTtsAdapter implements TtsService {
       } catch {
         // Fallback to text status
       }
-      throw new Error(errorMsg + unknownVoiceHint(voice));
+      // the server's raw text (request ids, URLs) is left out when the voice is the cause
+      const voiceHint = unknownVoiceHint(voice);
+      throw new Error(
+        voiceHint
+          ? `Error del servicio local TTS (${response.status}): ${voiceHint}`
+          : errorMsg,
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();
