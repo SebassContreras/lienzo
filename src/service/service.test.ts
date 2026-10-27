@@ -430,6 +430,24 @@ describe("ignored fields (063/R6)", () => {
       notices: ["Campo desconocido ignorado: elements.0.glw"],
     });
   });
+
+  it("warns about a misspelled compact key in scene_validate, naming the field it means (067/R3)", async () => {
+    // Arrange
+    const compact = {
+      elements: [{ kind: "text", text: "Hola", fontSize: 40 }],
+    };
+
+    // Act
+    const res = await ok("scene_validate", { compact });
+
+    // Assert
+    expect(res).toEqual({
+      valid: true,
+      notices: [
+        "Campo desconocido ignorado: compact.elements.0.fontSize (¿quisiste decir «size»?)",
+      ],
+    });
+  });
 });
 
 describe("scene_preview out (058/R3)", () => {

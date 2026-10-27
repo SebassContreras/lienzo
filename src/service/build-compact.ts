@@ -1,5 +1,5 @@
 import type { CompactScene } from "../model/compact.ts";
-import { ignoredNotice, ignoredPaths } from "../model/ignored.ts";
+import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Scene } from "../model/model.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
@@ -31,7 +31,7 @@ export async function buildCompact(
     });
     scene = checkScene(full.scene);
     notices = [
-      ...ignoredPaths(full.scene, scene).map(ignoredNotice),
+      ...ignoredFields(full.scene, scene).map(ignoredNotice),
       ...full.notices,
     ];
   } catch (err: unknown) {

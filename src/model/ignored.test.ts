@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { goldenScenes } from "../test/golden-scenes.ts";
-import { ignoredPaths } from "./ignored.ts";
+import { ignoredFields, ignoredNotice, ignoredPaths } from "./ignored.ts";
+import { defaultText } from "./model.ts";
 import { parseScene } from "./schema.ts";
 
 describe("ignoredPaths (063/R6)", () => {
@@ -30,5 +31,37 @@ describe("ignoredPaths (063/R6)", () => {
 
     // Assert
     expect(paths).toEqual([]);
+  });
+});
+
+describe("ignored field suggestions (067/R3)", () => {
+  /** The notices for a text element carrying `extra` on top of its own fields. */
+  function noticesFor(extra: Record<string, unknown>): string[] {
+    const scene = {
+      ...goldenScenes().kinds,
+      elements: [{ ...defaultText(), ...extra }],
+    };
+    const parsed = parseScene(scene);
+    return parsed.ok
+      ? ignoredFields(scene, parsed.value).map(ignoredNotice)
+      : ["unparsed"];
+  }
+
+  it("suggests the field a CSS-style name means", () => {
+    expect(noticesFor({ fontSize: 40 })).toEqual([
+      "Campo desconocido ignorado: elements.0.fontSize (¿quisiste decir «size»?)",
+    ]);
+  });
+
+  it("suggests the field a misspelled name is closest to", () => {
+    expect(noticesFor({ colr: "#fff" })).toEqual([
+      "Campo desconocido ignorado: elements.0.colr (¿quisiste decir «color»?)",
+    ]);
+  });
+
+  it("suggests nothing for a name unlike any field", () => {
+    expect(noticesFor({ zzz: 1 })).toEqual([
+      "Campo desconocido ignorado: elements.0.zzz",
+    ]);
   });
 });

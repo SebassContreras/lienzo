@@ -3,7 +3,7 @@
  * fonts that are not installed and text widths that are estimated (064/D3). Pure and free of Node imports, so the tool and the editor's
  * "Revisión" section build the very same list.
  */
-import { ignoredNotice, ignoredPaths } from "../model/ignored.ts";
+import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
 import {
   estimatedFonts,
@@ -31,10 +31,10 @@ export function sceneNotices(
   scene: Scene,
   installed: readonly string[],
 ): SceneNotice[] {
-  const ignored = ignoredPaths(raw, scene).map((path) => {
-    const index = /^elements\.(\d+)/.exec(path)?.[1];
+  const ignored = ignoredFields(raw, scene).map((field) => {
+    const index = /^elements\.(\d+)/.exec(field.path)?.[1];
     return {
-      message: ignoredNotice(path),
+      message: ignoredNotice(field),
       elementId:
         index === undefined ? undefined : scene.elements[Number(index)]?.id,
     };

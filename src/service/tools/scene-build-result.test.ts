@@ -35,7 +35,7 @@ describe("scene_build notices (064/R5)", () => {
 
     // Assert
     expect(res.notices).toEqual([
-      "Campo desconocido ignorado: compact.elements.0.glw",
+      "Campo desconocido ignorado: compact.elements.0.glw (¿quisiste decir «glow»?)",
       expect.stringContaining("«Montserrat» no está instalada"),
       expect.stringContaining("«Montserrat» es una estimación"),
     ]);
