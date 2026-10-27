@@ -15,6 +15,7 @@ The MCP tools and the CLI are the same registry: `mcp__lienzo__scene_build` is
 reference; this skill is the workflow. The server runs the code it started with. Its MCP `instructions` name that commit: if it is
 not `git rev-parse --short HEAD`, or a tool or input named here is missing, the server is
 stale: run `pnpm build:cli` (for `dist/cli.js`) and restart it before trusting a result.
+Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
 
 ## Rules
 
@@ -125,7 +126,8 @@ stale: run `pnpm build:cli` (for `dist/cli.js`) and restart it before trusting a
 - `background` is a background preset name, a color (`"#0b1020"`: solid, no gradient,
   dots or light) or an object that starts solid and adds only what it turns on
   (`{ "color": …, "dots": true }`); any other string comes back as a notice.
-- Shots: an element with `shot` only shows during that shot, and only it moves with that
+- Shots: an element with `shot` only shows during that shot (`[start, end)`: at a cut the
+  next shot owns the instant, and the scene's last instant stays with the last shot), and only it moves with that
   shot's camera (groups included, applied once); elements with no `shot` (subtitles, logos)
   never move. `transition` `fade` / `slide` / `zoom` plays over `duration` before the
   shot's `start` and after its `end`; consecutive shots overlap there.
