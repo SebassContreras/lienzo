@@ -451,3 +451,19 @@ it("tells a value below its range in Spanish (078/R5)", async () => {
 
   expect(r).toMatchObject(fails(/Demasiado pequeño/));
 });
+
+it("preset_validate lists each recipe problem at its own path (078/R6)", async () => {
+  const recipe = {
+    name: "X",
+    kind: "rect",
+    traits: [],
+    set: { w: "ancho" },
+    values: {},
+  };
+
+  const r = await call("preset_validate", { recipe });
+
+  expect(r).toMatchObject({
+    value: { errors: [{ path: "" }, { path: "set.w" }] },
+  });
+});

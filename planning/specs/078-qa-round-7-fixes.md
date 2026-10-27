@@ -90,7 +90,7 @@ test holds the opacity and reference rules for every kind.
 - [x] 078/T003 [agent] Unknown symbol fails; removed symbol notice — covers R3, D3
 - [x] 078/T004 [agent] `remapFailure`; `element_add` errors at `patch` — covers R4, D4
 - [x] 078/T005 [agent] Zod messages in Spanish — covers R5, D5
-- [ ] 078/T006 [agent] Recipe problems one by one — covers R6, D6
+- [x] 078/T006 [agent] Recipe problems one by one — covers R6, D6
 - [ ] 078/T007 [agent] Paths and codes: `scene_delete`, `keyframe_remove`, duplicate id, `project_create` — covers R7, D7
 - [ ] 078/T008 [agent] Missing asset wording, rounded off-canvas notice, built-in preset refusal — covers R8, D8
 - [ ] 078/T009 [agent] Object arguments sent as JSON strings — covers R9, D9

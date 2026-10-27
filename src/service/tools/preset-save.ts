@@ -4,7 +4,7 @@ import { readJson, writeJson } from "../../presets/json-fs.ts";
 import { slugify } from "../../presets/slug.ts";
 import { folderOf } from "../project-files.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
+import { defineTool, fail, failAll } from "../registry.ts";
 import { RECIPE_RULES } from "./preset-validate.ts";
 
 export const presetSave = defineTool({
@@ -24,7 +24,7 @@ export const presetSave = defineTool({
   output: z.object({ preset: z.string() }),
   async run({ project, recipe, file, overwrite }, ctx) {
     const parsed = parsePresetRecipe(recipe);
-    if (!parsed.ok) fail("invalid_preset", parsed.error, parsed.path);
+    if (!parsed.ok) failAll("invalid_preset", parsed.issues);
     const dir = folderOf(await inProject(ctx, project), "presets");
     const name = file ?? parsed.value.name;
     if (!overwrite && (await readJson(dir, name)) !== undefined)

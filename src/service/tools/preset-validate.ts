@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { parsePresetRecipe } from "../../model/schema.ts";
 import { TRAITS } from "../../traits/index.ts";
+import { defineTool, failAll } from "../registry.ts";
+import { Verdict, verdictOf } from "../verdict.ts";
 
 /** What a recipe is, for preset_validate and preset_save (074/D15). */
 export const RECIPE_RULES =
@@ -9,9 +11,6 @@ export const RECIPE_RULES =
   `each an id or \`{ use: id, …params }\` (ids: ${[...TRAITS.keys()].join(", ")}); \`set\` holds ` +
   "the element's own values on top (partial, as element_update patches; `tracks` times from " +
   "0, which a shot-bound element shifts to its shot's start). preset_get shows real ones. ";
-
-import { defineTool, fail } from "../registry.ts";
-import { Verdict, verdictOf } from "../verdict.ts";
 
 export const presetValidate = defineTool({
   name: "preset_validate",
@@ -25,6 +24,6 @@ export const presetValidate = defineTool({
   run: ({ recipe }) =>
     verdictOf(() => {
       const parsed = parsePresetRecipe(recipe);
-      if (!parsed.ok) fail("invalid_preset", parsed.error, parsed.path);
+      if (!parsed.ok) failAll("invalid_preset", parsed.issues);
     }),
 });
