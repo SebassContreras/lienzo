@@ -1,12 +1,31 @@
-import { createElement, useMemo, useState } from "react";
-import { ICON_NAMES, iconNode } from "../engine/icon-shapes.ts";
+import { createElement, useEffect, useMemo, useState } from "react";
+import { iconSet } from "../engine/icon-shapes.ts";
+
+/** The lucide icon set, or undefined until it has downloaded (066/D5); re-renders then. */
+function useIconSet() {
+  const [set, setSet] = useState(iconSet.get);
+  useEffect(() => {
+    if (set) return;
+    let live = true;
+    iconSet.load().then(
+      (loaded) => {
+        if (live) setSet(loaded);
+      },
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [set]);
+  return set;
+}
 
 /** Most icons shown at once; typing narrows the list. */
 const MAX_SHOWN = 60;
 
 /** Lucide's node data rendered as an inline SVG. */
 export function IconSvg({ name, size = 20 }: { name: string; size?: number }) {
-  const node = iconNode(name) ?? [];
+  const node = useIconSet()?.iconNode(name) ?? [];
   return (
     <svg
       width={size}
@@ -34,7 +53,7 @@ const words = (name: string) =>
     .toLowerCase();
 
 /** Filters icon names by every word typed, in any order. */
-function filterIcons(query: string, names = ICON_NAMES): string[] {
+function filterIcons(query: string, names: string[]): string[] {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return names;
   return names.filter((name) => {
@@ -51,7 +70,11 @@ export function IconPicker({
   onChange: (name: string) => void;
 }) {
   const [query, setQuery] = useState("");
-  const matches = useMemo(() => filterIcons(query), [query]);
+  const names = useIconSet()?.ICON_NAMES;
+  const matches = useMemo(
+    () => (names ? filterIcons(query, names) : []),
+    [query, names],
+  );
   return (
     <div className="icon-picker">
       <div className="icon-current">

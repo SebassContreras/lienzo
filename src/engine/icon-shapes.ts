@@ -1,4 +1,4 @@
-import { icons } from "lucide";
+import { lazyModule } from "./lazy-module.ts";
 
 /** One drawable piece of a lucide icon, on its 24×24 grid. */
 export type IconShape =
@@ -12,14 +12,8 @@ export type IconShape =
 /** Lucide's icon data: SVG tag names with their attributes. */
 export type IconNode = [string, Record<string, string | number | undefined>][];
 
-/** Every lucide icon name, PascalCase, sorted. */
-export const ICON_NAMES: string[] = Object.keys(icons).sort();
-
-export function iconNode(name: string): IconNode | undefined {
-  return Object.hasOwn(icons, name)
-    ? (icons[name as keyof typeof icons] as unknown as IconNode)
-    : undefined;
-}
+/** The lucide icon set (`icon-set.ts`), downloaded on first use (066/D5). */
+export const iconSet = lazyModule(() => import("./icon-set.ts"));
 
 const num = (v: string | number | undefined) => Number(v ?? 0) || 0;
 
@@ -100,11 +94,16 @@ function toPath(shape: IconShape): Path2D {
 
 const pathCache = new Map<string, Path2D[]>();
 
-/** The icon's outline as Path2D objects on the 24×24 grid, cached per name. */
+/**
+ * The icon's outline as Path2D objects on the 24×24 grid, cached per name; none while the
+ * icon set loads.
+ */
 export function iconPaths(name: string): Path2D[] {
+  const set = iconSet.get();
+  if (!set) return [];
   let paths = pathCache.get(name);
   if (!paths) {
-    const node = iconNode(name);
+    const node = set.iconNode(name);
     paths = node ? iconShapes(node).map(toPath) : [];
     pathCache.set(name, paths);
   }

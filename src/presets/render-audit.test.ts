@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { KINDS } from "../components/index.ts";
+import { iconSet } from "../engine/icon-shapes.ts";
 import type { Ctx } from "../engine/paint.ts";
 import { drawScene } from "../engine/render.ts";
 import { defaultElement, defaultScene, type Element } from "../model/model.ts";
@@ -10,6 +11,8 @@ import { installCanvasFakes, RecordingCtx } from "../test/recording-ctx.ts";
 import { resolvePreset } from "./resolve.ts";
 
 installCanvasFakes();
+// exports wait for the icon set before drawing (066/D5); so do these fingerprints
+await iconSet.load();
 
 const BUILT_IN = "presets/built-in";
 const presetFiles = readdirSync(BUILT_IN).filter((f) => f.endsWith(".json"));

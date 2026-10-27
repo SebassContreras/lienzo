@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { iconSet } from "../../engine/icon-shapes.ts";
 import { defineComponent, type ElementOf } from "../descriptor.ts";
 import {
   anim,
@@ -77,5 +78,6 @@ export const badge = defineComponent<BadgeEl>({
     { title: "Animación" },
   ],
   anims: BOX_ANIMS,
+  load: iconSet.load,
   draw: drawBadge,
 });

@@ -5,6 +5,8 @@ import { installCanvasFakes } from "./recording-ctx.ts";
 installCanvasFakes();
 const { goldenScenes } = await import("./golden-scenes.ts");
 const { renderHashes } = await import("./render-log.ts");
+// exports wait for the icon set before drawing (066/D5); so do the golden frames
+await (await import("../engine/icon-shapes.ts")).iconSet.load();
 
 /**
  * `render.golden.json` holds the hash of every canvas call made for each frame of the

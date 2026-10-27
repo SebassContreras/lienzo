@@ -12,7 +12,8 @@ import {
 } from "../model/model.ts";
 import { hitTest, indexById, placeChild } from "./geometry.ts";
 import { groupElements, ungroupElement } from "./groups.ts";
-import { ICON_NAMES, iconNode, iconShapes } from "./icon-shapes.ts";
+import { ICON_NAMES, iconNode } from "./icon-set.ts";
+import { iconShapes } from "./icon-shapes.ts";
 import { clipToEllipse, resolveLine } from "./lines.ts";
 
 const scene = (elements: Element[]): Scene => ({
