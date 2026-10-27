@@ -141,6 +141,11 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
   `@rotate` / `@scale`, with `repeat: "loop" | "pingpong"` and `until`, in scene time. Every
   `t` is scene time, camera keys included (`shot_set` takes the same short form and notes
   keys outside the shot). `keyframe_remove` with no key at `t` lists the track's times.
+  A shot-bound element's tracks are timed from its shot's `start`: changing its `shot`
+  (`element_update`), moving a shot's `start` (`shot_set`) or removing the shot moves them
+  (and the camera keys) by the difference, with a notice; tracks given in the same patch
+  are kept as given. `scene_validate` and every write list schema and rule problems
+  together in `errors`.
 - Preset recipes are `{ name, kind, category?, traits, set? }` (no other keys; `set` values
   are checked as the element's fields); `preset_get` shows real ones. Names become file
   names with accents folded (`Caja Ámbar` → `caja-ambar`).

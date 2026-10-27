@@ -102,7 +102,7 @@ What exists today:
   shot), shared by render and layout through `isElementActiveInShot(el, t, shots, duration)`;
   scene check errors name elements by id path (`idPath` in `src/service/scenes.ts`)
 - QA round 6 (074): wrong input fails, listing the options; notices only for valid input that
-  may surprise. `checkSceneRules` (`src/service/scenes.ts`) runs anim presets, shots and
+  may surprise. `checkWholeScene` (`src/service/scenes.ts`, 075) runs anim presets, shots and
   `checkReferences` (`src/service/scene-references.ts`: unknown shot, icon, line target on a
   changed element) on every write and lists every problem (`failAll`, `ToolError.errors`);
   `parseSize` (`src/model/size.ts`); one source of scene defaults (`sceneDefaults` /
@@ -112,6 +112,12 @@ What exists today:
   prefix (`withCanonicalAssets`); one `slugify` with accents folded (`src/presets/slug.ts`,
   `legacySlug` read fallback); `src/service/tools/contract.test.ts` holds the wrong-input
   rule across tools — a new scene-writing tool adds its cases there
+- Shot timing (075): an element's tracks are timed from its shot's `start` (0 unbound), so
+  rebinding (`rebindShot`, `src/model/shot-timing.ts`: `element_update`, the inspector), moving
+  a shot's `start` or removing it (`setShotIn` / `removeShotIn`, `src/model/shots.ts`:
+  `shot_set`, the shots section) carry tracks and camera keys along, with a notice;
+  `checkWholeScene` (`src/service/scenes.ts`) lists schema and rule problems together, the
+  rules reading what parses
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
@@ -222,6 +228,11 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
   only check/format the specific files or folders touched to preserve token budget and speed.
 - Use pnpm, never npm or yarn.
+- One rule, one place (075): a rule both the editor and the tools apply lives in `src/model/`
+  as a pure function both call; never re-implement it in a tool or a component. A QA fix
+  names the rule it restores and adds one case per writer (each tool and the editor helper)
+  to `src/service/tools/contract.test.ts`, so the next path that writes it is covered too.
+  Specs 071–074 patched one path at a time and the same family came back each round.
 - Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
   it started with, and a stale server reports fixed bugs as open (071).
   The server's MCP `instructions` name the commit it started from; compare it with

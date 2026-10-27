@@ -119,7 +119,9 @@ How the tools behave, in short:
 - **Defaults:** `scene_create` and `scene_build` start from the project's canvas;
   `scene_get` returns each element's non-default fields (`full: true` for all).
 - **Times:** keyframe `t` is scene time, also for elements bound to a shot and for the
-  shot camera. A new counter, and a preset's own tracks, start at its shot's start.
+  shot camera. A new counter, and a preset's own tracks, start at its shot's start, and
+  tracks move with the shot when an element changes shot or a shot moves or is removed, in
+  the tools and the editor alike.
 - **Shot windows:** a shot shows its elements over `[start, end)`. At a cut the instant
   belongs to the shot that starts there, in `scene_preview`, export and
   `scene_inspect_layout` alike; the scene's last instant stays with the shot ending there.
