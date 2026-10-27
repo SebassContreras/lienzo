@@ -9,7 +9,6 @@ import { drawScene } from "../engine/render.ts";
 import type { Scene } from "../model/model.ts";
 import type { FrameEncoder } from "./frame-encoder.ts";
 import { createGifEncoder } from "./gif-encoder.ts";
-import { createVideoEncoder } from "./video-encoder.ts";
 
 export type ExportFormat = "png" | "gif" | "mp4";
 
@@ -95,10 +94,15 @@ export async function exportScene(
     }
   }
 
+  // Mediabunny is downloaded only when a video is exported (066/D3)
   const encoder =
     options.format === "gif"
       ? createGifEncoder(ctx, options.fps)
-      : await createVideoEncoder(canvas, options.fps, videoOptions);
+      : await (await import("./video-encoder.ts")).createVideoEncoder(
+          canvas,
+          options.fps,
+          videoOptions,
+        );
   return encodeFrames(encoder, render, scene.duration, options.fps, onProgress);
 }
 

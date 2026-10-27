@@ -1,4 +1,3 @@
-import { registerAacEncoder } from "@mediabunny/aac-encoder";
 import {
   AudioBufferSource,
   BufferTarget,
@@ -51,6 +50,8 @@ export async function createVideoEncoder(
         sampleRate: options.audioBuffer.sampleRate,
       }))
     ) {
+      // the WASM encoder is large, so it is downloaded only here (066/D3)
+      const { registerAacEncoder } = await import("@mediabunny/aac-encoder");
       registerAacEncoder();
     }
 

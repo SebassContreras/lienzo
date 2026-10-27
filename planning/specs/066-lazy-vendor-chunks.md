@@ -21,7 +21,7 @@
   - _Trade-offs_: One more optional field on the descriptor, with one user today.
   - _Mitigation_: It sits next to `assets`, has the same meaning ("what drawing needs, awaited before export") and keeps the waiting in the one place that already does it, instead of a special case for 3D in `export.ts`.
 
-- D3 (R4): `export.ts` imports `video-encoder.ts` with `await import()` inside the MP4 branch. `video-encoder.ts` stays the one adapter over Mediabunny (A10); nothing else imports it.
+- D3 (R4): `export.ts` imports `video-encoder.ts` with `await import()` inside the MP4 branch. `video-encoder.ts` stays the one adapter over Mediabunny (A10); nothing else imports it. Inside it, `@mediabunny/aac-encoder` (a ~1 MB WASM build, only needed where the browser has no native AAC encoder, as in Firefox) is imported in the branch that registers it.
   - _Trade-offs_: Starting a video export waits for Mediabunny to download once.
   - _Mitigation_: It is a local file and the export already awaits fonts and assets before the first frame; the progress bar covers it.
 
@@ -33,5 +33,5 @@
 - [x] 066/T001 [agent] Test: `loadSceneAssets` waits for a kind's `load` (in a group too) before resolving — covers R3
 - [x] 066/T002 [agent] Descriptor `load` and `loadSceneAssets` awaiting it — covers D2
 - [x] 066/T003 [agent] Split the 3D element into `draw.ts`/`shapes.ts` and a lazily imported `runtime.ts`; lazy `.glb`/`.woff` loaders; descriptor `load` — covers D1, R2
-- [ ] 066/T004 [agent] Import the video encoder lazily in `export.ts` — covers D3, R4
+- [x] 066/T004 [agent] Import the video encoder lazily in `export.ts` — covers D3, R4
 - [ ] 066/T005 [agent] Verify: typecheck, tests, `pnpm build` chunk sizes, and a 3D scene and an MP4 export in the browser; update AGENTS.md — covers R1, R5, D4
