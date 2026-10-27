@@ -2,7 +2,6 @@ import { cp, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, it } from "vitest";
-import type { Scene } from "../../model/model.ts";
 import { type Ctx, createCtx } from "../ctx.ts";
 import { fakeRenderer } from "../fake-renderer.ts";
 import { registry } from "./index.ts";
@@ -36,37 +35,52 @@ beforeEach(async () => {
 });
 
 it("rejects a still past the scene's end (069/D9)", async () => {
-  expect(
-    await call("scene_export", { scene: "s", format: "png", t: 50 }),
-  ).toMatchObject({
+  const r = await call("scene_export", { scene: "s", format: "png", t: 50 });
+
+  expect(r).toMatchObject({
     ok: false,
     error: { code: "invalid_time", path: "t" },
   });
-  expect((await call("scene_preview", { scene: "s", t: 6 })).ok).toBe(true);
+});
+
+it("renders a still at the scene's last moment (069/D9)", async () => {
+  const r = await call("scene_preview", { scene: "s", t: 6 });
+
+  expect(r).toMatchObject({ ok: true });
 });
 
 it("says when a name is stored under another one (069/D13)", async () => {
   const r = await call("scene_rename", { from: "s", to: "Main Scene/../x" });
-  expect(r.ok && r.value).toMatchObject({ scene: "main-scene-x" });
-  expect(r.ok && (r.value as { notices: string[] }).notices[0]).toContain(
-    "main-scene-x",
-  );
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      scene: "main-scene-x",
+      notices: [expect.stringContaining("main-scene-x")],
+    },
+  });
 });
 
-it("moves a shared shot to the group and notes mixed ones (069/D13)", async () => {
-  const same = await call("element_group", { scene: "s", ids: ["a", "b"] });
+it("moves a shared shot to the group (069/D13)", async () => {
+  const grouped = await call("element_group", { scene: "s", ids: ["a", "b"] });
   const got = await call("scene_get", { scene: "s" });
-  const group = got.ok
-    ? (got.value as Scene).elements.find(
-        (e) => e.id === (same.ok && (same.value as { id: string }).id),
-      )
-    : undefined;
-  expect(group?.shot).toBe("s1");
-  const mixed = await call("element_group", {
-    scene: "s",
-    ids: [group?.id, "c"],
+
+  expect(grouped).toMatchObject({ ok: true, value: { notices: [] } });
+  expect(got).toMatchObject({
+    ok: true,
+    value: {
+      elements: expect.arrayContaining([
+        expect.objectContaining({ kind: "group", shot: "s1" }),
+      ]),
+    },
   });
-  expect(
-    mixed.ok && (mixed.value as { notices: string[] }).notices[0],
-  ).toContain("tomas distintas");
+});
+
+it("notes a group of elements from different shots (069/D13)", async () => {
+  const r = await call("element_group", { scene: "s", ids: ["b", "c"] });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringContaining("tomas distintas")] },
+  });
 });

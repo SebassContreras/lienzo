@@ -330,3 +330,16 @@ describe("layout under a shot camera (067/R2)", () => {
     expect([box?.x, box?.y, box?.w, box?.h]).toEqual([340, 440, 400, 200]);
   });
 });
+
+describe("unknown shots (069/D4)", () => {
+  it("reports an element bound to a shot the scene lacks", () => {
+    const scene = defaultScene();
+    scene.elements = [{ ...defaultRect(), id: "card", shot: "gone" }];
+
+    const diags = inspectLayout(scene, [0]);
+
+    expect(diags).toContainEqual(
+      expect.objectContaining({ code: "unknown_shot", elementId: "card" }),
+    );
+  });
+});

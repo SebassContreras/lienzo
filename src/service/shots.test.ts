@@ -204,43 +204,58 @@ describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
     expect((s3.value as Scene).shots).toBeUndefined();
   });
 
-  it("rejects late and overlapping shots and unbinds on remove (069/D4, D5)", async () => {
+  describe("shot rules (069/D4, D5)", () => {
     const call = (input: Record<string, unknown>) =>
       registry.call(
         "shot_set",
         { project: PROJECT, scene: "cuts", ...input },
         ctx,
       );
-    await registry.call(
-      "scene_build",
-      {
-        project: PROJECT,
-        save: "cuts",
-        compact: {
-          duration: 6,
-          shots: [{ id: "s1", start: 0, end: 3 }],
-          elements: [{ kind: "rect", id: "card", shot: "s1" }],
+
+    beforeEach(async () => {
+      await registry.call(
+        "scene_build",
+        {
+          project: PROJECT,
+          save: "cuts",
+          compact: {
+            duration: 6,
+            shots: [{ id: "s1", start: 0, end: 3 }],
+            elements: [{ kind: "rect", id: "card", shot: "s1" }],
+          },
         },
-      },
-      ctx,
-    );
-    expect(await call({ id: "s2", start: 3, end: 10 })).toMatchObject({
-      ok: false,
-      error: { path: "end" },
+        ctx,
+      );
     });
-    expect(await call({ id: "s2", start: 2, end: 5 })).toMatchObject({
-      ok: false,
-      error: { path: "start" },
+
+    it("rejects a shot ending after the scene", async () => {
+      const r = await call({ id: "s2", start: 3, end: 10 });
+
+      expect(r).toMatchObject({ ok: false, error: { path: "end" } });
     });
-    const removed = await call({ id: "s1", remove: true });
-    expect(
-      removed.ok && (removed.value as { notices: string[] }).notices[0],
-    ).toContain("card");
-    const got = await registry.call(
-      "scene_get",
-      { project: PROJECT, scene: "cuts" },
-      ctx,
-    );
-    expect(got.ok && (got.value as Scene).elements[0]?.shot).toBeUndefined();
+
+    it("rejects a shot overlapping another", async () => {
+      const r = await call({ id: "s2", start: 2, end: 5 });
+
+      expect(r).toMatchObject({ ok: false, error: { path: "start" } });
+    });
+
+    it("unbinds and names the elements of a removed shot", async () => {
+      const removed = await call({ id: "s1", remove: true });
+      const got = await registry.call(
+        "scene_get",
+        { project: PROJECT, scene: "cuts" },
+        ctx,
+      );
+
+      expect(removed).toMatchObject({
+        ok: true,
+        value: { notices: [expect.stringContaining("card")] },
+      });
+      expect(got).toMatchObject({
+        ok: true,
+        value: { elements: [expect.not.objectContaining({ shot: "s1" })] },
+      });
+    });
   });
 });
