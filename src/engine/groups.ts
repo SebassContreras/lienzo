@@ -58,6 +58,7 @@ function boundsOf(elements: Element[], byId: Map<string, Element>): Box {
 export function groupElements(
   scene: Scene,
   ids: string[],
+  id?: string,
 ): { scene: Scene; group?: GroupEl } {
   const members = scene.elements.filter((el) => ids.includes(el.id));
   if (members.length < 2) return { scene };
@@ -66,6 +67,7 @@ export function groupElements(
   const inside = new Set(members.map((el) => el.id));
   const group: GroupEl = {
     ...defaultGroup(),
+    ...(id ? { id } : {}),
     name: "Grupo",
     x: box.x,
     y: box.y,

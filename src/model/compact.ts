@@ -10,20 +10,24 @@ import {
   dataFields,
   type Fields,
 } from "../components/fields/index.ts";
-import { EASING_NAMES, type Easing } from "../engine/easing.ts";
+import type { Easing } from "../engine/easing.ts";
 import { OriginSchema } from "./element-schema.ts";
 import { TrackRepeatSchema } from "./track.ts";
+
+// any string here: the scene schema checks the easing at its own path, listing the names
+// (074/D13), where a union would only say "Invalid input"
+const KeyEasingSchema = z.string() as unknown as z.ZodType<Easing>;
 
 const ShortKeyframeTupleSchema = z.tuple([
   z.number().min(0),
   z.union([z.number(), z.string()]),
-  z.enum(["auto", ...EASING_NAMES] as [Easing, ...Easing[]]).optional(),
+  KeyEasingSchema.optional(),
 ]);
 
 const CanonicalKeyframeSchema = z.object({
   t: z.number().min(0),
   value: z.union([z.number(), z.string()]),
-  easing: z.enum(["auto", ...EASING_NAMES] as [Easing, ...Easing[]]).optional(),
+  easing: KeyEasingSchema.optional(),
 });
 
 const CompactKeyframeSchema = z.union([

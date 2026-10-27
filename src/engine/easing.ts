@@ -137,7 +137,7 @@ function bezierArgs(s: string): [number, number, number, number] | undefined {
 export const EasingSchema: z.ZodType<Easing> = z
   .string()
   .refine((s) => s === "auto" || s in EASINGS || bezierArgs(s) !== undefined, {
-    message: "unknown easing",
+    message: `easing desconocido (hay: auto, ${Object.keys(EASINGS).join(", ")} o cubic-bezier(x1, y1, x2, y2))`,
   }) as z.ZodType<Easing>;
 
 /** The function for `easing`; `auto` (and anything unknown) is `fallback`. */

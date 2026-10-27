@@ -213,3 +213,109 @@ it("names an element given without id by its index in errors (074/R9)", async ()
 
   expect(out).toMatchObject({ path: "compact.elements.0.shot" });
 });
+
+const twoRects = async () => {
+  await value("scene_create", { scene: "s" });
+  await value("element_add", { scene: "s", kind: "rect", patch: { id: "a" } });
+  await value("element_add", { scene: "s", kind: "rect", patch: { id: "b" } });
+};
+
+it("names a new group with the id given to element_group (074/R10)", async () => {
+  await twoRects();
+
+  const out = await value("element_group", {
+    scene: "s",
+    ids: ["a", "b"],
+    id: "caja",
+  });
+
+  expect(out.id).toBe("caja");
+});
+
+it("lists every id element_group cannot group, saying why (074/R10)", async () => {
+  await twoRects();
+  await value("element_group", { scene: "s", ids: ["a", "b"], id: "g" });
+  await value("element_add", { scene: "s", kind: "rect", patch: { id: "c" } });
+
+  const r = await call("element_group", {
+    scene: "s",
+    ids: ["a", "c", "fantasma"],
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      errors: [
+        { path: "ids.0", message: expect.stringContaining("«g»") },
+        { path: "ids.2", message: expect.stringContaining("«fantasma»") },
+      ],
+    },
+  });
+});
+
+it("rejects a layer index past the last sibling (074/R1)", async () => {
+  await twoRects();
+
+  const r = await call("element_move", { scene: "s", id: "a", to: 99 });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { path: "to", message: expect.stringContaining("0–1") },
+  });
+});
+
+it("lists the easings when one is unknown (074/R1)", async () => {
+  const r = await call("scene_build", {
+    compact: {
+      elements: [
+        {
+          kind: "rect",
+          tracks: {
+            x: [
+              [0, 0, "wobbly"],
+              [1, 10],
+            ],
+          },
+        },
+      ],
+    },
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { message: expect.stringContaining("ease-out") },
+  });
+});
+
+it("lists a track's keyframe times when none is at t (074/R13)", async () => {
+  await twoRects();
+  await value("keyframe_set", {
+    scene: "s",
+    id: "a",
+    path: "x",
+    t: 1,
+    value: 10,
+  });
+
+  const r = await call("keyframe_remove", {
+    scene: "s",
+    id: "a",
+    path: "x",
+    t: 2,
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { message: expect.stringContaining("1s") },
+  });
+});
+
+it("points effects.glow at the element's own glow field (074/R13)", async () => {
+  const out = await value("scene_build", {
+    compact: { elements: [{ kind: "rect", effects: { glow: true } }] },
+  });
+
+  expect(out.notices).toEqual([
+    expect.stringContaining("Glow: { enabled: true }"),
+  ]);
+});

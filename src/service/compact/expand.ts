@@ -217,6 +217,7 @@ async function buildElement(
       element.effects,
       effects as Record<string, unknown>,
       `${path}.effects`,
+      Object.keys(element),
     );
     element.effects = expanded.effects;
     state.notices.push(...expanded.notices);

@@ -297,32 +297,7 @@
                                       ]
                                     },
                                     {
-                                      "type": "string",
-                                      "enum": [
-                                        "auto",
-                                        "linear",
-                                        "step",
-                                        "hold",
-                                        "ease",
-                                        "ease-in",
-                                        "ease-out",
-                                        "ease-in-out",
-                                        "quad-in",
-                                        "quad-out",
-                                        "quad-in-out",
-                                        "cubic-in",
-                                        "cubic-out",
-                                        "cubic-in-out",
-                                        "back-in",
-                                        "back-out",
-                                        "back-in-out",
-                                        "bounce-in",
-                                        "bounce-out",
-                                        "bounce-in-out",
-                                        "elastic-in",
-                                        "elastic-out",
-                                        "elastic-in-out"
-                                      ]
+                                      "type": "string"
                                     }
                                   ],
                                   "items": false,
@@ -343,32 +318,7 @@
                                       ]
                                     },
                                     "easing": {
-                                      "type": "string",
-                                      "enum": [
-                                        "auto",
-                                        "linear",
-                                        "step",
-                                        "hold",
-                                        "ease",
-                                        "ease-in",
-                                        "ease-out",
-                                        "ease-in-out",
-                                        "quad-in",
-                                        "quad-out",
-                                        "quad-in-out",
-                                        "cubic-in",
-                                        "cubic-out",
-                                        "cubic-in-out",
-                                        "back-in",
-                                        "back-out",
-                                        "back-in-out",
-                                        "bounce-in",
-                                        "bounce-out",
-                                        "bounce-in-out",
-                                        "elastic-in",
-                                        "elastic-out",
-                                        "elastic-in-out"
-                                      ]
+                                      "type": "string"
                                     }
                                   },
                                   "required": [
@@ -401,32 +351,7 @@
                                           ]
                                         },
                                         {
-                                          "type": "string",
-                                          "enum": [
-                                            "auto",
-                                            "linear",
-                                            "step",
-                                            "hold",
-                                            "ease",
-                                            "ease-in",
-                                            "ease-out",
-                                            "ease-in-out",
-                                            "quad-in",
-                                            "quad-out",
-                                            "quad-in-out",
-                                            "cubic-in",
-                                            "cubic-out",
-                                            "cubic-in-out",
-                                            "back-in",
-                                            "back-out",
-                                            "back-in-out",
-                                            "bounce-in",
-                                            "bounce-out",
-                                            "bounce-in-out",
-                                            "elastic-in",
-                                            "elastic-out",
-                                            "elastic-in-out"
-                                          ]
+                                          "type": "string"
                                         }
                                       ],
                                       "items": false,
@@ -447,32 +372,7 @@
                                           ]
                                         },
                                         "easing": {
-                                          "type": "string",
-                                          "enum": [
-                                            "auto",
-                                            "linear",
-                                            "step",
-                                            "hold",
-                                            "ease",
-                                            "ease-in",
-                                            "ease-out",
-                                            "ease-in-out",
-                                            "quad-in",
-                                            "quad-out",
-                                            "quad-in-out",
-                                            "cubic-in",
-                                            "cubic-out",
-                                            "cubic-in-out",
-                                            "back-in",
-                                            "back-out",
-                                            "back-in-out",
-                                            "bounce-in",
-                                            "bounce-out",
-                                            "bounce-in-out",
-                                            "elastic-in",
-                                            "elastic-out",
-                                            "elastic-in-out"
-                                          ]
+                                          "type": "string"
                                         }
                                       },
                                       "required": [
@@ -773,32 +673,7 @@
                                 ]
                               },
                               {
-                                "type": "string",
-                                "enum": [
-                                  "auto",
-                                  "linear",
-                                  "step",
-                                  "hold",
-                                  "ease",
-                                  "ease-in",
-                                  "ease-out",
-                                  "ease-in-out",
-                                  "quad-in",
-                                  "quad-out",
-                                  "quad-in-out",
-                                  "cubic-in",
-                                  "cubic-out",
-                                  "cubic-in-out",
-                                  "back-in",
-                                  "back-out",
-                                  "back-in-out",
-                                  "bounce-in",
-                                  "bounce-out",
-                                  "bounce-in-out",
-                                  "elastic-in",
-                                  "elastic-out",
-                                  "elastic-in-out"
-                                ]
+                                "type": "string"
                               }
                             ],
                             "items": false,
@@ -819,32 +694,7 @@
                                 ]
                               },
                               "easing": {
-                                "type": "string",
-                                "enum": [
-                                  "auto",
-                                  "linear",
-                                  "step",
-                                  "hold",
-                                  "ease",
-                                  "ease-in",
-                                  "ease-out",
-                                  "ease-in-out",
-                                  "quad-in",
-                                  "quad-out",
-                                  "quad-in-out",
-                                  "cubic-in",
-                                  "cubic-out",
-                                  "cubic-in-out",
-                                  "back-in",
-                                  "back-out",
-                                  "back-in-out",
-                                  "bounce-in",
-                                  "bounce-out",
-                                  "bounce-in-out",
-                                  "elastic-in",
-                                  "elastic-out",
-                                  "elastic-in-out"
-                                ]
+                                "type": "string"
                               }
                             },
                             "required": [
@@ -877,32 +727,7 @@
                                     ]
                                   },
                                   {
-                                    "type": "string",
-                                    "enum": [
-                                      "auto",
-                                      "linear",
-                                      "step",
-                                      "hold",
-                                      "ease",
-                                      "ease-in",
-                                      "ease-out",
-                                      "ease-in-out",
-                                      "quad-in",
-                                      "quad-out",
-                                      "quad-in-out",
-                                      "cubic-in",
-                                      "cubic-out",
-                                      "cubic-in-out",
-                                      "back-in",
-                                      "back-out",
-                                      "back-in-out",
-                                      "bounce-in",
-                                      "bounce-out",
-                                      "bounce-in-out",
-                                      "elastic-in",
-                                      "elastic-out",
-                                      "elastic-in-out"
-                                    ]
+                                    "type": "string"
                                   }
                                 ],
                                 "items": false,
@@ -923,32 +748,7 @@
                                     ]
                                   },
                                   "easing": {
-                                    "type": "string",
-                                    "enum": [
-                                      "auto",
-                                      "linear",
-                                      "step",
-                                      "hold",
-                                      "ease",
-                                      "ease-in",
-                                      "ease-out",
-                                      "ease-in-out",
-                                      "quad-in",
-                                      "quad-out",
-                                      "quad-in-out",
-                                      "cubic-in",
-                                      "cubic-out",
-                                      "cubic-in-out",
-                                      "back-in",
-                                      "back-out",
-                                      "back-in-out",
-                                      "bounce-in",
-                                      "bounce-out",
-                                      "bounce-in-out",
-                                      "elastic-in",
-                                      "elastic-out",
-                                      "elastic-in-out"
-                                    ]
+                                    "type": "string"
                                   }
                                 },
                                 "required": [
@@ -1128,32 +928,7 @@
                                 ]
                               },
                               {
-                                "type": "string",
-                                "enum": [
-                                  "auto",
-                                  "linear",
-                                  "step",
-                                  "hold",
-                                  "ease",
-                                  "ease-in",
-                                  "ease-out",
-                                  "ease-in-out",
-                                  "quad-in",
-                                  "quad-out",
-                                  "quad-in-out",
-                                  "cubic-in",
-                                  "cubic-out",
-                                  "cubic-in-out",
-                                  "back-in",
-                                  "back-out",
-                                  "back-in-out",
-                                  "bounce-in",
-                                  "bounce-out",
-                                  "bounce-in-out",
-                                  "elastic-in",
-                                  "elastic-out",
-                                  "elastic-in-out"
-                                ]
+                                "type": "string"
                               }
                             ],
                             "items": false,
@@ -1174,32 +949,7 @@
                                 ]
                               },
                               "easing": {
-                                "type": "string",
-                                "enum": [
-                                  "auto",
-                                  "linear",
-                                  "step",
-                                  "hold",
-                                  "ease",
-                                  "ease-in",
-                                  "ease-out",
-                                  "ease-in-out",
-                                  "quad-in",
-                                  "quad-out",
-                                  "quad-in-out",
-                                  "cubic-in",
-                                  "cubic-out",
-                                  "cubic-in-out",
-                                  "back-in",
-                                  "back-out",
-                                  "back-in-out",
-                                  "bounce-in",
-                                  "bounce-out",
-                                  "bounce-in-out",
-                                  "elastic-in",
-                                  "elastic-out",
-                                  "elastic-in-out"
-                                ]
+                                "type": "string"
                               }
                             },
                             "required": [
@@ -1232,32 +982,7 @@
                                     ]
                                   },
                                   {
-                                    "type": "string",
-                                    "enum": [
-                                      "auto",
-                                      "linear",
-                                      "step",
-                                      "hold",
-                                      "ease",
-                                      "ease-in",
-                                      "ease-out",
-                                      "ease-in-out",
-                                      "quad-in",
-                                      "quad-out",
-                                      "quad-in-out",
-                                      "cubic-in",
-                                      "cubic-out",
-                                      "cubic-in-out",
-                                      "back-in",
-                                      "back-out",
-                                      "back-in-out",
-                                      "bounce-in",
-                                      "bounce-out",
-                                      "bounce-in-out",
-                                      "elastic-in",
-                                      "elastic-out",
-                                      "elastic-in-out"
-                                    ]
+                                    "type": "string"
                                   }
                                 ],
                                 "items": false,
@@ -1278,32 +1003,7 @@
                                     ]
                                   },
                                   "easing": {
-                                    "type": "string",
-                                    "enum": [
-                                      "auto",
-                                      "linear",
-                                      "step",
-                                      "hold",
-                                      "ease",
-                                      "ease-in",
-                                      "ease-out",
-                                      "ease-in-out",
-                                      "quad-in",
-                                      "quad-out",
-                                      "quad-in-out",
-                                      "cubic-in",
-                                      "cubic-out",
-                                      "cubic-in-out",
-                                      "back-in",
-                                      "back-out",
-                                      "back-in-out",
-                                      "bounce-in",
-                                      "bounce-out",
-                                      "bounce-in-out",
-                                      "elastic-in",
-                                      "elastic-out",
-                                      "elastic-in-out"
-                                    ]
+                                    "type": "string"
                                   }
                                 },
                                 "required": [
