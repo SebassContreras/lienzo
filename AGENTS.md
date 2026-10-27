@@ -88,6 +88,11 @@ What exists today:
   (`anchorMargin`) and unplaced compact elements are centred; shots are checked by
   `shotProblem` and unbound by `unbindShot` (`src/model/shots.ts`); animation tools take an
   optional `project` (`animationsDir`) and `animation_delete` exists
+- QA round 3 (071): `translate`/`placeChild` carry `x`/`y` (and size) tracks, so grouping
+  keeps motion; `saveScene(…, previous)` reports resource notices only for changed elements;
+  `scene_inspect_layout` has `shape_overlap`; a new counter gets a count-up `progress` track
+  (`src/components/counter/count-up.ts`); the local TTS adapter checks the voice against
+  `GET /v1/audio/voices` first
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
@@ -198,6 +203,8 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
   only check/format the specific files or folders touched to preserve token budget and speed.
 - Use pnpm, never npm or yarn.
+- Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
+  it started with, and a stale server reports fixed bugs as open (071).
 
 <!-- spectrace -->
 ## Planning
