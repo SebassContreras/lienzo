@@ -6,7 +6,7 @@ import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
 import { withFileAspects } from "./image-aspect.ts";
-import { fail, failAll, ToolFailure } from "./registry.ts";
+import { fail, remapFailure, ToolFailure } from "./registry.ts";
 
 const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
@@ -59,16 +59,10 @@ export async function buildCompact(
     ];
   } catch (err: unknown) {
     // the failing path is the compact one: elements keep their index (069/D12)
-    if (err instanceof ToolFailure) {
-      const { code, path, message, errors } = err.error;
-      failAll(
-        code,
-        (errors ?? [{ path, message }]).map((p) => ({
-          path: join("compact", p.path),
-          message: p.message,
-        })),
+    if (err instanceof ToolFailure)
+      throw new ToolFailure(
+        remapFailure(err.error, (path) => join("compact", path)),
       );
-    }
     const msg = err instanceof Error ? err.message : String(err);
     const path = /^([\w.]+): /.exec(msg)?.[1] ?? "";
     fail("invalid_compact_scene", msg, join("compact", path));

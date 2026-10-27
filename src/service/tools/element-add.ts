@@ -23,8 +23,16 @@ import {
 import { withFileAspect } from "../image-aspect.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
+import { defineTool, fail, remapFailure, ToolFailure } from "../registry.ts";
 import { editScene, findPreset, SceneResult } from "../scenes.ts";
+
+/** `elements.<id>.…` (or `elements.<group>/<id>.…`) of the element `id` as `patch.…`. */
+const atPatch =
+  (id: string) =>
+  (path: string): string => {
+    const m = /^elements\.([^.]+)(\..*)?$/.exec(path);
+    return m && m[1]?.split("/").at(-1) === id ? `patch${m[2] ?? ""}` : path;
+  };
 
 export const elementAdd = defineTool({
   name: "element_add",
@@ -90,7 +98,7 @@ export const elementAdd = defineTool({
     const added = el;
     if (at && hasPositionTrack(added)) notices.push(trackOverridesAt(added.id));
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
-    const result = await editScene(effectiveCtx, scene, (s) => {
+    const write = editScene(effectiveCtx, scene, (s) => {
       const fresh =
         preset === undefined
           ? withCountUp(added, patch ?? {}, s)
@@ -130,6 +138,12 @@ export const elementAdd = defineTool({
               : ""),
         );
       return { ...s, elements: [...s.elements, out] };
+    });
+    const result = await write.catch((err: unknown) => {
+      // a failure about the new element points at what the caller gave: `patch.…` (078/D4)
+      if (err instanceof ToolFailure)
+        throw new ToolFailure(remapFailure(err.error, atPatch(added.id)));
+      throw err;
     });
     return {
       ...result,

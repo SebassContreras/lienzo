@@ -425,3 +425,19 @@ it("scene_update removing a symbol a use names leaves a notice (078/R3)", async 
     value: { notices: [expect.stringMatching(/«u».*«sol»/)] },
   });
 });
+
+it("element_add names a failure about the new element by its patch (078/R4)", async () => {
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "rect",
+    patch: { shot: "nope", w: -5 },
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      path: "patch.w",
+      errors: [{ path: "patch.w" }, { path: "patch.shot" }],
+    },
+  });
+});

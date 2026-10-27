@@ -88,7 +88,7 @@ test holds the opacity and reference rules for every kind.
 - [x] 078/T001 [agent] `fraction()` for every opacity field; descriptor test — covers R1, D1
 - [x] 078/T002 [agent] Shot move vs trim in `setShotIn`; descriptions — covers R2, D2
 - [x] 078/T003 [agent] Unknown symbol fails; removed symbol notice — covers R3, D3
-- [ ] 078/T004 [agent] `remapFailure`; `element_add` errors at `patch` — covers R4, D4
+- [x] 078/T004 [agent] `remapFailure`; `element_add` errors at `patch` — covers R4, D4
 - [ ] 078/T005 [agent] Zod messages in Spanish — covers R5, D5
 - [ ] 078/T006 [agent] Recipe problems one by one — covers R6, D6
 - [ ] 078/T007 [agent] Paths and codes: `scene_delete`, `keyframe_remove`, duplicate id, `project_create` — covers R7, D7
@@ -96,3 +96,6 @@ test holds the opacity and reference rules for every kind.
 - [ ] 078/T009 [agent] Object arguments sent as JSON strings — covers R9, D9
 - [ ] 078/T010 [agent] Docs: README, usage skill, components, AGENTS.md — covers R1, R2, R3, R5, R9
 - [ ] 078/T011 [agent] Verify: typecheck, lint on touched files, tests, the round-7 script re-run (144 calls) plus the new cases — covers R1, R2, R3, R4, R5, R6, R7, R8, R9
+
+## Changes
+- 2026-10-27: `service.test.ts` expected `elements.bad.animPreset` for an `element_add` naming an unknown animation preset; R4 points that failure at the input, `patch.animPreset`, so the expectation changes. Work: T004.

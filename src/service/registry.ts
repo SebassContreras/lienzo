@@ -60,6 +60,28 @@ export function failAll(code: string, problems: readonly Problem[]): never {
   });
 }
 
+/**
+ * `error` with every path renamed by `rename` (078/D4): its `path`, each of its `errors` and
+ * the message lines built from them, so a caller re-roots a failure at its own input
+ * (`compact.…`, `patch.…`) the same way everywhere.
+ */
+export function remapFailure(
+  error: ToolError,
+  rename: (path: string) => string,
+): ToolError {
+  if (!error.errors) return { ...error, path: rename(error.path) };
+  const errors = error.errors.map((p) => ({
+    path: rename(p.path),
+    message: p.message,
+  }));
+  return {
+    code: error.code,
+    message: errors.map(line).join("\n"),
+    path: errors[0]?.path ?? "",
+    errors,
+  };
+}
+
 /** The problems `check` fails with, or none: each ToolFailure becomes its `errors` (or itself). */
 export function problemsOf(check: () => void):
   | {

@@ -249,7 +249,7 @@ describe("animation presets (D6, R7)", () => {
     });
     expect(r).toMatchObject({
       ok: false,
-      error: { code: "unknown_anim_preset", path: "elements.bad.animPreset" },
+      error: { code: "unknown_anim_preset", path: "patch.animPreset" },
     });
   });
 
