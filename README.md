@@ -171,7 +171,8 @@ The same options work in compact scenes (`scene_build`) and through the element 
 - **Symbols:** `symbols: { car: { w, h, children } }` defines a piece once; a `use`
   element (`symbol: "car"`, `overrides` by child id) draws an instance.
 - **Shapes:** `polygon` `fit: "box"`; `path` `mode: "layers"` draws every shape at once;
-  group `clip`; radial and multi-stop fills (`fill.type`, `fill.stops`).
+  group `clip`; radial and multi-stop fills (`fill.type`, `fill.stops`); a radial fill reaches
+  the edge of an ellipse, polygon or star.
 - **Particles:** direction and gravity for falling particles, fractional or `0` speed.
 - **Effects and flat style:** partial `effects` (blur, blend, mask…) on any element;
   `defaults: "flat"` turns off the default gradient, shadow, border and border glow of shapes and paths.
@@ -180,9 +181,11 @@ The same options work in compact scenes (`scene_build`) and through the element 
 - **Voice and audio:** `scene_generate_speech` with `asTrack: true` and `startOffset`
   appends one voice track per shot instead of replacing `scene.audio`; `scene_build` keeps
   existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not
-  installed (`font_install`).
-- **Checking a scene:** `scene_validate`, `scene_inspect_layout` (overlaps, out of canvas,
-  contrast, drawn boxes) and `scene_preview` (`out` also saves the PNG in `exports/`).
+  installed (`font_install`, which stores Google fonts as ttf so their text is measured);
+  until then they draw in Inter.
+- **Checking a scene:** `scene_validate` (unknown keys name the field they likely meant),
+  `scene_inspect_layout` (overlaps, out of canvas, contrast, drawn boxes as the shot camera
+  shows them) and `scene_preview` (`out` also saves the PNG in `exports/`).
 
 In the editor: the scene inspector's **Tomas** section adds and edits shots (times,
 transition, camera) and a top-level element picks its shot under **Toma**; **Crear símbolo

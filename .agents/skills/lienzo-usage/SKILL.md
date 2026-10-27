@@ -36,10 +36,11 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
    `preset_get`, `font_list` (then `font_install` for a Google font you need).
 3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
-   `notices` without writing anything. Read the notices (ignored keys, missing fonts, text
-   widths estimated for a font with no metrics: check those with `scene_preview`).
-4. **Check:** `scene_inspect_layout` (overlaps, out of canvas, contrast, drawn boxes) at
-   the times that matter; `scene_preview` at a time `t` to look at a frame (`out` saves the
+   `notices` without writing anything. Read the notices (ignored keys, with the field they
+   likely meant, missing fonts, which draw in Inter, text widths estimated for a font with no
+   metrics: check those with `scene_preview`).
+4. **Check:** `scene_inspect_layout` (overlaps, out of canvas, contrast, drawn boxes as the
+   shot camera shows them) at the times that matter; `scene_preview` at a time `t` to look at a frame (`out` saves the
    PNG in `exports/`).
 5. **Save:** `scene_build` with `save: "<name>"` (`overwrite: true` to replace; the stored
    audio is kept unless you pass `audioTracks`). `saved` is the scene name and every notice,
@@ -107,9 +108,10 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
   shot's `start` and after its `end`; consecutive shots overlap there.
 - Defaults: shapes fill at `fill.opacity: 1`; a `path` has no stroke unless you set
   `border.width` (a `"draw"` entrance gives it 3). Unknown keys come back as notices,
-  named by path.
+  named by path, with the field they likely meant (`fontSize` → `size`).
 - Shapes: `polygon` `fit: "box"`, `path` `mode: "layers"`, group `clip`, fills with
-  `fill.type: "radial"` or `fill.stops`. Partial `effects` merge with the defaults.
+  `fill.type: "radial"` (it reaches the edge of an ellipse, polygon or star, the farthest
+  corner of a rect) or `fill.stops`. Partial `effects` merge with the defaults.
 - `audioTracks: [{ assetId, startOffset?, volume? }]` sets the audio.
 
 The full schema is `schemas/compact-scene.json`; component fields are in
