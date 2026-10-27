@@ -55,7 +55,12 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
    `element_add` takes `patch.id` as the new id (fails if taken) and returns a notice when
    the element leaves the canvas (give a long text a `w` so it wraps).
    Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
-   `animation_save`.
+   `animation_save` / `animation_delete` (with `project`, the project's own; without it, the
+   global library). `preset_list` / `preset_get` take `project` to see the project's presets;
+   a recipe may omit `traits`, and an animation's `anim.in`/`loop`/`out` may be partial.
+   Patches with a key the kind lacks, or an `id`/`kind` (they never change), come back as
+   notices. Removing a shot unbinds its elements (named in `notices`); a shot must end
+   within the scene and not overlap another.
    - **Duplicate** (no tool of its own): `scene_get`, copy the element, then `element_add`
      with its fields in `patch`, a new `id` and the position shifted (`x`/`y`).
    - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
@@ -95,6 +100,18 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 - `at` places an element the same way in every tool (`scene_build`, `element_add`,
   `element_update`): `"center"` or another anchor, `{ anchor, offset: [dx, dy] }`, or a
   point `{ x, y }` it is centred on; `fit: "canvas"` fills the canvas; lines join elements with `from` / `to`.
+  Edge anchors (`"top"`, `"bottom-left"`, …) keep 5% of the shorter side from the edge
+  (54 px on 1080); `offset` moves from there. A top-level element with no `at`, `x`, `y`
+  or `fit` is centred. `at` with a track on `x`/`y` comes back as a notice: the track's
+  absolute values win.
+- Values are checked where they are written: colors are CSS colors (`#rrggbb`, `rgb()`,
+  `hsl()`, a name such as `red`), `w`/`h` are ≥ 0 and keyframes stay in their field's range
+  (`opacity` 0–1). A still (`scene_export` png, `scene_preview`) at `t` past the duration fails.
+- Notices also name what would draw as a placeholder: an unknown icon, an image `src` that
+  is not a project asset and a line `from`/`to` naming no element. `asset_add` refuses a
+  file that is not the image its extension says. An image given `src` and no `aspect`
+  takes the picture's proportion; a `counter` shows its final value until `progress` is
+  keyframed from 0 to 1; `list.items` takes `"a\nb"` or `["a", "b"]`.
 - Italic text is `italic: true` (`fontStyle` is not a field and comes back as ignored).
 - Only `scene_build` and `scene_validate` (with `compact`) take the compact form;
   `scene_create` and `scene_update` take full scenes (`scene_create` fills a partial

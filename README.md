@@ -208,7 +208,8 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
   `element_group`, `element_ungroup`,
   `image_trim`, `keyframe_set`, `keyframe_remove`, `background_set`, `shot_set`
 - Catalog: `component_list`, `preset_list`, `preset_get`, `preset_validate`, `preset_save`,
-  `preset_rename`, `preset_delete`, `animation_list`, `animation_save`, `font_list`,
+  `preset_rename`, `preset_delete`, `animation_list`, `animation_save`, `animation_delete`,
+  `font_list`,
   `font_install` (a Google family, or a local `file`)
 
 Everything the editor saves has a tool, and the editor's "Revisión" section runs the same

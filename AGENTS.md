@@ -80,6 +80,14 @@ What exists today:
   `src/service/compact/implied.ts`); `element_add` honors `patch.id` and notices an element off
   the canvas; `at` positions and layout boxes are rounded (`round2`); `scene_create` fills a
   partial `background`
+- QA suite fixes (069): colors are CSS colors (`ColorSchema`, `src/model/color.ts`) and the
+  scene schema checks keyframe values against their field (`keyframeError`); every scene write
+  appends `resourceNotices` (`src/service/scene-resources.ts`: unknown icons, missing assets,
+  loose line ends); `asset_add` and image `aspect` read picture headers
+  (`src/service/image-header.ts`, `image-aspect.ts`); edge anchors keep a 5% margin
+  (`anchorMargin`) and unplaced compact elements are centred; shots are checked by
+  `shotProblem` and unbound by `unbindShot` (`src/model/shots.ts`); animation tools take an
+  optional `project` (`animationsDir`) and `animation_delete` exists
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
