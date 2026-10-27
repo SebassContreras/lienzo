@@ -32,7 +32,7 @@ What exists today:
 - Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
   (global) and `projects/<project>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
   loaded with `FontFace` by `src/engine/fonts.ts` in the editor and the `?render` route;
-  Google Fonts only through `src/service/google-fonts.ts` (`font_install`) (A12@2, spec 045)
+  Google Fonts only through `src/service/google-fonts.ts` (`font_install`) (A12, spec 045)
 - pnpm only (A13); Biome + Vitest (A14); lint, typecheck and test run locally
 - UI text in Spanish; code, comments and docs in English (A16)
 - Conventional Commits (A17); MIT-compatible deps only (A18)
