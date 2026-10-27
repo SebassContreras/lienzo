@@ -343,3 +343,43 @@ describe("unknown shots (069/D4)", () => {
     );
   });
 });
+
+describe("shape_overlap (071/D4)", () => {
+  const rectAt = (id: string, x: number, y: number, w: number, h: number) => ({
+    ...defaultRect(),
+    id,
+    x,
+    y,
+    w,
+    h,
+  });
+  const codesOf = (elements: ReturnType<typeof rectAt>[]) =>
+    inspectLayout({ ...defaultScene(), elements }, [0]).map((d) => d.code);
+
+  it("reports two shapes stacked at the same spot", () => {
+    const codes = codesOf([
+      rectAt("a", 400, 450, 280, 180),
+      rectAt("b", 330, 470, 420, 140),
+    ]);
+
+    expect(codes).toContain("shape_overlap");
+  });
+
+  it("does not report a shape held inside another, as a card under its content", () => {
+    const codes = codesOf([
+      rectAt("card", 100, 100, 600, 400),
+      rectAt("badge", 150, 150, 100, 100),
+    ]);
+
+    expect(codes).not.toContain("shape_overlap");
+  });
+
+  it("does not report shapes that only touch at a corner", () => {
+    const codes = codesOf([
+      rectAt("a", 100, 100, 200, 200),
+      rectAt("b", 250, 250, 200, 200),
+    ]);
+
+    expect(codes).not.toContain("shape_overlap");
+  });
+});

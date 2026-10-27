@@ -26,6 +26,7 @@ import { round2 } from "./round.ts";
 export type LayoutDiagnostic = {
   code:
     | "text_overlap"
+    | "shape_overlap"
     | "out_of_bounds"
     | "dangling_attachment"
     | "low_contrast"
@@ -347,6 +348,27 @@ function checkTextContrast(
 /**
  * Default inspection times: loop start (0), middle, and end (scene.duration).
  */
+/** Kinds `shape_overlap` leaves out: text has its own check, lines and groups have no body. */
+const NOT_SHAPES = new Set(["text", "line", "group"]);
+
+const contains = (outer: Box, inner: Box) =>
+  inner.x >= outer.x &&
+  inner.y >= outer.y &&
+  inner.x + inner.w <= outer.x + outer.w &&
+  inner.y + inner.h <= outer.y + outer.h;
+
+/**
+ * Whether two boxes cover half or more of the smaller one while neither holds the other, as
+ * unplaced elements stacked at the centre do; a card under its content is contained (071/D4).
+ */
+export function shapesStack(a: Box, b: Box): boolean {
+  if (contains(a, b) || contains(b, a)) return false;
+  const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  if (w <= 0 || h <= 0) return false;
+  return w * h >= 0.5 * Math.min(a.w * a.h, b.w * b.h);
+}
+
 function defaultInspectionTimes(duration: number): number[] {
   if (duration <= 0) return [0];
   const half = duration / 2;
@@ -356,6 +378,7 @@ function defaultInspectionTimes(duration: number): number[] {
 /**
  * Pure layout inspection (D1, R2, D5, D6). Analyzes element boxes and contrast at given times:
  * - text overlaps
+ * - shapes stacked on each other (071/D4)
  * - elements outside the canvas bounds
  * - line ends attached to ids that do not exist
  * - elements bound to a shot that does not exist
@@ -428,6 +451,24 @@ export function inspectLayout(
             message: `El texto se solapa con el elemento de texto «${b.el.id}»`,
           });
         }
+      }
+    }
+
+    // 3b. Check shapes stacked on each other (071/D4)
+    const shapes = placed.filter(
+      (item) => !item.parentGroup && !NOT_SHAPES.has(item.el.kind),
+    );
+    for (let i = 0; i < shapes.length; i++) {
+      for (let j = i + 1; j < shapes.length; j++) {
+        const a = shapes[i];
+        const b = shapes[j];
+        if (!a || !b || !shapesStack(a.box, b.box)) continue;
+        diagnostics.push({
+          code: "shape_overlap",
+          elementId: a.el.id,
+          t,
+          message: `Se superpone con «${b.el.id}» en más de la mitad del menor, sin que uno contenga al otro`,
+        });
       }
     }
 
