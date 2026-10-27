@@ -112,29 +112,37 @@ for (const ext of ["mp3", "wav", "aac", "ogg"]) {
   registerAssetLoader(ext, loadAudioBuffer);
 }
 
-function sceneSources(scene: Scene, out: Set<string>): Set<string> {
+/** The asset files and the lazily loaded code (066/D2) drawing `scene` needs. */
+function sceneNeeds(scene: Scene) {
+  const sources = new Set<string>();
+  const loads = new Set<() => Promise<void>>();
   if (scene.audio?.assetId) {
-    out.add(scene.audio.assetId);
+    sources.add(scene.audio.assetId);
   }
   if (scene.audioTracks) {
     for (const track of scene.audioTracks) {
-      if (track.assetId) out.add(track.assetId);
+      if (track.assetId) sources.add(track.assetId);
     }
   }
   const collect = (elements: Element[]) => {
     for (const el of elements) {
-      for (const src of descriptorOf(el.kind)?.assets?.(el as never) ?? []) {
-        if (src) out.add(src);
+      const descriptor = descriptorOf(el.kind);
+      for (const src of descriptor?.assets?.(el as never) ?? []) {
+        if (src) sources.add(src);
       }
+      if (descriptor?.load) loads.add(descriptor.load);
       if (el.kind === "group") collect(el.children);
     }
   };
   collect(scene.elements);
-  return out;
+  return { sources, loads };
 }
 
-/** Waits until every asset the scene uses has loaded, so every exported frame shows them. */
+/** Waits until every asset and lazily loaded code the scene uses is ready, so every exported frame shows them. */
 export async function loadSceneAssets(scene: Scene): Promise<void> {
-  const sources = sceneSources(scene, new Set());
-  await Promise.all([...sources].map((src) => entry(src).ready));
+  const { sources, loads } = sceneNeeds(scene);
+  await Promise.all([
+    ...[...sources].map((src) => entry(src).ready),
+    ...[...loads].map((load) => load()),
+  ]);
 }

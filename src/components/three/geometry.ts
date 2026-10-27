@@ -1,6 +1,7 @@
 /**
  * The shapes a 3D element shows: primitives and extruded text, each fitted into about
- * `SIZE` scene units around the origin and cached. Models live in `model.ts`.
+ * `SIZE` scene units around the origin and cached. Models live in `model.ts`; the shape
+ * names live in `shapes.ts`, so the descriptor does not load three.js (066/D1).
  */
 import {
   type Box3,
@@ -16,24 +17,7 @@ import {
   Vector3,
 } from "three";
 import { type OutlineCommand, textOutline } from "./font.ts";
-
-/** Largest side of a primitive, text or model, in scene units. */
-export const SIZE = 2;
-
-export const SHAPES = [
-  ["cube", "Cubo"],
-  ["sphere", "Esfera"],
-  ["torus", "Toro"],
-  ["cylinder", "Cilindro"],
-  ["cone", "Cono"],
-  ["plane", "Plano"],
-  ["text", "Texto 3D"],
-  ["model", "Modelo (.glb)"],
-] as const;
-
-type Shape = (typeof SHAPES)[number][0];
-
-export type Primitive = Exclude<Shape, "text" | "model">;
+import { type Primitive, SIZE } from "./shapes.ts";
 
 const PRIMITIVES: Record<Primitive, () => BufferGeometry> = {
   cube: () => new BoxGeometry(1.4, 1.4, 1.4),

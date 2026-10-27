@@ -30,8 +30,8 @@
   - _Mitigation_: Names do not matter at runtime; the build output lists sizes for the check in T005.
 
 ## Tasks
-- [ ] 066/T001 [agent] Test: `loadSceneAssets` waits for a kind's `load` (in a group too) before resolving — covers R3
-- [ ] 066/T002 [agent] Descriptor `load` and `loadSceneAssets` awaiting it — covers D2
-- [ ] 066/T003 [agent] Split the 3D element into `draw.ts`/`shapes.ts` and a lazily imported `runtime.ts`; lazy `.glb`/`.woff` loaders; descriptor `load` — covers D1, R2
+- [x] 066/T001 [agent] Test: `loadSceneAssets` waits for a kind's `load` (in a group too) before resolving — covers R3
+- [x] 066/T002 [agent] Descriptor `load` and `loadSceneAssets` awaiting it — covers D2
+- [x] 066/T003 [agent] Split the 3D element into `draw.ts`/`shapes.ts` and a lazily imported `runtime.ts`; lazy `.glb`/`.woff` loaders; descriptor `load` — covers D1, R2
 - [ ] 066/T004 [agent] Import the video encoder lazily in `export.ts` — covers D3, R4
 - [ ] 066/T005 [agent] Verify: typecheck, tests, `pnpm build` chunk sizes, and a 3D scene and an MP4 export in the browser; update AGENTS.md — covers R1, R5, D4
