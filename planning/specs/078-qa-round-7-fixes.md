@@ -95,7 +95,8 @@ test holds the opacity and reference rules for every kind.
 - [x] 078/T008 [agent] Missing asset wording, rounded off-canvas notice, built-in preset refusal — covers R8, D8
 - [x] 078/T009 [agent] Object arguments sent as JSON strings — covers R9, D9
 - [x] 078/T010 [agent] Docs: README, usage skill, components, AGENTS.md — covers R1, R2, R3, R5, R9
-- [ ] 078/T011 [agent] Verify: typecheck, lint on touched files, tests, the round-7 script re-run (144 calls) plus the new cases — covers R1, R2, R3, R4, R5, R6, R7, R8, R9
+- [x] 078/T011 [agent] Verify: typecheck, lint on touched files, tests, the round-7 script re-run (144 calls) plus the new cases — covers R1, R2, R3, R4, R5, R6, R7, R8, R9
+      verified: `pnpm typecheck`, biome on the 38 touched source files, `pnpm test` (1292 tests, 155 files); the round-7 script re-run through the registry on HEAD, 151 calls on scratch project `qa-r7` (deleted after): `keyframe_set opacity: 5` on a text and `fill.opacity: 3` fail; trimming s1's start leaves tracks (only a camera-outside notice), moving s1 whole moves them; `use` of `nada` fails at `compact.elements.0.symbol` and `patch.symbol`; `element_add` with `w: -1, shot: "nope"` fails at `patch.w` and `patch.shot` in Spanish; `preset_validate` lists `""` and `set.w` apart; a JSON-string `patch` is applied; renaming a built-in answers `built_in` — found: the one flagged call (#110) is the round-7 expectation that a start-only change moves tracks, which R2 replaces (a trim leaves them); zod's Spanish locale says «Llave desconocida» for an unknown key
 
 ## Changes
 - 2026-10-27: `service.test.ts` expected `elements.bad.animPreset` for an `element_add` naming an unknown animation preset; R4 points that failure at the input, `patch.animPreset`, so the expectation changes. Work: T004.
