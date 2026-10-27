@@ -25,7 +25,8 @@ export const elementUpdate = defineTool({
     "partial patch, deep-merged: objects merge key by key, anything else (arrays, tracks' " +
     "keyframe lists) is replaced. id and kind never change. The result is checked against the " +
     "kind's fields; `notices` names patch keys the kind has no field for and an `id`/`kind` " +
-    "that was not changed. A `shot` the scene lacks fails. An element's tracks are timed from " +
+    "that was not changed. A value outside its field's range (every opacity is 0–1) fails, and " +
+    "so does a `shot`, icon, line target or symbol the scene lacks, listing the valid ones. An element's tracks are timed from " +
     "its shot's `start`: changing `shot` moves them by the difference (a notice says how " +
     "far), except tracks given in the same patch, which are taken as given. " +
     ANIM_RULES +

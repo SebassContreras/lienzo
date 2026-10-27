@@ -6,7 +6,8 @@ import { defineTool } from "../registry.ts";
 export const sceneDelete = defineTool({
   name: "scene_delete",
   description:
-    "Delete a scene from the project's scenes/, as the editor's Escenas tab does.",
+    "Delete a scene from the project's scenes/ (by name or file name), as the editor's " +
+    "Escenas tab does; a missing one fails at `scene`.",
   input: z.object({ project: PROJECT, scene: z.string().min(1) }),
   output: z.object({ ok: z.literal(true) }),
   async run({ project, scene }, ctx) {

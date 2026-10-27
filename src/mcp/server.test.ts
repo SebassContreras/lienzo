@@ -158,4 +158,20 @@ describe("build id (072/D1)", () => {
     expect(instructions).toContain("commit 90aee32");
     await other.close();
   });
+
+  it("tells the client how every tool takes arguments and answers failures (079/R2)", async () => {
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await createMcpServer(
+      registry,
+      createCtx(await mkdtemp(join(tmpdir(), "lienzo-rules-")), fakeRenderer()),
+    ).connect(serverSide);
+    const other = new Client({ name: "test", version: "0" });
+    await other.connect(clientSide);
+
+    const instructions = other.getInstructions();
+
+    expect(instructions).toContain("a JSON string holding one is read");
+    expect(instructions).toContain("`errors`, one per problem");
+    await other.close();
+  });
 });

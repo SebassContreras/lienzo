@@ -14,7 +14,7 @@ export const projectCreate = defineTool({
     "Create a new isolated project workspace in projects/<project>/ with its brand guide, " +
     "color palette, and directories for assets, presets, and scenes. `project` (lowercase " +
     "letters, digits and `-`) defaults to `name` made into one (accents folded: «Café Norte» " +
-    "→ cafe-norte); the result names it. `canvas` fields not given take 1080x1080, 30 fps, 5 s.",
+    "→ cafe-norte); the result names it; an existing id fails with `exists`. `canvas` fields not given take 1080x1080, 30 fps, 5 s.",
   input: z.object({
     project: ProjectSlugSchema.optional(),
     name: z.string().min(1, "El nombre del proyecto es obligatorio"),

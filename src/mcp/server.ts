@@ -24,6 +24,15 @@ import { gitCommit } from "./build-id.ts";
 
 const VERSION = "0.1.0";
 
+/** How every tool answers, told once to the client instead of in each description (079). */
+const RULES =
+  "Every tool: object and array arguments are JSON values (a JSON string holding one is read " +
+  "too); scene, asset and export tools need `project` (project_list); a failure is " +
+  "`{ code, message, path }`, and a scene or recipe check adds `errors`, one per problem at its " +
+  "path, an element named by the id you gave or else by its index; messages are Spanish; `notices` name what was " +
+  "ignored or may surprise, never a failure. Coordinates: `x, y` is an element's top-left " +
+  "corner; use `at` to place by anchor. Workflow: .agents/skills/lienzo-usage/SKILL.md.";
+
 /** A registry tool as MCP lists it: same name and description, its input as JSON Schema. */
 function mcpToolOf(tool: Tool): McpTool {
   const { $schema: _, ...schema } = z.toJSONSchema(tool.input, { io: "input" });
@@ -56,7 +65,7 @@ export function createMcpServer(registry: Registry, ctx: Ctx): Server {
     { name: "lienzo", version: VERSION },
     {
       capabilities: { tools: {} },
-      instructions: `lienzo ${VERSION}, commit ${gitCommit(ctx.root) ?? "desconocido"}. If it differs from \`git rev-parse --short HEAD\`, restart this server: it runs the code it started with.`,
+      instructions: `lienzo ${VERSION}, commit ${gitCommit(ctx.root) ?? "desconocido"}. If it differs from \`git rev-parse --short HEAD\`, restart this server: it runs the code it started with. ${RULES}`,
     },
   );
   const listed = registry.tools.map(mcpToolOf);

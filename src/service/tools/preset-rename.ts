@@ -7,8 +7,9 @@ import { refuseBuiltIn } from "../scenes.ts";
 export const presetRename = defineTool({
   name: "preset_rename",
   description:
-    "Rename a preset in the project's presets/ (its file and its stored name). Built-in " +
-    "presets are not in the project and cannot be renamed. Fails when `to` is taken; the old name stops working, and `notices` says when `to` was stored under another name.",
+    "Rename a preset in the project's presets/ (its file and its stored name), by name or " +
+    "file name. A built-in preset is not in the project and cannot be renamed: it fails with " +
+    "`built_in` (preset_save a copy instead). Fails when `to` is taken; the old name stops working, and `notices` says when `to` was stored under another name.",
   input: z.object({
     project: PROJECT,
     from: z.string().min(1),
