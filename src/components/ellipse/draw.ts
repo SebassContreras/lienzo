@@ -20,5 +20,5 @@ export function drawEllipse(
     0,
     Math.PI * 2,
   );
-  drawShape(ctx, el, path, st, dc);
+  drawShape(ctx, el, path, st, dc, "edge");
 }

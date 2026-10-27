@@ -59,8 +59,14 @@ export function gradientStops(fill: GradientFill): Stop[] {
 }
 
 /**
+ * How far a radial gradient reaches: the box's farthest corner, like CSS's default (059/D5),
+ * or the edge of a shape inscribed in the box, such as a circle, so its last color shows (067/D1).
+ */
+export type GradientReach = "corner" | "edge";
+
+/**
  * A linear gradient across `box` at `angleDeg` (0 = left to right), or a radial one from the
- * box centre out to its farthest corner, like CSS's default (059/D5), through `stops`.
+ * box centre out to `reach`, through `stops`.
  */
 function gradientAcross(
   ctx: Ctx,
@@ -68,6 +74,7 @@ function gradientAcross(
   type: "linear" | "radial",
   angleDeg: number,
   stops: Stop[],
+  reach: GradientReach = "corner",
 ): CanvasGradient {
   const cx = box.x + box.w / 2;
   const cy = box.y + box.h / 2;
@@ -79,7 +86,9 @@ function gradientAcross(
       0,
       cx,
       cy,
-      Math.hypot(box.w, box.h) / 2,
+      reach === "edge"
+        ? Math.max(box.w, box.h) / 2
+        : Math.hypot(box.w, box.h) / 2,
     );
   } else {
     const a = (angleDeg * Math.PI) / 180;
@@ -101,6 +110,7 @@ export function fillGradient(
   ctx: Ctx,
   box: Box,
   fill: GradientFill,
+  reach: GradientReach = "corner",
 ): CanvasGradient {
   return gradientAcross(
     ctx,
@@ -108,6 +118,7 @@ export function fillGradient(
     fill.type ?? "linear",
     fill.angle,
     gradientStops(fill),
+    reach,
   );
 }
 

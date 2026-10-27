@@ -50,5 +50,5 @@ export function drawPolygon(
   dc: DrawContext,
 ): void {
   const path = closedPath(polygonPoints(el));
-  drawShape(ctx, el, path, st, dc);
+  drawShape(ctx, el, path, st, dc, "edge");
 }

@@ -12,5 +12,5 @@ export function drawStar(
   dc: DrawContext,
 ): void {
   const n = cornerCount(el.points) * 2;
-  drawShape(ctx, el, closedPath(radialPoints(el, n, el.inner)), st, dc);
+  drawShape(ctx, el, closedPath(radialPoints(el, n, el.inner)), st, dc, "edge");
 }

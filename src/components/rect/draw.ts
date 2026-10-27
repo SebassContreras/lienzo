@@ -4,6 +4,7 @@ import {
   type Ctx,
   dashFor,
   fillGradient,
+  type GradientReach,
   rgba,
   shadowOnly,
   withTransform,
@@ -30,7 +31,8 @@ export function drawRect(
 
 /**
  * Paints a filled shape the way rectangles look: shadow, background glow, fill, border with
- * its glow and the inner label. `path` is the outline, in scene coordinates.
+ * its glow and the inner label. `path` is the outline, in scene coordinates; `reach` is how far
+ * a radial fill goes, `"edge"` for shapes inscribed in their box (067/D1).
  */
 export function drawShape(
   ctx: Ctx,
@@ -38,6 +40,7 @@ export function drawShape(
   path: Path2D,
   st: AnimState,
   { scene, t }: DrawContext,
+  reach: GradientReach = "corner",
 ): void {
   const box = { x: el.x, y: el.y, w: el.w, h: el.h };
   withTransform(ctx, box, st, () => {
@@ -65,7 +68,7 @@ export function drawShape(
     ctx.save();
     ctx.globalAlpha *= el.fill.opacity;
     ctx.fillStyle = el.fill.gradient
-      ? fillGradient(ctx, box, el.fill)
+      ? fillGradient(ctx, box, el.fill, reach)
       : el.fill.color;
     ctx.fill(path);
     ctx.restore();
