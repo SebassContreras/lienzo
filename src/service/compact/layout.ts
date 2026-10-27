@@ -98,14 +98,28 @@ const roundPoint = (p: { x: number; y: number }) => ({
   y: round2(p.y),
 });
 
+/**
+ * A text with no wrap width that is wider than `container` within its safe margins, given
+ * that width so it wraps instead of running off the canvas (074/D11).
+ */
+function wrapToContainer(
+  el: Element,
+  container: { width: number; height: number },
+): Element {
+  if (el.kind !== "text" || el.w) return el;
+  const room = container.width - 2 * anchorMargin(container);
+  return boxOf(el).w > room ? { ...el, w: room } : el;
+}
+
 /** Places `el` by `at` inside `container`, the same way in every tool (064/D12). */
 export function placeAt(
   el: Element,
   at: AtPlacement,
   container: { width: number; height: number },
 ): Element {
-  const c = atCenter(at, boxOf(el), container);
-  const out = centerOn(el, c.x, c.y);
+  const fitted = wrapToContainer(el, container);
+  const c = atCenter(at, boxOf(fitted), container);
+  const out = centerOn(fitted, c.x, c.y);
   if (out.kind === "line")
     return { ...out, a: roundPoint(out.a), b: roundPoint(out.b) };
   return { ...out, ...roundPoint(out) } as Element;

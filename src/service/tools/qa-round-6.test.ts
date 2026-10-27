@@ -319,3 +319,14 @@ it("points effects.glow at the element's own glow field (074/R13)", async () => 
     expect.stringContaining("Glow: { enabled: true }"),
   ]);
 });
+
+it("wraps a long centred text with no w inside the canvas margins (074/R11)", async () => {
+  const out = await value("scene_build", {
+    compact: {
+      size: "1080x1080",
+      elements: [{ kind: "text", at: "center", text: "palabra ".repeat(80) }],
+    },
+  });
+
+  expect(out.scene).toMatchObject({ elements: [{ w: 1080 - 2 * 54 }] });
+});

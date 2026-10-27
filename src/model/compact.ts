@@ -94,7 +94,8 @@ export const AT_RULES =
   '`at` places the element: an anchor name (`"center"`, `"top-left"`, …), ' +
   "`{ anchor, offset: [dx, dy] }`, or a point `{ x, y }` the element is centred on. Edge " +
   "anchors keep a safe margin of 5% of the shorter side from the edges they touch (54 px on " +
-  "1080); `offset` moves from there. ";
+  "1080); `offset` moves from there. A text with no `w` placed by `at` that is wider than " +
+  "that space gets it as its `w`, so it wraps. ";
 
 export type AtPlacement = z.infer<typeof AtPlacementSchema>;
 
