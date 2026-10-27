@@ -4,7 +4,7 @@ import { TRAITS } from "../../traits/index.ts";
 
 /** What a recipe is, for preset_validate and preset_save (074/D15). */
 export const RECIPE_RULES =
-  "A recipe is `{ name, kind, category?, traits, set? }` and nothing else: `kind` is a " +
+  "A recipe is `{ name, kind, category?, traits?, set? }` and nothing else (`traits` defaults to `[]`): `kind` is a " +
   "component kind (component_list) or `background`; `traits` applies style pieces in order, " +
   `each an id or \`{ use: id, …params }\` (ids: ${[...TRAITS.keys()].join(", ")}); \`set\` holds ` +
   "the element's own values on top (partial, as element_update patches; `tracks` times from " +

@@ -20,9 +20,10 @@ export const keyframeSet = defineTool({
     "Set a keyframe or configure loop options on an element's track (at root or inside nested " +
     "groups, by `id` or `group/child` path): `path` is an animatable field path or channel of " +
     "its kind (see component_list, e.g. `x`, `fill.color`, `@rotate`, `@scale`), `t` seconds " +
-    "within the scene, `value` a number or a color. A keyframe already at `t` is replaced. " +
+    "within the scene (scene time, also for an element bound to a shot; its tracks move with " +
+    "the shot when it changes, see shot_set), `value` a number or a color. A keyframe already at `t` is replaced. " +
     "`easing` (default `auto`) shapes the segment to the next keyframe (`step` / `hold` holds " +
-    "the value until the next keyframe). `repeat` (`none` | `loop` | `pingpong`) and `until` " +
+    "the value until the next keyframe); an unknown easing fails, listing the names. `repeat` (`none` | `loop` | `pingpong`) and `until` " +
     "(seconds, or `null` to clear) set or clear track looping.",
   input: z.object({
     scene: z.string().min(1),

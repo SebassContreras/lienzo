@@ -35,9 +35,12 @@ function stringSchema() {
 export const sceneInspectLayout = defineTool({
   name: "scene_inspect_layout",
   description:
-    "Analyse layout and spatial diagnostics of a scene (text overlaps, elements " +
-    "outside canvas bounds, line attachments to missing IDs, and contrast issues) at given " +
-    "times (default: start, middle and end of loop). Pass a saved scene name in `scene` or a whole scene object in `data`. " +
+    "Analyse layout and spatial diagnostics of a scene at given times (default: start, middle " +
+    "and end of loop): `text_overlap`, `shape_overlap` (shapes stacked on each other; a " +
+    "clearly smaller box inside a bigger one is not reported), `out_of_bounds`, " +
+    "`dangling_attachment` (a line end on a missing id), `low_contrast` / " +
+    "`unverifiable_contrast`, `missing_symbol` and `unknown_shot`, counting only the elements " +
+    "whose shot is on screen at that time. Pass a saved scene name in `scene` or a whole scene object in `data`. " +
     "Also returns `boxes`: the drawn box (top-left `x, y`, `w`, `h`) of every top-level " +
     "element at each time, as its shot's camera and transition show it on screen, to verify " +
     "placement (e.g. centred when x + w/2 = width/2). A box marked " +

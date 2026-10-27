@@ -15,7 +15,7 @@ const EXTENSIONS: Record<string, string> = {
 export const sceneExport = defineTool({
   name: "scene_export",
   description:
-    "Export a saved scene as a PNG (one frame at time `t`, default 0), a GIF or an MP4 " +
+    "Export a saved scene as a PNG (one frame at time `t`, default 0; past the duration fails), a GIF or an MP4 " +
     "(the whole loop) and return the written file. MP4 falls back to WebM, with a notice, " +
     "when the browser cannot encode H.264. `out` is the file path inside the project's " +
     "exports/ (default <scene>.<ext>); a path outside it fails; its extension follows the " +

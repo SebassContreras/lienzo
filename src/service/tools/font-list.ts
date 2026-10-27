@@ -7,7 +7,7 @@ export const fontList = defineTool({
   name: "font_list",
   description:
     "List the fonts a scene can use: bundled, global (fonts/) and, with `project`, that " +
-    "project's own (projects/<slug>/fonts/), which hide global ones of the same family.",
+    "project's own (projects/<project>/fonts/), which hide global ones of the same family.",
   input: z.object({ project: ProjectSlugSchema.optional() }),
   output: z.array(
     z.object({

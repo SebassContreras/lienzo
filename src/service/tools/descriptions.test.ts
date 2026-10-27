@@ -46,6 +46,6 @@ describe("tool descriptions (064/R2, R3)", () => {
     const text = presetValidate.description;
 
     // Assert
-    expect(text).toContain("`{ name, kind, category?, traits, set? }`");
+    expect(text).toContain("`{ name, kind, category?, traits?, set? }`");
   });
 });
