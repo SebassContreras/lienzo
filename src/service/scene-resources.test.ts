@@ -1,34 +1,54 @@
 import { cp, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, it } from "vitest";
-import { createCtx } from "./ctx.ts";
+import { beforeEach, expect, it } from "vitest";
+import { type Ctx, createCtx } from "./ctx.ts";
 import { fakeRenderer } from "./fake-renderer.ts";
 import { registry } from "./tools/index.ts";
 
-it("notes unknown icons, missing images and loose line ends (069/D8)", async () => {
+let ctx: Ctx;
+const build = (compact: unknown, save?: string) =>
+  registry.call("scene_build", { project: "p", compact, save }, ctx);
+
+beforeEach(async () => {
   const root = await mkdtemp(join(tmpdir(), "lienzo-res-"));
   await cp("presets/built-in", join(root, "presets", "built-in"), {
     recursive: true,
   });
-  const ctx = createCtx(root, fakeRenderer());
+  ctx = createCtx(root, fakeRenderer());
   await registry.call("project_create", { project: "p", name: "P" }, ctx);
-  const r = await registry.call(
-    "scene_build",
-    {
-      project: "p",
-      compact: {
-        elements: [
-          { kind: "icon", id: "i", icon: "no-such-icon" },
-          { kind: "image", id: "img", src: "missing.png" },
-          { kind: "line", id: "l", to: "nope" },
-          { kind: "icon", id: "ok", icon: "Wrench" },
-        ],
-      },
+});
+
+it("notes unknown icons, missing images and loose line ends (069/D8)", async () => {
+  const r = await build({
+    elements: [
+      { kind: "icon", id: "i", icon: "no-such-icon" },
+      { kind: "image", id: "img", src: "missing.png" },
+      { kind: "line", id: "l", to: "nope" },
+      { kind: "icon", id: "ok", icon: "Wrench" },
+    ],
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      notices: [
+        expect.stringContaining("«i»"),
+        expect.stringContaining("«img»"),
+        expect.stringContaining("«l»"),
+      ],
     },
-    ctx,
+  });
+});
+
+it("notes a missing resource once when the build is saved (070/D3)", async () => {
+  const r = await build(
+    { elements: [{ kind: "icon", id: "i", icon: "no-such-icon" }] },
+    "s",
   );
-  const notices = r.ok ? (r.value as { notices: string[] }).notices : [];
-  expect(notices.filter((n) => /«(i|img|l)»/.test(n))).toHaveLength(3);
-  expect(notices.some((n) => n.includes("«ok»"))).toBe(false);
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringContaining("«i»")] },
+  });
 });

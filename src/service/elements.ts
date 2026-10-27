@@ -40,6 +40,15 @@ export function patchNotices(
   return [...fixed, ...ignored];
 }
 
+/** Whether `el` animates `x` or `y`, which wins over its `at` placement while it plays. */
+export function hasPositionTrack(el: Element): boolean {
+  return Boolean(el.tracks?.x || el.tracks?.y);
+}
+
+/** The notice for an element placed by `at` that also has an `x`/`y` track (069/D11). */
+export const trackOverridesAt = (where: string) =>
+  `${where}: tiene \`at\` y una pista en x/y; la pista fija x/y y anula la posición de \`at\` (sus valores son absolutos: calcúlalos desde donde \`at\` lo deja, o quita \`at\`)`;
+
 /** Fails unless `kind` is a registered component kind. */
 export function checkKind(kind: string, path = "kind"): void {
   if (!descriptorOf(kind))

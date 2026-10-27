@@ -1,9 +1,14 @@
 import { z } from "zod";
 import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
-import { hasPositionTrack, trackOverridesAt } from "../compact/expand.ts";
 import { placeAt } from "../compact/layout.ts";
 import { updateElement } from "../element-tree.ts";
-import { COORDINATES, patched, patchNotices } from "../elements.ts";
+import {
+  COORDINATES,
+  hasPositionTrack,
+  patched,
+  patchNotices,
+  trackOverridesAt,
+} from "../elements.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
 import { editScene, SceneResult } from "../scenes.ts";

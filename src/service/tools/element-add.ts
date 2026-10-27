@@ -8,11 +8,16 @@ import {
   type ElementKind,
 } from "../../model/model.ts";
 import { resolveElement } from "../../presets/resolve.ts";
-import { hasPositionTrack, trackOverridesAt } from "../compact/expand.ts";
 import { applyImplied } from "../compact/implied.ts";
 import { placeAt } from "../compact/layout.ts";
 import { findElement, insertChild } from "../element-tree.ts";
-import { COORDINATES, checkKind, patched } from "../elements.ts";
+import {
+  COORDINATES,
+  checkKind,
+  hasPositionTrack,
+  patched,
+  trackOverridesAt,
+} from "../elements.ts";
 import { withFileAspect } from "../image-aspect.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";

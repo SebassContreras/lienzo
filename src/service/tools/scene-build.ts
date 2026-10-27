@@ -59,6 +59,7 @@ export const sceneBuild = defineTool({
       effectiveCtx,
       compact,
       fonts.map((f) => f.family),
+      { resources: !save },
     );
     let expanded = built.scene;
     const notices = built.notices;
@@ -82,9 +83,6 @@ export const sceneBuild = defineTool({
       notices.push(...storedAsNotice(save, saved));
       notices.push(...result.notices);
     }
-
-    // a saved build checks its resources twice, once building and once saving
-    notices.splice(0, notices.length, ...new Set(notices));
 
     // Concise by default once saved (064/D5): scene_get gives the full scene
     if (saved && response_format !== "detailed") {

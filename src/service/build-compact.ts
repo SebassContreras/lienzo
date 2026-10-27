@@ -26,6 +26,7 @@ export async function buildCompact(
   ctx: ProjectCtx,
   compact: CompactScene,
   fonts: readonly string[],
+  { resources = true } = {},
 ): Promise<{ scene: Scene; notices: string[] }> {
   let scene: Scene;
   let notices: string[];
@@ -69,7 +70,8 @@ export async function buildCompact(
   notices.push(
     ...fontNotices(scene, fonts),
     ...estimatedWidthNotices(scene),
-    ...(await resourceNotices(ctx, scene)),
+    // a build that is then saved leaves these to the save (070/D3)
+    ...(resources ? await resourceNotices(ctx, scene) : []),
   );
   return { scene, notices };
 }
