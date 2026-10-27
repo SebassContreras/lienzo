@@ -28,7 +28,8 @@ What exists today:
   `scenes/`, `assets/`, `presets/`, and `exports/`; no database (A7, spec 040)
 - The default workspace template is `projects/mi-proyecto/`, which is the only project tracked in Git
 - Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
-- Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10)
+- Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10); Mediabunny and its AAC encoder are
+  dynamic imports, loaded only by a video export (066)
 - Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
   (global) and `projects/<project>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
   loaded with `FontFace` by `src/engine/fonts.ts` in the editor and the `?render` route;
@@ -75,7 +76,9 @@ What exists today:
   provenance only, and a scene naming one is expanded on load; pure logic in
   `src/presets/anim-presets.ts` (A26, spec 019)
 - Descriptors also drive compact JSON (`src/model/compact.ts`, A23, spec 011); 3D = three.js
-  in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016)
+  in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016); three.js loads on
+  demand through `src/components/three/lazy.ts` and a descriptor's `load`, which
+  `loadSceneAssets` awaits before an export (066)
 - Tool parameter names (064/R13, R14): one name per meaning in every input and result —
   `project` (never `slug`), `scene` (a saved scene's name), `data` (a whole scene object),
   `recipe` (a preset object), `patch` (values merged in), `id` (an element), `at` (placement)

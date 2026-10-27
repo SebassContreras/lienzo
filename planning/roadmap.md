@@ -11,3 +11,5 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 ## Ideas
 
 Anything worth doing later.
+
+- The `icon` drawing code (`src/engine/icon-shapes.ts`) imports the whole `lucide` set (~900 kB source) into the startup chunk; load it on demand (found in 066).

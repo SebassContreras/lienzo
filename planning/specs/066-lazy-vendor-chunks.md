@@ -35,3 +35,4 @@
 - [x] 066/T003 [agent] Split the 3D element into `draw.ts`/`shapes.ts` and a lazily imported `runtime.ts`; lazy `.glb`/`.woff` loaders; descriptor `load` — covers D1, R2
 - [x] 066/T004 [agent] Import the video encoder lazily in `export.ts` — covers D3, R4
 - [ ] 066/T005 [agent] Verify: typecheck, tests, `pnpm build` chunk sizes, and a 3D scene and an MP4 export in the browser; update AGENTS.md — covers R1, R5, D4
+      blocked: conflicts R5: three.js and Mediabunny now load on demand (R1–R4 verified in Edge on the built app), but two chunks still pass 500 kB — the shared app core (872 kB: the whole `lucide` icon set from `src/engine/icon-shapes.ts`, opentype.js, zod) and the lazy AAC WASM encoder (992 kB, one module); propose: lazy-load the icon set and accept the AAC chunk with a documented `chunkSizeWarningLimit`, or relax R5
