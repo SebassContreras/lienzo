@@ -40,6 +40,8 @@ export const projectCreate = defineTool({
         `No se puede hacer un identificador con «${name}»: indica \`project\` (minúsculas, números y guiones)`,
         "project",
       );
+    if (await ctx.projects.get(id))
+      fail("exists", `Ya existe el proyecto «${id}»`, "project");
     try {
       const config = ProjectConfigSchema.parse({
         name,

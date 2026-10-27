@@ -38,7 +38,7 @@ export const keyframeRemove = defineTool({
             keys.length > 0
               ? `No hay keyframe en ${t}s en «${path}» (hay en: ${keys.map((key) => `${key.t}s`).join(", ")})`
               : `«${id}» no tiene pista «${path}» (pistas: ${Object.keys(el.tracks ?? {}).join(", ") || "ninguna"})`,
-            "t",
+            keys.length > 0 ? "t" : "path",
           );
         const left = withoutKeyframe(keys, k);
         const tracks = left.length

@@ -372,7 +372,7 @@ export async function expandScene(
         if (rawEl.id) {
           if (symSeenIds.has(el.id)) {
             throw new Error(
-              `ID duplicado «${el.id}» en el símbolo «${symName}»`,
+              `symbols.${symName}.children.${i}.id: ID duplicado «${el.id}» en el símbolo «${symName}»`,
             );
           }
           symSeenIds.add(el.id);
@@ -411,7 +411,9 @@ export async function expandScene(
 
     if (rawEl.id) {
       if (seenIds.has(el.id)) {
-        throw new Error(`ID duplicado «${el.id}» en la escena compacta`);
+        throw new Error(
+          `elements.${i}.id: ID duplicado «${el.id}» en la escena compacta`,
+        );
       }
       seenIds.add(el.id);
     } else if (!el.id) {

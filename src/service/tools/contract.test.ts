@@ -467,3 +467,48 @@ it("preset_validate lists each recipe problem at its own path (078/R6)", async (
     value: { errors: [{ path: "" }, { path: "set.w" }] },
   });
 });
+
+it("scene_delete of a missing scene fails at scene (078/R7)", async () => {
+  const r = await call("scene_delete", { scene: "nada" });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { path: "scene", message: expect.stringContaining("escena") },
+  });
+});
+
+it("keyframe_remove on a path with no track fails at path (078/R7)", async () => {
+  const r = await call("keyframe_remove", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 1,
+  });
+
+  expect(r).toMatchObject({ ok: false, error: { path: "path" } });
+});
+
+it("scene_build names a duplicate id at the element that repeats it (078/R7)", async () => {
+  const compact = {
+    elements: [
+      { kind: "rect", id: "a" },
+      { kind: "rect", id: "a" },
+    ],
+  };
+
+  const r = await call("scene_build", { compact });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { path: "compact.elements.1.id" },
+  });
+});
+
+it("project_create of an existing project fails with exists (078/R7)", async () => {
+  const r = await call("project_create", { name: "P" });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "exists", path: "project" },
+  });
+});

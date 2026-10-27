@@ -56,12 +56,18 @@ export async function renameIn(
   return r.name;
 }
 
-/** Deletes `name` from `folder`; fails when it is not there. */
+const NOUNS: Record<ProjectFolder, string> = {
+  scenes: "la escena",
+  presets: "el preset",
+};
+
+/** Deletes `name` from `folder`; fails at the parameter `field` when it is not there. */
 export async function removeIn(
   ctx: ProjectCtx,
   folder: ProjectFolder,
   name: string,
+  field: string,
 ): Promise<void> {
   if (!(await removeJson(folderOf(ctx, folder), name)))
-    fail("not_found", `No existe «${name}»`, "name");
+    fail("not_found", `No existe ${NOUNS[folder]} «${name}»`, field);
 }

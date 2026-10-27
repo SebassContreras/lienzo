@@ -10,7 +10,7 @@ export const sceneDelete = defineTool({
   input: z.object({ project: PROJECT, scene: z.string().min(1) }),
   output: z.object({ ok: z.literal(true) }),
   async run({ project, scene }, ctx) {
-    await removeIn(await inProject(ctx, project), "scenes", scene);
+    await removeIn(await inProject(ctx, project), "scenes", scene, "scene");
     return { ok: true as const };
   },
 });
