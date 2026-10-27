@@ -37,7 +37,7 @@ A first-time QA run of all 43 tools (scratch project `qa-suite`) found 22 proble
 - D5 (R8): `shotProblem(shots, duration)` in `src/model/shots.ts` (pure) returns the first error: an `end` past `duration` or two shots whose `[start, end)` intersect; `shot_set` fails with it.
 - D6 (R4, R15, R16): one `animationsDir(ctx, project?)` picks `projects/<project>/presets/animations/` or the global folder; `animation_list`, `animation_save` and the new `animation_delete` use it. `animation_save` merges each given `anim.<phase>` over the descriptor default of that phase before parsing. `PresetRecipeSchema.traits` defaults to `[]`. `preset_list`/`preset_get` read `inProject(ctx, project).store` when `project` is given. `project_inspect` lists `presets/*.json` only.
 - D7 (R6): `element_update` compares the patch with the parsed patched element (`ignoredFields`, prefix `patch`) and notes an `id`/`kind` key that differs from the element's; `background_set` does the same against `BackgroundSchema`.
-- D8 (R7): `resourceNotices(scene, assets)` in `scene-notices.ts` (pure): icon names not in the icon list, image `src` that is not an asset of the project (URLs and `data:` are left alone); `saveScene` appends them, `sceneNotices` includes them. `resolveLineConnections` returns a notice for a `from`/`to` with no element. `asset_add` probes an image's header (`image-probe.ts`) and fails `invalid_image` when it is not one.
+- D8 (R7): `resourceNotices(ctx, scene)` in `src/service/scene-resources.ts`: icon names not in lucide, asset references (`descriptor.assets`) that `checkAsset` rejects (URLs and `data:` are left alone), and line ends attached to no element id; `saveScene`, `buildCompact` and `scene_validate` append them, and `element_add` drops its own asset check. `asset_add` probes an image's header (`image-probe.ts`) and fails `invalid_image` when it is not one.
 - D9 (R9): `scene_export`/`scene_preview` fail `invalid_time` when `t > duration`.
 - D10 (R10): `project_update` returns `notices` for families not in `availableFonts`; `model/fonts.ts` lists each bundled family's weights and `availableFonts` returns one row per weight.
 - D11 (R11, R12, R13): `buildElement` sets `at: "center"` for a top-level element with none of `at`, `x`, `y`, `fit: "canvas"` (lines excluded); `resolveAnchorPosition` insets edge anchors by `round(0.05 × min(w, h))`; `buildElement` and `element_add`/`element_update` note `at` plus a track on `x`/`y`.
@@ -53,7 +53,7 @@ A first-time QA run of all 43 tools (scratch project `qa-suite`) found 22 proble
 - [x] 069/T003 [agent] Shots: unbind on remove, unknown shot in layout, end and overlap checks — covers R3, R8, D4, D5
 - [x] 069/T004 [agent] Animation and preset tools by project, animation_delete, recipe defaults, project_inspect presets — covers R4, R15, R16, D6
 - [x] 069/T005 [agent] Patch notices in element_update and background_set — covers R6, D7
-- [ ] 069/T006 [agent] Missing resource notices, line connections, image check in asset_add — covers R7, D8
+- [x] 069/T006 [agent] Missing resource notices, line connections, image check in asset_add — covers R7, D8
 - [ ] 069/T007 [agent] Time checks in export/preview; name and extension notices; group shot notice — covers R9, R18, R19, D9, D13
 - [ ] 069/T008 [agent] Placement: centred default in scene_build, anchor margin, `at` + track notice — covers R11, R12, R13, D11
 - [ ] 069/T009 [agent] Compact errors: list items array, real paths, all missing presets, traits and voices listed, animPreset message — covers R14, R17, R22, D12

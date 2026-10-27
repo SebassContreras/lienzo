@@ -54,22 +54,6 @@ export const elementAdd = defineTool({
     const effectiveCtx = await inProject(ctx, project);
 
     const notices: string[] = [];
-    if (patch) {
-      const assetKeys = ["src", "assetId", "image", "audio"];
-      for (const key of assetKeys) {
-        const val = patch[key];
-        if (typeof val === "string" && val.length > 0) {
-          const check = await ctx.projects.checkAsset(
-            effectiveCtx.project,
-            val,
-          );
-          if (!check.ok && check.warning) {
-            notices.push(check.warning);
-          }
-        }
-      }
-    }
-
     let el: Element;
     if (preset !== undefined) {
       const r = resolveElement((await findPreset(effectiveCtx, preset)).recipe);

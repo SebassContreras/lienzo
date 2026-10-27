@@ -80,6 +80,9 @@ export const sceneBuild = defineTool({
       notices.push(...result.notices);
     }
 
+    // a saved build checks its resources twice, once building and once saving
+    notices.splice(0, notices.length, ...new Set(notices));
+
     // Concise by default once saved (064/D5): scene_get gives the full scene
     if (saved && response_format !== "detailed") {
       const elements = expanded.elements.map(({ id, kind }) => ({ id, kind }));

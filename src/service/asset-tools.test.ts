@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Scene } from "../model/model.ts";
+import { PNG_1X1 } from "../test/png.ts";
 import { type Ctx, createCtx } from "./ctx.ts";
 import { fakeRenderer } from "./fake-renderer.ts";
 import { registry } from "./tools/index.ts";
@@ -30,7 +31,7 @@ const sceneSrc = async (scene: string) =>
 /** Adds `logo.png` and saves scene `uses` with an image showing it. */
 async function sceneUsingLogo(): Promise<string> {
   const file = join(root, "logo.png");
-  await writeFile(file, "png");
+  await writeFile(file, PNG_1X1);
   const { src, filename } = await ok("asset_add", { file });
   await ok("scene_build", {
     compact: { elements: [{ kind: "image", src }] },

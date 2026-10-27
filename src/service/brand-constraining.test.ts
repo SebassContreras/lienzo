@@ -115,11 +115,7 @@ describe("Brand constraining and asset guardrails", () => {
     expect(validAddRes.ok).toBe(true);
     if (validAddRes.ok) {
       const val = validAddRes.value as { notices: string[]; id: string };
-      expect(
-        val.notices.some((n) =>
-          n.includes("no pertenece a los assets del proyecto"),
-        ),
-      ).toBe(false);
+      expect(val.notices.some((n) => n.includes("brand-logo"))).toBe(false);
     }
   });
 });

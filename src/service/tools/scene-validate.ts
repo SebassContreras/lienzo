@@ -6,6 +6,7 @@ import { availableFonts, measureInstalledFonts } from "../font-install.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { sceneNotices } from "../scene-notices.ts";
+import { resourceNotices } from "../scene-resources.ts";
 import { prepareScene } from "../scenes.ts";
 import { Verdict, verdictOf } from "../verdict.ts";
 
@@ -58,6 +59,7 @@ export const sceneValidate = defineTool({
         prepared.scene,
         fonts.map((f) => f.family),
       ).map((n) => n.message),
+      ...(await resourceNotices(projectCtx, prepared.scene)),
     ];
     return notices.length > 0 ? { ...verdict, notices } : verdict;
   },

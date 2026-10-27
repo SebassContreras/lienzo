@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { Scene } from "../model/model.ts";
+import { PNG_1X1 } from "../test/png.ts";
 import { type Ctx, createCtx } from "./ctx.ts";
 import { fakeRenderer } from "./fake-renderer.ts";
 import { registry } from "./tools/index.ts";
@@ -217,7 +218,7 @@ describe("project_update", () => {
 describe("asset_add", () => {
   it("copies a file into a project subfolder", async () => {
     const file = join(root, "logo.png");
-    await writeFile(file, "png bytes");
+    await writeFile(file, PNG_1X1);
 
     const { src, filename } = await ok("asset_add", {
       project,
@@ -226,8 +227,17 @@ describe("asset_add", () => {
     });
 
     const stored = join(root, "projects", project, "assets", String(filename));
-    expect(await readFile(stored, "utf8")).toBe("png bytes");
+    expect(await readFile(stored)).toEqual(PNG_1X1);
     expect(src).toBe(`/projects/${project}/assets/${filename}`);
+  });
+
+  it("refuses a file that only has an image extension (069/D8)", async () => {
+    const file = join(root, "fake.png");
+    await writeFile(file, "not a png");
+
+    expect(await errorCode("asset_add", { project, file })).toBe(
+      "invalid_image",
+    );
   });
 
   it("refuses an unsupported extension", async () => {

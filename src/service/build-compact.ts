@@ -5,6 +5,7 @@ import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
 import { fail } from "./registry.ts";
+import { resourceNotices } from "./scene-resources.ts";
 import { animLibrary, checkScene, findPreset } from "./scenes.ts";
 
 /**
@@ -38,6 +39,10 @@ export async function buildCompact(
     const msg = err instanceof Error ? err.message : String(err);
     fail("invalid_compact_scene", msg, "compact");
   }
-  notices.push(...fontNotices(scene, fonts), ...estimatedWidthNotices(scene));
+  notices.push(
+    ...fontNotices(scene, fonts),
+    ...estimatedWidthNotices(scene),
+    ...(await resourceNotices(ctx, scene)),
+  );
   return { scene, notices };
 }

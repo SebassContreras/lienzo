@@ -12,6 +12,7 @@ import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
 import { fail } from "./registry.ts";
+import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
 
 /** `data` as a scene, or a failure naming the first failing path under `prefix`. */
@@ -96,6 +97,7 @@ export async function saveScene(
   data: unknown,
 ): Promise<SceneResult> {
   const { scene, notices } = await prepareScene(ctx, data);
+  notices.push(...(await resourceNotices(ctx, scene)));
   return { scene: await ctx.store.writeScene(name, scene), notices };
 }
 
