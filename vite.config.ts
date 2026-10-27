@@ -207,4 +207,9 @@ export default defineConfig({
     ttsProxyPlugin(),
     sceneWatch(import.meta.dirname),
   ],
+  build: {
+    // `@mediabunny/aac-encoder` is one ~990 kB WASM module the bundler cannot split; it loads
+    // only for a video export without native AAC. Every startup chunk stays under 500 kB (066/D6).
+    chunkSizeWarningLimit: 1024,
+  },
 });

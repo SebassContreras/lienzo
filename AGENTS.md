@@ -30,7 +30,9 @@ What exists today:
 - Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
 - Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10); Mediabunny and its AAC encoder are
   dynamic imports, loaded only by a video export (066)
-- Icons: lucide-react / lucide (A11); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
+- Icons: lucide-react / lucide (A11); the lucide set drawn on the canvas (`src/engine/icon-set.ts`) loads
+  on demand through `iconSet` in `icon-shapes.ts` (066); on-demand imports use `lazyModule`
+  (`src/engine/lazy-module.ts`); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
   (global) and `projects/<project>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
   loaded with `FontFace` by `src/engine/fonts.ts` in the editor and the `?render` route;
   Google Fonts only through `src/service/google-fonts.ts` (`font_install`) (A12, spec 045)

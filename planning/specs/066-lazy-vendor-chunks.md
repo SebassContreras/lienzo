@@ -51,8 +51,8 @@
 - ~~066/T005 [agent] Verify: typecheck, tests, `pnpm build` chunk sizes, and a 3D scene and an MP4 export in the browser; update AGENTS.md — covers R1, R5, D4~~ → T009
 - [x] 066/T006 [agent] Test and `lazyModule` helper; `three/lazy.ts` on it — covers D7
 - [x] 066/T007 [agent] Lazy lucide icon set: `icon-set.ts`, `iconPaths`, `icon`/`badge` `load`, editor hook; tests await it — covers D5, R7
-- [ ] 066/T008 [agent] `chunkSizeWarningLimit` for the AAC encoder, with the reason — covers D6
-- [ ] 066/T009 [agent] Verify: typecheck, tests, `pnpm build` with no warning and startup chunks under 500 kB, a 3D scene, an icon and an MP4 export in the browser; update AGENTS.md — covers R1, R6, R7
+- [x] 066/T008 [agent] `chunkSizeWarningLimit` for the AAC encoder, with the reason — covers D6
+- [x] 066/T009 [agent] Verify: typecheck, tests, `pnpm build` with no warning and startup chunks under 500 kB, a 3D scene, an icon and an MP4 export in the browser; update AGENTS.md — covers R1, R6, R7
 
 ## Changes
 - 2026-10-27: R5 → R6, D4 → D6, T005 → T009. Why: after D1 and D3 two chunks still passed 500 kB, the startup core (the whole lucide set) and the on-demand AAC WASM encoder, which cannot be split; the maintainer chose to load lucide lazily and accept the AAC chunk with a documented limit. Work: T006–T009.
