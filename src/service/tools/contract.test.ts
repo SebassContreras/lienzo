@@ -954,3 +954,21 @@ it("keyframe_set fails on a negative radius key (080/R9)", async () => {
 
   expect(r).toMatchObject({ ok: false, error: { code: "invalid_value" } });
 });
+
+// 080/R10: an unknown key close to a nested field suggests its paths
+it("element_update suggests the nested paths a misspelled key means (080/R10)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { colour: "#fff" },
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      notices: [
+        expect.stringMatching(/patch\.colour.*«fill\.color», «border\.color»/),
+      ],
+    },
+  });
+});

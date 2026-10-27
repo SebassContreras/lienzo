@@ -28,7 +28,8 @@ export function ignoredFields(
     if (key in parsed) {
       return ignoredFields(input[key], parsed[key], join(prefix, key));
     }
-    const suggestion = closestKey(key, knownKeys(parsed));
+    const suggestion =
+      closestKey(key, knownKeys(parsed)) ?? nestedSuggestion(key, parsed);
     return [{ path: join(prefix, key), ...(suggestion ? { suggestion } : {}) }];
   });
 }
@@ -43,6 +44,36 @@ function knownKeys(parsed: Record<string, unknown>): string[] {
   return kind && descriptorOf(kind)
     ? [...new Set([...own, ...Object.keys(createElement(kind as never))])]
     : own;
+}
+
+/** How many nested paths a suggestion names at most. */
+const NESTED_PATHS = 3;
+
+/**
+ * When `key` is close to no key of its own object, the paths one level down whose key it is
+ * closest to (080/D10): `colour` on a rect → «fill.color», «border.color», «label.color».
+ */
+function nestedSuggestion(
+  key: string,
+  parsed: Record<string, unknown>,
+): string | undefined {
+  const kind = typeof parsed.kind === "string" ? parsed.kind : undefined;
+  const whole =
+    kind && descriptorOf(kind)
+      ? { ...(createElement(kind as never) as object), ...parsed }
+      : parsed;
+  const paths = Object.entries(whole).flatMap(([outer, value]) =>
+    isRecord(value)
+      ? Object.keys(value).map((inner) => `${outer}.${inner}`)
+      : [],
+  );
+  const leaf = (path: string) => path.slice(path.indexOf(".") + 1);
+  const best = closestKey(key, [...new Set(paths.map(leaf))]);
+  if (!best) return undefined;
+  return paths
+    .filter((p) => leaf(p) === best)
+    .slice(0, NESTED_PATHS)
+    .join("», «");
 }
 
 /** CSS names that resemble no field by spelling, mapped to the field they mean. */

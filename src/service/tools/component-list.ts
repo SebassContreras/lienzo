@@ -15,7 +15,8 @@ const NOTES: Record<string, string> = {
     "start and end values.",
   icon:
     "`icon` is a lucide name (lucide.dev/icons), in any case or kebab-case (`star`, " +
-    "`arrow-right` are stored as `Star`, `ArrowRight`); an unknown name fails with the closest one.",
+    "`arrow-right` are stored as `Star`, `ArrowRight`); an unknown name fails, naming the closest one when one is close and " +
+    "otherwise examples (names are lucide's, in English: `star`, not `estrella`).",
   image:
     "Given a project asset `src` and no `aspect`, element_add and scene_build read the " +
     "picture's own proportion and size `h` (or `w`) to it.",

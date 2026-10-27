@@ -361,7 +361,7 @@ Changes (074 did the same), never weakened to pass.
 - [x] 080/T007 [agent] `findPreset` path and names, animation preset names, `namesHint` — covers R7, D7
 - [x] 080/T008 [agent] Scan stored animation recipes and lengths; strict `AnimPresetSchema` — covers R8, D8
 - [x] 080/T009 [agent] `length()` for length fields; unbounded-field list test — covers R9, D9
-- [ ] 080/T010 [agent] Nested-key suggestions; `component_list` icon wording — covers R10, D10
+- [x] 080/T010 [agent] Nested-key suggestions; `component_list` icon wording — covers R10, D10
 - [ ] 080/T011 [agent] `use` instances held by their `use` in layout — covers R11, D11
 - [ ] 080/T012 [agent] Moved-tracks notice only for moved keys — covers R12, D12
 - [ ] 080/T013 [agent] Speech cues over the clip; unique cue ids after merge — covers R13, D13
