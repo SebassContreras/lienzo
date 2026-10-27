@@ -5,6 +5,7 @@ import {
   check,
   color,
   font,
+  fraction,
   glow,
   noGlow,
   num,
@@ -49,7 +50,7 @@ const fields = {
     step: 0.5,
     ...T,
   }),
-  opacity: num(1, { label: "Opacidad", max: 1, step: 0.01, ...C }),
+  opacity: fraction(1, { label: "Opacidad", ...C }),
   glow: glow(noGlow("#60a5fa"), "Brillo"),
   anim: anim(TEXT_ANIMS),
 };

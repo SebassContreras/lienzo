@@ -85,7 +85,7 @@ test holds the opacity and reference rules for every kind.
     expects, and the parsed value still goes through the full schema.
 
 ## Tasks
-- [ ] 078/T001 [agent] `fraction()` for every opacity field; descriptor test — covers R1, D1
+- [x] 078/T001 [agent] `fraction()` for every opacity field; descriptor test — covers R1, D1
 - [ ] 078/T002 [agent] Shot move vs trim in `setShotIn`; descriptions — covers R2, D2
 - [ ] 078/T003 [agent] Unknown symbol fails; removed symbol notice — covers R3, D3
 - [ ] 078/T004 [agent] `remapFailure`; `element_add` errors at `patch` — covers R4, D4

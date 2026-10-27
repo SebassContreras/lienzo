@@ -1,4 +1,4 @@
-import { color, num, obj, type Parent, select } from "./field.ts";
+import { color, fraction, num, obj, type Parent, select } from "./field.ts";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 
@@ -17,7 +17,7 @@ export function strokeWidth(value: number, min = 0, max = 20) {
 }
 
 const opacity = (value: number, visible?: (p: Parent) => boolean) =>
-  num(value, { label: "Opacidad", max: 1, step: 0.01, visible });
+  fraction(value, { label: "Opacidad", visible });
 
 /** A shape's border: dashes can march around it (`flow` periods per loop, 0 = still). */
 export function border(

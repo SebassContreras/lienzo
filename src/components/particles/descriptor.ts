@@ -10,6 +10,7 @@ import {
   custom,
   defaulted,
   elementOpacity,
+  fraction,
   glow,
   noGlow,
   num,
@@ -56,7 +57,7 @@ export const templateSchema = z
   .default(null) as unknown as z.ZodType<unknown>;
 
 const opacity = (value: number, label = "Opacidad") =>
-  num(value, { label, max: 1, step: 0.05 });
+  fraction(value, { label, step: 0.05 });
 
 /**
  * How points differ from each other, drawn from the seed. The defaults leave every point

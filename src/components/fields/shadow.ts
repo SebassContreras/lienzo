@@ -1,4 +1,4 @@
-import { check, color, num, obj, type Parent } from "./field.ts";
+import { check, color, fraction, num, obj, type Parent } from "./field.ts";
 
 export type ShadowDefaults = {
   enabled: boolean;
@@ -26,12 +26,7 @@ export function shadow(d: ShadowDefaults, section = "Sombra") {
     {
       enabled: check(d.enabled, { label: "Activa" }),
       color: color(d.color, { label: "Color", visible: on }),
-      opacity: num(d.opacity, {
-        label: "Opacidad",
-        max: 1,
-        step: 0.01,
-        visible: on,
-      }),
+      opacity: fraction(d.opacity, { label: "Opacidad", visible: on }),
       blur: num(d.blur, { label: "Difusión", max: 150, visible: on }),
       x: num(d.x, { label: "X", ...offset }),
       y: num(d.y, { label: "Y", ...offset }),

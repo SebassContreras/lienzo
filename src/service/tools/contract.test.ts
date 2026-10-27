@@ -346,3 +346,30 @@ it("project_create fills the canvas fields not given (076/D4)", async () => {
     value: { canvas: { width: 1080, height: 1920, fps: 30, duration: 5 } },
   });
 });
+
+it("keyframe_set rejects an opacity above 1 on a text, as on a rect (078/R1)", async () => {
+  await call("element_add", { scene: "s", kind: "text", patch: { id: "t" } });
+
+  const r = await call("keyframe_set", {
+    scene: "s",
+    id: "t",
+    path: "opacity",
+    t: 1,
+    value: 5,
+  });
+
+  expect(r).toMatchObject({ ok: false, error: { path: "value" } });
+});
+
+it("element_update rejects a fill opacity above 1 (078/R1)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { fill: { opacity: 3 } },
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { path: "elements.r.fill.opacity" },
+  });
+});

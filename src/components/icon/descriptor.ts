@@ -8,6 +8,7 @@ import {
   color,
   custom,
   fillFields,
+  fraction,
   glow,
   noGlow,
   num,
@@ -48,7 +49,7 @@ const fields = {
     step: 0.25,
   }),
   color: color("#e0f2fe", { label: "Color", section: "Trazo" }),
-  opacity: num(1, { label: "Opacidad", section: "Trazo", max: 1, step: 0.01 }),
+  opacity: fraction(1, { label: "Opacidad", section: "Trazo" }),
   tile: obj(
     {
       enabled: check(true, { label: "Activo" }),

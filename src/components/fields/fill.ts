@@ -6,6 +6,7 @@ import {
   custom,
   defaulted,
   type Fields,
+  fraction,
   num,
   obj,
   type Parent,
@@ -71,12 +72,7 @@ export function fillFields(
       StopsSchema.optional(),
       { label: "Paradas", inspector: false },
     ),
-    opacity: num(d.opacity, {
-      label: "Opacidad",
-      max: 1,
-      step: 0.01,
-      visible: shown,
-    }),
+    opacity: fraction(d.opacity, { label: "Opacidad", visible: shown }),
   } satisfies Fields;
 }
 

@@ -10,6 +10,7 @@ import {
   custom,
   elementOpacity,
   font,
+  fraction,
   num,
   weight,
 } from "../fields/index.ts";
@@ -82,13 +83,7 @@ const fields = {
 
   background: check(true, { label: "Caja de fondo", ...B }),
   bgColor: color("#000000", { label: "Color fondo", ...B }),
-  bgOpacity: num(0.7, {
-    label: "Opacidad fondo",
-    min: 0,
-    max: 1,
-    step: 0.05,
-    ...B,
-  }),
+  bgOpacity: fraction(0.7, { label: "Opacidad fondo", step: 0.05, ...B }),
   paddingX: num(20, { label: "Margen H", min: 0, max: 100, ...B }),
   paddingY: num(12, { label: "Margen V", min: 0, max: 100, ...B }),
   radius: num(12, { label: "Esquinas", min: 0, max: 60, ...B }),

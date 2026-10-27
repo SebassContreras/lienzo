@@ -187,6 +187,17 @@ export function num<P = Parent>(
   };
 }
 
+/**
+ * A 0–1 number such as an opacity (078/D1): the inspector's slider range and the check that
+ * every write applies are the same, so no tool can store 5 where the editor stops at 1.
+ */
+export function fraction<P = Parent>(
+  value: number,
+  o: Opts<P, number> & { step?: number },
+): Typed<NumberField, number> {
+  return num<P>(value, { max: 1, step: 0.01, ...o, min: 0, bounds: [0, 1] });
+}
+
 export function color<P = Parent>(
   value: string,
   o: Opts<P, string>,
