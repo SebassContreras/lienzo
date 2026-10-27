@@ -71,4 +71,5 @@ contract test holds the timing rule across tools.
 - [x] 075/T003 [agent] Rules on raw data when the schema fails — covers R4, D3
 - [x] 075/T004 [agent] Contract cases for the timing rule — covers R5, D4
 - [x] 075/T005 [agent] Docs: AGENTS.md rule, usage skill, README, 074 Changes note — covers R6, D5
-- [ ] 075/T006 [agent] Verify: typecheck, lint on touched files, tests, replay with `pnpm lienzo` (rebind, shot move, removal, validate with schema + rule errors) — covers R1, R2, R3, R4, R5, R6
+- [x] 075/T006 [agent] Verify: typecheck, lint on touched files, tests, replay with `pnpm lienzo` (rebind, shot move, removal, validate with schema + rule errors) — covers R1, R2, R3, R4, R5, R6
+      verified: `pnpm typecheck`, biome on the 13 touched source files, `pnpm test` (1266 tests, 153 files); replayed with `pnpm lienzo` on scratch project `qa-075` (deleted after): `r` with an x key at 1 s in s1 (0–3), `element_update shot: s2` (3–6) → key at 4, notice «r» +3s; `shot_set s2 start: 4` → key at 5, notice +1s; `shot_set s2 remove` → unbound, key at 1, notices −4s and unbound; `scene_validate` with a bad easing, overlapping shots and shot `s9` → errors at `compact.elements.0.tracks.x.0.easing`, `compact.shots`, `compact.elements.1.shot` — found: nothing new

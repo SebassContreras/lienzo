@@ -15,7 +15,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 072 | qa-round-4-fixes | done        | 071 |
 | 073 | qa-round-5-fixes | done | 072 |
 | 074 | qa-round-6-root-causes | done        | 073 |
-| 075 | shot-timing-and-full-validation | in progress | 074 |
+| 075 | shot-timing-and-full-validation | done        | 074 |
 
 ## Ideas
 
