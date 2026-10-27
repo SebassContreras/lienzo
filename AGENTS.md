@@ -14,7 +14,7 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
   every component kind; `.agents/skills/lienzo-usage/` — how an agent builds a post with the
   tools. A change of behavior updates these and the tool's description in the same task; a
   rule every tool shares (arguments, failures, messages) goes once in `RULES`
-  (`src/mcp/server.ts`, the server's `instructions`), not in 44 descriptions.
+  (`src/mcp/server.ts`, the server's `instructions`), not in every description.
 
 ## Stack & conventions
 

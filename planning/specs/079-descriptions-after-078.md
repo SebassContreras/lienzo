@@ -24,10 +24,14 @@ the docs agree.
 - D2 (R2): `RULES` next to `VERSION` in `src/mcp/server.ts`, appended to `instructions`.
   - _Trade-offs_: A client that ignores `instructions` does not read them.
   - _Mitigation_: Each description still names its own failures (R1); the shared rules are
-    what applies everywhere, so repeating them in 44 descriptions would only add tokens.
+    what applies everywhere, so repeating them in all 43 descriptions would only add tokens.
 - D3 (R3): Doc edits; AGENTS.md's doc map says a rule for every tool goes in `RULES`.
 
 ## Tasks
 - [x] 079/T001 [agent] Nine descriptions and the MCP instructions — covers R1, R2, D1, D2
 - [x] 079/T002 [agent] README, usage skill, AGENTS.md — covers R3, D3
-- [ ] 079/T003 [agent] Verify: typecheck, lint on touched files, tests, the dump of every description and the instructions re-read — covers R1, R2, R3
+- [x] 079/T003 [agent] Verify: typecheck, lint on touched files, tests, the dump of every description and the instructions re-read — covers R1, R2, R3
+      verified: `pnpm typecheck`, biome on the 11 touched source files, `pnpm test` (1293 tests, 155 files); the tool list and `instructions` dumped through an MCP client on an in-memory transport and read: the instructions carry the commit and `RULES`, each of the nine descriptions states its 078 behavior; a search for stale phrases (built-in "by file name", first failing, `traits, set?`, "a new start moves", `<slug>`, "A failed call lists every problem") finds none in the descriptions, README, AGENTS.md, the usage skill, `docs/components.md` or `product.md` — found: the registry has 43 tools, not 44 as 077's verify note and earlier reports said (the count took `tools/index.ts` for a tool)
+
+## Changes
+- 2026-10-27: 077/T004's verify note says "the 44 registered descriptions"; the registry has 43 tools (that count took `src/service/tools/index.ts` for one). Work: T003.
