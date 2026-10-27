@@ -10,8 +10,8 @@ import {
   fill,
   glow,
   label,
+  length,
   noGlow,
-  num,
   shadow,
   softShadow,
 } from "../fields/index.ts";
@@ -97,7 +97,7 @@ const fields = {
   y,
   w,
   h,
-  radius: num(24, { label: "Esquinas", max: 300, section: "Forma" }),
+  radius: length(24, { label: "Esquinas", max: 300, section: "Forma" }),
   ...style,
 };
 

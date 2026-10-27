@@ -198,6 +198,22 @@ export function fraction<P = Parent>(
   return num<P>(value, { max: 1, step: 0.01, ...o, min: 0, bounds: [0, 1] });
 }
 
+/**
+ * A size that cannot be negative (radius, padding, blur, font size, stroke width…) (080/D9):
+ * its check starts at 0 wherever it is written, as `fraction` does for opacities; the
+ * inspector's own `min`/`max` stay the slider's range.
+ */
+export function length<P = Parent>(
+  value: number,
+  o: Opts<P, number> & {
+    min?: number | ((parent: P) => number);
+    max?: number | ((parent: P) => number);
+    step?: number;
+  },
+): Typed<NumberField, number> {
+  return num<P>(value, { min: 0, ...o, bounds: [0, Number.POSITIVE_INFINITY] });
+}
+
 export function color<P = Parent>(
   value: string,
   o: Opts<P, string>,

@@ -921,3 +921,36 @@ it("animation_save fails on an unknown recipe key, naming it (080/R8)", async ()
     },
   });
 });
+
+// 080/R9: a length below 0 fails as a value, in a recipe's set and as a keyframe
+it("element_update fails on a negative radius (080/R9)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { radius: -5 },
+  });
+
+  expect(r).toMatchObject({ ok: false, error: { path: "elements.r.radius" } });
+});
+
+it("preset_validate fails on a negative radius in set (080/R9)", async () => {
+  const r = await call("preset_validate", {
+    recipe: { name: "Caja", kind: "rect", set: { radius: -5 } },
+  });
+
+  expect(r).toMatchObject({
+    value: { valid: false, errors: [{ path: "set.radius" }] },
+  });
+});
+
+it("keyframe_set fails on a negative radius key (080/R9)", async () => {
+  const r = await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "radius",
+    t: 1,
+    value: -5,
+  });
+
+  expect(r).toMatchObject({ ok: false, error: { code: "invalid_value" } });
+});

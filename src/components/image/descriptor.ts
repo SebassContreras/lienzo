@@ -6,6 +6,7 @@ import {
   check,
   custom,
   fraction,
+  length,
   num,
   plainBorder,
   position,
@@ -34,7 +35,7 @@ const size = { section: "Forma", min: 10, max: 2000 };
 /** A picture file stored in `assets/`, drawn into its box. */
 const fields = {
   ...position(),
-  w: num(320, {
+  w: length(320, {
     label: "Ancho",
     ...size,
     set: (el: Sized, v: number) => {
@@ -42,7 +43,7 @@ const fields = {
       if (el.keepAspect) el.h = v / el.aspect;
     },
   }),
-  h: num(240, {
+  h: length(240, {
     label: "Alto",
     ...size,
     set: (el: Sized, v: number) => {
@@ -68,7 +69,7 @@ const fields = {
     section: "Imagen",
     inspector: false,
   }),
-  radius: num(16, { label: "Esquinas", section: "Forma", max: 300 }),
+  radius: length(16, { label: "Esquinas", section: "Forma", max: 300 }),
   opacity: fraction(1, { label: "Opacidad", section: "Forma" }),
   border: plainBorder({ width: 0, color: "#ffffff", opacity: 0.3 }, "Borde"),
   shadow: shadow(softShadow(false)),

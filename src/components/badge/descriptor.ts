@@ -12,8 +12,8 @@ import {
   fill,
   font,
   glow,
+  length,
   noGlow,
-  num,
   position,
   text,
   weight,
@@ -34,11 +34,11 @@ const fields = {
     visible: (p) => p.showIcon === true,
   }),
   font: { ...font("Inter"), ...B },
-  size: num(26, { label: "Tamaño", min: 8, max: 160, ...B }),
+  size: length(26, { label: "Tamaño", min: 8, max: 160, ...B }),
   weight: { ...weight(700), ...B },
   color: color("#e0f2fe", { label: "Color del texto", ...B }),
   /** Space around the content, as a fraction of the text size. */
-  padding: num(0.6, {
+  padding: length(0.6, {
     label: "Margen",
     min: 0.1,
     max: 2,

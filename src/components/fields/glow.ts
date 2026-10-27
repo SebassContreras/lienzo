@@ -1,4 +1,4 @@
-import { check, color, num, obj, type Parent } from "./field.ts";
+import { check, color, length, num, obj, type Parent } from "./field.ts";
 
 export type GlowDefaults = {
   enabled: boolean;
@@ -22,7 +22,7 @@ export function glow(d: GlowDefaults, section: string) {
     {
       enabled: check(d.enabled, { label: "Activo" }),
       color: color(d.color, { label: "Color", visible: on }),
-      blur: num(d.blur, { label: "Difusión", max: 150, visible: on }),
+      blur: length(d.blur, { label: "Difusión", max: 150, visible: on }),
       strength: num(d.strength, {
         label: "Intensidad",
         min: 1,

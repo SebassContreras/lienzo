@@ -20,3 +20,51 @@ it("checks every opacity field of every kind as 0–1 (078/R1)", () => {
 
   expect(unchecked).toEqual([]);
 });
+
+/** The names of every number field of every kind whose check has no lower bound. */
+function unboundedNumbers(fields: Fields): string[] {
+  return dataFields(fields).flatMap(([key, f]) => {
+    if (f.type === "object") return unboundedNumbers(f.fields);
+    const bounded = Number.isFinite(f.type === "number" ? f.bounds?.[0] : 0);
+    return f.type === "number" && !bounded ? [key] : [];
+  });
+}
+
+it("leaves only coordinates, angles, timing and counts with no lower bound (080/R9)", () => {
+  const names = new Set(COMPONENTS.flatMap((d) => unboundedNumbers(d.fields)));
+
+  // a new number field that may go below 0 joins this list on purpose
+  expect([...names].sort()).toEqual([
+    "amount",
+    "angle",
+    "aspect",
+    "bend",
+    "count",
+    "cycles",
+    "delay",
+    "flow",
+    "from",
+    "highlightScale",
+    "hole",
+    "letterSpacing",
+    "lineHeight",
+    "maxWidth",
+    "rotX",
+    "rotY",
+    "rotZ",
+    "seed",
+    "spacing",
+    "speed",
+    "spin",
+    "strength",
+    "targetX",
+    "targetY",
+    "targetZ",
+    "to",
+    "typingSpeed",
+    "wordsPerWindow",
+    "x",
+    "y",
+    "z",
+  ]);
+});

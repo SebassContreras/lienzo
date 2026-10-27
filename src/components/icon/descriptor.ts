@@ -10,8 +10,8 @@ import {
   fillFields,
   fraction,
   glow,
+  length,
   noGlow,
-  num,
   obj,
   type Parent,
   position,
@@ -24,7 +24,7 @@ const on = (p: Parent) => p.enabled === true;
 const fields = {
   ...position(),
   /** Icons are square: the size sets both sides. */
-  w: num(120, {
+  w: length(120, {
     label: "Tamaño",
     section: "Trazo",
     min: 16,
@@ -34,14 +34,14 @@ const fields = {
       el.h = v;
     },
   }),
-  h: num(120, { label: "Alto", inspector: false }),
+  h: length(120, { label: "Alto", inspector: false }),
   /** Lucide icon name in PascalCase, e.g. "Wrench". */
   icon: custom("icon", "Wrench", z.string(), {
     label: "Icono",
     section: "Icono",
   }),
   /** Stroke width on lucide's 24x24 grid. */
-  stroke: num(2, {
+  stroke: length(2, {
     label: "Grosor",
     section: "Trazo",
     min: 0.5,
@@ -63,9 +63,9 @@ const fields = {
         },
         on,
       ),
-      radius: num(28, { label: "Esquinas", max: 300, visible: on }),
+      radius: length(28, { label: "Esquinas", max: 300, visible: on }),
       /** Space between the tile's edge and the icon, px. */
-      padding: num(28, { label: "Margen", max: 300, visible: on }),
+      padding: length(28, { label: "Margen", max: 300, visible: on }),
     },
     { section: "Fondo del icono" },
   ),

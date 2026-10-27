@@ -11,6 +11,7 @@ import {
   elementOpacity,
   font,
   fraction,
+  length,
   num,
   weight,
 } from "../fields/index.ts";
@@ -58,7 +59,7 @@ const fields = {
     ...S,
   }),
   font: { ...font("Inter"), ...T },
-  size: num(48, { label: "Tamaño", min: 14, max: 200, ...T }),
+  size: length(48, { label: "Tamaño", min: 14, max: 200, ...T }),
   weight: { ...weight(800), ...T },
   textColor: color("#ffffff", { label: "Texto", ...T }),
   align: { ...align("center"), ...T },
@@ -84,9 +85,9 @@ const fields = {
   background: check(true, { label: "Caja de fondo", ...B }),
   bgColor: color("#000000", { label: "Color fondo", ...B }),
   bgOpacity: fraction(0.7, { label: "Opacidad fondo", step: 0.05, ...B }),
-  paddingX: num(20, { label: "Margen H", min: 0, max: 100, ...B }),
-  paddingY: num(12, { label: "Margen V", min: 0, max: 100, ...B }),
-  radius: num(12, { label: "Esquinas", min: 0, max: 60, ...B }),
+  paddingX: length(20, { label: "Margen H", min: 0, max: 100, ...B }),
+  paddingY: length(12, { label: "Margen V", min: 0, max: 100, ...B }),
+  radius: length(12, { label: "Esquinas", min: 0, max: 60, ...B }),
 
   anim: anim(BOX_ANIMS),
 };

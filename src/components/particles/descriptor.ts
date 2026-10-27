@@ -12,6 +12,7 @@ import {
   elementOpacity,
   fraction,
   glow,
+  length,
   noGlow,
   num,
   obj,
@@ -209,7 +210,7 @@ const fields = {
   }),
   dot: obj(
     {
-      size: num(2.5, { label: "Tamaño", max: 20, step: 0.5 }),
+      size: length(2.5, { label: "Tamaño", max: 20, step: 0.5 }),
       color: color("#93c5fd", { label: "Color" }),
       opacity: opacity(0.9),
     },
@@ -218,8 +219,8 @@ const fields = {
   variation: variationField,
   link: obj(
     {
-      distance: num(120, { label: "Distancia de unión", max: 400 }),
-      width: num(1, { label: "Grosor", max: 6, step: 0.25 }),
+      distance: length(120, { label: "Distancia de unión", max: 400 }),
+      width: length(1, { label: "Grosor", max: 6, step: 0.25 }),
       color: color("#60a5fa", { label: "Color" }),
       opacity: opacity(0.5),
     },

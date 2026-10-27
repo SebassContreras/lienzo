@@ -10,6 +10,7 @@ import {
   color,
   custom,
   elementOpacity,
+  length,
   num,
   type Parent,
   select,
@@ -62,8 +63,8 @@ const fields = {
       visible: (p) => p.clip === true && p.frame === "none",
     }),
   ),
-  cw: num(100, { label: "Ancho interior", inspector: false }),
-  ch: num(100, { label: "Alto interior", inspector: false }),
+  cw: length(100, { label: "Ancho interior", inspector: false }),
+  ch: length(100, { label: "Alto interior", inspector: false }),
   children: custom("children", [] as unknown[], childrenSchema, {
     label: "Elementos",
     inspector: false,

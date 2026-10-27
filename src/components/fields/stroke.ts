@@ -1,4 +1,12 @@
-import { color, fraction, num, obj, type Parent, select } from "./field.ts";
+import {
+  color,
+  fraction,
+  length,
+  num,
+  obj,
+  type Parent,
+  select,
+} from "./field.ts";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 
@@ -13,7 +21,7 @@ export function strokeStyle(value: StrokeStyle) {
 }
 
 export function strokeWidth(value: number, min = 0, max = 20) {
-  return num(value, { label: "Grosor", min, max, step: 0.5 });
+  return length(value, { label: "Grosor", min, max, step: 0.5 });
 }
 
 const opacity = (value: number, visible?: (p: Parent) => boolean) =>

@@ -8,6 +8,7 @@ import {
   elementOpacity,
   font,
   glow,
+  length,
   noGlow,
   num,
   type Parent,
@@ -46,7 +47,7 @@ const fields = {
     ...P,
   }),
   /** The ring's line width; a bar is as thick as its box. */
-  thickness: num(18, {
+  thickness: length(18, {
     label: "Grosor",
     min: 1,
     max: 200,
@@ -69,7 +70,7 @@ const fields = {
   }),
   suffix: text("%", { label: "Sufijo", section: "Número", visible: numbered }),
   font: { ...font("Inter"), section: "Número", visible: numbered },
-  size: num(48, {
+  size: length(48, {
     label: "Tamaño",
     min: 8,
     max: 300,

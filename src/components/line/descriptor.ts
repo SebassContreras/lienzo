@@ -8,6 +8,7 @@ import {
   custom,
   fraction,
   glow,
+  length,
   noGlow,
   num,
   obj,
@@ -121,7 +122,7 @@ const fields = {
         max: 10,
         visible: (p: Parent) => flowing(p) && p.kind !== "ants",
       }),
-      size: num(5, {
+      size: length(5, {
         label: "Tamaño",
         min: 1,
         max: 30,
