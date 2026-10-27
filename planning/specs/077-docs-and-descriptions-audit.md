@@ -33,4 +33,5 @@ tool description matches the code, checked one by one.
 - [x] 077/T001 [agent] Tool descriptions read one by one and fixed — covers R1, D1
 - [x] 077/T002 [agent] README, usage skill, docs/components.md read and fixed — covers R2, D2
 - [x] 077/T003 [agent] architecture.md A7@4 and A27, changes.md, product.md, AGENTS.md — covers R2, R3, R4, D3, D4
-- [ ] 077/T004 [agent] Verify: typecheck, lint on touched files, tests, the description dump re-read, every tool named in README and the skill — covers R1, R2, R3, R4
+- [x] 077/T004 [agent] Verify: typecheck, lint on touched files, tests, the description dump re-read, every tool named in README and the skill — covers R1, R2, R3, R4
+      verified: `pnpm typecheck`, biome on the 9 touched source files, `pnpm test` (1273 tests, 154 files); the 44 registered descriptions dumped again and read; a search for the stale phrases (`<slug>`, `1080x1080, 4`, first failing, `traits, set?`, icon placeholder) finds none in the descriptions, README, AGENTS.md, the usage skill, `docs/components.md` or `product.md`; every registered tool is named in README and the usage skill — found: A12 still writes `projects/<slug>/fonts/`, the same folder under the old placeholder name, left as is
