@@ -3,6 +3,8 @@
  * `Family-Weight.ext` split on the last `-` (`Open Sans-700.woff2`), weight 400 when the
  * name has no numeric suffix. No manifest to keep in sync.
  */
+import { BUNDLED_WEIGHTS } from "./fonts.ts";
+
 const FONT_EXTENSIONS = ["ttf", "otf", "woff", "woff2"] as const;
 export type FontExtension = (typeof FONT_EXTENSIONS)[number];
 
@@ -83,6 +85,10 @@ export function resolveFonts(
   const user = new Set([...fromProject, ...fromGlobal].map((f) => f.family));
   const fromBundle = bundled
     .filter((family) => !user.has(family))
-    .map((family) => ({ family, weight: 400, origin: "bundled" as const }));
+    .flatMap((family) =>
+      (BUNDLED_WEIGHTS[family as keyof typeof BUNDLED_WEIGHTS] ?? [400]).map(
+        (weight) => ({ family, weight, origin: "bundled" as const }),
+      ),
+    );
   return [...fromBundle, ...fromGlobal, ...fromProject];
 }

@@ -50,8 +50,14 @@ describe("resolveFonts", () => {
     const fonts = resolveFonts(["Brand", "Inter"], global);
 
     expect(fonts.map((f) => `${f.family}:${f.origin}`)).toEqual([
-      "Inter:bundled",
+      ...Array(4).fill("Inter:bundled"),
       "Brand:global",
+    ]);
+  });
+
+  it("lists every bundled weight (069/D10)", () => {
+    expect(resolveFonts(["Inter"], []).map((f) => f.weight)).toEqual([
+      400, 600, 700, 800,
     ]);
   });
 });

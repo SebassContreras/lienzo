@@ -2,29 +2,53 @@ import { z } from "zod";
 import {
   BrandFontSchema,
   ColorPaletteSchema,
-  ProjectCanvasDefaultsSchema,
   ProjectSlugSchema,
 } from "../../model/project.ts";
+import { availableFonts } from "../font-install.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
+
+/** The canvas fields given; the others keep their stored values (069/D3). */
+const CanvasPatchSchema = z.object({
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  fps: z.number().int().positive().optional(),
+  duration: z.number().positive().optional(),
+});
 
 export const projectUpdate = defineTool({
   name: "project_update",
   description:
     "Change a project's name, description, palette, brand fonts or canvas defaults, as the " +
-    "editor's brand dialog does. Each field given replaces the stored one; the `project` id never changes.",
+    "editor's brand dialog does. Each field given replaces the stored one, except `canvas`, " +
+    "whose fields not given keep their values; the `project` id never changes. `notices` " +
+    "names any brand font family that is not installed (run font_install).",
   input: z.object({
     project: ProjectSlugSchema,
     name: z.string().min(1).optional(),
     description: z.string().optional(),
     palette: ColorPaletteSchema.optional(),
     fonts: BrandFontSchema.array().optional(),
-    canvas: ProjectCanvasDefaultsSchema.optional(),
+    canvas: CanvasPatchSchema.optional(),
   }),
-  output: ToolProjectSchema,
-  async run({ project, ...config }, ctx) {
-    if (!(await ctx.projects.get(project)))
+  output: ToolProjectSchema.extend({ notices: z.array(z.string()) }),
+  async run({ project, canvas, ...config }, ctx) {
+    const stored = await ctx.projects.get(project);
+    if (!stored)
       fail("not_found", `No existe el proyecto «${project}»`, "project");
-    return asToolProject(await ctx.projects.update(project, config));
+    const updated = await ctx.projects.update(project, {
+      ...config,
+      ...(canvas ? { canvas: { ...stored.manifest.canvas, ...canvas } } : {}),
+    });
+    const installed = new Set(
+      (await availableFonts(ctx.fonts, project)).map((f) => f.family),
+    );
+    const notices = (config.fonts ?? [])
+      .filter((f) => !installed.has(f.family))
+      .map(
+        (f) =>
+          `La fuente «${f.family}» no está instalada; el texto usará Inter hasta que la instales (font_install)`,
+      );
+    return { ...asToolProject(updated), notices };
   },
 });
