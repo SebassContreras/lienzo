@@ -131,7 +131,8 @@ describe("scene_generate_speech duration (060/R2)", () => {
   it("reports the frames' length, not the byte-rate estimate (issue #11)", async () => {
     const res = await generate(frames(100, MPEG1_64K), "mp3");
 
-    expect(res.audioDuration).toBeCloseTo((100 * 1152) / 44100, 6);
+    // rounded to hundredths (069/D14)
+    expect(res.audioDuration).toBe(2.61);
   });
 
   it("falls back to the byte-rate estimate for a format it can't parse", async () => {

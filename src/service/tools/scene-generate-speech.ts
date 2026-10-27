@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { round2 } from "../compact/layout.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, SceneResult } from "../scenes.ts";
@@ -114,14 +115,16 @@ export function createSceneGenerateSpeechTool(
 
       // 3. Measure the audio itself; the provider's figure and a byte-rate estimate
       // (~16 KB/s at 128 kbps) are fallbacks for formats we can't parse (060/D2)
-      const estimatedDuration =
+      // rounded to hundredths, as every computed number tools return (069/D14)
+      const estimatedDuration = round2(
         audioDuration(speechResult.audioBuffer, speechResult.format) ??
-        (speechResult.durationSeconds && speechResult.durationSeconds > 0
-          ? speechResult.durationSeconds
-          : Math.max(
-              1,
-              Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
-            ));
+          (speechResult.durationSeconds && speechResult.durationSeconds > 0
+            ? speechResult.durationSeconds
+            : Math.max(
+                1,
+                Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
+              )),
+      );
 
       // 4. Resolve the project scope (046/D1)
       const effectiveCtx = await inProject(ctx, input.project);

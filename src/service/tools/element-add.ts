@@ -12,6 +12,7 @@ import { applyImplied } from "../compact/implied.ts";
 import { placeAt } from "../compact/layout.ts";
 import { findElement, insertChild, mapElementsDeep } from "../element-tree.ts";
 import { COORDINATES, checkKind, patched } from "../elements.ts";
+import { withFileAspect } from "../image-aspect.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
@@ -68,6 +69,7 @@ export const elementAdd = defineTool({
       el = patched(el, patch);
       if (preset === undefined) applyImplied(el, patch);
     }
+    if (patch) el = await withFileAspect(effectiveCtx, el, patch);
     // trimmed before the scene is opened, so a failure adds nothing (049/D4)
     if (trim) el = await trimImage(effectiveCtx, el, "trim");
     if (typeof patch?.id === "string" && patch.id) el = { ...el, id: patch.id };

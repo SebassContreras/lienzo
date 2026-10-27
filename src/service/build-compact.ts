@@ -4,6 +4,7 @@ import type { Scene } from "../model/model.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
+import { withFileAspects } from "./image-aspect.ts";
 import { fail, ToolFailure } from "./registry.ts";
 
 const join = (prefix: string, path: string) =>
@@ -40,7 +41,14 @@ export async function buildCompact(
       },
       animLibrary: library,
     });
-    scene = checkScene(full.scene);
+    scene = checkScene({
+      ...full.scene,
+      elements: await withFileAspects(
+        ctx,
+        full.scene.elements,
+        compact.elements ?? [],
+      ),
+    });
     checkAnimPresets(scene, library);
     notices = [
       ...ignoredFields(full.scene, scene).map(ignoredNotice),

@@ -2,6 +2,7 @@ import { applyCrop } from "../engine/image-trim.ts";
 import type { Element, ImageEl } from "../model/model.ts";
 import { assetSegments, projectAssetUrl, safeAssetPath } from "./asset-path.ts";
 import type { ProjectCtx } from "./ctx.ts";
+import { round3 } from "./image-aspect.ts";
 import { fail } from "./registry.ts";
 
 /** Where the page loads `src` from: a project asset through its route, anything else as is. */
@@ -30,5 +31,6 @@ export async function trimImage(
     );
   if (!bounds)
     fail("image_empty", `La imagen ${el.src} es transparente del todo`, path);
-  return applyCrop(el, bounds);
+  const out = applyCrop(el, bounds);
+  return { ...out, aspect: round3(out.aspect) };
 }
