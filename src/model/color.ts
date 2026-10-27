@@ -5,7 +5,12 @@
 import { z } from "zod";
 
 const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
-const FUNCTION = /^(?:rgba?|hsla?)\(\s*[-+0-9.%\s,/a-z]+\)$/i;
+/** One argument of `rgb()`/`hsl()` (CSS Color 4): a number with an optional unit, or `none`. */
+const ARG = String.raw`(?:[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?(?:%|deg|g?rad|turn)?|none)`;
+const FUNCTION = new RegExp(
+  String.raw`^(?:rgba?|hsla?)\(\s*${ARG}(?:\s*[,/]?\s*${ARG}){2,3}\s*\)$`,
+  "i",
+);
 
 /** The CSS named colors (CSS Color 4) and `transparent`. */
 const NAMES = new Set(

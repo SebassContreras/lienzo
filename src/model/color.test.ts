@@ -4,32 +4,35 @@ import { isColor } from "./color.ts";
 import { defaultScene } from "./model.ts";
 import { parseScene } from "./schema.ts";
 
-describe("isColor (069/D1)", () => {
-  it("takes the forms the canvas parses", () => {
-    for (const c of [
-      "#fff",
-      "#ffff",
-      "#0f172a",
-      "#0f172a80",
-      "rgb(1, 2, 3)",
-      "rgba(0 0 0 / 50%)",
-      "hsl(200 50% 40%)",
-      "Red",
-      "transparent",
-    ])
-      expect(isColor(c), c).toBe(true);
+describe("isColor (069/D1, 070/D1)", () => {
+  it.each([
+    "#fff",
+    "#ffff",
+    "#0f172a",
+    "#0f172a80",
+    "rgb(1, 2, 3)",
+    "rgba(0 0 0 / 50%)",
+    "hsl(200 50% 40%)",
+    "hsl(0.5turn, 10%, 20%, .5)",
+    "Red",
+    "transparent",
+  ])("takes %s, a form the canvas parses", (c) => {
+    expect(isColor(c)).toBe(true);
   });
-  it("rejects anything else", () => {
-    for (const c of [
-      "azul",
-      "not-a-color",
-      "#ggg",
-      "#12345",
-      "",
-      "rgb",
-      "url(x)",
-    ])
-      expect(isColor(c), c).toBe(false);
+
+  it.each([
+    "azul",
+    "not-a-color",
+    "#ggg",
+    "#12345",
+    "",
+    "rgb",
+    "url(x)",
+    "rgb(abc)",
+    "hsl(red)",
+    "rgb(1, 2)",
+  ])("rejects %s", (c) => {
+    expect(isColor(c)).toBe(false);
   });
 });
 

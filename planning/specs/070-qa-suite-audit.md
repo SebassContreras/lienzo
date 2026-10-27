@@ -20,7 +20,7 @@ An audit of spec 069 against the architecture guide found one bug and some drift
   - _Mitigation_: It reads only PNG, JPEG, WebP and SVG, the image types `asset_add` accepts; a file it cannot size fails with `invalid_image` instead of getting a wrong size. Switch to `image-size` if another format is accepted.
 
 ## Tasks
-- [ ] 070/T001 [agent] isColor: strict function arguments, regression test, `it.each` — covers R1, D1
+- [x] 070/T001 [agent] isColor: strict function arguments, regression test, `it.each` — covers R1, D1
 - [ ] 070/T002 [agent] One tree walk, one missing-font message, one rounding module — covers R2, D2
 - [ ] 070/T003 [agent] Placement notices in elements.ts; resources checked once in scene_build — covers R3, D3
 - [ ] 070/T004 [agent] Test hygiene in the 069 tests; unknown_shot test — covers R4, D4
