@@ -7,14 +7,14 @@ import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import { mapElementsDeep } from "../model/element-walk.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
-import { parseScene } from "../model/schema.ts";
+import { parseScene, ShotSchema } from "../model/schema.ts";
 import { shotProblem } from "../model/shots.ts";
 import { expandAnimPresets } from "../presets/anim-presets.ts";
 import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
 import { withCanonicalAssets } from "./asset-refs.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
-import { fail, failAll, problemsOf } from "./registry.ts";
+import { fail, failAll, type Problem, problemsOf } from "./registry.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
@@ -62,28 +62,77 @@ export function checkScene(data: unknown, prefix = "", given = data): Scene {
   );
 }
 
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
 /**
- * Fails listing every rule a parsed scene breaks (074/D9): animation presets missing from
- * `library`, shots out of the scene or overlapping, dangling references of changed elements.
+ * What the rules can read of `data` when it does not parse (075/D3): the elements as given
+ * (anything not an object as an empty one, so indices hold), the shots only if they parse.
+ * The rules read only ids, kinds, `shot`, `icon`, line `attach`, `animPreset.name` and
+ * `children`, and check each before use.
  */
-export function checkSceneRules(
+function rulesView(data: unknown): Scene {
+  const raw = isObject(data) ? data : {};
+  const shots = z.array(ShotSchema).safeParse(raw.shots ?? []);
+  return {
+    ...raw,
+    elements: (Array.isArray(raw.elements) ? raw.elements : []).map((el) =>
+      isObject(el) ? el : {},
+    ),
+    shots: shots.success ? shots.data : [],
+    duration:
+      typeof raw.duration === "number"
+        ? raw.duration
+        : Number.POSITIVE_INFINITY,
+  } as unknown as Scene;
+}
+
+/** Every rule `scene` breaks (074/D9): animation presets, shots, dangling references. */
+function ruleFailures(
   scene: Scene,
   library: readonly AnimPreset[],
-  { previous, given = scene }: { previous?: Scene; given?: unknown } = {},
-): void {
-  const failed = [
+  previous?: Scene,
+): { code: string; problems: Problem[] }[] {
+  return [
     () => checkAnimPresets(scene, library),
     () => checkShots(scene),
     () => checkReferences(scene, previous),
   ].flatMap((check) => problemsOf(check) ?? []);
-  const [first] = failed;
-  if (!first) return;
-  failAll(
-    first.code,
-    failed.flatMap(({ problems }) =>
-      problems.map((p) => ({ ...p, path: idPath(given, p.path) })),
+}
+
+/**
+ * `data` as a scene with its icon names canonical, or a failure listing every schema problem
+ * and every rule it breaks together (075/R4): rules run on what parses when the rest does not.
+ * Paths name elements as `given` (the caller's input) names them, under `prefix`.
+ */
+export function checkWholeScene(
+  data: unknown,
+  library: readonly AnimPreset[],
+  {
+    previous,
+    given = data,
+    prefix = "",
+  }: { previous?: Scene; given?: unknown; prefix?: string } = {},
+): Scene {
+  const parsed = parseScene(data);
+  const scene = parsed.ok ? withCanonicalIcons(parsed.value) : rulesView(data);
+  const named = (path: string) => under(prefix, idPath(given, path));
+  const schema = parsed.ok
+    ? []
+    : parsed.issues.map((i) => ({ path: named(i.path), message: i.message }));
+  const rules = ruleFailures(scene, library, previous);
+  const problems = [
+    ...schema,
+    ...rules.flatMap((r) =>
+      r.problems.map((p) => ({ ...p, path: named(p.path) })),
     ),
-  );
+  ];
+  if (problems.length > 0)
+    failAll(
+      schema.length > 0 ? "invalid_scene" : (rules[0]?.code ?? ""),
+      problems,
+    );
+  return scene;
 }
 
 /** The stored scene `name`, checked. */
@@ -110,9 +159,12 @@ function unknownPreset(
 ): { path: string; el: Element } | undefined {
   for (const [i, el] of elements.entries()) {
     const at = `${prefix}${i}`;
-    if (el.animPreset && !names.has(el.animPreset.name))
+    if (
+      typeof el.animPreset?.name === "string" &&
+      !names.has(el.animPreset.name)
+    )
       return { path: `${at}.animPreset`, el };
-    if (el.kind === "group") {
+    if (el.kind === "group" && Array.isArray(el.children)) {
       const inner = unknownPreset(el.children, names, `${at}.children.`);
       if (inner) return inner;
     }
@@ -159,9 +211,8 @@ export async function prepareScene(
   previous?: Scene,
   given: unknown = data,
 ): Promise<{ scene: Scene; notices: string[] }> {
-  const scene = withCanonicalIcons(checkScene(data, "", given));
   const library = await animLibrary(ctx);
-  checkSceneRules(scene, library, { previous, given });
+  const scene = checkWholeScene(data, library, { previous, given });
   const expanded = expandAnimPresets(scene, library);
   return { scene: checkScene(expanded.scene), notices: expanded.notices };
 }

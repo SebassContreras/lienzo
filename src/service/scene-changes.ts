@@ -10,12 +10,15 @@ export function placedElements(scene: Scene): { el: Element; path: string }[] {
   const walk = (list: readonly Element[], prefix: string) => {
     for (const [i, el] of list.entries()) {
       out.push({ el, path: `${prefix}.${i}` });
-      if (el.kind === "group") walk(el.children, `${prefix}.${i}.children`);
+      // checked, as the rules also read scenes that did not parse (075/D3)
+      if (el.kind === "group" && Array.isArray(el.children))
+        walk(el.children, `${prefix}.${i}.children`);
     }
   };
   walk(scene.elements, "elements");
   for (const [name, symbol] of Object.entries(scene.symbols ?? {}))
-    walk(symbol.children, `symbols.${name}.children`);
+    if (Array.isArray(symbol?.children))
+      walk(symbol.children, `symbols.${name}.children`);
   return out;
 }
 

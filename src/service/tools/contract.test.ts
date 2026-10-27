@@ -242,3 +242,44 @@ it("shot_set remove moves the unbound elements' tracks back to the scene's start
     value: { elements: [{ tracks: { x: [{ t: 1 }] } }] },
   });
 });
+
+it("scene_validate lists schema and rule problems together (075/R4)", async () => {
+  const compact = {
+    duration: 6,
+    shots: [
+      { id: "s1", start: 0, end: 4 },
+      { id: "s2", start: 3, end: 6 },
+    ],
+    elements: [
+      { kind: "rect", tracks: { x: [[0, 0, "wobbly"]] } },
+      { kind: "rect", shot: "s9" },
+    ],
+  };
+
+  const r = await call("scene_validate", { compact });
+
+  expect(r).toMatchObject({
+    value: {
+      errors: [
+        { path: "compact.elements.0.tracks.x.0.easing" },
+        { path: "compact.shots" },
+        { path: "compact.elements.1.shot" },
+      ],
+    },
+  });
+});
+
+it("element_update lists a bad field and an unknown shot together (075/R4)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { w: -50, shot: "nope" },
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      errors: [{ path: "elements.r.w" }, { path: "elements.r.shot" }],
+    },
+  });
+});

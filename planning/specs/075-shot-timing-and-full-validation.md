@@ -68,7 +68,7 @@ contract test holds the timing rule across tools.
 ## Tasks
 - [x] 075/T001 [agent] `shot-timing.ts` (`shotOrigin`, `shiftTracks`, `rebindShot`); `fromShotStart` on top; rebind in `element_update` and the inspector — covers R1, D1
 - [x] 075/T002 [agent] `setShotIn` / `removeShotIn` in `shots.ts`, used by `shot_set` and the shots section — covers R2, R3, D2
-- [ ] 075/T003 [agent] Rules on raw data when the schema fails — covers R4, D3
+- [x] 075/T003 [agent] Rules on raw data when the schema fails — covers R4, D3
 - [ ] 075/T004 [agent] Contract cases for the timing rule — covers R5, D4
 - [ ] 075/T005 [agent] Docs: AGENTS.md rule, usage skill, README, 074 Changes note — covers R6, D5
 - [ ] 075/T006 [agent] Verify: typecheck, lint on touched files, tests, replay with `pnpm lienzo` (rebind, shot move, removal, validate with schema + rule errors) — covers R1, R2, R3, R4, R5, R6

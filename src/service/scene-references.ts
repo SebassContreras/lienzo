@@ -52,13 +52,17 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
   const changed = changedSince(previous);
   const out: Dangling[] = [];
   for (const { el, path } of placed.filter(({ el }) => changed(el))) {
-    if (el.shot !== undefined && !shots.includes(el.shot))
+    if (typeof el.shot === "string" && !shots.includes(el.shot))
       out.push({
         code: "unknown_shot",
         message: `Está ligado a la toma «${el.shot}», que no existe (tomas: ${list(shots)}; créala con shot_set)`,
         path: `${path}.shot`,
       });
-    if (el.kind === "icon" && !BY_FOLDED.has(fold(el.icon))) {
+    if (
+      el.kind === "icon" &&
+      typeof el.icon === "string" &&
+      !BY_FOLDED.has(fold(el.icon))
+    ) {
       const near = closestKey(el.icon, ICON_NAMES);
       out.push({
         code: "unknown_icon",
@@ -71,8 +75,8 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
     }
     if (el.kind === "line")
       for (const end of ["a", "b"] as const) {
-        const attach = el[end].attach;
-        if (attach && !ids.has(attach))
+        const attach = (el[end] as { attach?: unknown } | undefined)?.attach;
+        if (typeof attach === "string" && attach && !ids.has(attach))
           out.push({
             code: "unknown_target",
             message: `El extremo ${end === "a" ? "inicial (from)" : "final (to)"} se conecta a «${attach}», que no existe (ids: ${list([...ids].filter((id) => id !== el.id))})`,

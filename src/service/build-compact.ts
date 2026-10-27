@@ -12,14 +12,8 @@ const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
 import { sceneDefaults } from "./scene-defaults.ts";
-import { withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
-import {
-  animLibrary,
-  checkScene,
-  checkSceneRules,
-  findPreset,
-} from "./scenes.ts";
+import { animLibrary, checkWholeScene, findPreset } from "./scenes.ts";
 
 /**
  * Expands and checks a compact scene, with every notice `scene_build` gives (064/D11):
@@ -46,21 +40,18 @@ export async function buildCompact(
       animLibrary: library,
       base: await sceneDefaults(ctx),
     });
-    scene = withCanonicalIcons(
-      checkScene(
-        {
-          ...full.scene,
-          elements: await withFileAspects(
-            ctx,
-            full.scene.elements,
-            compact.elements ?? [],
-          ),
-        },
-        "",
-        compact,
-      ),
+    scene = checkWholeScene(
+      {
+        ...full.scene,
+        elements: await withFileAspects(
+          ctx,
+          full.scene.elements,
+          compact.elements ?? [],
+        ),
+      },
+      library,
+      { given: compact },
     );
-    checkSceneRules(scene, library, { given: compact });
     notices = [
       ...ignoredFields(full.scene, scene).map(ignoredNotice),
       ...full.notices,
