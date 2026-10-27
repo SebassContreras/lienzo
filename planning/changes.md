@@ -63,3 +63,9 @@ Why: MP4s exported in Firefox on Windows played on desktop but not on phones or 
 Why: the owner removes everything CI/CD from the project; lint, typecheck and test run locally.
 - REMOVED A15@1
 - Tasks: 001/T010 deletes `.github/workflows/ci.yml`; 001/T008 and 039/T009 re-pointed (still valid)
+
+## 2026-10-27 — project workspaces in A7; shared rules (077)
+Why: A7@3 still put scenes and assets at the repo root, which spec 040 moved into `projects/<project>/`; and 075 found that rules re-implemented per writer (shot timing in each tool, shot edits in the editor) were why QA rounds kept finding the same failures.
+- MODIFIED A7@3 → A7@4
+- ADDED A27@1
+- Tasks: 077/T003 writes both; 075 tasks already built A27 (`src/model/shot-timing.ts`, `setShotIn` / `removeShotIn`)

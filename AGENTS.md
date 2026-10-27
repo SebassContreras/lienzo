@@ -10,6 +10,9 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 - `planning/architecture.md` — project-wide decisions (A items).
 - `planning/roadmap.md` — specs, order, status.
 - `planning/specs/NNN-name.md` — one file per spec: goal, requirements (R), design (D), tasks, changes.
+- `README.md` — the editor, the MCP/CLI tools and how they behave; `docs/components.md` —
+  every component kind; `.agents/skills/lienzo-usage/` — how an agent builds a post with the
+  tools. A change of behavior updates these and the tool's description in the same task.
 
 ## Stack & conventions
 
@@ -100,7 +103,8 @@ What exists today:
   `scene_validate`; an unclipped group's layout box holds its placed children (`withChildBoxes`)
 - QA round 5 (073): a shot owns `[start, end)` (the scene's last instant stays with the last
   shot), shared by render and layout through `isElementActiveInShot(el, t, shots, duration)`;
-  scene check errors name elements by id path (`idPath` in `src/service/scenes.ts`)
+  scene check errors name elements by id path (`idPath` in `src/service/scenes.ts`; since
+  074, by the id the caller gave, else by index)
 - QA round 6 (074): wrong input fails, listing the options; notices only for valid input that
   may surprise. `checkWholeScene` (`src/service/scenes.ts`, 075) runs anim presets, shots and
   `checkReferences` (`src/service/scene-references.ts`: unknown shot, icon, line target on a
