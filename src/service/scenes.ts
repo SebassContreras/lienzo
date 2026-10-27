@@ -39,22 +39,40 @@ export async function animLibrary(ctx: Ctx): Promise<AnimPreset[]> {
   });
 }
 
-/** The path of the first element (group children included) naming a preset not in `names`. */
+/** The first element (group children included) naming a preset not in `names`, with its path. */
 function unknownPreset(
   elements: readonly Element[],
   names: ReadonlySet<string>,
   prefix: string,
-): string | undefined {
+): { path: string; el: Element } | undefined {
   for (const [i, el] of elements.entries()) {
     const at = `${prefix}${i}`;
     if (el.animPreset && !names.has(el.animPreset.name))
-      return `${at}.animPreset`;
+      return { path: `${at}.animPreset`, el };
     if (el.kind === "group") {
       const inner = unknownPreset(el.children, names, `${at}.children.`);
       if (inner) return inner;
     }
   }
   return undefined;
+}
+
+/** Fails on the first element naming an animation preset not in `library` (019/D10, 069/D12). */
+export function checkAnimPresets(
+  scene: Scene,
+  library: readonly AnimPreset[],
+): void {
+  const missing = unknownPreset(
+    scene.elements,
+    new Set(library.map((p) => p.name)),
+    "elements.",
+  );
+  if (missing)
+    fail(
+      "unknown_anim_preset",
+      `«${missing.el.id}» usa la animación «${missing.el.animPreset?.name}», que no está en la biblioteca (animation_list)`,
+      missing.path,
+    );
 }
 
 /**
@@ -67,17 +85,7 @@ export async function prepareScene(
 ): Promise<{ scene: Scene; notices: string[] }> {
   const scene = checkScene(data);
   const library = await animLibrary(ctx);
-  const missing = unknownPreset(
-    scene.elements,
-    new Set(library.map((p) => p.name)),
-    "elements.",
-  );
-  if (missing)
-    fail(
-      "unknown_anim_preset",
-      "No existe esa animación en la biblioteca",
-      missing,
-    );
+  checkAnimPresets(scene, library);
   const expanded = expandAnimPresets(scene, library);
   return { scene: checkScene(expanded.scene), notices: expanded.notices };
 }

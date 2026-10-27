@@ -112,8 +112,10 @@ describe("preset schema", () => {
     });
     expect(unknown).toEqual({
       ok: false,
-      path: "",
-      error: "Trait desconocido «no-such-trait»",
+      path: "traits.0",
+      error: expect.stringContaining(
+        "Trait desconocido «no-such-trait» (hay: ",
+      ),
     });
     const child = parsePresetRecipe({
       name: "G",

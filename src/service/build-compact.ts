@@ -4,9 +4,18 @@ import type { Scene } from "../model/model.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
-import { fail } from "./registry.ts";
+import { fail, ToolFailure } from "./registry.ts";
+
+const join = (prefix: string, path: string) =>
+  path ? `${prefix}.${path}` : prefix;
+
 import { resourceNotices } from "./scene-resources.ts";
-import { animLibrary, checkScene, findPreset } from "./scenes.ts";
+import {
+  animLibrary,
+  checkAnimPresets,
+  checkScene,
+  findPreset,
+} from "./scenes.ts";
 
 /**
  * Expands and checks a compact scene, with every notice `scene_build` gives (064/D11):
@@ -19,6 +28,7 @@ export async function buildCompact(
 ): Promise<{ scene: Scene; notices: string[] }> {
   let scene: Scene;
   let notices: string[];
+  const library = await animLibrary(ctx);
   try {
     const full = await expandScene(compact, {
       findPreset: async (name) => {
@@ -28,16 +38,25 @@ export async function buildCompact(
           return undefined;
         }
       },
-      animLibrary: await animLibrary(ctx),
+      animLibrary: library,
     });
     scene = checkScene(full.scene);
+    checkAnimPresets(scene, library);
     notices = [
       ...ignoredFields(full.scene, scene).map(ignoredNotice),
       ...full.notices,
     ];
   } catch (err: unknown) {
+    // the failing path is the compact one: elements keep their index (069/D12)
+    if (err instanceof ToolFailure)
+      fail(
+        "invalid_compact_scene",
+        err.error.message,
+        join("compact", err.error.path),
+      );
     const msg = err instanceof Error ? err.message : String(err);
-    fail("invalid_compact_scene", msg, "compact");
+    const path = /^([\w.]+): /.exec(msg)?.[1] ?? "";
+    fail("invalid_compact_scene", msg, join("compact", path));
   }
   notices.push(
     ...fontNotices(scene, fonts),

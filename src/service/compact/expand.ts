@@ -2,6 +2,8 @@
  * Pure scene expansion from compact representation (011/D2, D3, D4, D6, R1-R9).
  */
 
+import { dataFields } from "../../components/fields/index.ts";
+import { descriptorOf } from "../../components/index.ts";
 import { ensureDrawOnStroke } from "../../components/path/draw-on.ts";
 import type { AnimPreset } from "../../model/anim-preset.ts";
 import type {
@@ -193,16 +195,20 @@ async function buildElement(
       if ("element" in resolved) {
         element = resolved.element;
       } else {
-        throw new Error(`El preset «${rawPreset}» no es un elemento`);
+        throw new Error(
+          `${path}.preset: El preset «${rawPreset}» no es un elemento`,
+        );
       }
     } else {
-      throw new Error(`No existe el preset «${rawPreset}»`);
+      throw new Error(`${path}.preset: No existe el preset «${rawPreset}»`);
     }
   } else if (rawKind) {
     element = defaultElement(rawKind);
     applySceneDefaults(element, state.defaults);
   } else {
-    throw new Error("El elemento compacto debe especificar 'kind' o 'preset'");
+    throw new Error(
+      `${path}: El elemento compacto debe especificar 'kind' o 'preset'`,
+    );
   }
 
   const {
@@ -229,6 +235,9 @@ async function buildElement(
     element.id = String(overrides.id);
   }
 
+  for (const [k, f] of dataFields(descriptorOf(element.kind)?.fields ?? {}))
+    if (f.type === "text" && f.multiline && Array.isArray(overrides[k]))
+      overrides[k] = (overrides[k] as string[]).join("\n");
   deepMerge(element as unknown as Record<string, unknown>, overrides);
   if (!(rawPreset && findPreset)) applyImplied(element, overrides);
 
@@ -395,6 +404,7 @@ export async function expandScene(
   }
 
   state.symbols = scene.symbols;
+  const failures: string[] = [];
   for (const [i, given] of (compact.elements ?? []).entries()) {
     // with no placement at all, a top-level element is centred, as element_add does (069/D11)
     const unplaced =
@@ -402,7 +412,14 @@ export async function expandScene(
       ["at", "x", "y", "a", "b"].every((k) => !(k in given)) &&
       given.fit !== "canvas";
     const rawEl = unplaced ? { ...given, at: "center" as const } : given;
-    const el = await buildElement(rawEl, state, `elements.${i}`);
+    // every element is built, so one failure does not hide the next (069/D12)
+    let el: Element;
+    try {
+      el = await buildElement(rawEl, state, `elements.${i}`);
+    } catch (err) {
+      failures.push(err instanceof Error ? err.message : String(err));
+      continue;
+    }
 
     if (rawEl.id) {
       if (seenIds.has(el.id)) {
@@ -415,6 +432,8 @@ export async function expandScene(
 
     elements.push(el);
   }
+
+  if (failures.length > 0) throw new Error(failures.join("\n"));
 
   // Post-layout pass: resolve fit and anchors (at root and inside groups)
   function applyLayoutPass(

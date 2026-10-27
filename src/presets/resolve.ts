@@ -58,7 +58,10 @@ export function resolvePreset(recipe: PresetRecipe): Resolved {
   for (const use of recipe.traits ?? []) {
     const { id, params } = splitUse(use);
     const trait = TRAITS.get(id);
-    if (!trait) return { error: `Trait desconocido «${id}»` };
+    if (!trait)
+      return {
+        error: `Trait desconocido «${id}» (hay: ${[...TRAITS.keys()].join(", ")})`,
+      };
     const apply = applierFor(trait, recipe.kind);
     if (!apply) {
       return { error: `El trait «${id}» no se aplica a «${recipe.kind}»` };

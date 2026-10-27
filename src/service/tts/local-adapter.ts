@@ -75,6 +75,23 @@ export const POPULAR_LOCAL_TTS_MODELS: TtsModel[] = [
   },
 ];
 
+/** Every voice id the local models list. */
+const KNOWN_VOICES = POPULAR_LOCAL_TTS_MODELS.flatMap((m) =>
+  m.voices.map((v) => v.id),
+);
+
+/**
+ * When `voice` names a voice no local model lists, the list to pick from (069/D12); a Kokoro
+ * mix (`af_bella+af_sky(0.5)`) is checked part by part.
+ */
+export function unknownVoiceHint(voice: string): string {
+  const parts = voice.split("+").map((p) => p.replace(/\(.*\)$/, "").trim());
+  const unknown = parts.filter((p) => !KNOWN_VOICES.includes(p));
+  return unknown.length === 0
+    ? ""
+    : `. La voz «${unknown.join("», «")}» no está en la lista; voces: ${KNOWN_VOICES.join(", ")}`;
+}
+
 /**
  * Local implementation of TtsService (D3, R3, R6).
  * Sends standard OpenAI-compatible audio speech synthesis requests to local endpoints (e.g. Kokoro-FastAPI)
@@ -152,7 +169,7 @@ export class LocalTtsAdapter implements TtsService {
       } catch {
         // Fallback to text status
       }
-      throw new Error(errorMsg);
+      throw new Error(errorMsg + unknownVoiceHint(voice));
     }
 
     const arrayBuffer = await response.arrayBuffer();

@@ -99,7 +99,11 @@ describe("resolvePreset", () => {
 
   it("reports an unknown trait by name", () => {
     const r = resolvePreset({ name: "x", kind: "rect", traits: ["sparkle"] });
-    expect(r).toEqual({ error: "Trait desconocido «sparkle»" });
+    expect(r).toEqual({
+      error: expect.stringMatching(
+        /^Trait desconocido «sparkle» \(hay: .*glow/,
+      ),
+    });
   });
 
   it("reports a trait that does not apply to the kind", () => {

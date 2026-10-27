@@ -121,6 +121,14 @@ function makeCompactFieldSchema(field: DataField): z.ZodType {
     }
     return z.object(shape).partial().optional();
   }
+  // a multiline text (list items) also takes its lines as an array (069/D12)
+  if (field.type === "text" && field.multiline)
+    return z
+      .union([field.schema, z.array(z.string())], {
+        error:
+          "Se esperaba un texto (una línea por item, separadas por \n) o un array de textos",
+      })
+      .optional();
   return field.schema.optional();
 }
 

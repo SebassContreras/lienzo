@@ -129,7 +129,16 @@ const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
   })
   .superRefine((recipe, ctx) => {
     const r = resolvePreset(recipe as PresetRecipe);
-    if ("error" in r) ctx.addIssue({ code: "custom", message: r.error });
+    if (!("error" in r)) return;
+    // point at the trait the error names, if it names one (069/D12)
+    const i = recipe.traits.findIndex((u) =>
+      r.error.includes(`«${typeof u === "string" ? u : u.use}»`),
+    );
+    ctx.addIssue({
+      code: "custom",
+      message: r.error,
+      ...(i >= 0 ? { path: ["traits", i] } : {}),
+    });
   }) as z.ZodType<PresetRecipe>;
 
 /** A failure's `path` is the first failing issue's ("elements.2.fill.color"; "" at the root). */
