@@ -211,6 +211,41 @@ describe("position tracks across groups (071/D1)", () => {
   });
 });
 
+describe("shots across groups (080/R4)", () => {
+  const inShot = (x: number) => ({ ...defaultRect(), x, shot: "s1" });
+
+  it("grouping elements of one shot gives the group that shot", () => {
+    const [a, b] = [inShot(0), inShot(300)];
+
+    const { group } = groupElements(scene([a, b]), [a.id, b.id]);
+
+    expect(group).toMatchObject({ shot: "s1" });
+    expect(group?.children.map((c) => c.shot)).toEqual([undefined, undefined]);
+  });
+
+  it("ungrouping gives the group's shot back to its children", () => {
+    const [a, b] = [inShot(0), inShot(300)];
+    const { scene: grouped, group } = groupElements(scene([a, b]), [
+      a.id,
+      b.id,
+    ]);
+
+    const { scene: flat } = ungroupElement(grouped, group?.id ?? "");
+
+    expect(flat.elements.map((el) => el.shot)).toEqual(["s1", "s1"]);
+  });
+
+  it("grouping elements of different shots names them and keeps theirs", () => {
+    const a = inShot(0);
+    const b = { ...defaultRect(), x: 300, shot: "s2" };
+
+    const { group, mixedShots } = groupElements(scene([a, b]), [a.id, b.id]);
+
+    expect(mixedShots).toEqual(["s1", "s2"]);
+    expect(group?.shot).toBeUndefined();
+  });
+});
+
 describe("icon node parsing", () => {
   it("turns each SVG tag into a shape and skips unknown ones", () => {
     const shapes = iconShapes([

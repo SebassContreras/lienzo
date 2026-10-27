@@ -355,7 +355,7 @@ Changes (074 did the same), never weakened to pass.
 - [x] 080/T001 [agent] Short-form keyframes in `TracksSchema`; compact normalizer removed; contract cases — covers R1, D1
 - [x] 080/T002 [agent] Defaults filled in `prepareScene` and `symbols`; `scene_inspect_layout data` through `sceneFromData`; contract cases — covers R2, D2
 - [x] 080/T003 [agent] Canonical audio refs, missing-audio notice; contract cases — covers R3, D3
-- [ ] 080/T004 [agent] Shot rule in `groupElements`/`ungroupElement`, used by the tool and the editor; round-trip test — covers R4, D4
+- [x] 080/T004 [agent] Shot rule in `groupElements`/`ungroupElement`, used by the tool and the editor; round-trip test — covers R4, D4
 - [x] 080/T005 [agent] Compact elements parsed in `buildCompact`; every shot problem and unknown animation preset in one `errors`; contract cases — covers R5, D5
 - [ ] 080/T006 [agent] Ignored-key notices by id — covers R6, D6
 - [ ] 080/T007 [agent] `findPreset` path and names, animation preset names, `namesHint` — covers R7, D7

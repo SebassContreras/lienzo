@@ -8,8 +8,9 @@ export const elementUngroup = defineTool({
   name: "element_ungroup",
   description:
     "Replace a top-level group (by `id`) with its children placed where they are drawn, as " +
-    "the editor's Ctrl+Shift+G does; the group's own animation is dropped. Returns the " +
-    "children's `ids`.",
+    "the editor's Ctrl+Shift+G does; the group's own animation is dropped and its shot goes to " +
+    "each child that has none, so element_group then element_ungroup gives back the scene. " +
+    "Returns the children's `ids`.",
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,

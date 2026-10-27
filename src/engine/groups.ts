@@ -50,24 +50,40 @@ function boundsOf(elements: Element[], byId: Map<string, Element>): Box {
   return { x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) };
 }
 
+/** The distinct shots of `members` (`""` for none), in their order. */
+const shotsOf = (members: readonly Element[]) => [
+  ...new Set(members.map((el) => el.shot ?? "")),
+];
+
+/** `el` without its own shot binding. */
+const unbound = ({ shot: _s, ...el }: Element) => el as Element;
+
 /**
  * Puts the elements `ids` into one group, placed where the topmost of them was in the layer
  * order. Lines inside the group stay attached to elements that are also inside; lines outside
- * keep following the elements they were attached to.
+ * keep following the elements they were attached to. Shots act on top-level elements, so
+ * members of one shot give the group that shot (069/D13, in the editor too since 080/D4);
+ * members of different shots keep theirs, and `mixedShots` names them.
  */
 export function groupElements(
   scene: Scene,
   ids: string[],
   id?: string,
-): { scene: Scene; group?: GroupEl } {
+): { scene: Scene; group?: GroupEl; mixedShots?: string[] } {
   const members = scene.elements.filter((el) => ids.includes(el.id));
   if (members.length < 2) return { scene };
   const byId = indexById(scene);
   const box = boundsOf(members, byId);
   const inside = new Set(members.map((el) => el.id));
+  const shots = shotsOf(members);
+  const shared = shots.length === 1 ? shots[0] : undefined;
+  const children = members.map((el) =>
+    translate(el, -box.x, -box.y, byId, inside),
+  );
   const group: GroupEl = {
     ...defaultGroup(),
     ...(id ? { id } : {}),
+    ...(shared ? { shot: shared } : {}),
     name: "Grupo",
     x: box.x,
     y: box.y,
@@ -75,7 +91,7 @@ export function groupElements(
     h: box.h,
     cw: box.w,
     ch: box.h,
-    children: members.map((el) => translate(el, -box.x, -box.y, byId, inside)),
+    children: shared ? children.map(unbound) : children,
   };
   const top = Math.max(...members.map((el) => scene.elements.indexOf(el)));
   const elements: Element[] = [];
@@ -83,12 +99,17 @@ export function groupElements(
     if (i === top) elements.push(group);
     else if (!inside.has(el.id)) elements.push(el);
   });
-  return { scene: { ...scene, elements }, group };
+  return {
+    scene: { ...scene, elements },
+    group,
+    ...(shots.length > 1 ? { mixedShots: shots } : {}),
+  };
 }
 
 /**
  * Replaces a group by its children, placed where they are drawn (sizes scaled by the group's
- * stretch). The group's own animation is dropped.
+ * stretch). The group's own animation is dropped; its shot goes to each child that has none
+ * (080/D4), so grouping and ungrouping gives back the scene it started from.
  */
 export function ungroupElement(
   scene: Scene,
@@ -96,7 +117,12 @@ export function ungroupElement(
 ): { scene: Scene; ids: string[] } {
   const group = scene.elements.find((el) => el.id === id);
   if (group?.kind !== "group") return { scene, ids: [] };
-  const children = group.children.map((child) => placeChild(child, group));
+  const children = group.children.map((child) => {
+    const placed = placeChild(child, group);
+    return group.shot && !placed.shot
+      ? { ...placed, shot: group.shot }
+      : placed;
+  });
   return {
     scene: {
       ...scene,

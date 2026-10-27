@@ -826,3 +826,24 @@ it("scene_update notes an audio file the project lacks (080/R3)", async () => {
     },
   });
 });
+
+// 080/R4: a group's shot goes back to its children on ungroup, in the tools as in the editor
+it("element_ungroup gives the group's shot back to its children (080/R4)", async () => {
+  await call("element_update", { scene: "s", id: "r", patch: { shot: "s1" } });
+  await call("element_add", {
+    scene: "s",
+    kind: "rect",
+    patch: { id: "q", shot: "s1", x: 300 },
+  });
+  await call("element_group", { scene: "s", ids: ["r", "q"], id: "g" });
+
+  await call("element_ungroup", { scene: "s", id: "g" });
+  const got = (await call("scene_get", { scene: "s" })) as {
+    value: { elements: { id: string; shot?: string }[] };
+  };
+
+  expect(got.value.elements.map(({ id, shot }) => ({ id, shot }))).toEqual([
+    { id: "r", shot: "s1" },
+    { id: "q", shot: "s1" },
+  ]);
+});
