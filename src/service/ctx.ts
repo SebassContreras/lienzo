@@ -1,12 +1,15 @@
-import { join } from "node:path";
 import { createFontStore, type FontStore } from "./font-store.ts";
 import { createBrowserImageProbe, type ImageProbe } from "./image-probe.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
 import { createRenderer, type Renderer } from "./renderer.ts";
+import { findAppRoot } from "./root.ts";
 import { createStore, type PresetStore, type Store } from "./store.ts";
 
-/** The repo, where the app the renderer serves lives (A21). */
-const APP_ROOT = join(import.meta.dirname, "..", "..");
+/**
+ * The repo, where the app the renderer serves lives (A21): found going up from this file, so
+ * it is the same from `src/service/` and from the one-file bundle `dist/cli.js` (076/D1).
+ */
+export const APP_ROOT = findAppRoot(import.meta.dirname);
 
 import type { TtsService } from "./tts/types.ts";
 
