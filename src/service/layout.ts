@@ -186,7 +186,39 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
   }
 
   collect(scene.elements);
-  return result;
+  return withChildBoxes(result);
+}
+
+const union = (a: Box, b: Box): Box => {
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x,
+    y,
+    w: Math.max(a.x + a.w, b.x + b.w) - x,
+    h: Math.max(a.y + a.h, b.y + b.h) - y,
+  };
+};
+
+/**
+ * `placed` with each unclipped group's box grown to hold its children where they are at that
+ * `t`, so a child animated out of the group still counts for `out_of_bounds` (072/D5). A
+ * clipped group draws nothing outside its own box, so it keeps it. Children follow their
+ * group in `placed`, so walking backwards grows inner groups before the groups holding them.
+ */
+function withChildBoxes(placed: PlacedElement[]): PlacedElement[] {
+  const boxes = new Map(placed.map((item) => [item.el, item.box]));
+  for (const item of [...placed].reverse()) {
+    const group = item.parentGroup;
+    if (!group || group.clip) continue;
+    const own = boxes.get(group);
+    const child = boxes.get(item.el);
+    if (own && child) boxes.set(group, union(own, child));
+  }
+  return placed.map((item) => ({
+    ...item,
+    box: boxes.get(item.el) ?? item.box,
+  }));
 }
 
 /**

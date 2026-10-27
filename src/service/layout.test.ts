@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { GroupEl } from "../model/model.ts";
 import {
+  defaultElement,
   defaultLine,
   defaultRect,
   defaultScene,
@@ -399,5 +401,55 @@ describe("shape_overlap (071/D4)", () => {
     ]);
 
     expect(codes).toContain("shape_overlap");
+  });
+});
+
+describe("a group's box with animated children (072/D5)", () => {
+  const sceneWith = (clip: boolean) => {
+    const child = {
+      ...defaultRect(),
+      id: "child",
+      x: 0,
+      y: 0,
+      w: 100,
+      h: 100,
+      tracks: {
+        x: [
+          { t: 0, value: 0, easing: "linear" as const },
+          { t: 3, value: 600, easing: "linear" as const },
+        ],
+      },
+    };
+    const group: GroupEl = {
+      ...(defaultElement("group") as GroupEl),
+      id: "g",
+      clip,
+      x: 500,
+      y: 100,
+      w: 200,
+      h: 100,
+      cw: 200,
+      ch: 100,
+      children: [child],
+    };
+    return { ...defaultScene(), width: 1080, duration: 3, elements: [group] };
+  };
+  const outOf = (clip: boolean) =>
+    inspectLayout(sceneWith(clip), [3])
+      .filter((d) => d.code === "out_of_bounds")
+      .map((d) => d.elementId);
+
+  it("reports a group whose animated child leaves the canvas", () => {
+    expect(outOf(false)).toEqual(["g"]);
+  });
+
+  it("keeps a clipped group to its own box", () => {
+    expect(outOf(true)).toEqual([]);
+  });
+
+  it("grows the group's box to hold the child where it is", () => {
+    const g = layoutBoxes(sceneWith(false), [3]).find((b) => b.id === "g");
+
+    expect(g).toMatchObject({ x: 500, w: 700 });
   });
 });

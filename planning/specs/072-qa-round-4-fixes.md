@@ -34,7 +34,8 @@ The fourth QA run lists 5 problems as still open and 2 new ones. Items 1–3 (`e
 - [x] 072/T003 [agent] shape_overlap for equal boxes (test on each side of the threshold) — covers R2, D2
 - [x] 072/T004 [agent] Counter count-up starts at its shot's start — covers R3, D3
 - [x] 072/T005 [agent] One shot/duration rule for every scene write and scene_validate — covers R4, D4
-- [ ] 072/T006 [agent] Reproduce the group box with an animated child; fix placement if needed — covers R5, D5
+- [x] 072/T006 [agent] Reproduce the group box with an animated child; fix placement if needed — covers R5, D5
+      found: the group box was its own `x`/`y`/`w`/`h`, so a child animated to x 1100 at t=3 gave no `out_of_bounds`; an unclipped group's box is now the union with its placed children. The clip itself is right: a `clip: true` group cuts to its own box by design (059)
 - [ ] 072/T007 [agent] Verify: typecheck, lint on touched files, tests, replay the 7 QA cases with `pnpm lienzo` and a preview of the counter in s2 at t=3 — covers R1–R5
 
 ## Changes
