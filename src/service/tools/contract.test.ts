@@ -870,3 +870,39 @@ it("scene_build names an ignored key of a compact element by its id (080/R6)", a
     value: { notices: [expect.stringContaining("compact.elements.t.content")] },
   });
 });
+
+// 080/R7: a failed lookup lists the valid names at the parameter given
+it("preset_get of a missing preset fails at name, listing presets (080/R7)", async () => {
+  expect(await call("preset_get", { name: "nope" })).toMatchObject({
+    ok: false,
+    error: {
+      path: "name",
+      message: expect.stringMatching(/«nope».*(hay|quisiste)/),
+    },
+  });
+});
+
+it("background_set of a missing preset lists background presets (080/R7)", async () => {
+  expect(
+    await call("background_set", { scene: "s", preset: "Azul nohe" }),
+  ).toMatchObject({
+    ok: false,
+    error: { path: "preset", message: expect.stringContaining("«Azul noche»") },
+  });
+});
+
+it("element_add of a missing preset lists presets (080/R7)", async () => {
+  expect(
+    await call("element_add", { scene: "s", preset: "nope" }),
+  ).toMatchObject(fails(/«nope».*(hay|quisiste)/));
+});
+
+it("scene_build of a missing preset lists presets (080/R7)", async () => {
+  const compact = { elements: [{ id: "a", preset: "nope" }] };
+
+  expect(await call("scene_build", { compact })).toMatchObject(
+    fails(
+      /compact\.elements\.a\.preset: No existe el preset «nope» \((hay|¿quisiste)/,
+    ),
+  );
+});

@@ -5,16 +5,17 @@ import {
   CompactSceneSchema,
 } from "../model/compact.ts";
 import { idPath } from "../model/id-path.ts";
-import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
+import { ignoredFields, ignoredNotice, namesHint } from "../model/ignored.ts";
 import type { Scene } from "../model/model.ts";
+import type { PresetRecipe } from "../model/preset.ts";
 import { cameraOutsideShot } from "../model/shots.ts";
 import { flatIssues } from "../model/zod-issues.ts";
+import { asRecipe } from "../presets/store.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
 import { withFileAspects } from "./image-aspect.ts";
 import {
-  fail,
   failAll,
   type Problem,
   remapFailure,
@@ -104,6 +105,7 @@ export async function buildCompact(
   let notices: string[];
   const library = await animLibrary(ctx);
   const base = await sceneDefaults(ctx);
+  const presets = await ctx.store.presets();
   const parsed = CompactSceneSchema.safeParse(input);
   if (!parsed.success)
     failCompact(input, parsed.error.issues, library, base.duration);
@@ -117,6 +119,12 @@ export async function buildCompact(
           return undefined;
         }
       },
+      presetHint: (name) =>
+        namesHint(
+          name,
+          presets.map((p) => asRecipe(p.data as PresetRecipe).name),
+          "preset_list",
+        ),
       animLibrary: library,
       base,
     });
@@ -145,14 +153,21 @@ export async function buildCompact(
       ...(scene.shots ?? []).flatMap((sh) => cameraOutsideShot(sh) ?? []),
     ];
   } catch (err: unknown) {
-    // the failing path is the compact one: elements keep their index (069/D12)
+    // the failing path is the compact one, an element named by its id (069/D12, 080/D5)
+    const named = (path: string) => join("compact", idPath(input, path));
     if (err instanceof ToolFailure)
-      throw new ToolFailure(
-        remapFailure(err.error, (path) => join("compact", path)),
-      );
+      throw new ToolFailure(remapFailure(err.error, named));
+    // the expansion fails with one «path: message» line per problem
     const msg = err instanceof Error ? err.message : String(err);
-    const path = /^([\w.]+): /.exec(msg)?.[1] ?? "";
-    fail("invalid_compact_scene", msg, join("compact", path));
+    failAll(
+      "invalid_compact_scene",
+      msg.split("\n").map((line) => {
+        const path = /^([\w./-]+): /.exec(line)?.[1];
+        return path
+          ? { path: named(path), message: line.slice(path.length + 2) }
+          : { path: "compact", message: line };
+      }),
+    );
   }
   notices.push(
     ...fontNotices(scene, fonts),

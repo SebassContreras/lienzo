@@ -287,8 +287,16 @@ export async function refuseBuiltIn(
     );
 }
 
-/** The preset whose name or file name is `name` (user presets before built-ins of the same name). */
-export async function findPreset(ctx: Ctx, name: string): Promise<FoundPreset> {
+/**
+ * The preset whose name or file name is `name` (user presets before built-ins of the same
+ * name); a miss fails at `field`, the caller's parameter, listing the presets (of `kind`
+ * when given) (080/D7).
+ */
+export async function findPreset(
+  ctx: Ctx,
+  name: string,
+  { field = "preset", kind }: { field?: string; kind?: string } = {},
+): Promise<FoundPreset> {
   const all = (await ctx.store.presets()).map((p) => ({
     ...p,
     recipe: asRecipe(p.data as PresetRecipe),
@@ -296,6 +304,18 @@ export async function findPreset(ctx: Ctx, name: string): Promise<FoundPreset> {
   const match = all
     .reverse()
     .find((p) => p.recipe.name === name || p.file === slugify(name));
-  if (!match) fail("not_found", `No existe el preset «${name}»`, "preset");
+  if (!match)
+    fail(
+      "not_found",
+      `No existe el preset «${name}»${namesHint(
+        name,
+        all
+          .filter((p) => kind === undefined || p.recipe.kind === kind)
+          .map((p) => p.recipe.name)
+          .reverse(),
+        "preset_list",
+      )}`,
+      field,
+    );
   return { recipe: match.recipe, source: match.source, file: match.file };
 }

@@ -13,7 +13,8 @@ export const backgroundSet = defineTool({
     "Set a scene's background from a background preset (see preset_list, kind " +
     "`background`) and/or `patch` (color, color2, gradient, angle, dots, dotColor, " +
     "dotGap, spotlight, spotlightColor) merged over it or over the current background; " +
-    "`notices` names any other patch key, which is ignored.",
+    "`notices` names any other patch key, which is ignored. A missing preset fails naming the " +
+    "closest background preset or listing them.",
   input: z
     .object({
       scene: z.string().min(1),
@@ -31,7 +32,7 @@ export const backgroundSet = defineTool({
     let base: Background | undefined;
     if (preset !== undefined) {
       const r = resolveBackground(
-        (await findPreset(projectCtx, preset)).recipe,
+        (await findPreset(projectCtx, preset, { kind: "background" })).recipe,
       );
       if ("error" in r) fail("invalid_preset", r.error, "preset");
       base = r.background;

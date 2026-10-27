@@ -48,6 +48,8 @@ type PresetResolver = (
 
 export type ExpandOptions = {
   findPreset?: PresetResolver;
+  /** What a missing preset's message adds: the valid names (080/D7); nothing when absent. */
+  presetHint?: (name: string) => string;
   animLibrary?: readonly AnimPreset[];
   /** The scene the compact one is laid over (the project's canvas, 074/D3); else the default. */
   base?: Scene;
@@ -56,6 +58,7 @@ export type ExpandOptions = {
 /** What every element of one expansion shares (058/D3); `notices` collects what was ignored. */
 type ExpandState = {
   findPreset?: PresetResolver;
+  presetHint?: (name: string) => string;
   defaults?: SceneDefaults;
   notices: string[];
   /** The scene's symbols, so a `use` with no size takes its symbol's (056). */
@@ -171,7 +174,9 @@ async function buildElement(
         );
       }
     } else {
-      throw new Error(`${path}.preset: No existe el preset «${rawPreset}»`);
+      throw new Error(
+        `${path}.preset: No existe el preset «${rawPreset}»${state.presetHint?.(rawPreset) ?? ""}`,
+      );
     }
   } else if (rawKind) {
     element = defaultElement(rawKind);
@@ -326,6 +331,7 @@ export async function expandScene(
   const scene = structuredClone(options.base ?? defaultScene());
   const state: ExpandState = {
     findPreset: options.findPreset,
+    presetHint: options.presetHint,
     defaults: compact.defaults,
     notices: [],
     timing: {

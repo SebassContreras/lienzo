@@ -358,7 +358,7 @@ Changes (074 did the same), never weakened to pass.
 - [x] 080/T004 [agent] Shot rule in `groupElements`/`ungroupElement`, used by the tool and the editor; round-trip test — covers R4, D4
 - [x] 080/T005 [agent] Compact elements parsed in `buildCompact`; every shot problem and unknown animation preset in one `errors`; contract cases — covers R5, D5
 - [x] 080/T006 [agent] Ignored-key notices by id — covers R6, D6
-- [ ] 080/T007 [agent] `findPreset` path and names, animation preset names, `namesHint` — covers R7, D7
+- [x] 080/T007 [agent] `findPreset` path and names, animation preset names, `namesHint` — covers R7, D7
 - [ ] 080/T008 [agent] Scan stored animation recipes and lengths; strict `AnimPresetSchema` — covers R8, D8
 - [ ] 080/T009 [agent] `length()` for length fields; unbounded-field list test — covers R9, D9
 - [ ] 080/T010 [agent] Nested-key suggestions; `component_list` icon wording — covers R10, D10
@@ -380,3 +380,4 @@ Changes (074 did the same), never weakened to pass.
 - 2026-10-27: 080/D2 has `scene_inspect_layout data` fill and check only the schema (`checkScene` over `withElementDefaults(sceneFromData(…))`), not `prepareScene`. Why: the rules would fail an unknown shot or symbol that the tool reports as `unknown_shot` / `missing_symbol`. Work: T002.
 - 2026-10-27: `service.test.ts` ("keeps a scene's audioTracks…") expected the bare `assetId: "voice"` back and one notice; R3 stores it as `/projects/mi-proyecto/assets/voice` and notes that the file is missing, both true of that scene. The TTS tests' hand-built `projects` fakes gain `checkAsset`, the boundary the audio check now calls. Work: T003.
 - 2026-10-27: 080/D6 moves `idPath` to `src/model/id-path.ts` (pure), so the registry, `buildCompact` and `sceneNotices` name ignored keys with it without importing `scenes.ts`. `service.test.ts` ("warns about a misspelled element key in scene_validate") expected `elements.0.glw` for data whose element has an id; R6 names it by that id. Work: T006.
+- 2026-10-27: 080/D7 takes `findPreset(ctx, name, { field, kind })`: `kind` limits the listed names (`background_set` lists background presets only). The compact expansion gets the names through an optional `presetHint`, and its failures become one `errors` list named by id. `idPath` keeps the index of an element whose id a sibling repeats, so a duplicate id stays at `compact.elements.1.id` (078/R7). Work: T007.
