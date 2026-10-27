@@ -51,7 +51,7 @@ export const elementAdd = defineTool({
     "order) give radial and multi-stop gradients when `fill.gradient` is on. " +
     "`trim: true` on an image crops it to its visible pixels first (see image_trim). " +
     "Returns the new element's id (`patch.id` names it; fails if taken) and a notice when it leaves " +
-    "the canvas. A `shot`, icon or line target that does not exist fails, listing the valid " +
+    "the canvas. A `shot`, icon, line target or symbol that does not exist fails, listing the valid " +
     "ones; icon names take any case (`star` → `Star`). A preset's own tracks start at its " +
     "shot's `start`. A bare asset path (`logos/x.png`) is stored with its project prefix. " +
     COORDINATES,

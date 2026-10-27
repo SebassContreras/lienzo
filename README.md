@@ -98,7 +98,7 @@ under `pnpm lienzo mcp`:
 }
 ```
 
-Tools read and write the files of this repo (`projects/<project>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (the `project` of an entry in `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints (plus `errors` when there are several problems); a key the tool does not take is named, with where it belongs (`elements` at the top of `scene_build` → inside `compact`). `project_create` needs only `name`: the `project` id is made from it (`Café Norte` → `cafe-norte`).
+Tools read and write the files of this repo (`projects/<project>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (the `project` of an entry in `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints (plus `errors` when there are several problems); a key the tool does not take is named, with where it belongs (`elements` at the top of `scene_build` → inside `compact`); an object argument a client sends as a JSON string (`patch: "{…}"`) is read as that object. `project_create` needs only `name`: the `project` id is made from it (`Café Norte` → `cafe-norte`).
 
 The server runs the code it started with: after a pull, restart it (and rerun `pnpm build:cli`
 for `dist/cli.js`). Its MCP `instructions` name the commit it started from; if that differs
@@ -113,17 +113,19 @@ How the tools behave, in short:
   field's range (`opacity` 0–1) in `scene_build`, `element_update` and `keyframe_set` alike.
   A shot must end within the scene and not overlap another in `shot_set`, `scene_update`
   (a shorter `duration`), `scene_build` and `scene_validate`.
-- **Wrong input fails:** an unknown `size`, `shot`, icon, line target or easing fails in
-  every tool, and the message lists the valid options; `scene_validate` returns every
-  problem in `errors`.
+- **Wrong input fails:** an unknown `size`, `shot`, icon, line target, symbol or easing
+  fails in every tool, and the message lists the valid options; every opacity is 0–1, as a
+  value and as a keyframe; `scene_validate` returns every problem in `errors`. Messages are
+  Spanish, and a failure about what `element_add` adds points at `patch.…`.
 - **Notices:** a write answers `notices` about what it ignored or could not draw yet (an
   asset not in the project), only for what the call changed; `scene_validate` lists them all.
 - **Defaults:** `scene_create` and `scene_build` start from the project's canvas;
   `scene_get` returns each element's non-default fields (`full: true` for all).
 - **Times:** keyframe `t` is scene time, also for elements bound to a shot and for the
   shot camera. A new counter, and a preset's own tracks, start at its shot's start, and
-  tracks move with the shot when an element changes shot or a shot moves or is removed, in
-  the tools and the editor alike.
+  tracks move with the shot when an element changes shot, a shot moves (`start` and `end`
+  shifted together) or is removed, in the tools and the editor alike; trimming one edge
+  of a shot leaves them in place.
 - **Shot windows:** a shot shows its elements over `[start, end)`. At a cut the instant
   belongs to the shot that starts there, in `scene_preview`, export and
   `scene_inspect_layout` alike; the scene's last instant stays with the shot ending there.

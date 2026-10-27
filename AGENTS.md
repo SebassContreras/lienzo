@@ -125,6 +125,11 @@ What exists today:
 - Bundle and inputs (076): `ctx.ts` finds the app with `findAppRoot`, so `dist/cli.js` renders;
   a failing call names top-level keys the tool does not take and where they belong
   (`misplacedHint`, `src/service/registry.ts`); `project_create` makes `project` from `name`
+- QA round 7 (078): every opacity field is `fraction()` (`src/components/fields/field.ts`,
+  0–1 for slider and check alike; `field.test.ts` walks every descriptor); `setShotIn` moves
+  tracks only for a shot moved whole, a trim leaves them; `use` of a missing symbol fails;
+  `remapFailure` re-roots failure paths (`compact.…`, `patch.…`); zod speaks Spanish
+  (`src/model/zod-locale.ts`); `jsonArgs` reads object arguments sent as JSON strings
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and

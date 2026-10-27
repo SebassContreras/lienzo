@@ -8,10 +8,11 @@ full field list, with the paths keyframes can animate, comes from the `component
 Shared by every kind: position and size (`x`, `y`, `w`, `h` where the kind has a box),
 `opacity`, entry / loop / exit animations (`anim.in`, `anim.loop`, `anim.out`), keyframe
 tracks (`tracks`, by field path or the `@rotate` / `@scale` channels) and a transform origin.
-Most kinds also offer glow and shadow. A top-level element may bind to a shot (`shot`): it
-shows only during that shot, and its tracks are timed from the shot's start, so they move
-when the element changes shot or the shot moves (`element_update`, `shot_set`, the editor's
-**Toma** and **Tomas**).
+Most kinds also offer glow and shadow; every opacity (`opacity`, `fill.opacity`,
+`shadow.opacity`, …) is 0–1. A top-level element may bind to a shot (`shot`): it shows only
+during that shot, and its tracks are timed from the shot's start, so they move when the
+element changes shot or the shot moves whole (`element_update`, `shot_set`, the editor's
+**Toma**); trimming one edge of the shot leaves them in place.
 
 ## `rect`
 
@@ -145,4 +146,5 @@ at once instead (flat illustrations).
 ## `use`
 
 **Símbolo.** An instance of a reusable symbol defined in the scene's `symbols`; it draws
-the symbol's elements in its own box and takes its own animations.
+the symbol's elements in its own box and takes its own animations. A `symbol` the scene
+does not define fails; removing a symbol an instance uses leaves a notice.

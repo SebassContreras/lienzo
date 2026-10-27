@@ -127,8 +127,10 @@ A failed call lists every problem in `errors`; paths name an element by the id y
   (`opacity` 0–1). A still (`scene_export` png, `scene_preview`) at `t` past the duration fails.
 - Wrong references fail, listing the valid ones: a `shot` the scene lacks, an icon lucide
   lacks (names in any case: `star`, `arrow-right` become `Star`, `ArrowRight`), a line
-  `from`/`to` naming no element, an unknown easing, an `element_move` index past the last
-  sibling. `scene_validate` returns every problem in `errors`; paths name an element by the
+  `from`/`to` naming no element, a `use` of a symbol the scene lacks, an unknown easing, an
+  opacity outside 0–1, an `element_move` index past the last sibling. Pass `patch` and
+  `data` as objects (a JSON string is read too). A failure about what `element_add` adds
+  points at `patch.…`. `scene_validate` returns every problem in `errors`; paths name an element by the
   `id` you gave, else by its index. Notices name what is valid but draws a placeholder: an
   image `src` that is not a project asset yet, a line end whose element a write removed.
   A bare asset path (`logos/x.png`, `asset_add`'s `filename`) is stored as
@@ -150,9 +152,10 @@ A failed call lists every problem in `errors`; paths name an element by the id y
   `t` is scene time, camera keys included (`shot_set` takes the same short form and notes
   keys outside the shot). `keyframe_remove` with no key at `t` lists the track's times.
   A shot-bound element's tracks are timed from its shot's `start`: changing its `shot`
-  (`element_update`), moving a shot's `start` (`shot_set`) or removing the shot moves them
-  (and the camera keys) by the difference, with a notice; tracks given in the same patch
-  are kept as given. `scene_validate` and every write list schema and rule problems
+  (`element_update`), moving a shot (`shot_set` with `start` and `end` shifted by the same
+  amount) or removing the shot moves them (and the camera keys) by the difference, with a
+  notice; trimming one edge (`start` or `end` alone, or a new length) leaves them in place,
+  and tracks given in the same patch are kept as given. `scene_validate` and every write list schema and rule problems
   together in `errors`.
 - Preset recipes are `{ name, kind, category?, traits?, set? }` (no other keys; `set` values
   are checked as the element's fields); `preset_get` shows real ones. Names become file
@@ -185,4 +188,5 @@ The full schema is `schemas/compact-scene.json`; component fields are in
 `pnpm dev` (http://localhost:5173) opens the same scenes. The editor edits shots, symbols, track
 `repeat`/`until` and `origin` too, writing the same JSON as the tools: its **Toma** picker
 moves an element's tracks with its shot as `element_update` does, and its **Tomas** section
-moves and removes shots through the same rules as `shot_set`.
+edits and removes shots through the same rules as `shot_set`; its **Inicio** and **Fin**
+fields trim (tracks stay), so moving a shot with its animation is `shot_set` with both.

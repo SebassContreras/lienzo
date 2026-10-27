@@ -34,7 +34,7 @@ export const sceneBuild = defineTool({
     "A top-level element with no `at`, `x`, `y` or `fit` is centred, as in element_add. " +
     "`from`/`to` are a line's target ids, and a counter's own start and end values. " +
     ANIM_RULES +
-    "A `shot`, icon or line target that does not exist fails, listing the valid ones. " +
+    "A `shot`, icon, line target or symbol that does not exist fails, listing the valid ones. " +
     "`notices` lists what was ignored (e.g. unknown effect keys). " +
     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
