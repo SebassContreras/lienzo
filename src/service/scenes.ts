@@ -5,10 +5,11 @@
 import { z } from "zod";
 import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import { mapElementsDeep } from "../model/element-walk.ts";
+import { namesHint } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parseScene, ShotSchema } from "../model/schema.ts";
-import { shotProblem } from "../model/shots.ts";
+import { shotProblems } from "../model/shots.ts";
 import { expandAnimPresets } from "../presets/anim-presets.ts";
 import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
@@ -87,6 +88,17 @@ function rulesView(data: unknown): Scene {
   } as unknown as Scene;
 }
 
+/**
+ * The rule problems of `data` that does not parse as a scene (075/D3), read from its raw
+ * elements; `buildCompact` uses it for a compact scene whose elements fail (080/D5).
+ */
+export function rawRuleProblems(
+  data: unknown,
+  library: readonly AnimPreset[],
+): Problem[] {
+  return ruleFailures(rulesView(data), library).flatMap((r) => r.problems);
+}
+
 /** Every rule `scene` breaks (074/D9): animation presets, shots, dangling references. */
 function ruleFailures(
   scene: Scene,
@@ -151,42 +163,46 @@ export async function animLibrary(ctx: Ctx): Promise<AnimPreset[]> {
   });
 }
 
-/** The first element (group children included) naming a preset not in `names`, with its path. */
-function unknownPreset(
+/** Every element (group children included) naming a preset not in `names`, with its path. */
+function unknownPresets(
   elements: readonly Element[],
   names: ReadonlySet<string>,
   prefix: string,
-): { path: string; el: Element } | undefined {
-  for (const [i, el] of elements.entries()) {
+): { path: string; el: Element }[] {
+  return elements.flatMap((el, i) => {
     const at = `${prefix}${i}`;
-    if (
-      typeof el.animPreset?.name === "string" &&
-      !names.has(el.animPreset.name)
-    )
-      return { path: `${at}.animPreset`, el };
-    if (el.kind === "group" && Array.isArray(el.children)) {
-      const inner = unknownPreset(el.children, names, `${at}.children.`);
-      if (inner) return inner;
-    }
-  }
-  return undefined;
+    const own =
+      typeof el.animPreset?.name === "string" && !names.has(el.animPreset.name)
+        ? [{ path: `${at}.animPreset`, el }]
+        : [];
+    const inner =
+      el.kind === "group" && Array.isArray(el.children)
+        ? unknownPresets(el.children, names, `${at}.children.`)
+        : [];
+    return [...own, ...inner];
+  });
 }
 
-/** Fails on the first element naming an animation preset not in `library` (019/D10, 069/D12). */
+/**
+ * Fails on every element naming an animation preset not in `library` (019/D10, 069/D12),
+ * each with the library's names, closest first (080/D5, D7).
+ */
 export function checkAnimPresets(
   scene: Scene,
   library: readonly AnimPreset[],
 ): void {
-  const missing = unknownPreset(
-    scene.elements,
-    new Set(library.map((p) => p.name)),
-    "elements.",
-  );
-  if (missing)
-    fail(
+  const names = library.map((p) => p.name);
+  const missing = unknownPresets(scene.elements, new Set(names), "elements.");
+  if (missing.length > 0)
+    failAll(
       "unknown_anim_preset",
-      `«${missing.el.id}» usa la animación «${missing.el.animPreset?.name}», que no está en la biblioteca (animation_list)`,
-      missing.path,
+      missing.map(({ path, el }) => {
+        const name = String(el.animPreset?.name);
+        return {
+          path,
+          message: `«${el.id}» usa la animación «${name}», que no está en la biblioteca${namesHint(name, names, "animation_list")}`,
+        };
+      }),
     );
 }
 
@@ -196,8 +212,12 @@ export function checkAnimPresets(
  * does. Opening a stored scene does not, so a broken one can still be read and fixed.
  */
 export function checkShots(scene: Scene): void {
-  const problem = shotProblem(scene.shots ?? [], scene.duration);
-  if (problem) fail(problem.code, problem.message, "shots");
+  const problems = shotProblems(scene.shots ?? [], scene.duration);
+  if (problems.length > 0)
+    failAll(
+      problems[0]?.code ?? "invalid_input",
+      problems.map(({ message }) => ({ path: "shots", message })),
+    );
 }
 
 /**

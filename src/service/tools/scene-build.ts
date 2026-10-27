@@ -3,7 +3,7 @@ import { SHOT_RULES } from "../../engine/shots.ts";
 import {
   ANIM_RULES,
   AT_RULES,
-  CompactSceneSchema,
+  CompactSceneInputSchema,
 } from "../../model/compact.ts";
 import { parseScene, SceneSchema } from "../../model/schema.ts";
 import { slugify } from "../../presets/slug.ts";
@@ -35,7 +35,9 @@ export const sceneBuild = defineTool({
     "`from`/`to` are a line's target ids, and a counter's own start and end values. " +
     ANIM_RULES +
     "A `shot`, icon, line target or symbol that does not exist fails, listing the valid ones. " +
-    "`notices` lists what was ignored (e.g. unknown effect keys). " +
+    "A failure lists every problem in `errors` at once (element values, shots, animation " +
+    "presets, references), each element named by the `id` you gave, else by its index. " +
+    "`notices` lists what was ignored (e.g. unknown effect keys), named the same way. " +
     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
     'frame; `fill.type: "radial"` and `fill.stops: [{at, color}, …]` (at 0–1, 2+ stops, in ' +
@@ -47,7 +49,7 @@ export const sceneBuild = defineTool({
     "A notice also names any text or subtitles font that is not installed (run font_install). " +
     SHOT_RULES,
   input: z.object({
-    compact: CompactSceneSchema,
+    compact: CompactSceneInputSchema,
     project: PROJECT,
     save: z.string().optional(),
     overwrite: z.boolean().optional(),
@@ -85,7 +87,7 @@ export const sceneBuild = defineTool({
       const kept = keepAudio(
         expanded,
         previous?.ok ? previous.value : undefined,
-        compact,
+        built.compact,
       );
       expanded = kept.scene;
       if (kept.notice) notices.push(kept.notice);

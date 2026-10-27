@@ -11,41 +11,11 @@ import {
   dataFields,
   type Fields,
 } from "../components/fields/index.ts";
-import type { Easing } from "../engine/easing.ts";
 import { OriginSchema } from "./element-schema.ts";
-import { TrackRepeatSchema } from "./track.ts";
+import { TracksSchema } from "./track.ts";
 
-// any string here: the scene schema checks the easing at its own path, listing the names
-// (074/D13), where a union would only say "Invalid input"
-const KeyEasingSchema = z.string() as unknown as z.ZodType<Easing>;
-
-const ShortKeyframeTupleSchema = z.tuple([
-  z.number().min(0),
-  z.union([z.number(), z.string()]),
-  KeyEasingSchema.optional(),
-]);
-
-const CanonicalKeyframeSchema = z.object({
-  t: z.number().min(0),
-  value: z.union([z.number(), z.string()]),
-  easing: KeyEasingSchema.optional(),
-});
-
-const CompactKeyframeSchema = z.union([
-  ShortKeyframeTupleSchema,
-  CanonicalKeyframeSchema,
-]);
-
-const CompactTrackObjectSchema = z.object({
-  keys: z.array(CompactKeyframeSchema),
-  repeat: TrackRepeatSchema.optional(),
-  until: z.number().min(0).optional(),
-});
-
-export const CompactTracksSchema = z.record(
-  z.string(),
-  z.union([z.array(CompactKeyframeSchema), CompactTrackObjectSchema]),
-);
+/** Tracks in compact take the same forms as everywhere: the scene's own schema (080/D1). */
+export const CompactTracksSchema = TracksSchema;
 
 /** Short animation: kind name as a string, or an object with slots. */
 const CompactAnimSchema = z.union([
@@ -96,7 +66,8 @@ export const ANIM_RULES =
   "Two animation models combine: `anim` is the kind's preset motion (`{ in, loop, out }`, " +
   'each `{ kind, … }`; the string shorthand `anim: "fade"` means `{ in: { kind: "fade" } }`, ' +
   'and a looping kind such as "float" or "pulse" means `{ loop: … }`), timed from the ' +
-  "element's shot; `tracks` are keyframes per field path (`{ x: [[t, value, easing?], …] }`), " +
+  "element's shot; `tracks` are keyframes per field path (`{ x: [[t, value, easing?], …] }`, " +
+  "or `{ t, value, easing? }`; easing `auto` when left out; stored as `{ t, value, easing }`), " +
   "in scene time, applied before `anim`. ";
 
 export const AT_RULES =
@@ -393,7 +364,11 @@ export function generateCompactJsonSchema(): Record<string, unknown> {
     shots: z.array(CompactShotSchema).optional(),
     audioTracks: z.array(CompactAudioTrackSchema).optional(),
   });
-  return z.toJSONSchema(staticSceneSchema) as Record<string, unknown>;
+  // what a caller writes: the input side of each transform (080/D1)
+  return z.toJSONSchema(staticSceneSchema, { io: "input" }) as Record<
+    string,
+    unknown
+  >;
 }
 
 export const CompactSceneSchema = z.object({
@@ -417,3 +392,20 @@ export const CompactSceneSchema = z.object({
 
 export type CompactScene = z.infer<typeof CompactSceneSchema>;
 export type CompactElement = z.infer<typeof CompactElementSchema>;
+
+/**
+ * The `compact` parameter as `scene_build` and `scene_validate` take it (080/D5): elements and
+ * symbol children are any values here; `buildCompact` checks them, so their problems come
+ * back with the rules', named by id, in one list.
+ */
+export const CompactSceneInputSchema = CompactSceneSchema.extend({
+  symbols: z
+    .record(
+      z.string(),
+      CompactSymbolSchema.extend({ children: z.array(z.unknown()) }),
+    )
+    .optional(),
+  elements: z.array(z.unknown()).default([]),
+});
+
+export type CompactSceneInput = z.infer<typeof CompactSceneInputSchema>;

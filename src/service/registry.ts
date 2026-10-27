@@ -3,8 +3,10 @@
  * `snake_case` name, an English description for the model, Zod input and output, and
  * `run(input, ctx)`. The CLI (008) and the MCP server (009) only list and call these.
  */
+
 import type { z } from "zod";
 import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
+import { flatIssues } from "../model/zod-issues.ts";
 import type { Ctx } from "./ctx.ts";
 
 /** One problem with an input: the path it is at and what is wrong. */
@@ -211,16 +213,17 @@ async function callTool(
   const input = first.success ? given : jsonArgs(given, first.error.issues);
   const parsed = input === given ? first : tool.input.safeParse(input);
   if (!parsed.success) {
-    const issue = parsed.error.issues[0];
+    const issues = flatIssues(parsed.error.issues);
+    const issue = issues[0];
     return {
       ok: false,
       error: {
         code: "invalid_input",
         message: [
-          ...parsed.error.issues.map(
+          ...issues.map(
             (i) => `${i.path.join(".") || "(entrada)"}: ${i.message}`,
           ),
-          misplacedHint(tool, input, parsed.error.issues),
+          misplacedHint(tool, input, issues),
         ]
           .filter(Boolean)
           .join("\n"),

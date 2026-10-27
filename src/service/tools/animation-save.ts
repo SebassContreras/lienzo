@@ -10,7 +10,8 @@ export const animationSave = defineTool({
   name: "animation_save",
   description:
     "Save an animation preset given in `recipe` ({ name, category?, anim?, tracks? }, checked as the editor's " +
-    "import checks it; an `anim.in`/`loop`/`out` given in part takes the defaults for the rest) " +
+    "import checks it; an `anim.in`/`loop`/`out` given in part takes the defaults for the rest; " +
+    "`tracks` take the short keyframe form `[t, value, easing?]`) " +
     "into the project's presets/animations/ with `project`, else the global presets/animations/. The file is " +
     "named after `file`, else the preset's name; fails when it exists unless `overwrite` is true. " +
     "animation_delete removes it.",

@@ -110,3 +110,25 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 export const ignoredNotice = ({ path, suggestion }: IgnoredField) =>
   `Campo desconocido ignorado: ${path}` +
   (suggestion ? ` (¿quisiste decir «${suggestion}»?)` : "");
+
+/** How many names a hint shows when none is close. */
+const HINT_NAMES = 8;
+
+/**
+ * The valid names for a lookup of `name` that failed (080/D7), as a parenthesis to append:
+ * the closest one when one is close, else the first few, and the tool that lists them all.
+ */
+export function namesHint(
+  name: string,
+  names: readonly string[],
+  listTool: string,
+): string {
+  if (names.length === 0) return ` (no hay ninguno; ${listTool})`;
+  const close = closestKey(name, names);
+  if (close)
+    return ` (¿quisiste decir «${close}»? ${listTool} los lista todos)`;
+  const shown = names.slice(0, HINT_NAMES).map((n) => `«${n}»`);
+  const more =
+    names.length > HINT_NAMES ? `, … ${listTool} los lista todos` : "";
+  return ` (hay: ${shown.join(", ")}${more})`;
+}

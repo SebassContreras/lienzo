@@ -9,7 +9,6 @@ import {
   type SceneShotsResult,
   setShotIn,
 } from "../../model/shots.ts";
-import { normalizeCamera } from "../compact/tracks.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, SceneResult } from "../scenes.ts";
@@ -58,7 +57,7 @@ export const shotSet = defineTool({
             start,
             end,
             transition,
-            camera: camera && normalizeCamera(camera),
+            camera,
           });
       if ("error" in out)
         fail(out.error.code, out.error.message, out.error.path);

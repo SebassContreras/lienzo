@@ -68,11 +68,35 @@ export type Channel = keyof typeof CHANNELS;
 
 export const isChannel = (path: string): path is Channel => path in CHANNELS;
 
-const KeyframeSchema: z.ZodType<Keyframe> = z.object({
+const KeyframeObjectSchema = z.object({
   t: z.number().min(0),
   value: z.union([z.number(), z.string()]),
-  easing: EasingSchema,
+  easing: EasingSchema.default("auto"),
 });
+
+/**
+ * A keyframe as stored, `{ t, value, easing }`, read from any of the forms a caller writes
+ * (080/D1): `[t, value, easing?]` or `{ t, value, easing? }`, easing `auto` when left out.
+ * Every writer parses tracks here, so each one takes the short form. The tuple is read as
+ * the object it stands for, so a failure names the field (`…0.easing`) in either form.
+ */
+const KeyframeSchema: z.ZodType<Keyframe> = z.union([
+  z
+    .tuple([
+      z.number().min(0),
+      z.union([z.number(), z.string()]),
+      z.string().optional(),
+    ])
+    .transform(
+      ([t, value, easing]): Record<string, unknown> => ({
+        t,
+        value,
+        ...(easing === undefined ? {} : { easing }),
+      }),
+    )
+    .pipe(KeyframeObjectSchema),
+  KeyframeObjectSchema,
+]);
 
 const TrackObjectSchema: z.ZodType<TrackObject> = z.object({
   keys: z.array(KeyframeSchema),
@@ -80,9 +104,10 @@ const TrackObjectSchema: z.ZodType<TrackObject> = z.object({
   until: z.number().min(0).optional(),
 });
 
+/** A track as stored: an object with no loop option active is its bare keys (`trackEntry`). */
 export const TrackSchema: z.ZodType<Track> = z.union([
   z.array(KeyframeSchema),
-  TrackObjectSchema,
+  TrackObjectSchema.transform((o) => trackEntry(o.keys, o.repeat, o.until)),
 ]);
 
 /** Optional on every element: scenes written before 015 have none. */

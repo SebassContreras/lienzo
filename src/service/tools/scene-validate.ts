@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CompactSceneSchema } from "../../model/compact.ts";
+import { CompactSceneInputSchema } from "../../model/compact.ts";
 import type { Scene } from "../../model/model.ts";
 import { buildCompact } from "../build-compact.ts";
 import { availableFonts, measureInstalledFonts } from "../font-install.ts";
@@ -27,7 +27,7 @@ export const sceneValidate = defineTool({
     "checked as scene_build would build it, with the same notices).",
   input: z.object({
     data: z.unknown().optional(),
-    compact: CompactSceneSchema.optional(),
+    compact: CompactSceneInputSchema.optional(),
     project: PROJECT,
   }),
   output: Verdict.extend({ notices: z.array(z.string()).optional() }),

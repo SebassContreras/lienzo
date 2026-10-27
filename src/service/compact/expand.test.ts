@@ -605,7 +605,8 @@ describe("expandScene pure expansion (011/T002)", () => {
     });
 
     it("expands compact scene shots and camera tracks (055/R3, T010)", async () => {
-      const compact: CompactScene = {
+      // camera keys in the short form a caller writes; the scene schema reads it (080/D1)
+      const compact = {
         size: "1920x1080",
         duration: 10,
         shots: [
@@ -636,7 +637,7 @@ describe("expandScene pure expansion (011/T002)", () => {
             h: 200,
           },
         ],
-      };
+      } as unknown as CompactScene;
 
       const { scene } = await expandScene(compact);
       expect(scene.shots?.length).toBe(1);

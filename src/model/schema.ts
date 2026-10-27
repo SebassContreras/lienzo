@@ -11,6 +11,7 @@ import { ColorSchema } from "./color.ts";
 import { ElementSchema } from "./element-schema.ts";
 import type { Element, Scene } from "./model.ts";
 import type { PresetRecipe } from "./preset.ts";
+import { flatIssues } from "./zod-issues.ts";
 
 export { ElementSchema };
 
@@ -169,8 +170,8 @@ export type Parsed<T> =
     };
 
 /** "elements.2.fill.color: …" — each issue with the path that failed. */
-function describe(error: z.ZodError): string {
-  return error.issues
+function describe(issues: readonly z.core.$ZodIssue[]): string {
+  return issues
     .map((i) => {
       const path = i.path.map(String).join(".");
       return path ? `${path}: ${i.message}` : i.message;
@@ -180,17 +181,17 @@ function describe(error: z.ZodError): string {
 
 export function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
   const r = schema.safeParse(data);
-  return r.success
-    ? { ok: true, value: r.data }
-    : {
-        ok: false,
-        error: describe(r.error),
-        path: r.error.issues[0]?.path.map(String).join(".") ?? "",
-        issues: r.error.issues.map((i) => ({
-          path: i.path.map(String).join("."),
-          message: i.message,
-        })),
-      };
+  if (r.success) return { ok: true, value: r.data };
+  const issues = flatIssues(r.error.issues);
+  return {
+    ok: false,
+    error: describe(issues),
+    path: issues[0]?.path.map(String).join(".") ?? "",
+    issues: issues.map((i) => ({
+      path: i.path.map(String).join("."),
+      message: i.message,
+    })),
+  };
 }
 
 export const parseScene = (data: unknown) => parseWith(SceneSchema, data);

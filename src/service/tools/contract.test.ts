@@ -581,3 +581,160 @@ it("element_update still fails on a patch string that is not JSON (078/R9)", asy
 
   expect(r).toMatchObject({ ok: false, error: { path: "patch" } });
 });
+
+// 080/R1: every writer takes the short keyframe forms and stores the full one
+const SHORT = { opacity: [[0, 0], { t: 0.5, value: 1 }] };
+const STORED = {
+  opacity: [
+    { t: 0, value: 0, easing: "auto" },
+    { t: 0.5, value: 1, easing: "auto" },
+  ],
+};
+const storedTracks = async (scene: string, id: string) => {
+  const got = await call("scene_get", { scene, full: true });
+  const { elements } = (
+    got as { value: { elements: Record<string, unknown>[] } }
+  ).value;
+  return elements.find((el) => el.id === id)?.tracks;
+};
+
+it("element_add takes short keyframes and stores them whole (080/R1)", async () => {
+  await call("element_add", {
+    scene: "s",
+    kind: "rect",
+    patch: { id: "q", tracks: SHORT },
+  });
+
+  expect(await storedTracks("s", "q")).toEqual(STORED);
+});
+
+it("element_update takes short keyframes and stores them whole (080/R1)", async () => {
+  await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { tracks: SHORT },
+  });
+
+  expect(await storedTracks("s", "r")).toEqual(STORED);
+});
+
+it("scene_create takes short keyframes in data (080/R1)", async () => {
+  await call("scene_create", {
+    scene: "t",
+    data: { elements: [{ id: "q", kind: "rect", tracks: SHORT }] },
+  });
+
+  expect(await storedTracks("t", "q")).toEqual(STORED);
+});
+
+it("scene_validate takes short keyframes in data (080/R1)", async () => {
+  const r = await call("scene_validate", {
+    data: { elements: [{ id: "q", kind: "rect", tracks: SHORT }] },
+  });
+
+  expect(r).toMatchObject({ ok: true, value: { valid: true } });
+});
+
+it("animation_save takes short keyframes (080/R1)", async () => {
+  const r = await call("animation_save", {
+    recipe: { name: "Aparece", tracks: SHORT },
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { animation: expect.any(String) },
+  });
+});
+
+it("a bad keyframe value names the keyframe's field, not «Entrada inválida» (080/R1)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { tracks: { opacity: [[0, "x", "wobbly"]] } },
+  });
+
+  expect(r).toMatchObject(
+    fails(/elements\.r\.tracks\.opacity\.0\.easing: easing desconocido/),
+  );
+});
+
+// 080/R5: a compact scene's problems come back together, elements named by id
+it("scene_build lists a bad element value and an unknown shot together, by id (080/R5)", async () => {
+  const compact = {
+    shots: [{ id: "s1", start: 0, end: 2 }],
+    elements: [
+      { id: "a", kind: "rect", opacity: 5 },
+      { id: "b", kind: "rect", shot: "nope" },
+    ],
+  };
+
+  expect(await call("scene_build", { compact })).toMatchObject({
+    ok: false,
+    error: {
+      errors: [
+        { path: "compact.elements.a.opacity" },
+        { path: "compact.elements.b.shot" },
+      ],
+    },
+  });
+});
+
+it("scene_validate lists a bad element value and an unknown shot together, by id (080/R5)", async () => {
+  const compact = {
+    shots: [{ id: "s1", start: 0, end: 2 }],
+    elements: [
+      { id: "a", kind: "rect", opacity: 5 },
+      { id: "b", kind: "rect", shot: "nope" },
+    ],
+  };
+
+  expect(await call("scene_validate", { compact })).toMatchObject({
+    value: {
+      valid: false,
+      errors: [
+        { path: "compact.elements.a.opacity" },
+        { path: "compact.elements.b.shot" },
+      ],
+    },
+  });
+});
+
+it("scene_validate lists a late shot and an overlap together (080/R5)", async () => {
+  const compact = {
+    duration: 4,
+    shots: [
+      { id: "s1", start: 0, end: 3 },
+      { id: "s2", start: 2, end: 5 },
+    ],
+  };
+
+  expect(await call("scene_validate", { compact })).toMatchObject({
+    value: {
+      errors: [
+        { message: expect.stringContaining("«s2» termina en 5s") },
+        { message: expect.stringContaining("se solapa") },
+      ],
+    },
+  });
+});
+
+it("scene_validate lists every unknown animation preset with the library's names (080/R5)", async () => {
+  const compact = {
+    elements: [
+      { id: "a", kind: "rect", animPreset: "nada" },
+      { id: "b", kind: "rect", animPreset: "tampoco" },
+    ],
+  };
+
+  expect(await call("scene_validate", { compact })).toMatchObject({
+    value: {
+      errors: [
+        {
+          path: "compact.elements.a.animPreset",
+          message: expect.stringMatching(/«nada».*(hay|quisiste)/),
+        },
+        { path: "compact.elements.b.animPreset" },
+      ],
+    },
+  });
+});

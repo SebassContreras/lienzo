@@ -27,6 +27,7 @@ import {
 import type { PresetRecipe } from "../../model/preset.ts";
 import { fromShotStart } from "../../model/shots.ts";
 import { parseSize } from "../../model/size.ts";
+import { TracksSchema } from "../../model/track.ts";
 import { expandAnimPresets } from "../../presets/anim-presets.ts";
 import {
   deepMerge,
@@ -40,7 +41,6 @@ import { applySceneDefaults } from "./defaults.ts";
 import { expandEffects } from "./effects.ts";
 import { applyImplied } from "./implied.ts";
 import { placeAt, resolveFitCanvas, resolveOrigin } from "./layout.ts";
-import { normalizeCamera, normalizeTracks } from "./tracks.ts";
 
 type PresetResolver = (
   name: string,
@@ -255,9 +255,7 @@ async function buildElement(
   const presetTracks =
     rawPreset && !tracks ? Object.keys(element.tracks ?? {}) : [];
   if (tracks) {
-    element.tracks = normalizeTracks(
-      tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
-    );
+    element.tracks = TracksSchema.parse(tracks);
   }
   element = rawPreset
     ? fromShotStart(element, presetTracks, state.timing.shots)
@@ -467,7 +465,9 @@ export async function expandScene(
       start: sh.start,
       end: sh.end,
       transition: sh.transition,
-      camera: sh.camera ? normalizeCamera(sh.camera) : undefined,
+      camera: sh.camera?.tracks
+        ? { ...sh.camera, tracks: TracksSchema.parse(sh.camera.tracks) }
+        : sh.camera,
     }));
   }
 

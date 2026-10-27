@@ -78,8 +78,7 @@
             "spotlightColor": {
               "type": "string"
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
@@ -172,8 +171,7 @@
                           },
                           "required": [
                             "anchor"
-                          ],
-                          "additionalProperties": false
+                          ]
                         },
                         {
                           "type": "object",
@@ -188,8 +186,7 @@
                           "required": [
                             "x",
                             "y"
-                          ],
-                          "additionalProperties": false
+                          ]
                         }
                       ]
                     },
@@ -248,8 +245,7 @@
                           "required": [
                             "x",
                             "y"
-                          ],
-                          "additionalProperties": false
+                          ]
                         }
                       ]
                     },
@@ -318,14 +314,14 @@
                                       ]
                                     },
                                     "easing": {
+                                      "default": "auto",
                                       "type": "string"
                                     }
                                   },
                                   "required": [
                                     "t",
                                     "value"
-                                  ],
-                                  "additionalProperties": false
+                                  ]
                                 }
                               ]
                             }
@@ -372,14 +368,14 @@
                                           ]
                                         },
                                         "easing": {
+                                          "default": "auto",
                                           "type": "string"
                                         }
                                       },
                                       "required": [
                                         "t",
                                         "value"
-                                      ],
-                                      "additionalProperties": false
+                                      ]
                                     }
                                   ]
                                 }
@@ -399,8 +395,7 @@
                             },
                             "required": [
                               "keys"
-                            ],
-                            "additionalProperties": false
+                            ]
                           }
                         ]
                       }
@@ -457,8 +452,7 @@
                           },
                           "required": [
                             "name"
-                          ],
-                          "additionalProperties": false
+                          ]
                         }
                       ]
                     }
@@ -476,12 +470,10 @@
           "w",
           "h",
           "children"
-        ],
-        "additionalProperties": false
+        ]
       }
     },
     "elements": {
-      "default": [],
       "type": "array",
       "items": {
         "anyOf": [
@@ -548,8 +540,7 @@
                     },
                     "required": [
                       "anchor"
-                    ],
-                    "additionalProperties": false
+                    ]
                   },
                   {
                     "type": "object",
@@ -564,8 +555,7 @@
                     "required": [
                       "x",
                       "y"
-                    ],
-                    "additionalProperties": false
+                    ]
                   }
                 ]
               },
@@ -624,8 +614,7 @@
                     "required": [
                       "x",
                       "y"
-                    ],
-                    "additionalProperties": false
+                    ]
                   }
                 ]
               },
@@ -694,14 +683,14 @@
                                 ]
                               },
                               "easing": {
+                                "default": "auto",
                                 "type": "string"
                               }
                             },
                             "required": [
                               "t",
                               "value"
-                            ],
-                            "additionalProperties": false
+                            ]
                           }
                         ]
                       }
@@ -748,14 +737,14 @@
                                     ]
                                   },
                                   "easing": {
+                                    "default": "auto",
                                     "type": "string"
                                   }
                                 },
                                 "required": [
                                   "t",
                                   "value"
-                                ],
-                                "additionalProperties": false
+                                ]
                               }
                             ]
                           }
@@ -775,8 +764,7 @@
                       },
                       "required": [
                         "keys"
-                      ],
-                      "additionalProperties": false
+                      ]
                     }
                   ]
                 }
@@ -833,8 +821,7 @@
                     },
                     "required": [
                       "name"
-                    ],
-                    "additionalProperties": false
+                    ]
                   }
                 ]
               }
@@ -887,8 +874,7 @@
             "required": [
               "kind",
               "duration"
-            ],
-            "additionalProperties": false
+            ]
           },
           "camera": {
             "type": "object",
@@ -949,14 +935,14 @@
                                 ]
                               },
                               "easing": {
+                                "default": "auto",
                                 "type": "string"
                               }
                             },
                             "required": [
                               "t",
                               "value"
-                            ],
-                            "additionalProperties": false
+                            ]
                           }
                         ]
                       }
@@ -1003,14 +989,14 @@
                                     ]
                                   },
                                   "easing": {
+                                    "default": "auto",
                                     "type": "string"
                                   }
                                 },
                                 "required": [
                                   "t",
                                   "value"
-                                ],
-                                "additionalProperties": false
+                                ]
                               }
                             ]
                           }
@@ -1030,22 +1016,19 @@
                       },
                       "required": [
                         "keys"
-                      ],
-                      "additionalProperties": false
+                      ]
                     }
                   ]
                 }
               }
-            },
-            "additionalProperties": false
+            }
           }
         },
         "required": [
           "id",
           "start",
           "end"
-        ],
-        "additionalProperties": false
+        ]
       }
     },
     "audioTracks": {
@@ -1083,13 +1066,8 @@
         },
         "required": [
           "assetId"
-        ],
-        "additionalProperties": false
+        ]
       }
     }
-  },
-  "required": [
-    "elements"
-  ],
-  "additionalProperties": false
+  }
 }

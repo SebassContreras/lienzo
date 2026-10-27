@@ -147,32 +147,41 @@ export function cameraValuePatch(
 }
 
 /**
- * Why `shots` cannot stand in a scene of `duration` seconds (069/D5): a shot ending after the
- * scene, or two shots whose `[start, end)` windows intersect. Undefined when they fit.
+ * Every problem of `shots` in a scene of `duration` (080/D5): each shot ending after the
+ * scene, then each shot starting before the one before it ends. `shot_set` reports the first.
  */
-export function shotProblem(
+export function shotProblems(
   shots: readonly Shot[],
   duration: number,
-): ShotError | undefined {
-  const late = shots.find((sh) => sh.end > duration);
-  if (late)
-    return {
+): ShotError[] {
+  const late = shots
+    .filter((sh) => sh.end > duration)
+    .map((sh) => ({
       code: "invalid_input",
-      message: `La toma «${late.id}» termina en ${late.end}s, después de la escena (${duration}s)`,
+      message: `La toma «${sh.id}» termina en ${sh.end}s, después de la escena (${duration}s)`,
       path: "end",
-    };
+    }));
   const sorted = [...shots].sort((a, b) => a.start - b.start);
-  for (const [i, sh] of sorted.entries()) {
+  const overlaps = sorted.flatMap((sh, i) => {
     const next = sorted[i + 1];
-    if (next && next.start < sh.end)
-      return {
-        code: "invalid_input",
-        message: `La toma «${next.id}» (${next.start}–${next.end}s) se solapa con «${sh.id}» (${sh.start}–${sh.end}s)`,
-        path: "start",
-      };
-  }
-  return undefined;
+    return next && next.start < sh.end
+      ? [
+          {
+            code: "invalid_input",
+            message: `La toma «${next.id}» (${next.start}–${next.end}s) se solapa con «${sh.id}» (${sh.start}–${sh.end}s)`,
+            path: "start",
+          },
+        ]
+      : [];
+  });
+  return [...late, ...overlaps];
 }
+
+/** The first of `shotProblems`, as `shot_set` reports it at its own input. */
+export const shotProblem = (
+  shots: readonly Shot[],
+  duration: number,
+): ShotError | undefined => shotProblems(shots, duration)[0];
 
 /** A scene edit of its shots, and the elements whose tracks moved with them (075/D2). */
 export type SceneShotsResult =

@@ -20,7 +20,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 077 | docs-and-descriptions-audit | done        | 076 |
 | 078 | qa-round-7-fixes | done        | 077 |
 | 079 | descriptions-after-078 | done        | 078 |
-| 080 | qa-round-8-every-writer | todo | 079 |
+| 080 | qa-round-8-every-writer | in progress | 079 |
 
 ## Ideas
 
