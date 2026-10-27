@@ -5,13 +5,16 @@ import { slugify } from "../../presets/slug.ts";
 import { folderOf } from "../project-files.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
+import { RECIPE_RULES } from "./preset-validate.ts";
 
 export const presetSave = defineTool({
   name: "preset_save",
   description:
     "Save a preset recipe (checked as preset_validate checks it) into the project's presets/, " +
     'as the editor\'s "Guardar como preset" does. The file is named after `file`, else the ' +
-    "recipe's name; fails when it exists unless `overwrite` is true.",
+    "recipe's name (accents folded: «Caja Ámbar» → caja-ambar); fails when it exists unless " +
+    "`overwrite` is true. " +
+    RECIPE_RULES,
   input: z.object({
     project: PROJECT,
     recipe: z.unknown(),

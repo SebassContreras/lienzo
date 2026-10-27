@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { SHOT_RULES } from "../../engine/shots.ts";
-import { AT_RULES, CompactSceneSchema } from "../../model/compact.ts";
+import {
+  ANIM_RULES,
+  AT_RULES,
+  CompactSceneSchema,
+} from "../../model/compact.ts";
 import { parseScene, SceneSchema } from "../../model/schema.ts";
 import { slugify } from "../../presets/slug.ts";
 import { buildCompact } from "../build-compact.ts";
@@ -15,7 +19,10 @@ import { saveScene } from "../scenes.ts";
 export const sceneBuild = defineTool({
   name: "scene_build",
   description:
-    "Build a full scene from a compact description. Expands size, background (a background " +
+    "Build a full scene from a compact description, over the project's canvas (size, " +
+    'duration, fps, palette background) for what it leaves out. `size` is "WxH", [w, h], a ' +
+    'ratio ("9:16", "4:5", "1:1", "16:9") or a format ("Story"); anything else fails. ' +
+    "Expands background (a background " +
     "preset name, a color such as `#111827` for a solid background, or an object such as " +
     "`{ color, dots: true }` that starts solid and turns on only what it names), " +
     "presets, shortcuts (at, fit, from, to, short tracks and anim), partial `effects`, and validates " +
@@ -24,6 +31,9 @@ export const sceneBuild = defineTool({
     "at build time, not stored. " +
     AT_RULES +
     "A top-level element with no `at`, `x`, `y` or `fit` is centred, as in element_add. " +
+    "`from`/`to` are a line's target ids, and a counter's own start and end values. " +
+    ANIM_RULES +
+    "A `shot`, icon or line target that does not exist fails, listing the valid ones. " +
     "`notices` lists what was ignored (e.g. unknown effect keys). " +
     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +

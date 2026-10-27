@@ -90,6 +90,14 @@ export const AtPlacementSchema = z.union(
 );
 
 /** What `at` accepts, for every tool description that takes it (064/D12). */
+/** The two ways an element moves, for every tool that writes elements (074/D15). */
+export const ANIM_RULES =
+  "Two animation models combine: `anim` is the kind's preset motion (`{ in, loop, out }`, " +
+  'each `{ kind, … }`; the string shorthand `anim: "fade"` means `{ in: { kind: "fade" } }`, ' +
+  'and a looping kind such as "float" or "pulse" means `{ loop: … }`), timed from the ' +
+  "element's shot; `tracks` are keyframes per field path (`{ x: [[t, value, easing?], …] }`), " +
+  "in scene time, applied before `anim`. ";
+
 export const AT_RULES =
   '`at` places the element: an anchor name (`"center"`, `"top-left"`, …), ' +
   "`{ anchor, offset: [dx, dy] }`, or a point `{ x, y }` the element is centred on. Edge " +

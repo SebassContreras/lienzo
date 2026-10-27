@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
+import {
+  ANIM_RULES,
+  AT_RULES,
+  AtPlacementSchema,
+} from "../../model/compact.ts";
 import { placeAt } from "../compact/layout.ts";
 import { updateElement } from "../element-tree.ts";
 import {
@@ -20,7 +24,9 @@ export const elementUpdate = defineTool({
     "partial patch, deep-merged: objects merge key by key, anything else (arrays, tracks' " +
     "keyframe lists) is replaced. id and kind never change. The result is checked against the " +
     "kind's fields; `notices` names patch keys the kind has no field for and an `id`/`kind` " +
-    "that was not changed. " +
+    "that was not changed. A `shot` the scene lacks fails. Changing `shot` does not move the " +
+    "element's tracks (they are scene time); shift them with keyframe_set if needed. " +
+    ANIM_RULES +
     AT_RULES +
     "It places the patched element against the scene and wins over an `x`/`y` in the patch. " +
     COORDINATES,

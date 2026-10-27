@@ -143,7 +143,7 @@ contract test that walks the tools with the same wrong inputs.
 - [x] 074/T011 [agent] `element_group` id and all bad ids; `element_move` range; easing options; keyframe times; effects field hint — covers R10, R13, D10, D13
 - [x] 074/T012 [agent] Long text wraps when placed — covers R11, D11
 - [x] 074/T013 [agent] Sparse `scene_get` — covers R12, D12
-- [ ] 074/T014 [agent] Descriptions: recipes, animation models, defaults — covers R14, D15
+- [x] 074/T014 [agent] Descriptions: recipes, animation models, defaults — covers R14, D15
 - [ ] 074/T015 [agent] Contract test across tools — covers R15, D16
 - [ ] 074/T016 [agent] Docs: AGENTS.md QA line and usage skill for 074 — covers R1, R3, R12
 - [ ] 074/T017 [agent] Verify: typecheck, lint on touched files, tests, every round-6 case replayed with `pnpm lienzo` — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15
