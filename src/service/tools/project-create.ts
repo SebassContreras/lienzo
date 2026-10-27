@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { ProjectConfigSchema, ProjectSlugSchema } from "../../model/project.ts";
+import {
+  ColorPaletteSchema,
+  ProjectConfigSchema,
+  ProjectSlugSchema,
+} from "../../model/project.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
 
@@ -12,17 +16,8 @@ export const projectCreate = defineTool({
     project: ProjectSlugSchema,
     name: z.string().min(1, "El nombre del proyecto es obligatorio"),
     description: z.string().optional(),
-    palette: z
-      .object({
-        primary: z.string().min(1),
-        secondary: z.string().optional(),
-        accent: z.string().optional(),
-        background: z.string().optional(),
-        surface: z.string().optional(),
-        text: z.string().optional(),
-        custom: z.array(z.string()).optional(),
-      })
-      .optional(),
+    // colors are checked here, so a bad one fails on its path (069/D1)
+    palette: ColorPaletteSchema.optional(),
     canvas: z
       .object({
         width: z.number().int().positive().optional(),
