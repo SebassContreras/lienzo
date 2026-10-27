@@ -92,10 +92,11 @@ test holds the opacity and reference rules for every kind.
 - [x] 078/T005 [agent] Zod messages in Spanish — covers R5, D5
 - [x] 078/T006 [agent] Recipe problems one by one — covers R6, D6
 - [x] 078/T007 [agent] Paths and codes: `scene_delete`, `keyframe_remove`, duplicate id, `project_create` — covers R7, D7
-- [ ] 078/T008 [agent] Missing asset wording, rounded off-canvas notice, built-in preset refusal — covers R8, D8
+- [x] 078/T008 [agent] Missing asset wording, rounded off-canvas notice, built-in preset refusal — covers R8, D8
 - [ ] 078/T009 [agent] Object arguments sent as JSON strings — covers R9, D9
 - [ ] 078/T010 [agent] Docs: README, usage skill, components, AGENTS.md — covers R1, R2, R3, R5, R9
 - [ ] 078/T011 [agent] Verify: typecheck, lint on touched files, tests, the round-7 script re-run (144 calls) plus the new cases — covers R1, R2, R3, R4, R5, R6, R7, R8, R9
 
 ## Changes
 - 2026-10-27: `service.test.ts` expected `elements.bad.animPreset` for an `element_add` naming an unknown animation preset; R4 points that failure at the input, `patch.animPreset`, so the expectation changes. Work: T004.
+- 2026-10-27: `brand-constraining.test.ts` expected "no pertenece a los assets" for `assets/unapproved-foreign-image.png`, a missing file of the same project (the misleading wording R8 fixes); it now expects "no existe en assets/". `parity-tools.test.ts` expected `not_found` when deleting a built-in preset; R8 answers `built_in`. Work: T008.

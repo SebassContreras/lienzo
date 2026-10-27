@@ -263,6 +263,24 @@ export type FoundPreset = {
   file: string;
 };
 
+/**
+ * Fails at `field` when `name` is a built-in preset the project has no preset of its own for
+ * (078/D8): built-ins are not files of the project, so they cannot be renamed or deleted.
+ */
+export async function refuseBuiltIn(
+  ctx: Ctx,
+  name: string,
+  field: string,
+): Promise<void> {
+  const found = await findPreset(ctx, name).catch(() => undefined);
+  if (found?.source === "built-in")
+    fail(
+      "built_in",
+      `«${name}» es un preset integrado: no se puede renombrar ni borrar; guarda una copia con preset_save`,
+      field,
+    );
+}
+
 /** The preset whose name or file name is `name` (user presets before built-ins of the same name). */
 export async function findPreset(ctx: Ctx, name: string): Promise<FoundPreset> {
   const all = (await ctx.store.presets()).map((p) => ({

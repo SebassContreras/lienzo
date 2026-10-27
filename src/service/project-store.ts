@@ -314,7 +314,9 @@ export function createProjectStore(root: string): ProjectStore {
       }
       return {
         ok: false,
-        warning: `El recurso «${assetRef}» no pertenece a los assets del proyecto «${slug}»`,
+        warning: assetPath
+          ? `El recurso «${assetPath}» no existe en assets/ del proyecto «${slug}» (añádelo con asset_add)`
+          : `«${assetRef}» no es una ruta válida dentro de assets/`,
       };
     },
   };

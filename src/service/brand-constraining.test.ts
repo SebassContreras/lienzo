@@ -91,7 +91,7 @@ describe("Brand constraining and asset guardrails", () => {
       const val = addRes.value as { notices: string[]; id: string };
       expect(
         val.notices.some((n) =>
-          n.includes("no pertenece a los assets del proyecto «brand-x»"),
+          n.includes("no existe en assets/ del proyecto «brand-x»"),
         ),
       ).toBe(true);
     }

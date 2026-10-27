@@ -2,6 +2,7 @@ import { z } from "zod";
 import { renameIn, storedAsNotice } from "../project-files.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
+import { refuseBuiltIn } from "../scenes.ts";
 
 export const presetRename = defineTool({
   name: "preset_rename",
@@ -15,12 +16,9 @@ export const presetRename = defineTool({
   }),
   output: z.object({ preset: z.string(), notices: z.array(z.string()) }),
   async run({ project, from, to }, ctx) {
-    const preset = await renameIn(
-      await inProject(ctx, project),
-      "presets",
-      from,
-      to,
-    );
+    const pctx = await inProject(ctx, project);
+    await refuseBuiltIn(pctx, from, "from");
+    const preset = await renameIn(pctx, "presets", from, to);
     return { preset, notices: storedAsNotice(to, preset) };
   },
 });

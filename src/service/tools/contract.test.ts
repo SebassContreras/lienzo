@@ -512,3 +512,50 @@ it("project_create of an existing project fails with exists (078/R7)", async () 
     error: { code: "exists", path: "project" },
   });
 });
+
+it("preset_rename of a built-in preset says it is built in (078/R8)", async () => {
+  const r = await call("preset_rename", {
+    from: "Contador animado",
+    to: "Mi contador",
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "built_in", path: "from" },
+  });
+});
+
+it("preset_delete of a built-in preset says it is built in (078/R8)", async () => {
+  const r = await call("preset_delete", { name: "31-contador" });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "built_in", path: "name" },
+  });
+});
+
+it("element_add of an image whose asset is missing says it does not exist (078/R8)", async () => {
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "image",
+    patch: { src: "nada.png" },
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringContaining("no existe")] },
+  });
+});
+
+it("element_add rounds the box in the off-canvas notice (078/R8)", async () => {
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "text",
+    patch: { text: "fuera", x: 5000, y: 5000 },
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.not.stringMatching(/\d\.\d{3,}/)] },
+  });
+});

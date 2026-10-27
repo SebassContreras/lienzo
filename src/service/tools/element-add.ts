@@ -24,6 +24,7 @@ import { withFileAspect } from "../image-aspect.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail, remapFailure, ToolFailure } from "../registry.ts";
+import { round2 } from "../round.ts";
 import { editScene, findPreset, SceneResult } from "../scenes.ts";
 
 /** `elements.<id>.…` (or `elements.<group>/<id>.…`) of the element `id` as `patch.…`. */
@@ -131,8 +132,8 @@ export const elementAdd = defineTool({
       const b = boxOf(out);
       if (b.x < 0 || b.y < 0 || b.x + b.w > s.width || b.y + b.h > s.height)
         notices.push(
-          `«${out.id}» se sale del lienzo (${s.width}x${s.height}): su caja es x ${b.x}, y ${b.y}, ` +
-            `${b.w}x${b.h}` +
+          `«${out.id}» se sale del lienzo (${s.width}x${s.height}): su caja es x ${round2(b.x)}, y ${round2(b.y)}, ` +
+            `${round2(b.w)}x${round2(b.h)}` +
             (out.kind === "text"
               ? "; da `w` al texto para que haga salto de línea"
               : ""),

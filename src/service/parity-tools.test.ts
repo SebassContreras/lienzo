@@ -171,7 +171,7 @@ describe("preset_save, preset_rename and preset_delete", () => {
   it("cannot delete a built-in preset", async () => {
     expect(
       await errorCode("preset_delete", { project, name: "01-tarjeta-neon" }),
-    ).toBe("not_found");
+    ).toBe("built_in");
   });
 });
 
