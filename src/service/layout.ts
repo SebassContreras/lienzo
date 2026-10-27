@@ -10,7 +10,7 @@ import {
 } from "../engine/color.ts";
 import { type Box, boxesTouch, boxOf, placeChild } from "../engine/geometry.ts";
 import { resolveLine } from "../engine/lines.ts";
-import { isElementActiveInShot } from "../engine/shots.ts";
+import { isElementActiveInShot, shotBox } from "../engine/shots.ts";
 import { widthIsEstimated } from "../engine/text-measure.ts";
 import type {
   Element,
@@ -71,12 +71,18 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
 
   const result: PlacedElement[] = [];
 
+  /**
+   * `view` is where the top-level element holding these ones puts a box on screen (its shot's
+   * camera and transition); top-level elements take their own (067/D2).
+   */
   function collect(
     elements: Element[],
     parentGroup?: GroupEl,
     parentAlpha = 1,
+    parentView?: (box: Box) => Box,
   ) {
     for (const raw of elements) {
+      const view = parentView ?? ((box: Box) => shotBox(box, raw, scene, t));
       if (raw.hidden) continue;
       if (!isElementActiveInShot(raw, t, scene.shots)) continue;
 
@@ -140,13 +146,13 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
 
       result.push({
         el: placed,
-        box: effectiveBox,
+        box: view(effectiveBox),
         parentGroup,
         alpha: effectiveAlpha,
       });
 
       if (raw.kind === "group") {
-        collect(raw.children, placed as GroupEl, effectiveAlpha);
+        collect(raw.children, placed as GroupEl, effectiveAlpha, view);
       } else if (raw.kind === "use") {
         const useEl = raw as UseEl;
         const sym = scene.symbols ? scene.symbols[useEl.symbol] : undefined;
@@ -170,7 +176,7 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
               h: childBox.h * scaleY,
             } as Element;
           });
-          collect(scaledInstances, parentGroup, effectiveAlpha);
+          collect(scaledInstances, parentGroup, effectiveAlpha, view);
         }
       }
     }

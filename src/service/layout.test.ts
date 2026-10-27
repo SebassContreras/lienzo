@@ -288,3 +288,45 @@ describe("pure layoutBoxes (023/T009, R2)", () => {
     ).toBeUndefined();
   });
 });
+
+describe("layout under a shot camera (067/R2)", () => {
+  /** A 1080×1080 scene whose one shot zooms its bound elements 2× about the centre. */
+  function zoomedScene(rect: { x: number; w: number }) {
+    return {
+      ...defaultScene(),
+      width: 1080,
+      height: 1080,
+      duration: 4,
+      shots: [
+        { id: "s1", name: "Zoom", start: 0, end: 4, camera: { zoom: 2 } },
+      ],
+      elements: [
+        { ...defaultRect(), id: "card", shot: "s1", y: 490, h: 100, ...rect },
+      ],
+    };
+  }
+
+  it("flags an element the camera zoom pushes past the canvas edge", () => {
+    // Arrange: 800–1000 fits, but zoomed 2× about x = 540 it spans 1060–1460
+    const scene = zoomedScene({ x: 800, w: 200 });
+
+    // Act
+    const diags = inspectLayout(scene, [1]);
+
+    // Assert
+    expect(diags.map((d) => [d.code, d.elementId])).toEqual([
+      ["out_of_bounds", "card"],
+    ]);
+  });
+
+  it("returns the box as the camera shows it", () => {
+    // Arrange
+    const scene = zoomedScene({ x: 440, w: 200 });
+
+    // Act
+    const [box] = layoutBoxes(scene, [1]);
+
+    // Assert
+    expect([box?.x, box?.y, box?.w, box?.h]).toEqual([340, 440, 400, 200]);
+  });
+});

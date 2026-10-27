@@ -2,6 +2,7 @@
  * Pure functions for shot timing, activation intervals, and camera view transforms (055/D1, D2).
  */
 import type { Element, Scene, Shot } from "../model/model.ts";
+import type { Box } from "./geometry.ts";
 import type { Ctx } from "./paint.ts";
 import { valueAt } from "./tracks.ts";
 
@@ -167,3 +168,37 @@ export const withShotView: ShotView = (ctx, el, scene, t, draw) => {
   draw();
   ctx.restore();
 };
+
+/** Where `box` lands under `camera`: the pure counterpart of `applyCameraTransform`. */
+export function cameraBox(
+  box: Box,
+  camera: ResolvedCamera,
+  sceneWidth: number,
+  sceneHeight: number,
+): Box {
+  const cx = sceneWidth / 2;
+  const cy = sceneHeight / 2;
+  return {
+    x: cx + camera.x + (box.x - cx) * camera.zoom,
+    y: cy + camera.y + (box.y - cy) * camera.zoom,
+    w: box.w * camera.zoom,
+    h: box.h * camera.zoom,
+  };
+}
+
+/**
+ * Where `box`, drawn by the top-level `el`, shows on screen at `t`: what `withShotView` does
+ * to it, its shot's transition around its camera (067/D2).
+ */
+export function shotBox(box: Box, el: Element, scene: Scene, t: number): Box {
+  const shot = el.shot ? scene.shots?.find((s) => s.id === el.shot) : undefined;
+  if (!shot) return box;
+  const { dx, scale } = shotTransitionAt(shot, t, scene.width);
+  const seen = cameraBox(
+    cameraBox(box, resolveShotCamera(shot, t), scene.width, scene.height),
+    { x: 0, y: 0, zoom: scale },
+    scene.width,
+    scene.height,
+  );
+  return { ...seen, x: seen.x + dx };
+}
