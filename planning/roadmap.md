@@ -9,7 +9,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 066 | lazy-vendor-chunks | done        | — |
 | 067 | tool-feedback-fixes | done | — |
 | 068 | qa-feedback-fixes | done        | — |
-| 069 | qa-suite-fixes | in progress | — |
+| 069 | qa-suite-fixes | done        | — |
 
 ## Ideas
 
