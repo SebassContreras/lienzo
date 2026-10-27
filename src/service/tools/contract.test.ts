@@ -441,3 +441,13 @@ it("element_add names a failure about the new element by its patch (078/R4)", as
     },
   });
 });
+
+it("tells a value below its range in Spanish (078/R5)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { w: -5 },
+  });
+
+  expect(r).toMatchObject(fails(/Demasiado pequeño/));
+});

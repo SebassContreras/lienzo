@@ -3,6 +3,7 @@
  * component, field and animation is accepted with every field optional, plus placement
  * shortcuts (`at`, `fit`), line connections (`from`, `to`) and short keyframe tracks.
  */
+import "./zod-locale.ts";
 import { z } from "zod";
 import { effects } from "../components/fields/effects.ts";
 import {

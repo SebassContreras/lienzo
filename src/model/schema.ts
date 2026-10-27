@@ -2,6 +2,7 @@
  * Zod schemas for the JSON files Lienzo reads from outside: scenes and preset recipes.
  * Imports are checked here before anything is written (D4).
  */
+import "./zod-locale.ts";
 import { z } from "zod";
 import { KINDS } from "../components/index.ts";
 import { keyframeError } from "../engine/tracks.ts";
