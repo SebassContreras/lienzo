@@ -41,3 +41,4 @@ Building scenes through the tools left six open points. Each was reproduced with
 - [x] 067/T005 [agent] Inter fallback in the canvas font; goldens re-recorded — covers D4
 - [x] 067/T006 [agent] Installed font metrics and ttf from Google — covers D5
 - [x] 067/T007 [agent] Verify: typecheck, lint, tests, a rendered preview of a radial circle and a missing font — covers R1, R4
+      verified: typecheck, lint and tests (bdabc0c), then the lienzo MCP tools — radial ellipse reaches the edge, zoomed shot boxes match the preview, fontSize/colr suggest size/color, a missing font draws in Inter with a notice, Bebas Neue centers to the pixel; found that family/fontFamily had no suggestion and a missing font was measured with an estimate (fixed in 9292fd4)
