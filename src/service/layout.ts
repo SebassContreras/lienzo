@@ -30,7 +30,8 @@ export type LayoutDiagnostic = {
     | "dangling_attachment"
     | "low_contrast"
     | "unverifiable_contrast"
-    | "missing_symbol";
+    | "missing_symbol"
+    | "unknown_shot";
   elementId: string;
   shot?: string;
   t: number;
@@ -357,6 +358,7 @@ function defaultInspectionTimes(duration: number): number[] {
  * - text overlaps
  * - elements outside the canvas bounds
  * - line ends attached to ids that do not exist
+ * - elements bound to a shot that does not exist
  * - low contrast text and unverifiable backdrops
  */
 export function inspectLayout(
@@ -448,6 +450,18 @@ export function inspectLayout(
     }
   }
   indexAll(scene.elements);
+
+  // An element bound to a shot the scene lacks is never drawn (069/D4)
+  const shotIds = new Set((scene.shots ?? []).map((sh) => sh.id));
+  for (const el of elementById.values()) {
+    if (el.shot && !shotIds.has(el.shot))
+      diagnostics.push({
+        code: "unknown_shot",
+        elementId: el.id,
+        t: 0,
+        message: `Está ligado a la toma «${el.shot}», que no existe, así que no se dibuja nunca`,
+      });
+  }
 
   return diagnostics.map((d) => {
     const el = elementById.get(d.elementId);

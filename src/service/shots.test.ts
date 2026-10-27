@@ -203,4 +203,44 @@ describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
     if (!s3.ok) return;
     expect((s3.value as Scene).shots).toBeUndefined();
   });
+
+  it("rejects late and overlapping shots and unbinds on remove (069/D4, D5)", async () => {
+    const call = (input: Record<string, unknown>) =>
+      registry.call(
+        "shot_set",
+        { project: PROJECT, scene: "cuts", ...input },
+        ctx,
+      );
+    await registry.call(
+      "scene_build",
+      {
+        project: PROJECT,
+        save: "cuts",
+        compact: {
+          duration: 6,
+          shots: [{ id: "s1", start: 0, end: 3 }],
+          elements: [{ kind: "rect", id: "card", shot: "s1" }],
+        },
+      },
+      ctx,
+    );
+    expect(await call({ id: "s2", start: 3, end: 10 })).toMatchObject({
+      ok: false,
+      error: { path: "end" },
+    });
+    expect(await call({ id: "s2", start: 2, end: 5 })).toMatchObject({
+      ok: false,
+      error: { path: "start" },
+    });
+    const removed = await call({ id: "s1", remove: true });
+    expect(
+      removed.ok && (removed.value as { notices: string[] }).notices[0],
+    ).toContain("card");
+    const got = await registry.call(
+      "scene_get",
+      { project: PROJECT, scene: "cuts" },
+      ctx,
+    );
+    expect(got.ok && (got.value as Scene).elements[0]?.shot).toBeUndefined();
+  });
 });

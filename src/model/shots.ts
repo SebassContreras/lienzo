@@ -5,7 +5,7 @@
 import { resolveShotCamera } from "../engine/shots.ts";
 import { keyframeAt, withKeyframe } from "../engine/tracks.ts";
 import { deepMerge } from "../presets/resolve.ts";
-import type { Shot, ShotCamera, ShotTransition } from "./model.ts";
+import type { Element, Shot, ShotCamera, ShotTransition } from "./model.ts";
 import {
   type Tracks,
   trackEntry,
@@ -131,4 +131,53 @@ export function cameraValuePatch(
   return {
     tracks: { [axis]: trackEntry(keys, trackRepeat(track), trackUntil(track)) },
   };
+}
+
+/**
+ * Why `shots` cannot stand in a scene of `duration` seconds (069/D5): a shot ending after the
+ * scene, or two shots whose `[start, end)` windows intersect. Undefined when they fit.
+ */
+export function shotProblem(
+  shots: readonly Shot[],
+  duration: number,
+): ShotError | undefined {
+  const late = shots.find((sh) => sh.end > duration);
+  if (late)
+    return {
+      code: "invalid_input",
+      message: `La toma «${late.id}» termina en ${late.end}s, después de la escena (${duration}s)`,
+      path: "end",
+    };
+  const sorted = [...shots].sort((a, b) => a.start - b.start);
+  for (const [i, sh] of sorted.entries()) {
+    const next = sorted[i + 1];
+    if (next && next.start < sh.end)
+      return {
+        code: "invalid_input",
+        message: `La toma «${next.id}» (${next.start}–${next.end}s) se solapa con «${sh.id}» (${sh.start}–${sh.end}s)`,
+        path: "start",
+      };
+  }
+  return undefined;
+}
+
+/** `elements` with no element (at any depth) bound to shot `id`, and the ids it unbound (069/D4). */
+export function unbindShot(
+  elements: readonly Element[],
+  id: string,
+): { elements: Element[]; unbound: string[] } {
+  const unbound: string[] = [];
+  const walk = (items: readonly Element[]): Element[] =>
+    items.map((el) => {
+      let out = el;
+      if (el.shot === id) {
+        const { shot: _shot, ...rest } = el;
+        out = rest as Element;
+        unbound.push(el.id);
+      }
+      return out.kind === "group"
+        ? { ...out, children: walk(out.children) }
+        : out;
+    });
+  return { elements: walk(elements), unbound };
 }
