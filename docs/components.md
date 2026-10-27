@@ -23,7 +23,8 @@ background glow, shadow and inner text (`label`).
 ## `icon`
 
 **Icono.** Any [Lucide](https://lucide.dev) icon from a searchable picker, with stroke,
-color, glow and an optional rounded tile (color or gradient).
+color, glow and an optional rounded tile (color or gradient). Tools take the name in any
+case or kebab-case (`star` → `Star`); an unknown name fails.
 
 ## `image`
 

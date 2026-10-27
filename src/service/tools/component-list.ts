@@ -10,7 +10,12 @@ const NOTES: Record<string, string> = {
     "element_add and scene_build give a new counter a `progress` track from 0 to 1 over the " +
     "first 1.5 s of its shot (or of the scene; less if the shot or scene is shorter), so it " +
     "counts up while it is seen; the track is written once, when it is added; a `progress` value or track of " +
-    "your own replaces it (compact: `tracks: { progress: [[0, 0], [2, 1]] }`).",
+    "your own replaces it (compact: `tracks: { progress: [[0, 0], [2, 1]] }`). A counter " +
+    "preset's own track starts at its shot's `start` too. In compact, `from`/`to` are its " +
+    "start and end values.",
+  icon:
+    "`icon` is a lucide name (lucide.dev/icons), in any case or kebab-case (`star`, " +
+    "`arrow-right` are stored as `Star`, `ArrowRight`); an unknown name fails with the closest one.",
   image:
     "Given a project asset `src` and no `aspect`, element_add and scene_build read the " +
     "picture's own proportion and size `h` (or `w`) to it.",

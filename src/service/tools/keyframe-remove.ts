@@ -15,7 +15,8 @@ export const keyframeRemove = defineTool({
   name: "keyframe_remove",
   description:
     "Remove an element's keyframe on `path` at time `t` (by `id` or `group/child` path); " +
-    "a track left empty is removed.",
+    "a track left empty is removed. `t` must match a keyframe; otherwise it fails listing the " +
+    "track's times (or the element's tracks when it has none on `path`).",
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,

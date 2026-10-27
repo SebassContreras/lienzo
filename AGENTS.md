@@ -82,8 +82,8 @@ What exists today:
   partial `background`
 - QA suite fixes (069): colors are CSS colors (`ColorSchema`, `src/model/color.ts`) and the
   scene schema checks keyframe values against their field (`keyframeError`); every scene write
-  appends `resourceNotices` (`src/service/scene-resources.ts`: unknown icons, missing assets,
-  loose line ends); `asset_add` and image `aspect` read picture headers
+  appends `resourceNotices` (`src/service/scene-resources.ts`: missing assets,
+  line ends a write left loose; unknown icons and targets fail since 074); `asset_add` and image `aspect` read picture headers
   (`src/service/image-header.ts`, `image-aspect.ts`); edge anchors keep a 5% margin
   (`anchorMargin`) and unplaced compact elements are centred; shots are checked by
   `shotProblem` and unbound by `unbindShot` (`src/model/shots.ts`); animation tools take an

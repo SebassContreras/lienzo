@@ -19,7 +19,8 @@ export const assetAdd = defineTool({
     "`folder` inside it, named by its content hash as the editor's upload names it. Accepts " +
     "png, jpg, svg, webp, glb, mp3, wav, aac, ogg, ttf, otf, woff and woff2 up to 20 MB; an " +
     "image must decode as its extension says. " +
-    "Returns the `src` to use in an image, audio or 3D element.",
+    "Returns the `src` to use in an image, audio or 3D element; `filename` (the path inside " +
+    "assets/) works too and is stored as that `src`, so asset_rename follows either.",
   input: z.object({
     project: PROJECT,
     file: z.string().min(1),
