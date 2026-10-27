@@ -1,0 +1,162 @@
+/**
+ * One rule across the scene-writing tools (074/R15): the same wrong input fails in each, and
+ * the message names the valid options. Written out per tool, no loops (070/R4).
+ */
+import { cp, mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { beforeEach, expect, it } from "vitest";
+import { type Ctx, createCtx } from "../ctx.ts";
+import { fakeRenderer } from "../fake-renderer.ts";
+import { registry } from "./index.ts";
+
+let ctx: Ctx;
+const call = (name: string, input: Record<string, unknown>) =>
+  registry.call(name, { project: "p", ...input }, ctx);
+const fails = (message: RegExp) => ({
+  ok: false,
+  error: { message: expect.stringMatching(message) },
+});
+const invalid = (message: RegExp) => ({
+  ok: true,
+  value: { valid: false, message: expect.stringMatching(message) },
+});
+
+beforeEach(async () => {
+  const root = await mkdtemp(join(tmpdir(), "lienzo-contract-"));
+  await cp("presets/built-in", join(root, "presets", "built-in"), {
+    recursive: true,
+  });
+  ctx = createCtx(root, fakeRenderer());
+  await call("project_create", { name: "P" });
+  await call("scene_create", { scene: "s" });
+  await call("shot_set", { scene: "s", id: "s1", start: 0, end: 2 });
+  await call("element_add", { scene: "s", kind: "rect", patch: { id: "r" } });
+});
+
+const UNKNOWN_SHOT = /«nope».*«s1»/;
+const UNKNOWN_ICON = /«Wrenchh».*«Wrench»/;
+const UNKNOWN_TARGET = /«fantasma».*«r»/;
+const UNKNOWN_EASING = /easing desconocido.*ease-out/;
+const UNKNOWN_SIZE = /«potato».*9:16/;
+
+it("scene_build fails on an unknown size", async () => {
+  expect(
+    await call("scene_build", { compact: { size: "potato" } }),
+  ).toMatchObject(fails(UNKNOWN_SIZE));
+});
+
+it("scene_validate fails on an unknown size", async () => {
+  expect(
+    await call("scene_validate", { compact: { size: "potato" } }),
+  ).toMatchObject(invalid(UNKNOWN_SIZE));
+});
+
+it("scene_build fails on an unknown shot", async () => {
+  const compact = {
+    shots: [{ id: "s1", start: 0, end: 2 }],
+    elements: [{ kind: "rect", shot: "nope" }],
+  };
+  expect(await call("scene_build", { compact })).toMatchObject(
+    fails(UNKNOWN_SHOT),
+  );
+});
+
+it("element_add fails on an unknown shot", async () => {
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "rect",
+    patch: { shot: "nope" },
+  });
+  expect(r).toMatchObject(fails(UNKNOWN_SHOT));
+});
+
+it("element_update fails on an unknown shot", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { shot: "nope" },
+  });
+  expect(r).toMatchObject(fails(UNKNOWN_SHOT));
+});
+
+it("scene_create fails on an unknown shot", async () => {
+  const data = {
+    elements: [{ id: "x", kind: "rect", shot: "nope" }],
+    shots: [{ id: "s1", name: "s1", start: 0, end: 2 }],
+  };
+  expect(await call("scene_create", { scene: "t", data })).toMatchObject(
+    fails(UNKNOWN_SHOT),
+  );
+});
+
+it("scene_validate fails on an unknown shot given as data", async () => {
+  const data = {
+    elements: [{ id: "x", kind: "rect", shot: "nope" }],
+    shots: [{ id: "s1", name: "s1", start: 0, end: 2 }],
+  };
+  expect(await call("scene_validate", { data })).toMatchObject(
+    invalid(UNKNOWN_SHOT),
+  );
+});
+
+it("scene_build fails on an unknown icon", async () => {
+  const compact = { elements: [{ kind: "icon", icon: "Wrenchh" }] };
+  expect(await call("scene_build", { compact })).toMatchObject(
+    fails(UNKNOWN_ICON),
+  );
+});
+
+it("element_add fails on an unknown icon", async () => {
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "icon",
+    patch: { icon: "Wrenchh" },
+  });
+  expect(r).toMatchObject(fails(UNKNOWN_ICON));
+});
+
+it("scene_build fails on a line attached to an id the scene lacks", async () => {
+  const compact = {
+    elements: [
+      { kind: "rect", id: "r" },
+      { kind: "line", to: "fantasma" },
+    ],
+  };
+  expect(await call("scene_build", { compact })).toMatchObject(
+    fails(UNKNOWN_TARGET),
+  );
+});
+
+it("element_add fails on a line attached to an id the scene lacks", async () => {
+  const patch = { b: { x: 0, y: 0, attach: "fantasma" } };
+  const r = await call("element_add", { scene: "s", kind: "line", patch });
+  expect(r).toMatchObject(fails(UNKNOWN_TARGET));
+});
+
+it("scene_build fails on an unknown easing", async () => {
+  const compact = {
+    elements: [{ kind: "rect", tracks: { x: [[0, 0, "wobbly"]] } }],
+  };
+  expect(await call("scene_build", { compact })).toMatchObject(
+    fails(UNKNOWN_EASING),
+  );
+});
+
+it("keyframe_set fails on an unknown easing", async () => {
+  const r = await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 1,
+    value: 5,
+    easing: "wobbly",
+  });
+  expect(r).toMatchObject(fails(UNKNOWN_EASING));
+});
+
+it("shot_set fails on an unknown camera easing", async () => {
+  const camera = { tracks: { zoom: [[0, 1, "wobbly"]] } };
+  const r = await call("shot_set", { scene: "s", id: "s1", camera });
+  expect(r).toMatchObject(fails(UNKNOWN_EASING));
+});
