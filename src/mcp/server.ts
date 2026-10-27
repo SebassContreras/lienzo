@@ -20,6 +20,7 @@ import { z } from "zod";
 import type { Ctx } from "../service/ctx.ts";
 import { ImageResult } from "../service/image.ts";
 import type { Registry, Tool } from "../service/registry.ts";
+import { gitCommit } from "./build-id.ts";
 
 const VERSION = "0.1.0";
 
@@ -53,7 +54,10 @@ function contentOf(value: unknown): CallToolResult["content"] {
 export function createMcpServer(registry: Registry, ctx: Ctx): Server {
   const server = new Server(
     { name: "lienzo", version: VERSION },
-    { capabilities: { tools: {} } },
+    {
+      capabilities: { tools: {} },
+      instructions: `lienzo ${VERSION}, commit ${gitCommit(ctx.root) ?? "desconocido"}. If it differs from \`git rev-parse --short HEAD\`, restart this server: it runs the code it started with.`,
+    },
   );
   const listed = registry.tools.map(mcpToolOf);
   server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: listed }));

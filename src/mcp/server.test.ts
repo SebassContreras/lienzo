@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -134,5 +134,28 @@ describe("lienzo MCP server", () => {
       { type: "image", mimeType: "image/png", data: expect.any(String) },
       { type: "text", text: expect.stringMatching(/look\.png"\}$/) },
     ]);
+  });
+});
+
+describe("build id (072/D1)", () => {
+  it("names the commit the server started from in its instructions", async () => {
+    const root = await mkdtemp(join(tmpdir(), "lienzo-git-"));
+    await mkdir(join(root, ".git", "refs", "heads"), { recursive: true });
+    await writeFile(join(root, ".git", "HEAD"), "ref: refs/heads/main\n");
+    await writeFile(
+      join(root, ".git", "refs", "heads", "main"),
+      "90aee3237aa28af38080c40246338626a6cff1dd\n",
+    );
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await createMcpServer(registry, createCtx(root, fakeRenderer())).connect(
+      serverSide,
+    );
+    const other = new Client({ name: "test", version: "0" });
+    await other.connect(clientSide);
+
+    const instructions = other.getInstructions();
+
+    expect(instructions).toContain("commit 90aee32");
+    await other.close();
   });
 });

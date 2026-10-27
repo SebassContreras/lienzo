@@ -205,6 +205,8 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
 - Use pnpm, never npm or yarn.
 - Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
   it started with, and a stale server reports fixed bugs as open (071).
+  The server's MCP `instructions` name the commit it started from; compare it with
+  `git rev-parse --short HEAD` (072).
 
 <!-- spectrace -->
 ## Planning
