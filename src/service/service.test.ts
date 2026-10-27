@@ -434,9 +434,12 @@ describe("ignored fields (063/R6)", () => {
     const res = await ok("scene_validate", { data: typo });
 
     // Assert
+    // the data names its element by id, so the notice does (080/R6)
     expect(res).toEqual({
       valid: true,
-      notices: ["Campo desconocido ignorado: elements.0.glw"],
+      notices: [
+        `Campo desconocido ignorado: elements.${typo.elements[0]?.id}.glw`,
+      ],
     });
   });
 

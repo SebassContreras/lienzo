@@ -847,3 +847,26 @@ it("element_ungroup gives the group's shot back to its children (080/R4)", async
     { id: "q", shot: "s1" },
   ]);
 });
+
+// 080/R6: an ignored key names its element as errors do
+it("scene_validate names an ignored key of a data element by its id (080/R6)", async () => {
+  const r = await call("scene_validate", {
+    data: { elements: [{ id: "t", kind: "text", content: "hola" }] },
+  });
+
+  expect(r).toMatchObject({
+    value: {
+      notices: [expect.stringContaining("ignorado: elements.t.content")],
+    },
+  });
+});
+
+it("scene_build names an ignored key of a compact element by its id (080/R6)", async () => {
+  const r = await call("scene_build", {
+    compact: { elements: [{ id: "t", kind: "text", content: "hola" }] },
+  });
+
+  expect(r).toMatchObject({
+    value: { notices: [expect.stringContaining("compact.elements.t.content")] },
+  });
+});

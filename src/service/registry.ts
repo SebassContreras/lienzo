@@ -5,6 +5,7 @@
  */
 
 import type { z } from "zod";
+import { idPath } from "../model/id-path.ts";
 import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import { flatIssues } from "../model/zod-issues.ts";
 import type { Ctx } from "./ctx.ts";
@@ -115,6 +116,14 @@ export function defineTool<I extends z.ZodType, O extends z.ZodType>(
  * The input keys the schema dropped, put first in the output's `notices` when its schema has
  * them, even if this call had none, so a misspelled field is never lost silently (063/D5, 067/D3).
  */
+/** `param.rest` with `rest` named as `idPath` names it inside the parameter's value. */
+function byId(input: unknown, path: string): string {
+  const [param, ...rest] = path.split(".");
+  if (!param || rest.length === 0) return path;
+  const value = (input as Record<string, unknown> | undefined)?.[param];
+  return `${param}.${idPath(value, rest.join("."))}`;
+}
+
 function withIgnored(
   tool: Tool,
   value: unknown,
@@ -123,7 +132,10 @@ function withIgnored(
 ): unknown {
   const shape = (tool.output as { shape?: Record<string, unknown> }).shape;
   if (!shape || !("notices" in shape)) return value;
-  const ignored = ignoredFields(input, parsed).map(ignoredNotice);
+  // an element named as errors name it, by the id the input gave (080/D6)
+  const ignored = ignoredFields(input, parsed).map((f) =>
+    ignoredNotice({ ...f, path: byId(input, f.path) }),
+  );
   if (ignored.length === 0) return value;
   const notices = (value as { notices?: string[] }).notices ?? [];
   return { ...(value as object), notices: [...ignored, ...notices] };

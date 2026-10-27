@@ -4,6 +4,7 @@ import {
   type CompactSceneInput,
   CompactSceneSchema,
 } from "../model/compact.ts";
+import { idPath } from "../model/id-path.ts";
 import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Scene } from "../model/model.ts";
 import { cameraOutsideShot } from "../model/shots.ts";
@@ -29,7 +30,6 @@ import {
   animLibrary,
   checkWholeScene,
   findPreset,
-  idPath,
   rawRuleProblems,
 } from "./scenes.ts";
 
