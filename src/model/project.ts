@@ -3,6 +3,7 @@
  * Encapsulates visual identity: colors, typography, canvas defaults, and assets/presets metadata.
  */
 import { z } from "zod";
+import { ColorSchema } from "./color.ts";
 
 /** Slugs must be lowercase, alphanumeric, hyphen-separated identifiers. */
 export const PROJECT_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -20,13 +21,13 @@ export const ProjectSlugSchema = z
   );
 
 export const ColorPaletteSchema = z.object({
-  primary: z.string().min(1, "El color primario es obligatorio"),
-  secondary: z.string().optional(),
-  accent: z.string().optional(),
-  background: z.string().optional(),
-  surface: z.string().optional(),
-  text: z.string().optional(),
-  custom: z.array(z.string()).default([]),
+  primary: ColorSchema,
+  secondary: ColorSchema.optional(),
+  accent: ColorSchema.optional(),
+  background: ColorSchema.optional(),
+  surface: ColorSchema.optional(),
+  text: ColorSchema.optional(),
+  custom: z.array(ColorSchema).default([]),
 });
 
 export type ColorPalette = z.infer<typeof ColorPaletteSchema>;

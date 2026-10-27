@@ -4,14 +4,16 @@
  */
 import { z } from "zod";
 import { KINDS } from "../components/index.ts";
+import { keyframeError } from "../engine/tracks.ts";
 import { resolvePreset } from "../presets/resolve.ts";
+import { ColorSchema } from "./color.ts";
 import { ElementSchema } from "./element-schema.ts";
-import type { Scene } from "./model.ts";
+import type { Element, Scene } from "./model.ts";
 import type { PresetRecipe } from "./preset.ts";
 
 export { ElementSchema };
 
-const color = z.string();
+const color = ColorSchema;
 
 const BackgroundSchema = z.object({
   color,
@@ -20,7 +22,7 @@ const BackgroundSchema = z.object({
   angle: z.number(),
   dots: z.boolean(),
   dotColor: color,
-  dotGap: z.number(),
+  dotGap: z.number().min(1),
   spotlight: z.number(),
   spotlightColor: color,
 });
@@ -42,7 +44,7 @@ const AudioTrackItemSchema = z.object({
   muted: z.boolean().optional(),
 });
 
-import { TracksSchema } from "./track.ts";
+import { TracksSchema, trackKeys } from "./track.ts";
 
 export const ShotTransitionSchema = z.object({
   kind: z.enum(["cut", "fade", "slide", "zoom"]),
@@ -71,19 +73,40 @@ export const SymbolDefinitionSchema = z.object({
   children: z.array(ElementSchema),
 });
 
-export const SceneSchema: z.ZodType<Scene> = z.object({
-  width: z.number().positive(),
-  height: z.number().positive(),
-  duration: z.number().positive(),
-  fps: z.number().positive(),
-  background: BackgroundSchema,
-  elements: z.array(ElementSchema),
-  symbols: z.record(z.string(), SymbolDefinitionSchema).optional(),
-  audio: SceneAudioSchema.optional(),
-  audioTracks: z.array(AudioTrackItemSchema).optional(),
-  shots: z.array(ShotSchema).optional(),
-  mode: z.enum(["static", "video"]).optional(),
-});
+export const SceneSchema: z.ZodType<Scene> = z
+  .object({
+    width: z.number().positive(),
+    height: z.number().positive(),
+    duration: z.number().positive(),
+    fps: z.number().positive(),
+    background: BackgroundSchema,
+    elements: z.array(ElementSchema),
+    symbols: z.record(z.string(), SymbolDefinitionSchema).optional(),
+    audio: SceneAudioSchema.optional(),
+    audioTracks: z.array(AudioTrackItemSchema).optional(),
+    shots: z.array(ShotSchema).optional(),
+    mode: z.enum(["static", "video"]).optional(),
+  })
+  .superRefine((scene, ctx) => {
+    // keyframe values pass their field's schema, at any depth (069/D2)
+    const walk = (elements: readonly Element[], path: (string | number)[]) => {
+      for (const [i, el] of elements.entries()) {
+        for (const [track, entry] of Object.entries(el.tracks ?? {})) {
+          for (const [k, key] of trackKeys(entry).entries()) {
+            const message = keyframeError(el.kind, track, key.value);
+            if (message)
+              ctx.addIssue({
+                code: "custom",
+                message,
+                path: [...path, i, "tracks", track, k, "value"],
+              });
+          }
+        }
+        if (el.kind === "group") walk(el.children, [...path, i, "children"]);
+      }
+    };
+    walk(scene.elements, ["elements"]);
+  }) as z.ZodType<Scene>;
 
 const traitParam = z.union([z.string(), z.number(), z.boolean()]);
 

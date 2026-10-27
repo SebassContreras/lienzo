@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ColorSchema } from "../../model/color.ts";
 import {
   check,
   color,
@@ -16,7 +17,7 @@ import {
  * applied in order so two stops at the same place give a hard edge.
  */
 export const StopsSchema = z
-  .array(z.object({ at: z.number().min(0).max(1), color: z.string() }))
+  .array(z.object({ at: z.number().min(0).max(1), color: ColorSchema }))
   .min(2)
   .refine(
     (stops) => stops.every((s, i) => i === 0 || s.at >= stops[i - 1].at),

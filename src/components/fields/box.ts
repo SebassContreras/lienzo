@@ -24,8 +24,8 @@ export function box(w: number, h: number, o?: BoxOpts) {
     : { inspector: false as const };
   return {
     ...position(),
-    w: num(w, { label: "Ancho", ...size }),
-    h: num(h, { label: "Alto", ...size }),
+    w: num(w, { label: "Ancho", ...size, bounds: [0, Infinity] }),
+    h: num(h, { label: "Alto", ...size, bounds: [0, Infinity] }),
   };
 }
 

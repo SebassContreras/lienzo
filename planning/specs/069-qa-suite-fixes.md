@@ -48,7 +48,7 @@ A first-time QA run of all 43 tools (scratch project `qa-suite`) found 22 proble
 - D14 (R20, R21): `element_add` and `scene_build` set an image's `aspect` from `probeImage` of its project asset when the input gives `src` and no `aspect`, rounded to 3 decimals; `audioDuration` is rounded with `round2`; the counter description is updated.
 
 ## Tasks
-- [ ] 069/T001 [agent] CSS colors and value bounds (colors, `w`/`h`, `dotGap`, keyframe values) — covers R1, R5, D1, D2
+- [x] 069/T001 [agent] CSS colors and value bounds (colors, `w`/`h`, `dotGap`, keyframe values) — covers R1, R5, D1, D2
 - [ ] 069/T002 [agent] Partial canvas in project_update; font notices and bundled weights — covers R2, R10, D3, D10
 - [ ] 069/T003 [agent] Shots: unbind on remove, unknown shot in layout, end and overlap checks — covers R3, R8, D4, D5
 - [ ] 069/T004 [agent] Animation and preset tools by project, animation_delete, recipe defaults, project_inspect presets — covers R4, R15, R16, D6

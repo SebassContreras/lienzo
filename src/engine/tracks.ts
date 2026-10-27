@@ -45,6 +45,23 @@ export function valueKind(kind: string, path: string): ValueKind {
 }
 
 /**
+ * Why `value` cannot be a keyframe of `path` on an element of `kind` (069/D2): it must pass
+ * the field's own schema (a color, a number within bounds); channels take any number.
+ */
+export function keyframeError(
+  kind: string,
+  path: string,
+  value: unknown,
+): string | undefined {
+  if (isChannel(path))
+    return typeof value === "number" ? undefined : "Se esperaba un número";
+  const f = fieldAt(descriptorOf(kind)?.fields ?? {}, path);
+  if (!f) return undefined;
+  const r = f.schema.safeParse(value);
+  return r.success ? undefined : r.error.issues[0]?.message;
+}
+
+/**
  * Resolves the effective lookup timestamp for a track at `t` (052/D2):
  * clamps at `until` when set and `t >= until`, then wraps `t` past `last.t`
  * across `last.t - first.t` for `repeat: "loop"` or `"pingpong"`.

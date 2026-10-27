@@ -4,6 +4,7 @@
  * elements and the inspector are all built from them (A23).
  */
 import { z } from "zod";
+import { ColorSchema } from "../../model/color.ts";
 
 /** The object a field lives in: the element for top-level fields, else the enclosing object. */
 export type Parent = Record<string, unknown>;
@@ -190,7 +191,7 @@ export function color<P = Parent>(
   value: string,
   o: Opts<P, string>,
 ): Typed<ColorField, string> {
-  return { ...common(o), type: "color", default: value, schema: z.string() };
+  return { ...common(o), type: "color", default: value, schema: ColorSchema };
 }
 
 export function check<P = Parent>(

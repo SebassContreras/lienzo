@@ -4,7 +4,7 @@
  */
 import { trackPaths } from "../components/descriptor.ts";
 import { descriptorOf, KINDS } from "../components/index.ts";
-import { valueKind } from "../engine/tracks.ts";
+import { keyframeError, valueKind } from "../engine/tracks.ts";
 import type { Element } from "../model/model.ts";
 import { deepMerge } from "../presets/resolve.ts";
 import { fail } from "./registry.ts";
@@ -48,6 +48,8 @@ export function checkKeyframe(kind: string, path: string, value: unknown) {
       color ? "Se esperaba un color" : "Se esperaba un número",
       "value",
     );
+  const error = keyframeError(kind, path, value);
+  if (error) fail("invalid_value", error, "value");
 }
 
 /** How element positions read, told to every agent placing elements. */
