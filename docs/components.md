@@ -84,7 +84,9 @@ thickness and an optional number.
 ## `counter`
 
 **Contador.** A number that counts from `from` to `to` as `progress` goes 0 → 1, with
-decimals and a thousands separator.
+decimals and a thousands separator. A counter added by `element_add` or `scene_build` with no `progress`
+of its own gets a 0 → 1 track over 1.5 s from the start of its shot (or of the scene),
+capped by the shot's end.
 
 ## `bubble`
 

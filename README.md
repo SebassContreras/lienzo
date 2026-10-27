@@ -98,6 +98,27 @@ so rerun it after every pull or the server lists an older set of tools):
 
 Tools read and write the files of this repo (`projects/<project>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (the `project` of an entry in `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
 
+The server runs the code it started with: after a pull, restart it (and rerun `pnpm build:cli`
+for `dist/cli.js`). Its MCP `instructions` name the commit it started from; if that differs
+from `git rev-parse --short HEAD`, the server is stale and may report fixed bugs as open.
+
+How the tools behave, in short:
+
+- **One registry:** the CLI and MCP run the same tools; a call checks its input, then the
+  whole scene before anything is written. A failed write changes nothing.
+- **Same rules everywhere:** `w`/`h` ≥ 0, colors are CSS colors and keyframes stay in their
+  field's range (`opacity` 0–1) in `scene_build`, `element_update` and `keyframe_set` alike.
+  A shot must end within the scene and not overlap another in `shot_set`, `scene_update`
+  (a shorter `duration`), `scene_build` and `scene_validate`.
+- **Notices:** a write answers `notices` about what it ignored or could not draw, only for
+  what the call changed; `scene_validate` lists them all.
+- **Times:** keyframe `t` is scene time, also for elements bound to a shot. A new counter
+  counts up over 1.5 s from its shot's start.
+- **Layout check:** `scene_inspect_layout` reports text and shape overlaps (two shapes of
+  about the same size count, a card holding smaller content does not), out-of-canvas boxes
+  (a group's box includes children animated out of it, unless the group clips), contrast
+  and loose references.
+
 To remove the transparent margin of a PNG, call `image_trim` on an image element, or pass `trim: true` to `element_add`; the asset file is not changed, only the element's `crop`. In the editor, the same trim is the **Recortar transparencia** button of an image, and double-clicking an image opens its manual crop handles.
 
 ## Compact Scenes (Spec 011)

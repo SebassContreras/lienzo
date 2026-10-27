@@ -12,8 +12,9 @@ description: >-
 
 The MCP tools and the CLI are the same registry: `mcp__lienzo__scene_build` is
 `pnpm lienzo scene_build --json '…'`. Each tool's description and input schema is the
-reference; this skill is the workflow. If a tool named here is missing from the MCP list,
-the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
+reference; this skill is the workflow. The server runs the code it started with. Its MCP `instructions` name that commit: if it is
+not `git rev-parse --short HEAD`, or a tool or input named here is missing, the server is
+stale: run `pnpm build:cli` (for `dist/cli.js`) and restart it before trusting a result.
 
 ## Rules
 
@@ -39,8 +40,9 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
    `notices` without writing anything. Read the notices (ignored keys, with the field they
    likely meant, missing fonts, which draw in Inter, text widths estimated for a font with no
    metrics: check those with `scene_preview`).
-4. **Check:** `scene_inspect_layout` (overlaps, out of canvas, contrast, drawn boxes as the
-   shot camera shows them) at the times that matter; `scene_preview` at a time `t` to look at a frame (`out` saves the
+4. **Check:** `scene_inspect_layout` (text overlaps, `shape_overlap` for shapes stacked on
+   each other, out of canvas, contrast, drawn boxes as the shot camera shows them; a group's
+   box holds children animated out of it unless it clips) at the times that matter; `scene_preview` at a time `t` to look at a frame (`out` saves the
    PNG in `exports/`).
 5. **Save:** `scene_build` with `save: "<name>"` (`overwrite: true` to replace; the stored
    audio is kept unless you pass `audioTracks`). `saved` is the scene name and every notice,
@@ -60,7 +62,8 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
    a recipe may omit `traits`, and an animation's `anim.in`/`loop`/`out` may be partial.
    Patches with a key the kind lacks, or an `id`/`kind` (they never change), come back as
    notices. Removing a shot unbinds its elements (named in `notices`); a shot must end
-   within the scene and not overlap another.
+   within the scene and not overlap another, and the same rule rejects a `scene_update` that
+   shortens `duration` past a shot, a `scene_build` and a `scene_validate`.
    - **Duplicate** (no tool of its own): `scene_get`, copy the element, then `element_add`
      with its fields in `patch`, a new `id` and the position shifted (`x`/`y`).
    - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
@@ -110,8 +113,8 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 - Notices also name what would draw as a placeholder: an unknown icon, an image `src` that
   is not a project asset and a line `from`/`to` naming no element. `asset_add` refuses a
   file that is not the image its extension says. An image given `src` and no `aspect`
-  takes the picture's proportion; a `counter` shows its final value until `progress` is
-  keyframed from 0 to 1; `list.items` takes `"a\nb"` or `["a", "b"]`.
+  takes the picture's proportion; a new `counter` (no `progress` given) counts up over 1.5 s
+  from its shot's `start` (scene time; the track is written once, when it is added); `list.items` takes `"a\nb"` or `["a", "b"]`.
 - Italic text is `italic: true` (`fontStyle` is not a field and comes back as ignored).
 - Only `scene_build` and `scene_validate` (with `compact`) take the compact form;
   `scene_create` and `scene_update` take full scenes (`scene_create` fills a partial

@@ -93,6 +93,11 @@ What exists today:
   `scene_inspect_layout` has `shape_overlap`; a new counter gets a count-up `progress` track
   (`src/components/counter/count-up.ts`); the local TTS adapter checks the voice against
   `GET /v1/audio/voices` first
+- QA round 4 (072): the MCP server names its starting commit in its `instructions`
+  (`src/mcp/build-id.ts`); `shape_overlap` excuses containment only for a clearly smaller box
+  (`HELD_AREA`); the counter count-up starts at its shot (`withCountUp(el, given, scene)`);
+  `checkShots` (`src/service/scenes.ts`) runs on every scene write, `scene_build` and
+  `scene_validate`; an unclipped group's layout box holds its placed children (`withChildBoxes`)
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
