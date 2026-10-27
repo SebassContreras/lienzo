@@ -10,7 +10,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 067 | tool-feedback-fixes | done | — |
 | 068 | qa-feedback-fixes | done        | — |
 | 069 | qa-suite-fixes | done        | — |
-| 070 | qa-suite-audit | in progress | 069 |
+| 070 | qa-suite-audit | done        | 069 |
 
 ## Ideas
 

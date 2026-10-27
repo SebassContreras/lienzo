@@ -26,4 +26,5 @@ An audit of spec 069 against the architecture guide found one bug and some drift
 - [x] 070/T004 [agent] Test hygiene in the 069 tests; unknown_shot test — covers R4, D4
 - [x] 070/T005 [agent] Review: the trade-offs of spec 069 D4, D8, D12, D14 and the header reader choice are written — covers R5, D5
       reviewed (self): planning/specs/069-qa-suite-fixes.md, planning/specs/070-qa-suite-audit.md, src/service/image-header.ts — found D4, D8, D12 and D14 lacked trade-offs; added them in this commit, and the header reader choice is in 070/D5
-- [ ] 070/T006 [agent] Verify: typecheck, lint of touched files, tests — covers R1, R2, R3, R4, R5
+- [x] 070/T006 [agent] Verify: typecheck, lint of touched files, tests — covers R1, R2, R3, R4, R5
+      verified: `pnpm typecheck`, biome on the 75 src files touched by 069–070, `pnpm test` (1165 tests, 143 files) — found nothing to fix; `rgb(abc)`/`hsl(red)` now fail `isColor`
