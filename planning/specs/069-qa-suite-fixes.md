@@ -34,18 +34,26 @@ A first-time QA run of all 43 tools (scratch project `qa-suite`) found 22 proble
 - D2 (R5, R1): `SceneSchema` `superRefine`s every element track (any depth): a keyframe on a field path must pass that field's schema (`fieldAt`), so color tracks need a color and number tracks the field's bounds; `checkKeyframe` checks the same for `keyframe_set`. `box()` gives `w`/`h` `bounds: [0, Infinity]`; `dotGap` gets `.min(1)`.
 - D3 (R2): `project_update`'s `canvas` input is the partial canvas schema; the tool merges it over the stored canvas before `update`.
 - D4 (R3): `shot_set remove` deletes `shot` from every element (any depth) bound to the removed id and adds a notice listing their ids; `inspectLayout` adds `unknown_shot` for an element whose `shot` is not in `scene.shots`.
+  - _Trade-offs_: An element of a removed shot shows for the whole scene, which may not be what the user wanted.
+  - _Mitigation_: The notice names every unbound element, and `element_update` with `patch.shot` binds it again.
 - D5 (R8): `shotProblem(shots, duration)` in `src/model/shots.ts` (pure) returns the first error: an `end` past `duration` or two shots whose `[start, end)` intersect; `shot_set` fails with it.
 - D6 (R4, R15, R16): one `animationsDir(ctx, project?)` picks `projects/<project>/presets/animations/` or the global folder; `animation_list`, `animation_save` and the new `animation_delete` use it. `animation_save` merges each given `anim.<phase>` over the descriptor default of that phase before parsing. `PresetRecipeSchema.traits` defaults to `[]`. `preset_list`/`preset_get` read `inProject(ctx, project).store` when `project` is given. `project_inspect` lists `presets/*.json` only.
 - D7 (R6): `element_update` compares the patch with the parsed patched element (`ignoredFields`, prefix `patch`) and notes an `id`/`kind` key that differs from the element's; `background_set` does the same against `BackgroundSchema`.
 - D8 (R7): `resourceNotices(ctx, scene)` in `src/service/scene-resources.ts`: icon names not in lucide, asset references (`descriptor.assets`) that `checkAsset` rejects (URLs and `data:` are left alone), and line ends attached to no element id; `saveScene`, `buildCompact` and `scene_validate` append them, and `element_add` drops its own asset check. `asset_add` probes an image's header (`image-probe.ts`) and fails `invalid_image` when it is not one.
+  - _Trade-offs_: The notices repeat on every write while the resource is missing, and each write reads the asset folder.
+  - _Mitigation_: They are true of the saved scene, so they stop once it is fixed; a saving `scene_build` checks once (070/D3).
 - D9 (R9): `scene_export`/`scene_preview` fail `invalid_time` when `t > duration`.
 - D10 (R10): `project_update` returns `notices` for families not in `availableFonts`; `model/fonts.ts` lists each bundled family's weights and `availableFonts` returns one row per weight.
 - D11 (R11, R12, R13): `buildElement` sets `at: "center"` for a top-level element with none of `at`, `x`, `y`, `fit: "canvas"` (lines excluded); `resolveAnchorPosition` insets edge anchors by `round(0.05 × min(w, h))`; `buildElement` and `element_add`/`element_update` note `at` plus a track on `x`/`y`.
   - _Trade-offs_: Existing callers relying on `at: "top"` touching the edge move by the margin.
   - _Mitigation_: `offset` still applies, so `{ anchor: "top", offset: [0, -54] }` touches the edge again; `top-left` with `x`/`y` stays exact.
 - D12 (R14, R17, R22): the compact `list.items` schema takes `string | string[]` and the expansion joins an array with `\n`; `buildCompact` prefixes the scene path with `compact.`; `buildElement` collects missing-preset errors and the expansion fails once with all of them; `resolvePreset`'s unknown-trait error lists the trait names; the Kokoro adapter turns an unknown-voice failure into a message listing its voices; `prepareScene` names the preset and element id.
+  - _Trade-offs_: Every element is built before the expansion fails, so a scene with an early error takes a little longer to reject.
+  - _Mitigation_: Building is in memory and fast; one call shows every missing preset instead of one per retry.
 - D13 (R18, R19): rename/create/export compare the given name with the stored slug or written file and add a notice; `element_group` notes when its members name different shots.
 - D14 (R20, R21): `element_add` and `scene_build` set an image's `aspect` from `probeImage` of its project asset when the input gives `src` and no `aspect`, rounded to 3 decimals; `audioDuration` is rounded with `round2`; the counter description is updated.
+  - _Trade-offs_: Each image with a `src` costs a file read per build, and the header reader is ours to maintain.
+  - _Mitigation_: Only the first bytes are parsed; the reader covers exactly the image types `asset_add` accepts (070/D5).
 
 ## Tasks
 - [x] 069/T001 [agent] CSS colors and value bounds (colors, `w`/`h`, `dotGap`, keyframe values) — covers R1, R5, D1, D2

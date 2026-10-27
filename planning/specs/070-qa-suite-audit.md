@@ -24,5 +24,6 @@ An audit of spec 069 against the architecture guide found one bug and some drift
 - [x] 070/T002 [agent] One tree walk, one missing-font message, one rounding module — covers R2, D2
 - [x] 070/T003 [agent] Placement notices in elements.ts; resources checked once in scene_build — covers R3, D3
 - [x] 070/T004 [agent] Test hygiene in the 069 tests; unknown_shot test — covers R4, D4
-- [ ] 070/T005 [agent] Trade-offs in spec 069 — covers R5, D5
+- [x] 070/T005 [agent] Review: the trade-offs of spec 069 D4, D8, D12, D14 and the header reader choice are written — covers R5, D5
+      reviewed (self): planning/specs/069-qa-suite-fixes.md, planning/specs/070-qa-suite-audit.md, src/service/image-header.ts — found D4, D8, D12 and D14 lacked trade-offs; added them in this commit, and the header reader choice is in 070/D5
 - [ ] 070/T006 [agent] Verify: typecheck, lint of touched files, tests — covers R1, R2, R3, R4, R5
