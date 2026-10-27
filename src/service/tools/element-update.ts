@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
+import { hasPositionTrack, trackOverridesAt } from "../compact/expand.ts";
 import { placeAt } from "../compact/layout.ts";
 import { updateElement } from "../element-tree.ts";
 import { COORDINATES, patched, patchNotices } from "../elements.ts";
@@ -36,6 +37,7 @@ export const elementUpdate = defineTool({
         elements: updateElement(s.elements, id, (el) => {
           notices.push(...patchNotices(el, patch));
           const out = patched(el, patch);
+          if (at && hasPositionTrack(out)) notices.push(trackOverridesAt(id));
           return at ? placeAt(out, at, s) : out;
         }),
       }),

@@ -165,6 +165,15 @@ function normalizeAnim(rawAnim: unknown): unknown {
   return rawAnim;
 }
 
+/** Whether `el` animates `x` or `y`, which wins over its `at` placement while it plays. */
+export function hasPositionTrack(el: Element): boolean {
+  return Boolean(el.tracks?.x || el.tracks?.y);
+}
+
+/** The notice for an element placed by `at` that also has an `x`/`y` track (069/D11). */
+export const trackOverridesAt = (where: string) =>
+  `${where}: tiene \`at\` y una pista en x/y; la pista fija x/y y anula la posición de \`at\` (sus valores son absolutos: calcúlalos desde donde \`at\` lo deja, o quita \`at\`)`;
+
 /** Builds an element from preset or kind, applying deepMerge and children expansion */
 async function buildElement(
   raw: CompactElement,
@@ -281,6 +290,8 @@ async function buildElement(
 
   // Preserve placement hints for the post-layout pass
   if (at) (element as unknown as Record<string, unknown>).__at = at;
+  if (at && hasPositionTrack(element))
+    state.notices.push(trackOverridesAt(path));
   if (fit === "canvas")
     (element as unknown as Record<string, unknown>).__fit = fit;
   if (from) (element as unknown as Record<string, unknown>).from = from;
@@ -384,7 +395,13 @@ export async function expandScene(
   }
 
   state.symbols = scene.symbols;
-  for (const [i, rawEl] of (compact.elements ?? []).entries()) {
+  for (const [i, given] of (compact.elements ?? []).entries()) {
+    // with no placement at all, a top-level element is centred, as element_add does (069/D11)
+    const unplaced =
+      given.kind !== "line" &&
+      ["at", "x", "y", "a", "b"].every((k) => !(k in given)) &&
+      given.fit !== "canvas";
+    const rawEl = unplaced ? { ...given, at: "center" as const } : given;
     const el = await buildElement(rawEl, state, `elements.${i}`);
 
     if (rawEl.id) {

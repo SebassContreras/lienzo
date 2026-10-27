@@ -211,8 +211,9 @@ describe("expandScene pure expansion (011/T002)", () => {
       import("../../model/model.ts").Element,
       { kind: "rect" }
     >;
-    expect(offsetEl.x).toBe(50);
-    expect(offsetEl.y).toBe(60);
+    // edge anchors keep 5% of the shorter side (40) from the edge (069/D11)
+    expect(offsetEl.x).toBe(40 + 50);
+    expect(offsetEl.y).toBe(40 + 60);
 
     const fullCanvas = scene.elements[2] as Extract<
       import("../../model/model.ts").Element,
@@ -594,13 +595,13 @@ describe("expandScene pure expansion (011/T002)", () => {
       expect(child1.x).toBe(150);
       expect(child1.y).toBe(125);
 
-      // bottom-right of 50x50 in 400x300 is x: 400 - 50 = 350, y: 300 - 50 = 250
+      // bottom-right of 50x50 in 400x300, 15 px in (069/D11): x: 400 - 50 - 15, y: 300 - 50 - 15
       const child2 = group.children[1] as Extract<
         import("../../model/model.ts").Element,
         { kind: "rect" }
       >;
-      expect(child2.x).toBe(350);
-      expect(child2.y).toBe(250);
+      expect(child2.x).toBe(335);
+      expect(child2.y).toBe(235);
     });
 
     it("expands compact scene shots and camera tracks (055/R3, T010)", async () => {
@@ -683,5 +684,32 @@ describe("compact fit and use sizing", () => {
 
     expect(scene.elements[0]).toMatchObject({ w: 200, h: 80 });
     expect(scene.elements[1]).toMatchObject({ w: 50, h: 80 });
+  });
+});
+
+describe("placement defaults (069/D11)", () => {
+  it("centres an unplaced element and notes `at` with a position track", async () => {
+    const { scene, notices } = await expandScene({
+      width: 1000,
+      height: 800,
+      elements: [
+        { kind: "rect", w: 200, h: 100 },
+        { kind: "rect", w: 200, h: 100, x: 5 },
+        {
+          kind: "rect",
+          at: "top",
+          tracks: {
+            x: [
+              [0, 0],
+              [1, 100],
+            ],
+          },
+        },
+      ],
+    } as never);
+    expect(scene.elements[0]).toMatchObject({ x: 400, y: 350 });
+    expect(scene.elements[1]).toMatchObject({ x: 5, y: 0 });
+    expect(scene.elements[2]).toMatchObject({ y: 40 });
+    expect(notices.some((n) => n.includes("elements.2"))).toBe(true);
   });
 });

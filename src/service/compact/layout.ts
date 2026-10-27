@@ -21,50 +21,55 @@ export function resolveFitCanvas(
   mutable.h = scene.height;
 }
 
+/** How far edge anchors stay from the edges they touch: 5% of the shorter side (069/D11). */
+export const anchorMargin = (c: { width: number; height: number }) =>
+  Math.round(0.05 * Math.min(c.width, c.height));
+
 function resolveAnchorPosition(
   anchor: AnchorName,
   box: { w: number; h: number },
   scene: Pick<Scene, "width" | "height">,
 ): { x: number; y: number } {
-  let x = 0;
-  let y = 0;
+  const m = anchorMargin(scene);
+  const left = m;
+  const right = scene.width - box.w - m;
+  const top = m;
+  const bottom = scene.height - box.h - m;
+  const midX = (scene.width - box.w) / 2;
+  const midY = (scene.height - box.h) / 2;
+  let x = midX;
+  let y = midY;
 
   switch (anchor) {
     case "top-left":
-      x = 0;
-      y = 0;
+      x = left;
+      y = top;
       break;
     case "top":
-      x = (scene.width - box.w) / 2;
-      y = 0;
+      y = top;
       break;
     case "top-right":
-      x = scene.width - box.w;
-      y = 0;
+      x = right;
+      y = top;
       break;
     case "left":
-      x = 0;
-      y = (scene.height - box.h) / 2;
+      x = left;
       break;
     case "center":
-      x = (scene.width - box.w) / 2;
-      y = (scene.height - box.h) / 2;
       break;
     case "right":
-      x = scene.width - box.w;
-      y = (scene.height - box.h) / 2;
+      x = right;
       break;
     case "bottom-left":
-      x = 0;
-      y = scene.height - box.h;
+      x = left;
+      y = bottom;
       break;
     case "bottom":
-      x = (scene.width - box.w) / 2;
-      y = scene.height - box.h;
+      y = bottom;
       break;
     case "bottom-right":
-      x = scene.width - box.w;
-      y = scene.height - box.h;
+      x = right;
+      y = bottom;
       break;
   }
 

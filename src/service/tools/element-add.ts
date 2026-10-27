@@ -7,6 +7,7 @@ import {
   type ElementKind,
 } from "../../model/model.ts";
 import { resolveElement } from "../../presets/resolve.ts";
+import { hasPositionTrack, trackOverridesAt } from "../compact/expand.ts";
 import { applyImplied } from "../compact/implied.ts";
 import { placeAt } from "../compact/layout.ts";
 import { findElement, insertChild, mapElementsDeep } from "../element-tree.ts";
@@ -71,6 +72,7 @@ export const elementAdd = defineTool({
     if (trim) el = await trimImage(effectiveCtx, el, "trim");
     if (typeof patch?.id === "string" && patch.id) el = { ...el, id: patch.id };
     const added = el;
+    if (at && hasPositionTrack(added)) notices.push(trackOverridesAt(added.id));
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
     const result = await editScene(effectiveCtx, scene, (s) => {
       mapElementsDeep(s.elements, (e) => {

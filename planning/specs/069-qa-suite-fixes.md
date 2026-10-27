@@ -55,7 +55,7 @@ A first-time QA run of all 43 tools (scratch project `qa-suite`) found 22 proble
 - [x] 069/T005 [agent] Patch notices in element_update and background_set — covers R6, D7
 - [x] 069/T006 [agent] Missing resource notices, line connections, image check in asset_add — covers R7, D8
 - [x] 069/T007 [agent] Time checks in export/preview; name and extension notices; group shot notice — covers R9, R18, R19, D9, D13
-- [ ] 069/T008 [agent] Placement: centred default in scene_build, anchor margin, `at` + track notice — covers R11, R12, R13, D11
+- [x] 069/T008 [agent] Placement: centred default in scene_build, anchor margin, `at` + track notice — covers R11, R12, R13, D11
 - [ ] 069/T009 [agent] Compact errors: list items array, real paths, all missing presets, traits and voices listed, animPreset message — covers R14, R17, R22, D12
 - [ ] 069/T010 [agent] Image aspect from file, rounding, counter description — covers R20, R21, D14
 - [ ] 069/T011 [agent] Docs: usage skill, README, AGENTS.md for the 069 behavior — covers R4, R11, R12

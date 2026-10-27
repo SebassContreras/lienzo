@@ -23,6 +23,7 @@ export const sceneBuild = defineTool({
     `border glow of ${FLAT_KINDS.join(", ")} unless the element sets them; it is applied ` +
     "at build time, not stored. " +
     AT_RULES +
+    "A top-level element with no `at`, `x`, `y` or `fit` is centred, as in element_add. " +
     "`notices` lists what was ignored (e.g. unknown effect keys). " +
     'Shape options: `fit: "box"` stretches a polygon to fill its box (a `sides: 3` roof ' +
     "touches the bottom); `clip: true` (and `radius`) on a group clips its children without a " +
