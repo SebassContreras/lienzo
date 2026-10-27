@@ -12,7 +12,9 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 - `planning/specs/NNN-name.md` — one file per spec: goal, requirements (R), design (D), tasks, changes.
 - `README.md` — the editor, the MCP/CLI tools and how they behave; `docs/components.md` —
   every component kind; `.agents/skills/lienzo-usage/` — how an agent builds a post with the
-  tools. A change of behavior updates these and the tool's description in the same task.
+  tools. A change of behavior updates these and the tool's description in the same task; a
+  rule every tool shares (arguments, failures, messages) goes once in `RULES`
+  (`src/mcp/server.ts`, the server's `instructions`), not in 44 descriptions.
 
 ## Stack & conventions
 
@@ -130,6 +132,8 @@ What exists today:
   tracks only for a shot moved whole, a trim leaves them; `use` of a missing symbol fails;
   `remapFailure` re-roots failure paths (`compact.…`, `patch.…`); zod speaks Spanish
   (`src/model/zod-locale.ts`); `jsonArgs` reads object arguments sent as JSON strings
+- MCP instructions (079): `RULES` in `src/mcp/server.ts` states the rules every tool shares,
+  after the starting commit
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and

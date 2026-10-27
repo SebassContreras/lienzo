@@ -15,8 +15,10 @@ The MCP tools and the CLI are the same registry: `mcp__lienzo__scene_build` is
 reference; this skill is the workflow. The server runs the code it started with. Its MCP `instructions` name that commit: if it is
 not `git rev-parse --short HEAD`, or a tool or input named here is missing, the server is
 stale: run `pnpm build:cli` (for `dist/cli.js`) and restart it before trusting a result.
-A failed call lists every problem in `errors`; paths name an element by the id you gave
-(`elements.a.w`, `elements.g/child.w`), else by its index (`compact.elements.0.shot`).
+A failed scene or recipe check lists every problem in `errors`; paths name an element by
+the id you gave (`elements.a.w`, `elements.g/child.w`), else by its index
+(`compact.elements.0.shot`); a failure about what `element_add` adds points at `patch.…`.
+Messages are Spanish; the server's `instructions` repeat these rules for every tool.
 
 ## Rules
 
@@ -68,7 +70,8 @@ A failed call lists every problem in `errors`; paths name an element by the id y
    `element_add` takes `patch.id` as the new id (fails if taken) and returns a notice when
    the element leaves the canvas; a text with no `w` placed by `at` that would be wider
    than the canvas margins wraps at them. `element_group` takes `id` to name the group.
-   Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
+   Reusables: `preset_save` / `preset_rename` / `preset_delete` (a built-in preset is not
+   the project's: renaming or deleting it fails with `built_in`), `animation_list` /
    `animation_save` / `animation_delete` (with `project`, the project's own; without it, the
    global library). `preset_list` / `preset_get` take `project` to see the project's presets;
    a recipe may omit `traits`, and an animation's `anim.in`/`loop`/`out` may be partial.

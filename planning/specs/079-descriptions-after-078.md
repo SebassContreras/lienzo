@@ -29,5 +29,5 @@ the docs agree.
 
 ## Tasks
 - [x] 079/T001 [agent] Nine descriptions and the MCP instructions — covers R1, R2, D1, D2
-- [ ] 079/T002 [agent] README, usage skill, AGENTS.md — covers R3, D3
+- [x] 079/T002 [agent] README, usage skill, AGENTS.md — covers R3, D3
 - [ ] 079/T003 [agent] Verify: typecheck, lint on touched files, tests, the dump of every description and the instructions re-read — covers R1, R2, R3

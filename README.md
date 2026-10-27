@@ -103,6 +103,9 @@ Tools read and write the files of this repo (`projects/<project>/`, `presets/`, 
 The server runs the code it started with: after a pull, restart it (and rerun `pnpm build:cli`
 for `dist/cli.js`). Its MCP `instructions` name the commit it started from; if that differs
 from `git rev-parse --short HEAD`, the server is stale and may report fixed bugs as open.
+They also state, once for every tool, how arguments and failures work (JSON values,
+`project`, `errors`, Spanish messages, notices, coordinates), so each tool's description
+only says what is its own.
 Before reporting a bug as still open, check that commit or replay the call with `pnpm lienzo`.
 
 How the tools behave, in short:
@@ -129,9 +132,10 @@ How the tools behave, in short:
 - **Shot windows:** a shot shows its elements over `[start, end)`. At a cut the instant
   belongs to the shot that starts there, in `scene_preview`, export and
   `scene_inspect_layout` alike; the scene's last instant stays with the shot ending there.
-- **Error paths:** a failed scene write lists every problem in `errors` (schema and rules
-  together) and names an element by the id you gave (`elements.a.w`,
-  `elements.g/child.w`), else by its index (`compact.elements.0.shot`).
+- **Error paths:** a failed scene or recipe check lists every problem in `errors` (schema
+  and rules together) and names an element by the id you gave (`elements.a.w`,
+  `elements.g/child.w`), else by its index (`compact.elements.0.shot`); a failure about
+  what `element_add` adds points at its `patch` (`patch.w`).
 - **Layout check:** `scene_inspect_layout` reports text and shape overlaps (two shapes of
   about the same size count, a card holding smaller content does not), out-of-canvas boxes
   (a group's box includes children animated out of it, unless the group clips), contrast
