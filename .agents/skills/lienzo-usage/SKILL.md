@@ -111,7 +111,9 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
   named by path, with the field they likely meant (`fontSize` → `size`).
 - Shapes: `polygon` `fit: "box"`, `path` `mode: "layers"`, group `clip`, fills with
   `fill.type: "radial"` (it reaches the edge of an ellipse, polygon or star, the farthest
-  corner of a rect) or `fill.stops`. Partial `effects` merge with the defaults.
+  corner of a rect) or `fill.stops` (ordered by `at`). A fill given only `color` is flat;
+  a group given `w`/`h` places its children in those pixels (`cw`/`ch` follow them).
+  Partial `effects` merge with the defaults.
 - `audioTracks: [{ assetId, startOffset?, volume? }]` sets the audio.
 
 The full schema is `schemas/compact-scene.json`; component fields are in

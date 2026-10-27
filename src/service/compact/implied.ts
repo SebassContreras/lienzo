@@ -1,0 +1,37 @@
+/**
+ * What an input means beyond the keys it writes (068/D2), applied to an element built from
+ * a kind's defaults once the input is merged in: a fill given only a color is flat, and a
+ * group sized by hand lays its children out in its own pixels.
+ */
+import type { Element } from "../../model/model.ts";
+
+type Obj = Record<string, unknown>;
+
+const GRADIENT_KEYS = ["gradient", "color2", "type", "stops"];
+
+function isObj(v: unknown): v is Obj {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
+/** Turns off `gradient` in every fill of `target` whose `input` sets a color and nothing of a gradient. */
+function flatFills(target: Obj, input: Obj): void {
+  for (const [key, value] of Object.entries(input)) {
+    const into = target[key];
+    if (!isObj(value) || !isObj(into)) continue;
+    if (
+      typeof into.gradient === "boolean" &&
+      "color" in value &&
+      !GRADIENT_KEYS.some((k) => k in value)
+    )
+      into.gradient = false;
+    flatFills(into, value);
+  }
+}
+
+export function applyImplied(el: Element, input: Obj): void {
+  flatFills(el as unknown as Obj, input);
+  if (el.kind === "group") {
+    if (!("cw" in input) && "w" in input) el.cw = el.w;
+    if (!("ch" in input) && "h" in input) el.ch = el.h;
+  }
+}

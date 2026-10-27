@@ -30,6 +30,7 @@ import { solid } from "../../traits/solid.ts";
 import { resolveLineConnections } from "./connections.ts";
 import { applySceneDefaults } from "./defaults.ts";
 import { expandEffects } from "./effects.ts";
+import { applyImplied } from "./implied.ts";
 import { placeAt, resolveFitCanvas, resolveOrigin } from "./layout.ts";
 import { normalizeTracks } from "./tracks.ts";
 
@@ -220,6 +221,7 @@ async function buildElement(
   }
 
   deepMerge(element as unknown as Record<string, unknown>, overrides);
+  if (!(rawPreset && findPreset)) applyImplied(element, overrides);
 
   if (effects !== undefined) {
     const expanded = expandEffects(

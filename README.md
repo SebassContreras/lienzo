@@ -172,7 +172,9 @@ The same options work in compact scenes (`scene_build`) and through the element 
   element (`symbol: "car"`, `overrides` by child id) draws an instance.
 - **Shapes:** `polygon` `fit: "box"`; `path` `mode: "layers"` draws every shape at once;
   group `clip`; radial and multi-stop fills (`fill.type`, `fill.stops`); a radial fill reaches
-  the edge of an ellipse, polygon or star.
+  the edge of an ellipse, polygon or star. A fill given only a `color` is flat (add `gradient: true`,
+  `color2` or `stops` for a gradient), and a group given `w`/`h` lays its children out in those
+  pixels (`cw`/`ch` default to them).
 - **Particles:** direction and gravity for falling particles, fractional or `0` speed.
 - **Effects and flat style:** partial `effects` (blur, blend, mask…) on any element;
   `defaults: "flat"` turns off the default gradient, shadow, border and border glow of shapes and paths.

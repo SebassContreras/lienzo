@@ -6,6 +6,7 @@ import {
   type ElementKind,
 } from "../../model/model.ts";
 import { resolveElement } from "../../presets/resolve.ts";
+import { applyImplied } from "../compact/implied.ts";
 import { placeAt } from "../compact/layout.ts";
 import { findElement, insertChild } from "../element-tree.ts";
 import { COORDINATES, checkKind, patched } from "../elements.ts";
@@ -76,7 +77,10 @@ export const elementAdd = defineTool({
       checkKind(kind as string);
       el = defaultElement(kind as ElementKind);
     }
-    if (patch) el = patched(el, patch);
+    if (patch) {
+      el = patched(el, patch);
+      if (preset === undefined) applyImplied(el, patch);
+    }
     // trimmed before the scene is opened, so a failure adds nothing (049/D4)
     if (trim) el = await trimImage(effectiveCtx, el, "trim");
     const added = el;
