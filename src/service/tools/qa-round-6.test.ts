@@ -118,3 +118,45 @@ it("sets a counter preset's final value with `to` in compact (074/R7)", async ()
 
   expect(out.scene).toMatchObject({ elements: [{ from: 0, to: 1500 }] });
 });
+
+it("takes camera keyframes without easing in shot_set, as scene_build does (074/R8)", async () => {
+  await value("scene_create", { scene: "s" });
+
+  const r = await call("shot_set", {
+    scene: "s",
+    id: "s1",
+    start: 0,
+    end: 3,
+    camera: {
+      tracks: {
+        zoom: [
+          [0, 1],
+          [3, 1.2],
+        ],
+      },
+    },
+  });
+
+  expect(r).toMatchObject({ ok: true, value: { notices: [] } });
+});
+
+it("notes camera keyframes outside their shot, as times are scene time (074/R8)", async () => {
+  await value("scene_create", { scene: "s" });
+
+  const out = await value("shot_set", {
+    scene: "s",
+    id: "s2",
+    start: 3,
+    end: 6,
+    camera: {
+      tracks: {
+        zoom: [
+          [0, 1],
+          [3, 1.2],
+        ],
+      },
+    },
+  });
+
+  expect(out.notices).toEqual([expect.stringContaining("zoom en 0s")]);
+});

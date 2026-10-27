@@ -11,7 +11,8 @@ export const SHOT_RULES =
   "A shot shows its elements over [start, end): at a cut the next shot owns the instant, and " +
   "the scene's last instant stays with the shot ending there. A shot's transition runs before its `start` (entering) and after its `end` (leaving), " +
   "over its `duration`; its camera moves only the elements bound to that shot (`shot` on the " +
-  "element), never elements with no shot such as subtitles or logos.";
+  "element), never elements with no shot such as subtitles or logos. Camera keyframe times " +
+  "are scene time, like every other `t`.";
 
 export type ResolvedCamera = {
   x: number;

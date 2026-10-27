@@ -40,7 +40,7 @@ import { applySceneDefaults } from "./defaults.ts";
 import { expandEffects } from "./effects.ts";
 import { applyImplied } from "./implied.ts";
 import { placeAt, resolveFitCanvas, resolveOrigin } from "./layout.ts";
-import { normalizeTracks } from "./tracks.ts";
+import { normalizeCamera, normalizeTracks } from "./tracks.ts";
 
 type PresetResolver = (
   name: string,
@@ -464,21 +464,7 @@ export async function expandScene(
       start: sh.start,
       end: sh.end,
       transition: sh.transition,
-      camera: sh.camera
-        ? {
-            x: sh.camera.x,
-            y: sh.camera.y,
-            zoom: sh.camera.zoom,
-            tracks: sh.camera.tracks
-              ? normalizeTracks(
-                  sh.camera.tracks as Record<
-                    string,
-                    import("./tracks.ts").CompactTrackInput
-                  >,
-                )
-              : undefined,
-          }
-        : undefined,
+      camera: sh.camera ? normalizeCamera(sh.camera) : undefined,
     }));
   }
 

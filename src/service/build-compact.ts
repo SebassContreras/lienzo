@@ -1,6 +1,7 @@
 import type { CompactScene } from "../model/compact.ts";
 import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Scene } from "../model/model.ts";
+import { cameraOutsideShot } from "../model/shots.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
@@ -62,6 +63,7 @@ export async function buildCompact(
     notices = [
       ...ignoredFields(full.scene, scene).map(ignoredNotice),
       ...full.notices,
+      ...(scene.shots ?? []).flatMap((sh) => cameraOutsideShot(sh) ?? []),
     ];
   } catch (err: unknown) {
     // the failing path is the compact one: elements keep their index (069/D12)

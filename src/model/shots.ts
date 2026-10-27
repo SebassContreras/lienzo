@@ -202,3 +202,19 @@ export function fromShotStart(
   }
   return { ...el, tracks };
 }
+
+/**
+ * A notice when `shot`'s camera has keyframes outside its `[start, end]` (074/D8): camera
+ * times are scene time, so keys written from 0 in a later shot never play.
+ */
+export function cameraOutsideShot(shot: Shot): string | undefined {
+  const outside = Object.entries(shot.camera?.tracks ?? {}).flatMap(
+    ([axis, track]) =>
+      trackKeys(track)
+        .filter((k) => k.t < shot.start || k.t > shot.end)
+        .map((k) => `${axis} en ${k.t}s`),
+  );
+  return outside.length > 0
+    ? `La cámara de «${shot.id}» tiene keyframes fuera de la toma (${shot.start}–${shot.end}s): ${outside.join(", ")}; los tiempos de la cámara son de la escena, no de la toma`
+    : undefined;
+}
