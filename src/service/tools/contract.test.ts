@@ -283,3 +283,18 @@ it("element_update lists a bad field and an unknown shot together (075/R4)", asy
     },
   });
 });
+
+it("element_update keeps tracks given with a new shot as given (075/R1)", async () => {
+  await call("shot_set", { scene: "s", id: "s2", start: 3, end: 5 });
+
+  await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { shot: "s2", tracks: { x: [{ t: 3, value: 0, easing: "auto" }] } },
+  });
+  const scene = await call("scene_get", { scene: "s", full: true });
+
+  expect(scene).toMatchObject({
+    value: { elements: [{ tracks: { x: [{ t: 3 }] } }] },
+  });
+});
