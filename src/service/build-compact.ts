@@ -10,6 +10,7 @@ import { fail, ToolFailure } from "./registry.ts";
 const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
+import { sceneDefaults } from "./scene-defaults.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import {
   animLibrary,
@@ -42,6 +43,7 @@ export async function buildCompact(
         }
       },
       animLibrary: library,
+      base: await sceneDefaults(ctx),
     });
     scene = checkScene({
       ...full.scene,

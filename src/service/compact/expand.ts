@@ -48,6 +48,8 @@ type PresetResolver = (
 export type ExpandOptions = {
   findPreset?: PresetResolver;
   animLibrary?: readonly AnimPreset[];
+  /** The scene the compact one is laid over (the project's canvas, 074/D3); else the default. */
+  base?: Scene;
 };
 
 /** What every element of one expansion shares (058/D3); `notices` collects what was ignored. */
@@ -73,8 +75,9 @@ async function resolveSceneBackground(
   bgInput: unknown,
   notices: string[],
   findPreset?: PresetResolver,
+  fallback: Background = defaultBackground(),
 ): Promise<Background> {
-  const base = defaultBackground();
+  const base = structuredClone(fallback);
   if (!bgInput) return base;
 
   if (typeof bgInput === "string") {
@@ -313,7 +316,7 @@ export async function expandScene(
   compact: CompactScene,
   options: ExpandOptions = {},
 ): Promise<{ scene: Scene; notices: string[] }> {
-  const scene = defaultScene();
+  const scene = structuredClone(options.base ?? defaultScene());
   const state: ExpandState = {
     findPreset: options.findPreset,
     defaults: compact.defaults,
@@ -340,6 +343,7 @@ export async function expandScene(
     compact.background,
     state.notices,
     options.findPreset,
+    scene.background,
   );
 
   const elements: Element[] = [];

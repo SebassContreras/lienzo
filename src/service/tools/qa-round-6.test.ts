@@ -1,0 +1,39 @@
+import { cp, mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { beforeEach, expect, it } from "vitest";
+import { type Ctx, createCtx } from "../ctx.ts";
+import { fakeRenderer } from "../fake-renderer.ts";
+import { registry } from "./index.ts";
+
+/** Cases the sixth QA run reported, held at the tool boundary (074). */
+let ctx: Ctx;
+type Result =
+  | { ok: true; value: Record<string, unknown> }
+  | { ok: false; error: { code: string; message: string; path: string } };
+const call = (name: string, input: Record<string, unknown>) =>
+  registry.call(name, { project: "p", ...input }, ctx) as Promise<Result>;
+/** The value of a call that must succeed. */
+const value = async (name: string, input: Record<string, unknown>) => {
+  const r = await call(name, input);
+  if (!r.ok) throw new Error(r.error.message);
+  return r.value;
+};
+
+beforeEach(async () => {
+  const root = await mkdtemp(join(tmpdir(), "lienzo-qa6-"));
+  await cp("presets/built-in", join(root, "presets", "built-in"), {
+    recursive: true,
+  });
+  ctx = createCtx(root, fakeRenderer());
+  await call("project_create", {
+    name: "P",
+    canvas: { width: 1080, height: 1920, fps: 30, duration: 6 },
+  });
+});
+
+it("builds an unsaved compact scene on the project's canvas (074/R3)", async () => {
+  const out = await value("scene_build", { compact: { elements: [] } });
+
+  expect(out.scene).toMatchObject({ width: 1080, height: 1920, duration: 6 });
+});
