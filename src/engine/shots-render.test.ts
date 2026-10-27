@@ -111,3 +111,43 @@ describe("shot transitions on screen (063/R1)", () => {
     expect(entering.at(-1)).toBe("1.000,1.000,540.000,0.000");
   });
 });
+
+describe("grouped children of different shots (071/D2)", () => {
+  /** The texts drawn at `t`. */
+  function textsAt(scene: Scene, t: number): string[] {
+    const ctx = new RecordingCtx();
+    const texts: string[] = [];
+    const fillText = ctx.fillText.bind(ctx);
+    ctx.fillText = ((text: string, ...rest: never[]) => {
+      texts.push(text);
+      fillText(text, ...rest);
+    }) as typeof ctx.fillText;
+    drawScene(ctx as unknown as Ctx, scene, t);
+    return texts;
+  }
+  const shots: Shot[] = [
+    { id: "s1", name: "A", start: 0, end: 3 },
+    { id: "s2", name: "B", start: 3, end: 6 },
+  ];
+  const grouped = (): Scene => {
+    const counter = { ...defaultElement("counter"), id: "n", shot: "s2" };
+    const group: GroupEl = {
+      ...(defaultElement("group") as GroupEl),
+      id: "g",
+      children: [rect("r", "s1"), counter as Element],
+    };
+    return { ...sceneOf([group], shots), duration: 6 };
+  };
+
+  it("draws a grouped child inside its own shot", () => {
+    const texts = textsAt(grouped(), 4);
+
+    expect(texts).toHaveLength(1);
+  });
+
+  it("skips a grouped child outside its own shot", () => {
+    const texts = textsAt(grouped(), 1);
+
+    expect(texts).toEqual([]);
+  });
+});
