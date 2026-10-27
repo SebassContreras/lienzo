@@ -7,6 +7,7 @@ import type {
   Scene,
   TextEl,
 } from "../model/model.ts";
+import { type Track, type Tracks, trackKeys } from "../model/track.ts";
 import { distToPath, resolveLine, samplePath } from "./lines.ts";
 import { fontStringOf, measureTextWidth } from "./text-measure.ts";
 
@@ -158,6 +159,30 @@ function inBox(b: Box, p: Pt, pad = 0): boolean {
   );
 }
 
+/** `track` with each numeric keyframe value passed through `f`, stored the same way. */
+function mapTrack(track: Track, f: (v: number) => number): Track {
+  const keys = trackKeys(track).map((k) =>
+    typeof k.value === "number" ? { ...k, value: f(k.value) } : k,
+  );
+  return Array.isArray(track) ? keys : { ...track, keys };
+}
+
+/**
+ * `el` with the tracks named in `maps` passed through their function, so keyframed motion
+ * follows a change of coordinates as `x`/`y` do (071/D1).
+ */
+function mapTracks(
+  el: Element,
+  maps: Record<string, (v: number) => number>,
+): Element {
+  const tracks = (el as { tracks?: Tracks }).tracks;
+  if (!tracks) return el;
+  const out: Tracks = { ...tracks };
+  for (const [path, f] of Object.entries(maps))
+    if (out[path]) out[path] = mapTrack(out[path], f);
+  return { ...el, tracks: out } as Element;
+}
+
 /**
  * A group's child as it appears on the canvas: its position and size mapped from the group's
  * content space onto the group's body: its box, less a window frame (a text's size scales
@@ -175,9 +200,17 @@ export function placeChild(child: Element, group: GroupEl): Element {
       b: { ...child.b, ...at(child.b) },
     };
   }
+  const x = (v: number) => body.x + v * sx;
+  const y = (v: number) => body.y + v * sy;
   if (child.kind === "text" || child.kind === "badge")
-    return { ...child, ...at(child), size: child.size * sx };
-  return { ...child, ...at(child), w: child.w * sx, h: child.h * sy };
+    return mapTracks(
+      { ...child, ...at(child), size: child.size * sx },
+      { x, y, size: (v) => v * sx },
+    );
+  return mapTracks(
+    { ...child, ...at(child), w: child.w * sx, h: child.h * sy },
+    { x, y, w: (v) => v * sx, h: (v) => v * sy },
+  );
 }
 
 /** Every element by id, including those inside groups, in canvas coordinates. */
@@ -253,7 +286,11 @@ export function translate(
   byId: Map<string, Element>,
   moving: Set<string> = new Set(),
 ): Element {
-  if (el.kind !== "line") return { ...el, x: el.x + dx, y: el.y + dy };
+  if (el.kind !== "line")
+    return mapTracks(
+      { ...el, x: el.x + dx, y: el.y + dy },
+      { x: (v) => v + dx, y: (v) => v + dy },
+    );
   const r = resolveLine(el, byId);
   const end = (ep: LineEl["a"], at: Pt) =>
     ep.attach && moving.has(ep.attach) ? ep : { x: at.x + dx, y: at.y + dy };

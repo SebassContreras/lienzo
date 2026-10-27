@@ -32,7 +32,7 @@ The third QA run found 19 of the 069 problems fixed, 1 partly fixed, 3 still ope
 - D7 (R7): Behavior tests in the existing tool test files (patch `w: -50` rejected, keyframe `opacity: 5` rejected, partial `loop` saved, `preset_list` with `project` includes the project preset), added only where missing. A line in AGENTS.md's QA notes.
 
 ## Tasks
-- [ ] 071/T001 [agent] Position tracks follow group/ungroup/move — covers R1, D1
+- [x] 071/T001 [agent] Position tracks follow group/ungroup/move — covers R1, D1
 - [ ] 071/T002 [agent] Reproduce grouped child in shot; fix or document — covers R2, D2
 - [ ] 071/T003 [agent] Resource notices only for changed elements — covers R3, D3
 - [ ] 071/T004 [agent] shape_overlap diagnostic — covers R4, D4

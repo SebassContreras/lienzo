@@ -10,7 +10,7 @@ import {
   type LineEl,
   type Scene,
 } from "../model/model.ts";
-import { hitTest, indexById, placeChild } from "./geometry.ts";
+import { hitTest, indexById, placeChild, translate } from "./geometry.ts";
 import { groupElements, ungroupElement } from "./groups.ts";
 import { ICON_NAMES, iconNode } from "./icon-set.ts";
 import { iconShapes } from "./icon-shapes.ts";
@@ -149,6 +149,65 @@ describe("group coordinate mapping", () => {
       { id: a.id, x: 100, y: 100, w: 200, h: 100 },
       { id: b.id, x: 500, y: 300, w: 160, h: 160 },
     ]);
+  });
+});
+
+describe("position tracks across groups (071/D1)", () => {
+  const key = (t: number, value: number) => ({
+    t,
+    value,
+    easing: "linear" as const,
+  });
+  const tracked = () => ({
+    ...defaultRect(),
+    x: 100,
+    y: 100,
+    w: 100,
+    h: 50,
+    tracks: { x: [key(0, 100), key(4, 400)] },
+  });
+
+  it("grouping moves a child's x track into group coordinates", () => {
+    const a = tracked();
+    const b = { ...defaultEllipse(), x: 300, y: 200, w: 80, h: 80 };
+
+    const { group } = groupElements(scene([a, b]), [a.id, b.id]);
+
+    expect(group?.children[0]).toMatchObject({
+      tracks: { x: [{ value: 0 }, { value: 300 }] },
+    });
+  });
+
+  it("ungrouping a stretched group maps the x track back onto the canvas", () => {
+    const a = tracked();
+    const b = { ...defaultEllipse(), x: 300, y: 200, w: 80, h: 80 };
+    const { scene: grouped, group } = groupElements(scene([a, b]), [
+      a.id,
+      b.id,
+    ]);
+    const bigger = { ...(group as GroupEl), w: (group as GroupEl).w * 2 };
+
+    const { scene: flat } = ungroupElement(
+      { ...grouped, elements: [bigger] },
+      bigger.id,
+    );
+
+    expect(flat.elements[0]).toMatchObject({
+      tracks: { x: [{ value: 100 }, { value: 700 }] },
+    });
+  });
+
+  it("moving an element shifts its keyed track object too", () => {
+    const el = {
+      ...tracked(),
+      tracks: { y: { keys: [key(0, 10)], repeat: "loop" as const } },
+    };
+
+    const moved = translate(el, 0, 5, new Map());
+
+    expect(moved).toMatchObject({
+      tracks: { y: { keys: [{ value: 15 }], repeat: "loop" } },
+    });
   });
 });
 
