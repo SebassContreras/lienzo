@@ -75,6 +75,11 @@ What exists today:
   edge (`reach` in `fillGradient`); layout boxes are the on-screen ones (`shotBox`); ignored
   keys suggest a field (`closestKey`); canvas fonts fall back to Inter; installed fonts are
   measured (`measureInstalledFonts`) and `font_install` stores ttf (opentype.js reads no woff2)
+- QA fixes (068): gradient `stops` must be ordered; a kind-built element whose input gives a
+  fill only `color` is flat and a group given `w`/`h` gets `cw`/`ch` from them (`applyImplied`,
+  `src/service/compact/implied.ts`); `element_add` honors `patch.id` and notices an element off
+  the canvas; `at` positions and layout boxes are rounded (`round2`); `scene_create` fills a
+  partial `background`
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and

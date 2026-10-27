@@ -200,7 +200,7 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
 `pnpm lienzo --help` (or the MCP tool list) shows each one with its input. By area:
 
 - Projects: `project_list`, `project_create`, `project_inspect`, `project_update`,
-  `project_delete`, `asset_add`
+  `project_delete`, `asset_add`, `asset_rename`, `asset_delete`
 - Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_update`,
   `scene_rename`, `scene_delete`, `scene_validate`,
   `scene_inspect_layout`, `scene_preview`, `scene_export`, `scene_generate_speech`

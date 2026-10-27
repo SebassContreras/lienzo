@@ -29,12 +29,12 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
 
 ## Workflow
 
-1. **Project:** `project_list`, or `project_create`. `project_inspect` lists its assets,
+1. **Project:** `project_list`, or `project_create` (`project_delete` removes one). `project_inspect` lists its assets,
    scenes, presets and brand; `project_update` changes the brand, `asset_add` copies a local
    file into `assets/`, `asset_rename` moves one (scenes follow) and `asset_delete` removes
    one (refused while a scene uses it, unless `force`).
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
-   `preset_get`, `font_list` (then `font_install` for a Google font you need).
+   `preset_get`, `preset_validate` (checks a recipe before `preset_save`), `font_list` (then `font_install` for a Google font you need).
 3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
    `notices` without writing anything. Read the notices (ignored keys, with the field they
    likely meant, missing fonts, which draw in Inter, text widths estimated for a font with no
@@ -51,7 +51,9 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
    `element_move` / `element_remove`, `keyframe_set` / `keyframe_remove`, `background_set`,
    `shot_set`, `image_trim`, `element_group` / `element_ungroup`. Targets are an `id` or a
    `group/child` path. Scene settings (size, duration, fps, mode, audio tracks, symbols) go
-   through `scene_update`; `scene_rename` / `scene_delete` manage the files.
+   through `scene_update`; `scene_list` lists them, `scene_rename` / `scene_delete` manage the files.
+   `element_add` takes `patch.id` as the new id (fails if taken) and returns a notice when
+   the element leaves the canvas (give a long text a `w` so it wraps).
    Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
    `animation_save`.
    - **Duplicate** (no tool of its own): `scene_get`, copy the element, then `element_add`
@@ -95,7 +97,8 @@ the server is stale: run `pnpm build:cli` (for `dist/cli.js`) and reconnect.
   point `{ x, y }` it is centred on; `fit: "canvas"` fills the canvas; lines join elements with `from` / `to`.
 - Italic text is `italic: true` (`fontStyle` is not a field and comes back as ignored).
 - Only `scene_build` and `scene_validate` (with `compact`) take the compact form;
-  `scene_create` and `scene_update` take full scenes.
+  `scene_create` and `scene_update` take full scenes (`scene_create` fills a partial
+  `background` object from the defaults).
 - `anim` is an entry/loop/exit shorthand; `tracks` are keyframes `[t, value, easing?]` by
   field path or `@rotate` / `@scale`, with `repeat: "loop" | "pingpong"` and `until`.
 - `origin` is the pivot for rotation and scale; `w` on `text` wraps it.
