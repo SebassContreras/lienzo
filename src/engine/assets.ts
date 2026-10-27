@@ -115,7 +115,7 @@ for (const ext of ["mp3", "wav", "aac", "ogg"]) {
 /** The asset files and the lazily loaded code (066/D2) drawing `scene` needs. */
 function sceneNeeds(scene: Scene) {
   const sources = new Set<string>();
-  const loads = new Set<() => Promise<void>>();
+  const loads = new Set<() => Promise<unknown>>();
   if (scene.audio?.assetId) {
     sources.add(scene.audio.assetId);
   }

@@ -77,7 +77,7 @@ export type Descriptor<E extends { kind: string } = Element> = {
   /** URLs of the files drawing `el` needs (images, models), awaited before an export. */
   assets?: (el: E) => string[];
   /** Loads the code drawing this kind needs (066/D2); awaited before an export like `assets`. */
-  load?: () => Promise<void>;
+  load?: () => Promise<unknown>;
   /** Draws `el` as `animate` left it, with `transform` (A24). */
   draw(ctx: Ctx, el: E, transform: AnimState, dc: DrawContext): void;
 };

@@ -18,7 +18,7 @@ import {
 } from "../fields/index.ts";
 import { drawThree } from "./draw.ts";
 import { TEXT_FONT } from "./font.ts";
-import { loadThree } from "./lazy.ts";
+import { threeRuntime } from "./lazy.ts";
 import { SHAPES } from "./shapes.ts";
 
 const O = { section: "Objeto" };
@@ -115,6 +115,6 @@ export const three = defineComponent<ThreeEl>({
   anims: BOX_ANIMS,
   assets: (el) =>
     el.shape === "model" ? [el.model] : el.shape === "text" ? [TEXT_FONT] : [],
-  load: loadThree,
+  load: threeRuntime.load,
   draw: drawThree,
 });

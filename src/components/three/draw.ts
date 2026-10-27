@@ -12,7 +12,9 @@ export function drawThree(
   dc: DrawContext,
 ): void {
   withTransform(ctx, boxOf(el), st, () => {
-    const picture = threeRuntime()?.renderThree(el, dc.t, dc.scene.duration);
+    const picture = threeRuntime
+      .get()
+      ?.renderThree(el, dc.t, dc.scene.duration);
     if (picture) ctx.drawImage(picture, el.x, el.y, el.w, el.h);
     else drawPlaceholder(ctx, el);
   });

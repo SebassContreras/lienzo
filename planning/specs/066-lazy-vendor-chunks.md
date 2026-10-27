@@ -49,7 +49,7 @@
 - [x] 066/T003 [agent] Split the 3D element into `draw.ts`/`shapes.ts` and a lazily imported `runtime.ts`; lazy `.glb`/`.woff` loaders; descriptor `load` — covers D1, R2
 - [x] 066/T004 [agent] Import the video encoder lazily in `export.ts` — covers D3, R4
 - ~~066/T005 [agent] Verify: typecheck, tests, `pnpm build` chunk sizes, and a 3D scene and an MP4 export in the browser; update AGENTS.md — covers R1, R5, D4~~ → T009
-- [ ] 066/T006 [agent] Test and `lazyModule` helper; `three/lazy.ts` on it — covers D7
+- [x] 066/T006 [agent] Test and `lazyModule` helper; `three/lazy.ts` on it — covers D7
 - [ ] 066/T007 [agent] Lazy lucide icon set: `icon-set.ts`, `iconPaths`, `icon`/`badge` `load`, editor hook; tests await it — covers D5, R7
 - [ ] 066/T008 [agent] `chunkSizeWarningLimit` for the AAC encoder, with the reason — covers D6
 - [ ] 066/T009 [agent] Verify: typecheck, tests, `pnpm build` with no warning and startup chunks under 500 kB, a 3D scene, an icon and an MP4 export in the browser; update AGENTS.md — covers R1, R6, R7
