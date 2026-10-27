@@ -7,6 +7,7 @@ import { keyframeAt, withKeyframe } from "../engine/tracks.ts";
 import { deepMerge } from "../presets/resolve.ts";
 import { mapElementsDeep } from "./element-walk.ts";
 import type { Element, Shot, ShotCamera, ShotTransition } from "./model.ts";
+import { shiftTracks, shotOrigin } from "./shot-timing.ts";
 import {
   type Tracks,
   trackEntry,
@@ -180,27 +181,15 @@ export function unbindShot(
 /**
  * `el` with its tracks on `paths` moved from shot time to scene time (074/D4): a preset's
  * tracks start at 0, so on an element bound to a shot they start at the shot's `start`.
- * Unchanged when the element has no shot or the shot is not in `shots`.
  */
 export function fromShotStart(
   el: Element,
   paths: readonly string[],
   shots: readonly Pick<Shot, "id" | "start">[] | undefined,
 ): Element {
-  const start = shots?.find((sh) => sh.id === el.shot)?.start ?? 0;
+  const start = shotOrigin(shots, el.shot);
   if (start === 0 || !el.tracks) return el;
-  const tracks: Tracks = { ...el.tracks };
-  for (const path of paths) {
-    const track = tracks[path];
-    if (!track) continue;
-    const until = trackUntil(track);
-    tracks[path] = trackEntry(
-      trackKeys(track).map((k) => ({ ...k, t: k.t + start })),
-      trackRepeat(track),
-      until === undefined ? undefined : until + start,
-    );
-  }
-  return { ...el, tracks };
+  return { ...el, tracks: shiftTracks(el.tracks, start, paths) };
 }
 
 /**

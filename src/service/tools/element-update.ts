@@ -4,6 +4,7 @@ import {
   AT_RULES,
   AtPlacementSchema,
 } from "../../model/compact.ts";
+import { movedNotice, rebindShot } from "../../model/shot-timing.ts";
 import { placeAt } from "../compact/layout.ts";
 import { updateElement } from "../element-tree.ts";
 import {
@@ -24,8 +25,9 @@ export const elementUpdate = defineTool({
     "partial patch, deep-merged: objects merge key by key, anything else (arrays, tracks' " +
     "keyframe lists) is replaced. id and kind never change. The result is checked against the " +
     "kind's fields; `notices` names patch keys the kind has no field for and an `id`/`kind` " +
-    "that was not changed. A `shot` the scene lacks fails. Changing `shot` does not move the " +
-    "element's tracks (they are scene time); shift them with keyframe_set if needed. " +
+    "that was not changed. A `shot` the scene lacks fails. An element's tracks are timed from " +
+    "its shot's `start`: changing `shot` moves them by the difference (a notice says how " +
+    "far), except tracks given in the same patch, which are taken as given. " +
     ANIM_RULES +
     AT_RULES +
     "It places the patched element against the scene and wins over an `x`/`y` in the patch. " +
@@ -47,7 +49,14 @@ export const elementUpdate = defineTool({
         ...s,
         elements: updateElement(s.elements, id, (el) => {
           notices.push(...patchNotices(el, patch));
-          const out = patched(el, patch);
+          // a new shot carries the tracks along; tracks in the patch are taken as given (075/D1)
+          const rebound =
+            typeof patch.shot === "string" && patch.shot !== el.shot
+              ? rebindShot(el, patch.shot, s.shots)
+              : { el, delta: 0 };
+          const moved = movedNotice([{ id, delta: rebound.delta }]);
+          if (moved) notices.push(moved);
+          const out = patched(rebound.el, patch);
           if (at && hasPositionTrack(out)) notices.push(trackOverridesAt(id));
           return at ? placeAt(out, at, s) : out;
         }),

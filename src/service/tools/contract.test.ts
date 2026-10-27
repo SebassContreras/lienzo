@@ -160,3 +160,29 @@ it("shot_set fails on an unknown camera easing", async () => {
   const r = await call("shot_set", { scene: "s", id: "s1", camera });
   expect(r).toMatchObject(fails(UNKNOWN_EASING));
 });
+
+it("element_update moves an element's tracks with the shot it is rebound to (075/R1)", async () => {
+  await call("shot_set", { scene: "s", id: "s2", start: 3, end: 5 });
+  await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 1,
+    value: 50,
+  });
+
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { shot: "s2" },
+  });
+  const scene = await call("scene_get", { scene: "s", full: true });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«r» \+3s/)] },
+  });
+  expect(scene).toMatchObject({
+    value: { elements: [{ id: "r", tracks: { x: [{ t: 4 }] } }] },
+  });
+});

@@ -25,6 +25,7 @@ import {
   type Shot,
   SIZE_PRESETS,
 } from "../model/model.ts";
+import { rebindShot } from "../model/shot-timing.ts";
 import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";
@@ -129,8 +130,10 @@ export function ElementInspector({
             ]}
             onChange={(id) =>
               change((d) => {
-                if (id) d.shot = id;
-                else delete d.shot;
+                // the tracks move with the shot, as in element_update (075/D1)
+                const { el: bound } = rebindShot(d, id || undefined, shots);
+                Object.assign(d, bound);
+                if (!id) delete d.shot;
               })
             }
           />
