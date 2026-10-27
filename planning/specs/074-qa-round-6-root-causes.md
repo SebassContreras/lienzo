@@ -136,7 +136,7 @@ contract test that walks the tools with the same wrong inputs.
 - [x] 074/T004 [agent] Preset tracks start at the element's shot — covers R4, D4
 - [x] 074/T005 [agent] Asset refs stored in one form — covers R5, D5
 - [x] 074/T006 [agent] One `slugify` with accents folded, legacy read fallback — covers R6, D6
-- [ ] 074/T007 [agent] Compact `from`/`to` per kind — covers R7, D7
+- [x] 074/T007 [agent] Compact `from`/`to` per kind — covers R7, D7
 - [ ] 074/T008 [agent] Camera tracks short form in `shot_set`, scene-time note and notice — covers R8, D8
 - [ ] 074/T009 [agent] Preset recipes: strict keys, typed `set` — covers R1, D14
 - [ ] 074/T010 [agent] `scene_validate`: every error, partial elements, id-or-index paths — covers R9, D9

@@ -280,8 +280,10 @@ async function buildElement(
     state.notices.push(trackOverridesAt(path));
   if (fit === "canvas")
     (element as unknown as Record<string, unknown>).__fit = fit;
-  if (from) (element as unknown as Record<string, unknown>).from = from;
-  if (to) (element as unknown as Record<string, unknown>).to = to;
+  // a line attaches to `from`/`to` later; any other kind takes them as its own fields (074/D7)
+  if (from !== undefined)
+    (element as unknown as Record<string, unknown>).from = from;
+  if (to !== undefined) (element as unknown as Record<string, unknown>).to = to;
 
   // Handle nested children for groups
   if (element.kind === "group" && Array.isArray(children)) {

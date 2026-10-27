@@ -180,8 +180,9 @@ const baseSpecialFields = {
   origin: CompactOriginSchema.optional(),
   w: z.number().min(0).optional(),
   shot: z.string().optional(),
-  from: z.string().optional(),
-  to: z.string().optional(),
+  // a line's targets (ids); a kind with its own `from`/`to` (counter) declares numbers (074/D7)
+  from: z.union([z.string(), z.number()]).optional(),
+  to: z.union([z.string(), z.number()]).optional(),
   tracks: CompactTracksSchema.optional(),
   effects: CompactEffectsSchema.optional(),
   animPreset: z

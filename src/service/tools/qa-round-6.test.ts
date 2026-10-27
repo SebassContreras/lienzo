@@ -108,3 +108,13 @@ it("renames a preset to a slug with its accents folded (074/R6)", async () => {
 
   expect(out.preset).toBe("caja-ambar");
 });
+
+it("sets a counter preset's final value with `to` in compact (074/R7)", async () => {
+  const out = await value("scene_build", {
+    compact: {
+      elements: [{ preset: "Contador animado", from: 0, to: 1500 }],
+    },
+  });
+
+  expect(out.scene).toMatchObject({ elements: [{ from: 0, to: 1500 }] });
+});
