@@ -49,8 +49,13 @@ export type PlacedElement = {
   el: Element;
   box: Box;
   parentGroup?: GroupEl;
+  /** The `use` whose symbol this element is an instance of (080/D11): content it holds. */
+  heldBy?: Element;
   alpha: number;
 };
+
+/** Whether `item` stands on the canvas itself: not in a group, not inside a `use`. */
+const topLevel = (item: PlacedElement) => !item.parentGroup && !item.heldBy;
 
 /**
  * Returns elements placed in canvas space at time `t`.
@@ -83,6 +88,7 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
     parentGroup?: GroupEl,
     parentAlpha = 1,
     parentView?: (box: Box) => Box,
+    heldBy?: Element,
   ) {
     for (const raw of elements) {
       const view = parentView ?? ((box: Box) => shotBox(box, raw, scene, t));
@@ -151,11 +157,12 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
         el: placed,
         box: view(effectiveBox),
         parentGroup,
+        ...(heldBy ? { heldBy } : {}),
         alpha: effectiveAlpha,
       });
 
       if (raw.kind === "group") {
-        collect(raw.children, placed as GroupEl, effectiveAlpha, view);
+        collect(raw.children, placed as GroupEl, effectiveAlpha, view, heldBy);
       } else if (raw.kind === "use") {
         const useEl = raw as UseEl;
         const sym = scene.symbols ? scene.symbols[useEl.symbol] : undefined;
@@ -179,7 +186,13 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
               h: childBox.h * scaleY,
             } as Element;
           });
-          collect(scaledInstances, parentGroup, effectiveAlpha, view);
+          collect(
+            scaledInstances,
+            parentGroup,
+            effectiveAlpha,
+            view,
+            heldBy ?? raw,
+          );
         }
       }
     }
@@ -469,7 +482,7 @@ export function inspectLayout(
 
     // 2. Check out of canvas bounds for top-level placed elements
     for (const item of placed) {
-      if (!item.parentGroup) {
+      if (topLevel(item)) {
         const oob = checkOutOfBounds(item.el.id, item.box, scene, t);
         if (oob) diagnostics.push(oob);
       }
@@ -495,7 +508,7 @@ export function inspectLayout(
 
     // 3b. Check shapes stacked on each other (071/D4)
     const shapes = placed.filter(
-      (item) => !item.parentGroup && !NOT_SHAPES.has(item.el.kind),
+      (item) => topLevel(item) && !NOT_SHAPES.has(item.el.kind),
     );
     for (let i = 0; i < shapes.length; i++) {
       for (let j = i + 1; j < shapes.length; j++) {
@@ -573,7 +586,7 @@ export function layoutBoxes(
 ): LayoutBox[] {
   return times.flatMap((t) =>
     placedElementsAt(scene, t)
-      .filter((item) => !item.parentGroup)
+      .filter(topLevel)
       .map(({ el, box }) => ({
         id: el.id,
         t,

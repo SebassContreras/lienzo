@@ -385,6 +385,35 @@ describe("shape_overlap (071/D4)", () => {
     expect(codes).not.toContain("shape_overlap");
   });
 
+  it("does not report a use overlapping its own symbol's instances (080/R11)", () => {
+    const chip = {
+      ...defaultElement("use"),
+      id: "chip",
+      symbol: "chip",
+      x: 100,
+      y: 100,
+      w: 200,
+      h: 200,
+    };
+    const disc = {
+      ...defaultElement("ellipse"),
+      id: "disc",
+      x: 0,
+      y: 0,
+      w: 200,
+      h: 200,
+    };
+    const scene = {
+      ...defaultScene(),
+      symbols: { chip: { w: 200, h: 200, children: [disc] } },
+      elements: [chip],
+    };
+
+    const codes = inspectLayout(scene, [0]).map((d) => d.code);
+
+    expect(codes).not.toContain("shape_overlap");
+  });
+
   it("reports two shapes with the same box (072/D2)", () => {
     const codes = codesOf([
       rectAt("rect", 340, 760, 400, 400),
