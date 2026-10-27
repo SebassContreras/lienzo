@@ -25,6 +25,7 @@ import {
   type Scene,
 } from "../../model/model.ts";
 import type { PresetRecipe } from "../../model/preset.ts";
+import { fromShotStart } from "../../model/shots.ts";
 import { parseSize } from "../../model/size.ts";
 import { expandAnimPresets } from "../../presets/anim-presets.ts";
 import {
@@ -249,12 +250,17 @@ async function buildElement(
     }
   }
 
+  // a preset's own tracks run in its shot's time; tracks the input gives replace them (074/D4)
+  const presetTracks =
+    rawPreset && !tracks ? Object.keys(element.tracks ?? {}) : [];
   if (tracks) {
     element.tracks = normalizeTracks(
       tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
     );
   }
-  if (!rawPreset) element = withCountUp(element, raw, state.timing);
+  element = rawPreset
+    ? fromShotStart(element, presetTracks, state.timing.shots)
+    : withCountUp(element, raw, state.timing);
 
   if (origin !== undefined) {
     element.origin = resolveOrigin(

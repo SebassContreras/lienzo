@@ -8,6 +8,7 @@ import {
   type Element,
   type ElementKind,
 } from "../../model/model.ts";
+import { fromShotStart } from "../../model/shots.ts";
 import { resolveElement } from "../../presets/resolve.ts";
 import { applyImplied } from "../compact/implied.ts";
 import { placeAt } from "../compact/layout.ts";
@@ -64,10 +65,14 @@ export const elementAdd = defineTool({
 
     const notices: string[] = [];
     let el: Element;
+    let presetTracks: string[] = [];
     if (preset !== undefined) {
       const r = resolveElement((await findPreset(effectiveCtx, preset)).recipe);
       if ("error" in r) fail("invalid_preset", r.error, "preset");
       el = r.element;
+      // the recipe's tracks run in the element's shot time unless `patch` replaces them (074/D4)
+      const given = (patch?.tracks ?? {}) as Record<string, unknown>;
+      presetTracks = Object.keys(el.tracks ?? {}).filter((k) => !(k in given));
     } else {
       checkKind(kind as string);
       el = defaultElement(kind as ElementKind);
@@ -85,7 +90,9 @@ export const elementAdd = defineTool({
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
     const result = await editScene(effectiveCtx, scene, (s) => {
       const fresh =
-        preset === undefined ? withCountUp(added, patch ?? {}, s) : added;
+        preset === undefined
+          ? withCountUp(added, patch ?? {}, s)
+          : fromShotStart(added, presetTracks, s.shots);
       mapElementsDeep(s.elements, (e) => {
         if (e.id === added.id)
           fail("duplicate_id", `Ya hay un elemento «${added.id}»`, "patch.id");

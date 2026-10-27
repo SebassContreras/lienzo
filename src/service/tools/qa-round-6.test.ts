@@ -65,3 +65,36 @@ it("rejects an unknown shot in scene_validate (074/R1)", async () => {
     message: expect.stringContaining("«s9»"),
   });
 });
+
+it("runs a preset counter's count-up from the start of its shot in scene_build (074/R4)", async () => {
+  const out = await value("scene_build", {
+    compact: {
+      duration: 6,
+      shots: [
+        { id: "s1", start: 0, end: 3 },
+        { id: "s2", start: 3, end: 6 },
+      ],
+      elements: [{ preset: "Contador animado", id: "c", shot: "s2" }],
+    },
+  });
+
+  expect(out.scene).toMatchObject({
+    elements: [{ tracks: { progress: [{ t: 3 }, { t: 5 }] } }],
+  });
+});
+
+it("runs a preset counter's count-up from the start of its shot in element_add (074/R4)", async () => {
+  await value("scene_create", { scene: "s" });
+  await value("shot_set", { scene: "s", id: "s2", start: 3, end: 6 });
+
+  await value("element_add", {
+    scene: "s",
+    preset: "Contador animado",
+    patch: { id: "c", shot: "s2" },
+  });
+  const scene = await value("scene_get", { scene: "s", full: true });
+
+  expect(scene).toMatchObject({
+    elements: [{ tracks: { progress: [{ t: 3 }, { t: 5 }] } }],
+  });
+});
