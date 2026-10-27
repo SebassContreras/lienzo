@@ -27,4 +27,5 @@ A QA run of the tools on a scratch project found seven rough edges. When this sp
 - [x] 068/T002 [agent] Implied flat fill and group content size — covers R2, R3, D2
 - [x] 068/T003 [agent] element_add: out-of-canvas notice and `patch.id` — covers R4, R5, D3, D4
 - [x] 068/T004 [agent] Rounded placement and boxes; partial background in scene_create — covers R6, R7, D5, D6
-- [ ] 068/T005 [agent] Verify: typecheck, lint of touched files, tests — covers R1, R2, R3, R4, R5, R6, R7
+- [x] 068/T005 [agent] Verify: typecheck, lint of touched files, tests — covers R1, R2, R3, R4, R5, R6, R7
+      verified: `pnpm typecheck`, biome on the touched files, `pnpm test` (1119 tests) — found one `at` centre test off by 0.004 px from the rounding, loosened to two decimals in the T004 commit
