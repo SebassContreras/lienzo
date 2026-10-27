@@ -210,7 +210,18 @@ export function measureWithOpentype(
 }
 
 /**
- * Typographic fallback width estimation when no font tables are available.
+ * The font tables to measure `style` with: its own, else Inter's, the family the canvas
+ * draws a missing one in (`fontStringOf`), so a missing font still centers exactly.
+ */
+function measuringFont(style: MeasureStyle): opentype.Font | null {
+  return (
+    loadFontSync(style.font, style.weight, style.italic) ??
+    loadFontSync("Inter", style.weight, style.italic)
+  );
+}
+
+/**
+ * Typographic fallback width estimation when not even Inter's tables are available.
  * Uses realistic character width ratios based on typical sans-serif proportions.
  */
 function fallbackMeasureWidth(text: string, style: MeasureStyle): number {
@@ -256,8 +267,8 @@ export function measureTextWidth(text: string, style: MeasureStyle): number {
     return ctx.measureText(text).width;
   }
 
-  // 2. Node opentype.js glyph measurement
-  const font = loadFontSync(style.font, style.weight, style.italic);
+  // 2. Node opentype.js glyph measurement, in Inter for a missing family
+  const font = measuringFont(style);
   if (font) {
     return measureWithOpentype(
       font,
@@ -275,7 +286,7 @@ export function measureTextWidth(text: string, style: MeasureStyle): number {
  * Returns vertical font metrics (ascent, descent, default line height).
  */
 export function measureFontMetrics(style: MeasureStyle): FontMetrics {
-  const font = loadFontSync(style.font, style.weight, style.italic);
+  const font = measuringFont(style);
   if (font?.unitsPerEm) {
     const upe = font.unitsPerEm;
     const asc =

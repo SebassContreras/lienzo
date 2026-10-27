@@ -59,6 +59,13 @@ describe("ignored field suggestions (067/R3)", () => {
     ]);
   });
 
+  it("suggests the field a common CSS alias means", () => {
+    expect(noticesFor({ family: "Inter", fontFamily: "Inter" })).toEqual([
+      "Campo desconocido ignorado: elements.0.family (¿quisiste decir «font»?)",
+      "Campo desconocido ignorado: elements.0.fontFamily (¿quisiste decir «font»?)",
+    ]);
+  });
+
   it("suggests nothing for a name unlike any field", () => {
     expect(noticesFor({ zzz: 1 })).toEqual([
       "Campo desconocido ignorado: elements.0.zzz",

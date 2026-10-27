@@ -125,6 +125,8 @@ describe("text measurement (054/R1, T005)", () => {
       size: 50,
       weight: 400,
     });
-    expect(fallback).toBeGreaterThan(0);
+    expect(fallback).toBe(
+      measureTextWidth("Custom", { font: "Inter", size: 50, weight: 400 }),
+    );
   });
 });

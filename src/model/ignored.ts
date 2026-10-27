@@ -45,15 +45,25 @@ function knownKeys(parsed: Record<string, unknown>): string[] {
     : own;
 }
 
+/** CSS names that resemble no field by spelling, mapped to the field they mean. */
+const ALIASES: Record<string, string> = {
+  family: "font",
+  fontfamily: "font",
+  fontweight: "weight",
+};
+
 /**
- * The known key `key` most likely meant, or undefined: one it ends or starts with, as
- * `fontSize` ends with `size` (CSS names), else one a typo or two away (`colr`).
+ * The known key `key` most likely meant, or undefined: a common alias (`fontFamily`), one it
+ * ends or starts with, as `fontSize` ends with `size` (CSS names), else one a typo or two
+ * away (`colr`).
  */
 export function closestKey(
   key: string,
   known: readonly string[],
 ): string | undefined {
   const k = normal(key);
+  const alias = ALIASES[k];
+  if (alias && known.includes(alias)) return alias;
   const longest = (fits: (c: string) => boolean) =>
     known
       .filter((c) => normal(c).length >= 4 && fits(normal(c)))
