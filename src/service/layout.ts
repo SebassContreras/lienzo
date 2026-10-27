@@ -19,6 +19,7 @@ import type {
   Scene,
   TextEl,
 } from "../model/model.ts";
+import { round2 } from "./compact/layout.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
 import { measureStyleOf } from "./font-check.ts";
 
@@ -482,7 +483,10 @@ export function layoutBoxes(
       .map(({ el, box }) => ({
         id: el.id,
         t,
-        ...box,
+        x: round2(box.x),
+        y: round2(box.y),
+        w: round2(box.w),
+        h: round2(box.h),
         ...(hasEstimatedWidth(el) ? { estimated: true as const } : {}),
       })),
   );

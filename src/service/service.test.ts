@@ -125,7 +125,10 @@ describe("service tools", () => {
     });
 
     const el = (await onDisk("demo")).elements[0] as Element;
-    expect(center(boxOf(el))).toEqual({ x: 540, y: 300 });
+    const c = center(boxOf(el));
+    // `at` positions are rounded to two decimals (068/D5)
+    expect(c.x).toBeCloseTo(540, 2);
+    expect(c.y).toBeCloseTo(300, 2);
   });
 
   it("keeps an updated element's position when no `at` is given (R3)", async () => {

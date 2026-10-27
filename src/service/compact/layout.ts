@@ -87,6 +87,16 @@ export function atCenter(
   };
 }
 
+/** `n` to two decimals, so computed positions read cleanly (068/D5). */
+export function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+const roundPoint = (p: { x: number; y: number }) => ({
+  x: round2(p.x),
+  y: round2(p.y),
+});
+
 /** Places `el` by `at` inside `container`, the same way in every tool (064/D12). */
 export function placeAt(
   el: Element,
@@ -94,7 +104,10 @@ export function placeAt(
   container: { width: number; height: number },
 ): Element {
   const c = atCenter(at, boxOf(el), container);
-  return centerOn(el, c.x, c.y);
+  const out = centerOn(el, c.x, c.y);
+  if (out.kind === "line")
+    return { ...out, a: roundPoint(out.a), b: roundPoint(out.b) };
+  return { ...out, ...roundPoint(out) } as Element;
 }
 
 const NAMED_ORIGINS: Record<AnchorName, { x: number; y: number }> = {

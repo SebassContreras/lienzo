@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defaultScene } from "../../model/model.ts";
+import { deepMerge } from "../../presets/resolve.ts";
 import { slugify } from "../../presets/slug.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
@@ -12,9 +13,9 @@ export const sceneCreate = defineTool({
     "background, elements, mode) replace the defaults: an empty 1080x1080, 4 s, 30 fps scene. " +
     "`mode` can be 'static' (graphic post/image) or 'video' (animated video, default). " +
     "Elements may name an animation preset in `animPreset`; it is copied in. Fails if the " +
-    "name is taken unless `overwrite` is true. `data` is a full scene: every element and " +
-    "the background whole, as scene_get returns them; for the compact form (a color as " +
-    "background, partial elements, `at`) use scene_build with `save`.",
+    "name is taken unless `overwrite` is true. `data` is a full scene: every element whole, as scene_get " +
+    "returns them; a `background` object may be partial (the rest is the default's). For the " +
+    "compact form (a color as background, partial elements, `at`) use scene_build with `save`.",
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,
@@ -46,6 +47,16 @@ export const sceneCreate = defineTool({
     }
 
     const sceneData = { ...defaults, ...(mode ? { mode } : {}), ...data };
+    // a partial background fills in the rest from the defaults (068/D6)
+    const bg = data?.background;
+    if (typeof bg === "object" && bg !== null && !Array.isArray(bg)) {
+      const merged = structuredClone(defaults.background);
+      deepMerge(
+        merged as unknown as Record<string, unknown>,
+        bg as Record<string, unknown>,
+      );
+      sceneData.background = merged;
+    }
     return saveScene(effectiveCtx, scene, sceneData);
   },
 });

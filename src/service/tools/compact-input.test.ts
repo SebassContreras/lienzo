@@ -140,3 +140,34 @@ describe("element_add feedback (068)", () => {
     expect(again.ok ? "" : again.error.code).toBe("duplicate_id");
   });
 });
+
+describe("rounded positions and partial backgrounds (068)", () => {
+  it("rounds what `at` computes (R6)", async () => {
+    // Act
+    const res = await ok("scene_build", {
+      compact: {
+        height: 1000,
+        elements: [
+          { kind: "rect", w: 100, h: 64.39999999999999, at: "center" },
+        ],
+      },
+    });
+
+    // Assert
+    const [el] = (res.scene as { elements: { y: number }[] }).elements;
+    expect(el.y).toBe(468);
+  });
+
+  it("fills a partial background in scene_create (R7)", async () => {
+    // Act
+    await ok("scene_create", {
+      scene: "bg",
+      data: { background: { color: "#123456" } },
+    });
+    const res = await ok("scene_get", { scene: "bg" });
+
+    // Assert
+    const scene = (res.scene ?? res) as { background: { color: string } };
+    expect(scene.background.color).toBe("#123456");
+  });
+});
