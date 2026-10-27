@@ -6,6 +6,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 |-----|------|--------|------------|
 | 050 | joint-mode | done | — |
 | 065 | defaults-and-easing-notices | todo | — |
+| 066 | lazy-vendor-chunks | todo | — |
 
 ## Ideas
 
