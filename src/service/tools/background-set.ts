@@ -1,5 +1,7 @@
 import { z } from "zod";
-import type { Background } from "../../model/model.ts";
+import { ignoredFields, ignoredNotice } from "../../model/ignored.ts";
+import { type Background, defaultScene } from "../../model/model.ts";
+import { BackgroundSchema } from "../../model/schema.ts";
 import { deepMerge, resolveBackground } from "../../presets/resolve.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
@@ -10,7 +12,8 @@ export const backgroundSet = defineTool({
   description:
     "Set a scene's background from a background preset (see preset_list, kind " +
     "`background`) and/or `patch` (color, color2, gradient, angle, dots, dotColor, " +
-    "dotGap, spotlight, spotlightColor) merged over it or over the current background.",
+    "dotGap, spotlight, spotlightColor) merged over it or over the current background; " +
+    "`notices` names any other patch key, which is ignored.",
   input: z
     .object({
       scene: z.string().min(1),
@@ -33,11 +36,19 @@ export const backgroundSet = defineTool({
       if ("error" in r) fail("invalid_preset", r.error, "preset");
       base = r.background;
     }
-    return editScene(projectCtx, scene, (s) => {
+    const ignored = patch
+      ? ignoredFields(
+          patch,
+          BackgroundSchema.parse(defaultScene().background),
+          "patch",
+        ).map(ignoredNotice)
+      : [];
+    const result = await editScene(projectCtx, scene, (s) => {
       const background = structuredClone(base ?? s.background);
       if (patch)
         deepMerge(background as unknown as Record<string, unknown>, patch);
       return { ...s, background };
     });
+    return { ...result, notices: [...ignored, ...result.notices] };
   },
 });

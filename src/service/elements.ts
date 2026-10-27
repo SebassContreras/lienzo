@@ -5,7 +5,9 @@
 import { trackPaths } from "../components/descriptor.ts";
 import { descriptorOf, KINDS } from "../components/index.ts";
 import { keyframeError, valueKind } from "../engine/tracks.ts";
+import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Element } from "../model/model.ts";
+import { ElementSchema } from "../model/schema.ts";
 import { deepMerge } from "../presets/resolve.ts";
 import { fail } from "./registry.ts";
 
@@ -14,6 +16,28 @@ export function patched(el: Element, patch: Record<string, unknown>): Element {
   const out = structuredClone(el) as unknown as Record<string, unknown>;
   deepMerge(out, patch);
   return { ...out, id: el.id, kind: el.kind } as unknown as Element;
+}
+
+/**
+ * What a patch on `el` did not change (069/D7): keys its kind has no field for, as
+ * `ignoredFields` lists them under `patch.`, and an `id` or `kind` that differs, since
+ * neither changes.
+ */
+export function patchNotices(
+  el: Element,
+  patch: Record<string, unknown>,
+): string[] {
+  const parsed = ElementSchema.safeParse(patched(el, patch));
+  const ignored = parsed.success
+    ? ignoredFields(patch, parsed.data, "patch").map(ignoredNotice)
+    : [];
+  const fixed = (["id", "kind"] as const)
+    .filter((k) => k in patch && patch[k] !== el[k])
+    .map(
+      (k) =>
+        `«${k}» no cambia con un patch (sigue «${el[k]}»): ${k === "kind" ? "quita el elemento y agrega otro" : "usa element_add con otro id"}`,
+    );
+  return [...fixed, ...ignored];
 }
 
 /** Fails unless `kind` is a registered component kind. */

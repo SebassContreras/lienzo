@@ -15,7 +15,7 @@ export { ElementSchema };
 
 const color = ColorSchema;
 
-const BackgroundSchema = z.object({
+export const BackgroundSchema = z.object({
   color,
   color2: color,
   gradient: z.boolean(),
