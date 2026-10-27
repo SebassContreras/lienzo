@@ -3,7 +3,6 @@
  * project's canvas (size, duration, fps) and palette background, so `scene_create` and
  * `scene_build` (saved or not) agree.
  */
-import { withElementDefaults } from "../model/fill-defaults.ts";
 import { defaultScene, type Scene } from "../model/model.ts";
 import { deepMerge } from "../presets/resolve.ts";
 import type { ProjectCtx } from "./ctx.ts";
@@ -28,8 +27,9 @@ export async function sceneDefaults(ctx: ProjectCtx): Promise<Scene> {
 
 /**
  * `data` (a scene object, possibly partial) laid over `sceneDefaults`: missing scene fields
- * from the project, a partial `background` merged (068/D6), partial elements filled from
- * their kind's defaults (074/D9). Shared by `scene_create` and `scene_validate`.
+ * from the project and a partial `background` merged (068/D6). Partial elements are filled
+ * by `prepareScene` (080/D2). Shared by `scene_create`, `scene_validate` and
+ * `scene_inspect_layout`.
  */
 export async function sceneFromData(
   ctx: ProjectCtx,
@@ -46,5 +46,5 @@ export async function sceneFromData(
     );
     out.background = merged;
   }
-  return withElementDefaults(out);
+  return out;
 }

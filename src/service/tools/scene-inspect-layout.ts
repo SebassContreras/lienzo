@@ -1,9 +1,25 @@
 import { z } from "zod";
+import { withElementDefaults } from "../../model/fill-defaults.ts";
+import type { ProjectCtx } from "../ctx.ts";
 import { measureInstalledFonts } from "../font-install.ts";
 import { inspectLayout, layoutBoxes } from "../layout.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
+import { sceneFromData } from "../scene-defaults.ts";
 import { checkScene, openScene } from "../scenes.ts";
+
+/**
+ * `data` as a scene, the project's canvas for what it leaves out and partial elements filled
+ * (080/D2), so `scene_get`'s sparse result goes in as it is. Only the schema is checked: an
+ * unknown shot or symbol is what the diagnostics report.
+ */
+async function sceneOf(ctx: ProjectCtx, data: unknown) {
+  const whole =
+    typeof data === "object" && data !== null && !Array.isArray(data)
+      ? await sceneFromData(ctx, data as Record<string, unknown>)
+      : data;
+  return checkScene(withElementDefaults(whole), "data", data);
+}
 
 const DiagnosticSchema = z.object({
   code: z.string(),
@@ -40,7 +56,9 @@ export const sceneInspectLayout = defineTool({
     "clearly smaller box inside a bigger one is not reported), `out_of_bounds`, " +
     "`dangling_attachment` (a line end on a missing id), `low_contrast` / " +
     "`unverifiable_contrast`, `missing_symbol` and `unknown_shot`, counting only the elements " +
-    "whose shot is on screen at that time. Pass a saved scene name in `scene` or a whole scene object in `data`. " +
+    "whose shot is on screen at that time. Pass a saved scene name in `scene` or a scene object in `data` " +
+    "(as scene_get returns it: missing scene fields take the project's canvas and an " +
+    "element's missing fields its kind's defaults). " +
     "Also returns `boxes`: the drawn box (top-left `x, y`, `w`, `h`) of every top-level " +
     "element at each time, as its shot's camera and transition show it on screen, to verify " +
     "placement (e.g. centred when x + w/2 = width/2). A box marked " +
@@ -60,7 +78,7 @@ export const sceneInspectLayout = defineTool({
     await measureInstalledFonts(ctx.fonts, project);
     const scene =
       data !== undefined
-        ? checkScene(data)
+        ? await sceneOf(projectCtx, data)
         : saved
           ? await openScene(projectCtx, saved)
           : fail(

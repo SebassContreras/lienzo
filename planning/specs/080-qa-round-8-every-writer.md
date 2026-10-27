@@ -353,7 +353,7 @@ Changes (074 did the same), never weakened to pass.
 
 ## Tasks
 - [x] 080/T001 [agent] Short-form keyframes in `TracksSchema`; compact normalizer removed; contract cases — covers R1, D1
-- [ ] 080/T002 [agent] Defaults filled in `prepareScene` and `symbols`; `scene_inspect_layout data` through `sceneFromData`; contract cases — covers R2, D2
+- [x] 080/T002 [agent] Defaults filled in `prepareScene` and `symbols`; `scene_inspect_layout data` through `sceneFromData`; contract cases — covers R2, D2
 - [ ] 080/T003 [agent] Canonical audio refs, missing-audio notice; contract cases — covers R3, D3
 - [ ] 080/T004 [agent] Shot rule in `groupElements`/`ungroupElement`, used by the tool and the editor; round-trip test — covers R4, D4
 - [x] 080/T005 [agent] Compact elements parsed in `buildCompact`; every shot problem and unknown animation preset in one `errors`; contract cases — covers R5, D5
@@ -377,3 +377,4 @@ Changes (074 did the same), never weakened to pass.
 ## Changes
 - 2026-10-27: 080/D1 adds `flatIssues` (`src/model/zod-issues.ts`), used by `parseWith` and the registry: a failed union that one branch explains reports that branch's issues, so a bad keyframe says «…0.easing: easing desconocido» instead of «Entrada inválida». A union with its own message keeps it (`at`). `generateCompactJsonSchema` writes the input side (`io: "input"`), since the keyframe form is a transform; `schemas/compact-scene.json` is regenerated. Why: the tester's «Invalid input» was this union message. Work: T001.
 - 2026-10-27: `scene-build-result.test.ts` expected `compact.elements.0.glw` for an element given `id: "title"`; R6 names it `compact.elements.title.glw`. `expand.test.ts` passes short camera keys to `expandScene` with a cast, since `CompactScene` is the parsed type. Work: T005.
+- 2026-10-27: 080/D2 has `scene_inspect_layout data` fill and check only the schema (`checkScene` over `withElementDefaults(sceneFromData(…))`), not `prepareScene`. Why: the rules would fail an unknown shot or symbol that the tool reports as `unknown_shot` / `missing_symbol`. Work: T002.

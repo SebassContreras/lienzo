@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import { mapElementsDeep } from "../model/element-walk.ts";
+import { withElementDefaults } from "../model/fill-defaults.ts";
 import { namesHint } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
@@ -222,8 +223,9 @@ export function checkShots(scene: Scene): void {
 
 /**
  * `data` checked as a scene with its `animPreset` names expanded into copied values
- * (019/D10); an unknown name fails, and so does a reference a changed element leaves
- * dangling (074/D1). `notices` lists what a preset could not apply.
+ * (019/D10), partial elements filled from their kind (080/D2); an unknown name fails, and so
+ * does a reference a changed element leaves dangling (074/D1). `notices` lists what a preset
+ * could not apply.
  */
 export async function prepareScene(
   ctx: Ctx,
@@ -232,7 +234,11 @@ export async function prepareScene(
   given: unknown = data,
 ): Promise<{ scene: Scene; notices: string[] }> {
   const library = await animLibrary(ctx);
-  const scene = checkWholeScene(data, library, { previous, given });
+  // every write takes partial elements, filled from their kind (080/D2)
+  const scene = checkWholeScene(withElementDefaults(data), library, {
+    previous,
+    given,
+  });
   const expanded = expandAnimPresets(scene, library);
   return { scene: checkScene(expanded.scene), notices: expanded.notices };
 }

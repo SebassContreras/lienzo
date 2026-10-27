@@ -738,3 +738,29 @@ it("scene_validate lists every unknown animation preset with the library's names
     },
   });
 });
+
+// 080/R2: partial elements are filled wherever a scene comes in
+it("scene_update takes partial symbol children with short keyframes (080/R1, R2)", async () => {
+  const r = await call("scene_update", {
+    scene: "s",
+    patch: {
+      symbols: {
+        chip: {
+          w: 100,
+          h: 100,
+          children: [{ id: "d", kind: "ellipse", w: 50, h: 50, tracks: SHORT }],
+        },
+      },
+    },
+  });
+
+  expect(r).toMatchObject({ ok: true });
+});
+
+it("scene_inspect_layout takes scene_get's sparse result as data (080/R2)", async () => {
+  const got = (await call("scene_get", { scene: "s" })) as { value: unknown };
+
+  const r = await call("scene_inspect_layout", { data: got.value });
+
+  expect(r).toMatchObject({ ok: true, value: { boxes: expect.any(Array) } });
+});
