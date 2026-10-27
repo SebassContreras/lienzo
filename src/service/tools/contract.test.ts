@@ -392,3 +392,36 @@ it("shot_set trimming a shot's start leaves its elements' tracks in place (078/R
     value: { elements: [{ tracks: { x: [{ t: 1 }] } }] },
   });
 });
+
+it("scene_build fails on a use naming a symbol the scene lacks, listing the symbols (078/R3)", async () => {
+  const compact = {
+    symbols: { sol: { w: 10, h: 10, children: [] } },
+    elements: [{ kind: "use", symbol: "luna" }],
+  };
+
+  const r = await call("scene_build", { compact });
+
+  expect(r).toMatchObject(fails(/«luna».*«sol»/));
+});
+
+it("scene_update removing a symbol a use names leaves a notice (078/R3)", async () => {
+  await call("scene_update", {
+    scene: "s",
+    patch: { symbols: { sol: { w: 10, h: 10, children: [] } } },
+  });
+  await call("element_add", {
+    scene: "s",
+    kind: "use",
+    patch: { id: "u", symbol: "sol" },
+  });
+
+  const r = await call("scene_update", {
+    scene: "s",
+    patch: { symbols: { sol: null } },
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«u».*«sol»/)] },
+  });
+});

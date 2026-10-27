@@ -1,6 +1,6 @@
 /**
  * References a scene write must not leave dangling (074/D1): a `shot` the scene lacks, an
- * icon lucide lacks and a line end attached to no element. Only elements the write changed
+ * icon lucide lacks, a line end attached to no element and a `use` of a missing symbol (078/D3). Only elements the write changed
  * are checked, so a stored scene with an old problem can still be edited elsewhere. Pure.
  */
 import { ICON_NAMES } from "../engine/icon-set.ts";
@@ -44,9 +44,10 @@ const list = (items: readonly string[]) =>
 
 type Dangling = Problem & { code: string };
 
-/** Every changed element's reference to a shot, icon or line target `scene` lacks. */
+/** Every changed element's reference to a shot, icon, line target or symbol `scene` lacks. */
 export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
   const shots = (scene.shots ?? []).map((sh) => sh.id);
+  const symbols = Object.keys(scene.symbols ?? {});
   const placed = placedElements(scene);
   const ids = new Set(placed.map(({ el }) => el.id));
   const changed = changedSince(previous);
@@ -57,6 +58,16 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
         code: "unknown_shot",
         message: `Está ligado a la toma «${el.shot}», que no existe (tomas: ${list(shots)}; créala con shot_set)`,
         path: `${path}.shot`,
+      });
+    if (
+      el.kind === "use" &&
+      typeof el.symbol === "string" &&
+      !symbols.includes(el.symbol)
+    )
+      out.push({
+        code: "unknown_symbol",
+        message: `Usa el símbolo «${el.symbol}», que no existe (símbolos: ${list(symbols)}; defínelo en \`symbols\`)`,
+        path: `${path}.symbol`,
       });
     if (
       el.kind === "icon" &&
