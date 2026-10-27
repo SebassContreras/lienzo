@@ -27,7 +27,7 @@ async function ok(tool: string, input: Record<string, unknown>) {
 }
 
 const saved = async () =>
-  (await ok("scene_get", { scene: "s" })) as unknown as Scene;
+  (await ok("scene_get", { scene: "s", full: true })) as unknown as Scene;
 
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), "lienzo-parity-"));

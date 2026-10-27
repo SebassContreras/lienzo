@@ -330,3 +330,38 @@ it("wraps a long centred text with no w inside the canvas margins (074/R11)", as
 
   expect(out.scene).toMatchObject({ elements: [{ w: 1080 - 2 * 54 }] });
 });
+
+it("returns only what differs from the kind's defaults in scene_get (074/R12)", async () => {
+  await value("scene_create", { scene: "s" });
+  await value("element_add", {
+    scene: "s",
+    kind: "rect",
+    patch: { id: "r", w: 333 },
+  });
+
+  const scene = await value("scene_get", { scene: "s" });
+
+  expect(scene.elements).toEqual([
+    {
+      id: "r",
+      kind: "rect",
+      x: expect.any(Number),
+      y: expect.any(Number),
+      w: 333,
+    },
+  ]);
+});
+
+it("takes a sparse scene_get result back into scene_create (074/R12)", async () => {
+  await value("scene_create", { scene: "s" });
+  await value("element_add", {
+    scene: "s",
+    kind: "text",
+    patch: { id: "t", text: "Hola" },
+  });
+  const sparse = await value("scene_get", { scene: "s" });
+
+  const r = await call("scene_create", { scene: "copia", data: sparse });
+
+  expect(r).toMatchObject({ ok: true });
+});

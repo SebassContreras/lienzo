@@ -102,7 +102,7 @@ describe("service tools", () => {
     scene = await onDisk("demo");
     expect(scene.elements).toHaveLength(1);
     expect(scene.background.color).toBe("#123456");
-    expect(await ok("scene_get", { scene: "demo" })).toEqual(scene);
+    expect(await ok("scene_get", { scene: "demo", full: true })).toEqual(scene);
     const list = (await ok("scene_list", {})) as unknown as unknown[];
     expect(list).toEqual([
       expect.objectContaining({ name: "demo", valid: true }),

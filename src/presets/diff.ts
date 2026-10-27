@@ -14,7 +14,7 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
  * the differing keys are kept; anything else is kept whole when it is not equal.
  * Returns `undefined` when nothing differs.
  */
-function deepDiff(value: unknown, base: unknown): unknown {
+export function deepDiff(value: unknown, base: unknown): unknown {
   if (isPlainObject(value) && isPlainObject(base)) {
     const out: Record<string, unknown> = {};
     for (const [key, v] of Object.entries(value)) {
