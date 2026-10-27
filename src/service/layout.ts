@@ -351,22 +351,29 @@ function checkTextContrast(
 /** Kinds `shape_overlap` leaves out: text has its own check, lines and groups have no body. */
 const NOT_SHAPES = new Set(["text", "line", "group"]);
 
+/** A held box this much of its holder's area or more is stacked on it, not held by it (072/D2). */
+const HELD_AREA = 0.9;
+
+const area = (b: Box) => b.w * b.h;
+
 const contains = (outer: Box, inner: Box) =>
+  area(inner) < HELD_AREA * area(outer) &&
   inner.x >= outer.x &&
   inner.y >= outer.y &&
   inner.x + inner.w <= outer.x + outer.w &&
   inner.y + inner.h <= outer.y + outer.h;
 
 /**
- * Whether two boxes cover half or more of the smaller one while neither holds the other, as
- * unplaced elements stacked at the centre do; a card under its content is contained (071/D4).
+ * Whether two boxes cover half or more of the smaller one while neither clearly holds the other,
+ * as unplaced elements stacked at the centre do; a card under its content is held (071/D4),
+ * two boxes of (almost) the same size are not (072/D2).
  */
 export function shapesStack(a: Box, b: Box): boolean {
   if (contains(a, b) || contains(b, a)) return false;
   const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
   const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
   if (w <= 0 || h <= 0) return false;
-  return w * h >= 0.5 * Math.min(a.w * a.h, b.w * b.h);
+  return w * h >= 0.5 * Math.min(area(a), area(b));
 }
 
 function defaultInspectionTimes(duration: number): number[] {

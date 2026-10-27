@@ -382,4 +382,22 @@ describe("shape_overlap (071/D4)", () => {
 
     expect(codes).not.toContain("shape_overlap");
   });
+
+  it("reports two shapes with the same box (072/D2)", () => {
+    const codes = codesOf([
+      rectAt("rect", 340, 760, 400, 400),
+      rectAt("ellipse", 340, 760, 400, 400),
+    ]);
+
+    expect(codes).toContain("shape_overlap");
+  });
+
+  it("reports a shape held in one barely bigger than it", () => {
+    const codes = codesOf([
+      rectAt("outer", 100, 100, 200, 200),
+      rectAt("inner", 105, 105, 190, 190),
+    ]);
+
+    expect(codes).toContain("shape_overlap");
+  });
 });
