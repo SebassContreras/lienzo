@@ -9,7 +9,7 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 - `planning/product.md` — what this is, who it's for, out of scope.
 - `planning/architecture.md` — project-wide decisions (A items).
 - `planning/roadmap.md` — specs, order, status.
-- `planning/NNN-name.md` — one file per spec: goal, requirements (R), design (D), tasks, changes.
+- `planning/specs/NNN-name.md` — one file per spec: goal, requirements (R), design (D), tasks, changes.
 
 ## Stack & conventions
 
@@ -185,7 +185,7 @@ Work is planned in `planning/`:
 ```
 planning/product.md      what this is, who it's for, stack, how to run and test, docs
 planning/roadmap.md      specs in order, their status, and a free "Ideas" list
-planning/NNN-name.md     one file per spec
+planning/specs/NNN-name.md  one file per spec
 ```
 
 A spec file:
