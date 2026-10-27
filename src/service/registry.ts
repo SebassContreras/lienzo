@@ -160,16 +160,56 @@ export function misplacedHint(
     : `${quoted(foreign)} ${verb} de ${tool.name} (parámetros: ${quoted(Object.keys(shape))})`;
 }
 
+const JSON_TYPES = new Set(["object", "record", "array"]);
+
+/**
+ * `input` with each top-level argument that should be an object or array but came as a string
+ * holding one (`patch: "{\"w\": 1}"`) parsed (078/D9): several MCP clients send object
+ * arguments that way. Anything else stays as given, and the result is parsed by the schema
+ * again, so it is never looser than one parse of the real value.
+ */
+export function jsonArgs(
+  input: unknown,
+  issues: readonly z.core.$ZodIssue[],
+): unknown {
+  if (typeof input !== "object" || input === null) return input;
+  const given = input as Record<string, unknown>;
+  const read: Record<string, unknown> = {};
+  for (const i of issues) {
+    const key = String(i.path[0]);
+    const value = given[key];
+    if (
+      i.path.length !== 1 ||
+      i.code !== "invalid_type" ||
+      !JSON_TYPES.has(i.expected) ||
+      typeof value !== "string"
+    )
+      continue;
+    try {
+      const parsed: unknown = JSON.parse(value);
+      const isArray = Array.isArray(parsed);
+      const fits = i.expected === "array" ? isArray : !isArray;
+      if (fits && typeof parsed === "object" && parsed !== null)
+        read[key] = parsed;
+    } catch {
+      // not JSON: the schema's own error stands
+    }
+  }
+  return Object.keys(read).length > 0 ? { ...given, ...read } : input;
+}
+
 /**
  * Runs `tool` on `input`: the input is parsed first, a `ToolFailure` becomes an error result,
  * and the output is parsed so callers only ever see what the schema promises.
  */
 async function callTool(
   tool: Tool,
-  input: unknown,
+  given: unknown,
   ctx: Ctx,
 ): Promise<ToolResult<unknown>> {
-  const parsed = tool.input.safeParse(input);
+  const first = tool.input.safeParse(given);
+  const input = first.success ? given : jsonArgs(given, first.error.issues);
+  const parsed = input === given ? first : tool.input.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return {

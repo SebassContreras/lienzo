@@ -93,7 +93,7 @@ test holds the opacity and reference rules for every kind.
 - [x] 078/T006 [agent] Recipe problems one by one — covers R6, D6
 - [x] 078/T007 [agent] Paths and codes: `scene_delete`, `keyframe_remove`, duplicate id, `project_create` — covers R7, D7
 - [x] 078/T008 [agent] Missing asset wording, rounded off-canvas notice, built-in preset refusal — covers R8, D8
-- [ ] 078/T009 [agent] Object arguments sent as JSON strings — covers R9, D9
+- [x] 078/T009 [agent] Object arguments sent as JSON strings — covers R9, D9
 - [ ] 078/T010 [agent] Docs: README, usage skill, components, AGENTS.md — covers R1, R2, R3, R5, R9
 - [ ] 078/T011 [agent] Verify: typecheck, lint on touched files, tests, the round-7 script re-run (144 calls) plus the new cases — covers R1, R2, R3, R4, R5, R6, R7, R8, R9
 

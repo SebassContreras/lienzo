@@ -559,3 +559,25 @@ it("element_add rounds the box in the off-canvas notice (078/R8)", async () => {
     value: { notices: [expect.not.stringMatching(/\d\.\d{3,}/)] },
   });
 });
+
+it("element_update reads a patch sent as a JSON string, as some MCP clients send it (078/R9)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: '{"w": 321}',
+  });
+  const scene = await call("scene_get", { scene: "s" });
+
+  expect(r).toMatchObject({ ok: true });
+  expect(scene).toMatchObject({ value: { elements: [{ id: "r", w: 321 }] } });
+});
+
+it("element_update still fails on a patch string that is not JSON (078/R9)", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: "w=321",
+  });
+
+  expect(r).toMatchObject({ ok: false, error: { path: "patch" } });
+});
