@@ -19,56 +19,91 @@ beforeEach(async () => {
   await registry.call("project_create", { project: "p", name: "P" }, ctx);
 });
 
-it("notes unknown icons, missing images and loose line ends (069/D8)", async () => {
+it("notes a missing image (069/D8)", async () => {
   const r = await build({
-    elements: [
-      { kind: "icon", id: "i", icon: "no-such-icon" },
-      { kind: "image", id: "img", src: "missing.png" },
-      { kind: "line", id: "l", to: "nope" },
-      { kind: "icon", id: "ok", icon: "Wrench" },
-    ],
+    elements: [{ kind: "image", id: "img", src: "missing.png" }],
   });
 
   expect(r).toMatchObject({
     ok: true,
-    value: {
-      notices: [
-        expect.stringContaining("«i»"),
-        expect.stringContaining("«img»"),
-        expect.stringContaining("«l»"),
-      ],
+    value: { notices: [expect.stringContaining("«img»")] },
+  });
+});
+
+it("rejects an unknown icon, suggesting the closest name (074/R1)", async () => {
+  const r = await build({
+    elements: [{ kind: "icon", id: "i", icon: "Wrenchh" }],
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      code: "unknown_icon",
+      message: expect.stringContaining("«Wrench»"),
     },
+  });
+});
+
+it("takes an icon name in any case or kebab-case (074/R1)", async () => {
+  const r = await build(
+    { elements: [{ kind: "icon", id: "i", icon: "arrow-right" }] },
+    "s",
+  );
+  const scene = await registry.call(
+    "scene_get",
+    { project: "p", scene: "s", full: true },
+    ctx,
+  );
+
+  expect(r).toMatchObject({ ok: true, value: { notices: [] } });
+  expect(scene).toMatchObject({
+    ok: true,
+    value: { elements: [{ icon: "ArrowRight" }] },
+  });
+});
+
+it("rejects a line attached to an id the scene lacks, listing the ids (074/R1)", async () => {
+  const r = await build({
+    elements: [
+      { kind: "rect", id: "r" },
+      { kind: "line", id: "l", to: "nope" },
+    ],
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "unknown_target", message: expect.stringContaining("«r»") },
   });
 });
 
 it("notes a missing resource once when the build is saved (070/D3)", async () => {
   const r = await build(
-    { elements: [{ kind: "icon", id: "i", icon: "no-such-icon" }] },
+    { elements: [{ kind: "image", id: "img", src: "missing.png" }] },
     "s",
   );
 
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: [expect.stringContaining("«i»")] },
+    value: { notices: [expect.stringContaining("«img»")] },
   });
 });
 
 const call = (name: string, input: Record<string, unknown>) =>
   registry.call(name, { project: "p", scene: "s", ...input }, ctx);
-const savedWithMissingIcon = () =>
+const savedWithMissingImage = () =>
   build(
     {
       elements: [
-        { kind: "icon", id: "i", icon: "no-such-icon" },
+        { kind: "image", id: "img", src: "missing.png" },
         { kind: "rect", id: "r" },
-        { kind: "line", id: "l", from: "r", to: "i" },
+        { kind: "line", id: "l", from: "r", to: "img" },
       ],
     },
     "s",
   );
 
 it("leaves out notices about elements a write did not change (071/D3)", async () => {
-  await savedWithMissingIcon();
+  await savedWithMissingImage();
 
   const r = await call("element_update", { id: "r", patch: { w: 120 } });
 
@@ -76,18 +111,18 @@ it("leaves out notices about elements a write did not change (071/D3)", async ()
 });
 
 it("notes a missing resource on the element a write changed (071/D3)", async () => {
-  await savedWithMissingIcon();
+  await savedWithMissingImage();
 
-  const r = await call("element_update", { id: "i", patch: { w: 80 } });
+  const r = await call("element_update", { id: "img", patch: { w: 80 } });
 
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: [expect.stringContaining("«i»")] },
+    value: { notices: [expect.stringContaining("«img»")] },
   });
 });
 
 it("notes a line end left loose by removing its element (071/D3)", async () => {
-  await savedWithMissingIcon();
+  await savedWithMissingImage();
 
   const r = await call("element_remove", { id: "r" });
 

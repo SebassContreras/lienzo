@@ -11,6 +11,7 @@ const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
 import { sceneDefaults } from "./scene-defaults.ts";
+import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import {
   animLibrary,
@@ -45,16 +46,19 @@ export async function buildCompact(
       animLibrary: library,
       base: await sceneDefaults(ctx),
     });
-    scene = checkScene({
-      ...full.scene,
-      elements: await withFileAspects(
-        ctx,
-        full.scene.elements,
-        compact.elements ?? [],
-      ),
-    });
+    scene = withCanonicalIcons(
+      checkScene({
+        ...full.scene,
+        elements: await withFileAspects(
+          ctx,
+          full.scene.elements,
+          compact.elements ?? [],
+        ),
+      }),
+    );
     checkAnimPresets(scene, library);
     checkShots(scene);
+    checkReferences(scene);
     notices = [
       ...ignoredFields(full.scene, scene).map(ignoredNotice),
       ...full.notices,
@@ -62,11 +66,7 @@ export async function buildCompact(
   } catch (err: unknown) {
     // the failing path is the compact one: elements keep their index (069/D12)
     if (err instanceof ToolFailure)
-      fail(
-        "invalid_compact_scene",
-        err.error.message,
-        join("compact", err.error.path),
-      );
+      fail(err.error.code, err.error.message, join("compact", err.error.path));
     const msg = err instanceof Error ? err.message : String(err);
     const path = /^([\w.]+): /.exec(msg)?.[1] ?? "";
     fail("invalid_compact_scene", msg, join("compact", path));

@@ -13,6 +13,7 @@ import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
 import { fail } from "./registry.ts";
+import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
 
@@ -113,16 +114,19 @@ export function checkShots(scene: Scene): void {
 
 /**
  * `data` checked as a scene with its `animPreset` names expanded into copied values
- * (019/D10); an unknown name fails. `notices` lists what a preset could not apply.
+ * (019/D10); an unknown name fails, and so does a reference a changed element leaves
+ * dangling (074/D1). `notices` lists what a preset could not apply.
  */
 export async function prepareScene(
   ctx: Ctx,
   data: unknown,
+  previous?: Scene,
 ): Promise<{ scene: Scene; notices: string[] }> {
-  const scene = checkScene(data);
+  const scene = withCanonicalIcons(checkScene(data));
   const library = await animLibrary(ctx);
   checkAnimPresets(scene, library);
   checkShots(scene);
+  checkReferences(scene, previous);
   const expanded = expandAnimPresets(scene, library);
   return { scene: checkScene(expanded.scene), notices: expanded.notices };
 }
@@ -145,7 +149,7 @@ export async function saveScene(
   data: unknown,
   previous?: Scene,
 ): Promise<SceneResult> {
-  const { scene, notices } = await prepareScene(ctx, data);
+  const { scene, notices } = await prepareScene(ctx, data, previous);
   notices.push(...(await resourceNotices(ctx, scene, previous)));
   return { scene: await ctx.store.writeScene(name, scene), notices };
 }

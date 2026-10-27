@@ -37,3 +37,31 @@ it("builds an unsaved compact scene on the project's canvas (074/R3)", async () 
 
   expect(out.scene).toMatchObject({ width: 1080, height: 1920, duration: 6 });
 });
+
+it("rejects an element bound to a shot the scene lacks, listing the shots (074/R1)", async () => {
+  await value("scene_create", { scene: "s" });
+  await value("shot_set", { scene: "s", id: "s1", start: 0, end: 3 });
+  await value("element_add", { scene: "s", kind: "rect", patch: { id: "r" } });
+
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { shot: "nope" },
+  });
+
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "unknown_shot", message: expect.stringContaining("«s1»") },
+  });
+});
+
+it("rejects an unknown shot in scene_validate (074/R1)", async () => {
+  const r = await value("scene_validate", {
+    compact: { elements: [{ kind: "rect", shot: "s9" }] },
+  });
+
+  expect(r).toMatchObject({
+    valid: false,
+    message: expect.stringContaining("«s9»"),
+  });
+});
