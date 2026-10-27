@@ -36,7 +36,8 @@ The fourth QA run lists 5 problems as still open and 2 new ones. Items 1–3 (`e
 - [x] 072/T005 [agent] One shot/duration rule for every scene write and scene_validate — covers R4, D4
 - [x] 072/T006 [agent] Reproduce the group box with an animated child; fix placement if needed — covers R5, D5
       found: the group box was its own `x`/`y`/`w`/`h`, so a child animated to x 1100 at t=3 gave no `out_of_bounds`; an unclipped group's box is now the union with its placed children. The clip itself is right: a `clip: true` group cuts to its own box by design (059)
-- [ ] 072/T007 [agent] Verify: typecheck, lint on touched files, tests, replay the 7 QA cases with `pnpm lienzo` and a preview of the counter in s2 at t=3 — covers R1–R5
+- [x] 072/T007 [agent] Verify: typecheck, lint on touched files, tests, replay the 7 QA cases with `pnpm lienzo` and a preview of the counter in s2 at t=3 — covers R1–R5
+      verified: `pnpm typecheck`, biome on the touched files, `pnpm test` (1195 tests, 146 files); replayed with `pnpm lienzo` on a scratch project: `w: -50` and `opacity: 5` rejected, an identical rect and ellipse give `shape_overlap`, a counter in s2 (3–6 s) gets `progress` 3→4.5 and a preview shows 83+ at t=3.1 and 1,250+ at t=5, `scene_update duration: 2` fails at `shots`; group box covered by layout tests
 
 ## Changes
 - 2026-10-27: 072/D4 keeps the `shotProblem` call in `shot-set.ts`. Why: its tests and callers expect the error at the `end`/`start` input, not at `shots`. One function still holds the rule. Work: T005.
