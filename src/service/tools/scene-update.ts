@@ -20,7 +20,8 @@ export const sceneUpdate = defineTool({
     "Change a saved scene's settings with a partial patch: width, height, duration, fps, mode, " +
     "audio, audioTracks and symbols. Objects merge key by key, anything else is replaced, and " +
     "`null` removes a key (JSON Merge Patch, RFC 7386), e.g. `{ symbols: { card: null } }` " +
-    "deletes a symbol. Elements, shots and the background have their own tools.",
+    "deletes a symbol. Elements, shots and the background have their own tools. A `duration` " +
+    "shorter than the end of a shot is rejected: move or remove the shot first (shot_set).",
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,

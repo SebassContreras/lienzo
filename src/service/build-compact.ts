@@ -15,6 +15,7 @@ import {
   animLibrary,
   checkAnimPresets,
   checkScene,
+  checkShots,
   findPreset,
 } from "./scenes.ts";
 
@@ -51,6 +52,7 @@ export async function buildCompact(
       ),
     });
     checkAnimPresets(scene, library);
+    checkShots(scene);
     notices = [
       ...ignoredFields(full.scene, scene).map(ignoredNotice),
       ...full.notices,

@@ -7,6 +7,7 @@ import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import { parseScene } from "../model/schema.ts";
+import { shotProblem } from "../model/shots.ts";
 import { expandAnimPresets } from "../presets/anim-presets.ts";
 import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
@@ -76,6 +77,16 @@ export function checkAnimPresets(
 }
 
 /**
+ * Fails when a shot ends after the scene or two shots overlap (072/D4): every scene write,
+ * `scene_update` shortening the scene included, and `scene_validate` apply the rule `shot_set`
+ * does. Opening a stored scene does not, so a broken one can still be read and fixed.
+ */
+export function checkShots(scene: Scene): void {
+  const problem = shotProblem(scene.shots ?? [], scene.duration);
+  if (problem) fail(problem.code, problem.message, "shots");
+}
+
+/**
  * `data` checked as a scene with its `animPreset` names expanded into copied values
  * (019/D10); an unknown name fails. `notices` lists what a preset could not apply.
  */
@@ -86,6 +97,7 @@ export async function prepareScene(
   const scene = checkScene(data);
   const library = await animLibrary(ctx);
   checkAnimPresets(scene, library);
+  checkShots(scene);
   const expanded = expandAnimPresets(scene, library);
   return { scene: checkScene(expanded.scene), notices: expanded.notices };
 }

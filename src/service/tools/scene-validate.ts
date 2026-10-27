@@ -14,7 +14,7 @@ export const sceneValidate = defineTool({
   name: "scene_validate",
   description:
     "Check a whole scene without saving it, as the editor would open it (animation " +
-    "presets it names must exist). Returns the first failing path. A valid scene can " +
+    "presets it names must exist, and shots must end within the scene and not overlap). Returns the first failing path. A valid scene can " +
     "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
     "project (it would draw with a fallback; run font_install), or a text whose width is " +
     "estimated because its font has no metrics here (check it with scene_preview). " +

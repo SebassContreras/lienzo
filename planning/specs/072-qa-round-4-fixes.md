@@ -20,7 +20,7 @@ The fourth QA run lists 5 problems as still open and 2 new ones. Items 1–3 (`e
 - D3 (R3): `withCountUp(el, given, scene)` in `src/components/counter/count-up.ts` reads the shot window: `start = shot?.start ?? 0` and `end = min(start + COUNT_UP_SECONDS, shot?.end ?? duration, duration)`. Its callers (`element_add`, `buildElement`) pass the scene (or its shots) instead of `duration`. Keyframe `t` is scene time (see the `keyframe_set` description), so no conversion is needed.
   - _Trade-offs_: If a shot is moved later, the counter's track does not follow it.
   - _Mitigation_: This is the same as any track the user sets by hand. The tool description says the track is written once, when the counter is added.
-- D4 (R4): Call `shotProblem(scene.shots, scene.duration)` in the one shared scene check (`prepareScene` in `src/service/scenes.ts`) that every write and `scene_validate` go through. Then remove the separate call in `shot-set.ts`. This is DRY: one rule in one place.
+- D4 (R4): Call `shotProblem(scene.shots, scene.duration)` in the one shared scene check (`prepareScene` in `src/service/scenes.ts`) that every write and `scene_validate` go through. `shot_set` keeps its own call too, so its error still points at its `start`/`end` input.
   - _Trade-offs_: A stored scene that already breaks the rule can no longer be saved until it is fixed.
   - _Mitigation_: The error names the shot and its `end`. Opening a scene to read it does not run the check, so only writes do.
 - D5 (R5): First reproduce it: a test with a group whose child has `tracks.x` 500→800 checks the group's box at t=3. If the box comes from the children's static `x`/`y`, then `placedElementsAt` builds the group box from the children's placed boxes at `t`. Grouped and ungrouped share the same box code, with no second implementation.
@@ -33,6 +33,9 @@ The fourth QA run lists 5 problems as still open and 2 new ones. Items 1–3 (`e
 - [x] 072/T002 [agent] Build version/sha in server output; QA note in AGENTS.md — covers R1, D1
 - [x] 072/T003 [agent] shape_overlap for equal boxes (test on each side of the threshold) — covers R2, D2
 - [x] 072/T004 [agent] Counter count-up starts at its shot's start — covers R3, D3
-- [ ] 072/T005 [agent] One shot/duration rule for every scene write and scene_validate — covers R4, D4
+- [x] 072/T005 [agent] One shot/duration rule for every scene write and scene_validate — covers R4, D4
 - [ ] 072/T006 [agent] Reproduce the group box with an animated child; fix placement if needed — covers R5, D5
 - [ ] 072/T007 [agent] Verify: typecheck, lint on touched files, tests, replay the 7 QA cases with `pnpm lienzo` and a preview of the counter in s2 at t=3 — covers R1–R5
+
+## Changes
+- 2026-10-27: 072/D4 keeps the `shotProblem` call in `shot-set.ts`. Why: its tests and callers expect the error at the `end`/`start` input, not at `shots`. One function still holds the rule. Work: T005.
