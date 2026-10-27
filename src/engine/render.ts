@@ -46,7 +46,7 @@ export function drawElements(
     // A hidden element is skipped from drawing (034/D4)
     if (el.hidden) continue;
     // An element bound to a shot is active only within the shot's window (055/D2)
-    if (!isElementActiveInShot(el, t, scene.shots)) continue;
+    if (!isElementActiveInShot(el, t, scene.shots, scene.duration)) continue;
     // A mask element itself is skipped instead of being drawn directly (025/D2)
     if (maskIds.has(el.id)) continue;
 

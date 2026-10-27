@@ -29,7 +29,7 @@ it("rejects a negative width in an element_update patch", async () => {
     patch: { w: -50 },
   });
 
-  expect(r).toMatchObject({ ok: false, error: { path: "elements.0.w" } });
+  expect(r).toMatchObject({ ok: false, error: { path: "elements.r.w" } });
 });
 
 it("rejects an opacity keyframe above 1", async () => {

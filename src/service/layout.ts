@@ -87,7 +87,7 @@ function placedElementsAt(scene: Scene, t: number): PlacedElement[] {
     for (const raw of elements) {
       const view = parentView ?? ((box: Box) => shotBox(box, raw, scene, t));
       if (raw.hidden) continue;
-      if (!isElementActiveInShot(raw, t, scene.shots)) continue;
+      if (!isElementActiveInShot(raw, t, scene.shots, scene.duration)) continue;
 
       // Skip elements that have not yet entered (before in.delay) or have exited (after out.delay + out.duration) (055/R5)
       const anim = raw.anim;

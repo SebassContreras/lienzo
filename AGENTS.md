@@ -98,6 +98,9 @@ What exists today:
   (`HELD_AREA`); the counter count-up starts at its shot (`withCountUp(el, given, scene)`);
   `checkShots` (`src/service/scenes.ts`) runs on every scene write, `scene_build` and
   `scene_validate`; an unclipped group's layout box holds its placed children (`withChildBoxes`)
+- QA round 5 (073): a shot owns `[start, end)` (the scene's last instant stays with the last
+  shot), shared by render and layout through `isElementActiveInShot(el, t, shots, duration)`;
+  scene check errors name elements by id path (`idPath` in `src/service/scenes.ts`)
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
@@ -211,7 +214,8 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
 - Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
   it started with, and a stale server reports fixed bugs as open (071).
   The server's MCP `instructions` name the commit it started from; compare it with
-  `git rev-parse --short HEAD` (072).
+  `git rev-parse --short HEAD` (072). A QA report of "still open" counts only with that
+  commit matching `HEAD`, or replayed with `pnpm lienzo`; otherwise replay it first (073).
 
 <!-- spectrace -->
 ## Planning

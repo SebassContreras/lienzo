@@ -21,12 +21,15 @@ export type ResolvedCamera = {
 /**
  * Returns whether an element bound to a shot (or unbounded) is active at time `t`.
  * Top-level elements without `shot` are active throughout the scene.
- * Elements with `shot` are active within [shot.start, shot.end] + transition overlap.
+ * Elements with `shot` are active within [shot.start, shot.end) + transition overlap: at a cut
+ * the next shot owns the instant (073/D2). A shot reaching the scene's end keeps `t = end`,
+ * so the last frame still shows it.
  */
 export function isElementActiveInShot(
   el: Element,
   t: number,
   shots?: readonly Shot[],
+  duration = Number.POSITIVE_INFINITY,
 ): boolean {
   if (!el.shot) return true;
   if (!shots || shots.length === 0) return true;
@@ -38,7 +41,7 @@ export function isElementActiveInShot(
   const start = Math.max(0, shot.start - transDuration);
   const end = shot.end + transDuration;
 
-  return t >= start && t <= end;
+  return t >= start && (t < end || (end >= duration && t === end));
 }
 
 /**

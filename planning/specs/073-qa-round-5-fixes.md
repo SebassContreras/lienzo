@@ -20,10 +20,16 @@ The fifth QA run lists one item still open and two new ones. Item 3 (`preset_lis
   - _Mitigation_: The ids are unique per scene, and other errors already use ids. The tool descriptions say paths name elements by id.
 
 ## Tasks
-- [ ] 073/T001 [agent] Replay item 3 on a restarted server with a matching build id; regression test + fix only if it fails; AGENTS.md QA note — covers R1, D1
-- [ ] 073/T002 [agent] Failing test: render vs layout at a shot boundary (t=3 with s1 0–3, s2 3–6, plus the last frame at `duration`) — covers R2, D2
-- [ ] 073/T003 [agent] One half-open activity window shared by render and layout; fix whatever T002 shows — covers R2, D2
-- [ ] 073/T004 [agent] Failing test then fix: `element_update` with `w: -50` on element `a` (and a nested child) reports `elements.a.w` — covers R3, D3
-- [ ] 073/T005 [agent] Verify: typecheck, lint on touched files, tests, replay all 3 QA cases with `pnpm lienzo` and a preview at t=2.99, 3 and 4 — covers R1–R3
+- [x] 073/T001 [agent] Replay item 3 on a restarted server with a matching build id; regression test + fix only if it fails; AGENTS.md QA note — covers R1, D1
+      found: this session's MCP server lists `preset_list` with no input, while `project` was added in 948f4fc (2026-10-27 15:05), so it was a stale server; with `pnpm lienzo`, `preset_list`/`preset_get { project }` find «Mi tarjeta», by display name too (regression test in `qa-round-5.test.ts`)
+- [x] 073/T002 [agent] Failing test: render vs layout at a shot boundary (t=3 with s1 0–3, s2 3–6, plus the last frame at `duration`) — covers R2, D2
+      found: render and layout shared `isElementActiveInShot`, whose closed window `t <= end` made both s1 and s2 active at t=3; the export's last frame is `(n−1)/fps`, but the preview and the editor can sit on `t = duration`, so that instant stays with a shot ending there
+- [x] 073/T003 [agent] One half-open activity window shared by render and layout; fix whatever T002 shows — covers R2, D2
+- [x] 073/T004 [agent] Failing test then fix: `element_update` with `w: -50` on element `a` (and a nested child) reports `elements.a.w` — covers R3, D3
+      found: the error message repeated the index path too (`elements.0.w: …`), so it is rewritten with the id path as well
+- [x] 073/T005 [agent] Verify: typecheck, lint on touched files, tests, replay all 3 QA cases with `pnpm lienzo` and a preview at t=2.99, 3 and 4 — covers R1–R3
+      verified: `pnpm typecheck`, biome on touched files, `pnpm test` (1200 tests, 147 files); replayed with `pnpm lienzo` on a scratch project: t=2.99 shows a and b only, t=3 and t=4 only `cnt` with no `shape_overlap`, t=6 keeps `cnt`; previews at 2.99/3/4 draw s1, the counter, the counter; `element_update w: -50` fails at `elements.a.w`; `preset_list`/`preset_get` with `project` find «Mi tarjeta»
 
 ## Changes
+- 2026-10-27: 073/D2 keeps `t = end` for a shot ending at the scene's `duration`. Why: the preview and the editor can render `t = duration`, and the last shot would vanish there. Work: T003.
+- 2026-10-27: 073/D3 also rewrites the path inside the error message. Why: the message repeated `elements.0.w`. Work: T004.

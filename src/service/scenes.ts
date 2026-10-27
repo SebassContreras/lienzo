@@ -16,12 +16,37 @@ import { fail } from "./registry.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
 
+/**
+ * `path` with its leading `elements.N(.children.M)*` indices replaced by the element's id
+ * path (`elements.g/child.w`), as other errors name elements (073/D3). Kept as is where an
+ * index has no element with an id.
+ */
+export function idPath(data: unknown, path: string): string {
+  const parts = path.split(".");
+  if (parts[0] !== "elements") return path;
+  const ids: string[] = [];
+  let list = (data as { elements?: unknown })?.elements;
+  let i = 1;
+  while (Array.isArray(list) && /^\d+$/.test(parts[i] ?? "")) {
+    const id = (list[Number(parts[i])] as { id?: unknown } | undefined)?.id;
+    if (typeof id !== "string") return path;
+    ids.push(id);
+    i++;
+    if (parts[i] !== "children") break;
+    list = (list[Number(parts[i - 1])] as { children?: unknown }).children;
+    i++;
+  }
+  if (ids.length === 0) return path;
+  return ["elements", ids.join("/"), ...parts.slice(i)].join(".");
+}
+
 /** `data` as a scene, or a failure naming the first failing path under `prefix`. */
 export function checkScene(data: unknown, prefix = ""): Scene {
   const parsed = parseScene(data);
   if (parsed.ok) return parsed.value;
-  const path = [prefix, parsed.path].filter(Boolean).join(".");
-  return fail("invalid_scene", parsed.error, path);
+  const named = idPath(data, parsed.path);
+  const path = [prefix, named].filter(Boolean).join(".");
+  return fail("invalid_scene", parsed.error.replace(parsed.path, named), path);
 }
 
 /** The stored scene `name`, checked. */
