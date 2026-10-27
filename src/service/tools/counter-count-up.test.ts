@@ -65,3 +65,52 @@ it("gives a built counter with no progress a count-up track (071/D5)", async () 
     },
   });
 });
+
+it("starts a new counter's count-up when its shot starts (072/D3)", async () => {
+  await call("scene_build", {
+    compact: {
+      duration: 6,
+      shots: [
+        { id: "s1", start: 0, end: 3 },
+        { id: "s2", start: 3, end: 6 },
+      ],
+      elements: [{ kind: "counter", shot: "s2" }],
+    },
+    save: "s",
+    overwrite: true,
+  });
+
+  expect(await counterOf()).toMatchObject({
+    tracks: {
+      progress: [
+        { t: 3, value: 0 },
+        { t: 4.5, value: 1 },
+      ],
+    },
+  });
+});
+
+it("ends an added counter's count-up with its shot (072/D3)", async () => {
+  await call("scene_update", { scene: "s", patch: { duration: 6 } });
+  await call("shot_set", {
+    scene: "s",
+    id: "s2",
+    start: 3,
+    end: 4,
+  });
+
+  await call("element_add", {
+    scene: "s",
+    kind: "counter",
+    patch: { shot: "s2" },
+  });
+
+  expect(await counterOf()).toMatchObject({
+    tracks: {
+      progress: [
+        { t: 3, value: 0 },
+        { t: 4, value: 1 },
+      ],
+    },
+  });
+});

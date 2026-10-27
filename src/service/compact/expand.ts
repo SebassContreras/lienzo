@@ -2,7 +2,10 @@
  * Pure scene expansion from compact representation (011/D2, D3, D4, D6, R1-R9).
  */
 
-import { withCountUp } from "../../components/counter/count-up.ts";
+import {
+  type CountUpScene,
+  withCountUp,
+} from "../../components/counter/count-up.ts";
 import { dataFields } from "../../components/fields/index.ts";
 import { descriptorOf } from "../../components/index.ts";
 import { ensureDrawOnStroke } from "../../components/path/draw-on.ts";
@@ -54,8 +57,8 @@ type ExpandState = {
   notices: string[];
   /** The scene's symbols, so a `use` with no size takes its symbol's (056). */
   symbols?: Scene["symbols"];
-  /** The scene's duration, so a new counter's count-up fits it (071/D5). */
-  duration: number;
+  /** The scene's duration and shots, so a new counter's count-up fits its shot (072/D3). */
+  timing: CountUpScene;
 };
 
 /** Parses size specification (e.g. "1080x1080", "1920x1080", "story", or [w, h]) */
@@ -279,7 +282,7 @@ async function buildElement(
       tracks as Record<string, import("./tracks.ts").CompactTrackInput>,
     );
   }
-  if (!rawPreset) element = withCountUp(element, raw, state.duration);
+  if (!rawPreset) element = withCountUp(element, raw, state.timing);
 
   if (origin !== undefined) {
     element.origin = resolveOrigin(
@@ -346,7 +349,10 @@ export async function expandScene(
     findPreset: options.findPreset,
     defaults: compact.defaults,
     notices: [],
-    duration: compact.duration ?? scene.duration,
+    timing: {
+      duration: compact.duration ?? scene.duration,
+      shots: compact.shots,
+    },
   };
 
   const dims = resolveSceneDimensions(

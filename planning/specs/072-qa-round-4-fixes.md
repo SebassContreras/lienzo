@@ -32,7 +32,7 @@ The fourth QA run lists 5 problems as still open and 2 new ones. Items 1–3 (`e
       found: with `pnpm lienzo` on main, `w: -50` fails at `elements.0.w`, `opacity: 5` fails with `invalid_value`, `preset_list`/`preset_get` with `project` find the project preset; no fix needed, qa-round-3.test.ts already holds them
 - [x] 072/T002 [agent] Build version/sha in server output; QA note in AGENTS.md — covers R1, D1
 - [x] 072/T003 [agent] shape_overlap for equal boxes (test on each side of the threshold) — covers R2, D2
-- [ ] 072/T004 [agent] Counter count-up starts at its shot's start — covers R3, D3
+- [x] 072/T004 [agent] Counter count-up starts at its shot's start — covers R3, D3
 - [ ] 072/T005 [agent] One shot/duration rule for every scene write and scene_validate — covers R4, D4
 - [ ] 072/T006 [agent] Reproduce the group box with an animated child; fix placement if needed — covers R5, D5
 - [ ] 072/T007 [agent] Verify: typecheck, lint on touched files, tests, replay the 7 QA cases with `pnpm lienzo` and a preview of the counter in s2 at t=3 — covers R1–R5

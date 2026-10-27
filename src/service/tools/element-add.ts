@@ -85,9 +85,7 @@ export const elementAdd = defineTool({
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
     const result = await editScene(effectiveCtx, scene, (s) => {
       const fresh =
-        preset === undefined
-          ? withCountUp(added, patch ?? {}, s.duration)
-          : added;
+        preset === undefined ? withCountUp(added, patch ?? {}, s) : added;
       mapElementsDeep(s.elements, (e) => {
         if (e.id === added.id)
           fail("duplicate_id", `Ya hay un elemento «${added.id}»`, "patch.id");
