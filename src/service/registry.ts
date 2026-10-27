@@ -105,6 +105,39 @@ function withIgnored(
   return { ...(value as object), notices: [...ignored, ...notices] };
 }
 
+const quoted = (keys: readonly string[]) =>
+  keys.map((k) => `«${k}»`).join(", ");
+
+/**
+ * Where the keys of a failing `input` belong (076/D2): top-level keys the tool does not take,
+ * and, when an object parameter is missing, the guess that they go inside it. Empty when
+ * every key is the tool's.
+ */
+export function misplacedHint(
+  tool: Pick<Tool, "name" | "input">,
+  input: unknown,
+  issues: readonly z.core.$ZodIssue[],
+): string {
+  const shape = (tool.input as { shape?: Record<string, unknown> }).shape;
+  if (!shape || typeof input !== "object" || input === null) return "";
+  const given = input as Record<string, unknown>;
+  const foreign = Object.keys(given).filter((k) => !(k in shape));
+  if (foreign.length === 0) return "";
+  const missing = issues
+    .filter(
+      (i) =>
+        i.code === "invalid_type" &&
+        i.expected === "object" &&
+        i.path.length === 1 &&
+        given[String(i.path[0])] === undefined,
+    )
+    .map((i) => String(i.path[0]));
+  const verb = foreign.length > 1 ? "no son parámetros" : "no es un parámetro";
+  return missing.length > 0
+    ? `${quoted(foreign)} ${verb} de ${tool.name}: ¿van dentro de ${quoted(missing)}?`
+    : `${quoted(foreign)} ${verb} de ${tool.name} (parámetros: ${quoted(Object.keys(shape))})`;
+}
+
 /**
  * Runs `tool` on `input`: the input is parsed first, a `ToolFailure` becomes an error result,
  * and the output is parsed so callers only ever see what the schema promises.
@@ -121,8 +154,13 @@ async function callTool(
       ok: false,
       error: {
         code: "invalid_input",
-        message: parsed.error.issues
-          .map((i) => `${i.path.join(".") || "(entrada)"}: ${i.message}`)
+        message: [
+          ...parsed.error.issues.map(
+            (i) => `${i.path.join(".") || "(entrada)"}: ${i.message}`,
+          ),
+          misplacedHint(tool, input, parsed.error.issues),
+        ]
+          .filter(Boolean)
           .join("\n"),
         path: issue?.path.map(String).join(".") ?? "",
       },

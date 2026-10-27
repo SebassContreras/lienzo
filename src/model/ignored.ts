@@ -47,6 +47,7 @@ function knownKeys(parsed: Record<string, unknown>): string[] {
 
 /** CSS names that resemble no field by spelling, mapped to the field they mean. */
 const ALIASES: Record<string, string> = {
+  content: "text",
   family: "font",
   fontfamily: "font",
   fontweight: "weight",

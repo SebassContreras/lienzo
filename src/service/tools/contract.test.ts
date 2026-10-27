@@ -298,3 +298,32 @@ it("element_update keeps tracks given with a new shot as given (075/R1)", async 
     value: { elements: [{ tracks: { x: [{ t: 3 }] } }] },
   });
 });
+
+it("scene_build given the compact fields at the top level says they go in compact (076/R2)", async () => {
+  const r = await call("scene_build", { elements: [], size: "9:16" });
+
+  expect(r).toMatchObject(
+    fails(
+      /«elements», «size» no son parámetros de scene_build: ¿van dentro de «compact»\?/,
+    ),
+  );
+});
+
+it("a tool given a key it does not take lists its parameters (076/R2)", async () => {
+  const r = await call("element_move", { scene: "s", id: "r", position: 2 });
+
+  expect(r).toMatchObject(
+    fails(/«position» no es un parámetro de element_move \(parámetros: .*«to»/),
+  );
+});
+
+it("suggests text for content on a text element (076/R3)", async () => {
+  const r = await call("scene_build", {
+    compact: { elements: [{ kind: "text", content: "Hola" }] },
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringContaining("«text»")] },
+  });
+});
