@@ -327,3 +327,22 @@ it("suggests text for content on a text element (076/R3)", async () => {
     value: { notices: [expect.stringContaining("«text»")] },
   });
 });
+
+it("project_create makes the project id from the name alone (076/R4)", async () => {
+  const r = await registry.call("project_create", { name: "Café Norte" }, ctx);
+
+  expect(r).toMatchObject({ ok: true, value: { project: "cafe-norte" } });
+});
+
+it("project_create fills the canvas fields not given (076/D4)", async () => {
+  const r = await registry.call(
+    "project_create",
+    { name: "Vertical", canvas: { height: 1920 } },
+    ctx,
+  );
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { canvas: { width: 1080, height: 1920, fps: 30, duration: 5 } },
+  });
+});

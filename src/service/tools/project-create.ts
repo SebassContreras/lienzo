@@ -4,6 +4,7 @@ import {
   ProjectConfigSchema,
   ProjectSlugSchema,
 } from "../../model/project.ts";
+import { projectSlug } from "../../presets/slug.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
 
@@ -11,9 +12,11 @@ export const projectCreate = defineTool({
   name: "project_create",
   description:
     "Create a new isolated project workspace in projects/<project>/ with its brand guide, " +
-    "color palette, and directories for assets, presets, and scenes.",
+    "color palette, and directories for assets, presets, and scenes. `project` (lowercase " +
+    "letters, digits and `-`) defaults to `name` made into one (accents folded: «Café Norte» " +
+    "→ cafe-norte); the result names it. `canvas` fields not given take 1080x1080, 30 fps, 5 s.",
   input: z.object({
-    project: ProjectSlugSchema,
+    project: ProjectSlugSchema.optional(),
     name: z.string().min(1, "El nombre del proyecto es obligatorio"),
     description: z.string().optional(),
     // colors are checked here, so a bad one fails on its path (069/D1)
@@ -29,6 +32,14 @@ export const projectCreate = defineTool({
   }),
   output: ToolProjectSchema,
   async run({ project, name, description, palette, canvas }, ctx) {
+    // one slug rule for every name (074/D6, 076/D4)
+    const id = project ?? projectSlug(name).slice(0, 64).replace(/-+$/, "");
+    if (!id)
+      fail(
+        "invalid_input",
+        `No se puede hacer un identificador con «${name}»: indica \`project\` (minúsculas, números y guiones)`,
+        "project",
+      );
     try {
       const config = ProjectConfigSchema.parse({
         name,
@@ -44,17 +55,11 @@ export const projectCreate = defineTool({
               custom: palette.custom ?? [],
             }
           : undefined,
-        canvas: canvas
-          ? {
-              width: canvas.width ?? 1080,
-              height: canvas.height ?? 1080,
-              fps: canvas.fps ?? 30,
-              duration: canvas.duration ?? 5,
-            }
-          : undefined,
+        // fields not given take the schema's defaults
+        canvas,
       });
 
-      return asToolProject(await ctx.projects.create(project, config));
+      return asToolProject(await ctx.projects.create(id, config));
     } catch (error) {
       fail(
         "project_create_failed",
