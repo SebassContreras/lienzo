@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { groupElements } from "../../engine/groups.ts";
+import type { Element } from "../../model/model.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { openScene, SceneResult, saveScene } from "../scenes.ts";
@@ -9,7 +10,8 @@ export const elementGroup = defineTool({
   description:
     "Put two or more top-level elements (by `id`) into one new group, as the editor's Ctrl+G " +
     "does: the group takes their bounding box and the topmost one's layer, and lines keep " +
-    "their attachments. Returns the group's `id`.",
+    "their attachments. Elements of one shot make a group of that shot; elements of different " +
+    "shots make a group of none (with a notice). Returns the group's `id`.",
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,
@@ -31,6 +33,33 @@ export const elementGroup = defineTool({
     const { scene: grouped, group } = groupElements(current, ids);
     if (!group)
       fail("too_few", "Hacen falta al menos dos elementos distintos", "ids");
-    return { ...(await saveScene(pctx, scene, grouped)), id: group.id };
+    // shots act on top-level elements: one shared shot moves to the group (069/D13)
+    const shots = [...new Set(group.children.map((c) => c.shot ?? ""))];
+    const notices: string[] = [];
+    let saved = grouped;
+    if (shots.length === 1 && shots[0]) {
+      const shot = shots[0];
+      saved = {
+        ...grouped,
+        elements: grouped.elements.map((el) =>
+          el.id === group.id && el.kind === "group"
+            ? {
+                ...el,
+                shot,
+                children: el.children.map(({ shot: _s, ...c }) => c as Element),
+              }
+            : el,
+        ),
+      };
+    } else if (shots.length > 1)
+      notices.push(
+        `Los elementos son de tomas distintas (${shots.map((s) => s || "sin toma").join(", ")}): el grupo no queda en ninguna; cada hijo solo se ve en su toma, sin su transición ni su cámara`,
+      );
+    const result = await saveScene(pctx, scene, saved);
+    return {
+      ...result,
+      notices: [...notices, ...result.notices],
+      id: group.id,
+    };
   },
 });

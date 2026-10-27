@@ -1,3 +1,4 @@
+import { extname } from "node:path";
 import { z } from "zod";
 import { writeExport } from "../exports.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
@@ -67,6 +68,15 @@ export const sceneExport = defineTool({
       rendered.bytes,
       ext,
     );
+    const webm = format === "mp4" && ext !== "mp4";
+    if (
+      !webm &&
+      out &&
+      extname(out).toLowerCase() !== extname(target).toLowerCase()
+    )
+      notices.push(
+        `Se guardó como «${target}»: la extensión sigue al formato real`,
+      );
     return {
       file: target,
       type: rendered.type,

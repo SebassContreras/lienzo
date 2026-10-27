@@ -7,6 +7,7 @@ import { buildCompact } from "../build-compact.ts";
 import { FLAT_KINDS } from "../compact/defaults.ts";
 import { keepAudio } from "../compact/keep-audio.ts";
 import { availableFonts, measureInstalledFonts } from "../font-install.ts";
+import { storedAsNotice } from "../project-files.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { saveScene } from "../scenes.ts";
@@ -77,6 +78,7 @@ export const sceneBuild = defineTool({
       if (kept.notice) notices.push(kept.notice);
       const result = await saveScene(effectiveCtx, save, expanded);
       saved = result.scene;
+      notices.push(...storedAsNotice(save, saved));
       notices.push(...result.notices);
     }
 

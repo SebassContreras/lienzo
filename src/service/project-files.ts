@@ -32,6 +32,15 @@ export async function animationsDir(
     : join(ctx.root, "presets", "animations");
 }
 
+/** A notice when `given` was stored under another name, `stored` (069/D13). */
+export function storedAsNotice(given: string, stored: string): string[] {
+  return given === stored
+    ? []
+    : [
+        `Se guardó como «${stored}»: los nombres se guardan en minúsculas, con guiones y sin rutas`,
+      ];
+}
+
 /** Renames `from` to `to` in `folder` and returns the new slug. */
 export async function renameIn(
   ctx: ProjectCtx,

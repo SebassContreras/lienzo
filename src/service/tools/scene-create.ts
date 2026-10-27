@@ -2,6 +2,7 @@ import { z } from "zod";
 import { defaultScene } from "../../model/model.ts";
 import { deepMerge } from "../../presets/resolve.ts";
 import { slugify } from "../../presets/slug.ts";
+import { storedAsNotice } from "../project-files.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { SceneResult, saveScene } from "../scenes.ts";
@@ -57,6 +58,8 @@ export const sceneCreate = defineTool({
       );
       sceneData.background = merged;
     }
-    return saveScene(effectiveCtx, scene, sceneData);
+    const result = await saveScene(effectiveCtx, scene, sceneData);
+    result.notices.push(...storedAsNotice(scene, result.scene));
+    return result;
   },
 });

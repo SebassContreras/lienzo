@@ -1,6 +1,7 @@
 import type { ExportOptions } from "../export/export.ts";
 import type { Scene } from "../model/model.ts";
 import type { ProjectCtx } from "./ctx.ts";
+import { fail } from "./registry.ts";
 import type { Rendered } from "./renderer.ts";
 import { openScene } from "./scenes.ts";
 
@@ -29,6 +30,9 @@ export async function resolveAndRenderScene(
     typeof sceneInput === "string"
       ? await openScene(ctx, sceneInput)
       : sceneInput;
+  // a still past the end shows the last frame; say so rather than draw it (069/D9)
+  if (options.format === "png" && (options.time ?? 0) > scene.duration)
+    fail("invalid_time", `t pasa la duración (${scene.duration}s)`, "t");
 
   const effectiveFps =
     options.fps ??
