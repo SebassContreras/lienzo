@@ -101,6 +101,17 @@ What exists today:
 - QA round 5 (073): a shot owns `[start, end)` (the scene's last instant stays with the last
   shot), shared by render and layout through `isElementActiveInShot(el, t, shots, duration)`;
   scene check errors name elements by id path (`idPath` in `src/service/scenes.ts`)
+- QA round 6 (074): wrong input fails, listing the options; notices only for valid input that
+  may surprise. `checkSceneRules` (`src/service/scenes.ts`) runs anim presets, shots and
+  `checkReferences` (`src/service/scene-references.ts`: unknown shot, icon, line target on a
+  changed element) on every write and lists every problem (`failAll`, `ToolError.errors`);
+  `parseSize` (`src/model/size.ts`); one source of scene defaults (`sceneDefaults` /
+  `sceneFromData`, `src/service/scene-defaults.ts`); `withElementDefaults`
+  (`src/model/fill-defaults.ts`) and `sparseScene` (`scene_get`); preset tracks shift to the
+  shot (`fromShotStart`, `src/model/shots.ts`); bare asset refs stored with their project
+  prefix (`withCanonicalAssets`); one `slugify` with accents folded (`src/presets/slug.ts`,
+  `legacySlug` read fallback); `src/service/tools/contract.test.ts` holds the wrong-input
+  rule across tools — a new scene-writing tool adds its cases there
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and

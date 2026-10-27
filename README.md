@@ -111,10 +111,15 @@ How the tools behave, in short:
   field's range (`opacity` 0–1) in `scene_build`, `element_update` and `keyframe_set` alike.
   A shot must end within the scene and not overlap another in `shot_set`, `scene_update`
   (a shorter `duration`), `scene_build` and `scene_validate`.
-- **Notices:** a write answers `notices` about what it ignored or could not draw, only for
-  what the call changed; `scene_validate` lists them all.
-- **Times:** keyframe `t` is scene time, also for elements bound to a shot. A new counter
-  counts up over 1.5 s from its shot's start.
+- **Wrong input fails:** an unknown `size`, `shot`, icon, line target or easing fails in
+  every tool, and the message lists the valid options; `scene_validate` returns every
+  problem in `errors`.
+- **Notices:** a write answers `notices` about what it ignored or could not draw yet (an
+  asset not in the project), only for what the call changed; `scene_validate` lists them all.
+- **Defaults:** `scene_create` and `scene_build` start from the project's canvas;
+  `scene_get` returns each element's non-default fields (`full: true` for all).
+- **Times:** keyframe `t` is scene time, also for elements bound to a shot and for the
+  shot camera. A new counter, and a preset's own tracks, start at its shot's start.
 - **Shot windows:** a shot shows its elements over `[start, end)`. At a cut the instant
   belongs to the shot that starts there, in `scene_preview`, export and
   `scene_inspect_layout` alike; the scene's last instant stays with the shot ending there.

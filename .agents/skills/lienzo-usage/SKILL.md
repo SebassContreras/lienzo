@@ -38,7 +38,10 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
    `preset_get`, `preset_validate` (checks a recipe before `preset_save`), `font_list` (then `font_install` for a Google font you need).
 3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
-   `notices` without writing anything. Read the notices (ignored keys, with the field they
+   `notices` without writing anything. What `compact` leaves out (size, duration, fps,
+   background) comes from the project's canvas, as in `scene_create`; `size` is `"WxH"`,
+   `[w, h]`, a ratio (`"9:16"`, `"4:5"`, `"1:1"`, `"16:9"`) or a format (`"Story"`), and
+   anything else fails. Read the notices (ignored keys, with the field they
    likely meant, missing fonts, which draw in Inter, text widths estimated for a font with no
    metrics: check those with `scene_preview`).
 4. **Check:** `scene_inspect_layout` (text overlaps, `shape_overlap` for shapes stacked on
@@ -49,14 +52,17 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
    audio is kept unless you pass `audioTracks`). `saved` is the scene name and every notice,
    build and save, is in the one `notices` list. A saving build answers short: `saved`,
    `notices` and the `id`/`kind` of each top-level element; pass `response_format:
-   "detailed"` (or call `scene_get`) when you need the expanded scene.
+   "detailed"` (or call `scene_get`) when you need the expanded scene. `scene_get` returns
+   each element as `id`, `kind` and its non-default fields (`full: true` for all of them);
+   that form goes back into `scene_create` / `scene_validate` `data` as is.
 6. **Edit:** `element_update` / `element_add` (`parent` to insert in a group) /
    `element_move` / `element_remove`, `keyframe_set` / `keyframe_remove`, `background_set`,
    `shot_set`, `image_trim`, `element_group` / `element_ungroup`. Targets are an `id` or a
    `group/child` path. Scene settings (size, duration, fps, mode, audio tracks, symbols) go
    through `scene_update`; `scene_list` lists them, `scene_rename` / `scene_delete` manage the files.
    `element_add` takes `patch.id` as the new id (fails if taken) and returns a notice when
-   the element leaves the canvas (give a long text a `w` so it wraps).
+   the element leaves the canvas; a text with no `w` placed by `at` that would be wider
+   than the canvas margins wraps at them. `element_group` takes `id` to name the group.
    Reusables: `preset_save` / `preset_rename` / `preset_delete`, `animation_list` /
    `animation_save` / `animation_delete` (with `project`, the project's own; without it, the
    global library). `preset_list` / `preset_get` take `project` to see the project's presets;
@@ -111,17 +117,33 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
 - Values are checked where they are written: colors are CSS colors (`#rrggbb`, `rgb()`,
   `hsl()`, a name such as `red`), `w`/`h` are ≥ 0 and keyframes stay in their field's range
   (`opacity` 0–1). A still (`scene_export` png, `scene_preview`) at `t` past the duration fails.
-- Notices also name what would draw as a placeholder: an unknown icon, an image `src` that
-  is not a project asset and a line `from`/`to` naming no element. `asset_add` refuses a
+- Wrong references fail, listing the valid ones: a `shot` the scene lacks, an icon lucide
+  lacks (names in any case: `star`, `arrow-right` become `Star`, `ArrowRight`), a line
+  `from`/`to` naming no element, an unknown easing, an `element_move` index past the last
+  sibling. `scene_validate` returns every problem in `errors`; paths name an element by the
+  `id` you gave, else by its index. Notices name what is valid but draws a placeholder: an
+  image `src` that is not a project asset yet, a line end whose element a write removed.
+  A bare asset path (`logos/x.png`, `asset_add`'s `filename`) is stored as
+  `/projects/<project>/assets/logos/x.png`, so `asset_rename` follows it. `asset_add` refuses a
   file that is not the image its extension says. An image given `src` and no `aspect`
   takes the picture's proportion; a new `counter` (no `progress` given) counts up over 1.5 s
-  from its shot's `start` (scene time; the track is written once, when it is added); `list.items` takes `"a\nb"` or `["a", "b"]`.
+  from its shot's `start` (scene time; the track is written once, when it is added); a
+  preset's own tracks (counter, charts, progress) also start at its shot's `start`, and a
+  counter's `from`/`to` in compact are its numbers (on a line they are target ids); `list.items` takes `"a\nb"` or `["a", "b"]`.
 - Italic text is `italic: true` (`fontStyle` is not a field and comes back as ignored).
 - Only `scene_build` and `scene_validate` (with `compact`) take the compact form;
-  `scene_create` and `scene_update` take full scenes (`scene_create` fills a partial
-  `background` object from the defaults).
-- `anim` is an entry/loop/exit shorthand; `tracks` are keyframes `[t, value, easing?]` by
-  field path or `@rotate` / `@scale`, with `repeat: "loop" | "pingpong"` and `until`.
+  `scene_create` and `scene_validate` `data` take scenes whose elements may be partial
+  (filled from their kind's defaults) and a partial `background`; `scene_update` takes scene
+  settings.
+- Two animation models: `anim` is the kind's motion (`{ in, loop, out }`; `anim: "fade"` is
+  short for `{ in: { kind: "fade" } }`, a looping kind such as `"float"` for `loop`), timed
+  from the element's shot; `tracks` are keyframes `[t, value, easing?]` by field path or
+  `@rotate` / `@scale`, with `repeat: "loop" | "pingpong"` and `until`, in scene time. Every
+  `t` is scene time, camera keys included (`shot_set` takes the same short form and notes
+  keys outside the shot). `keyframe_remove` with no key at `t` lists the track's times.
+- Preset recipes are `{ name, kind, category?, traits, set? }` (no other keys; `set` values
+  are checked as the element's fields); `preset_get` shows real ones. Names become file
+  names with accents folded (`Caja Ámbar` → `caja-ambar`).
 - `origin` is the pivot for rotation and scale; `w` on `text` wraps it.
 - `background` is a background preset name, a color (`"#0b1020"`: solid, no gradient,
   dots or light) or an object that starts solid and adds only what it turns on
