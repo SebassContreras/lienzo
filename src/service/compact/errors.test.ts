@@ -25,3 +25,8 @@ it("lists the voices for an unknown one, mixes included (069/D12)", () => {
   expect(unknownVoiceHint("af_bella+am_adam(0.5)")).toBe("");
   expect(unknownVoiceHint("zz_nope")).toContain("af_heart");
 });
+
+it("fails on an unknown size at its path instead of building a square (074/R1)", async () => {
+  const run = expandScene({ size: "potato", elements: [] });
+  await expect(run).rejects.toThrow(/^size: Tamaño «potato»/);
+});

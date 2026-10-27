@@ -23,9 +23,9 @@ import {
   type Element,
   newId,
   type Scene,
-  SIZE_PRESETS,
 } from "../../model/model.ts";
 import type { PresetRecipe } from "../../model/preset.ts";
+import { parseSize } from "../../model/size.ts";
 import { expandAnimPresets } from "../../presets/anim-presets.ts";
 import {
   deepMerge,
@@ -60,37 +60,6 @@ type ExpandState = {
   /** The scene's duration and shots, so a new counter's count-up fits its shot (072/D3). */
   timing: CountUpScene;
 };
-
-/** Parses size specification (e.g. "1080x1080", "1920x1080", "story", or [w, h]) */
-function resolveSceneDimensions(size?: string | [number, number]): {
-  width: number;
-  height: number;
-} {
-  if (Array.isArray(size)) {
-    return { width: size[0], height: size[1] };
-  }
-  if (!size) {
-    return { width: 1080, height: 1080 };
-  }
-
-  const dimMatch = size.match(/^(\d+)[x×](\d+)$/i);
-  if (dimMatch) {
-    return {
-      width: Number.parseInt(dimMatch[1], 10),
-      height: Number.parseInt(dimMatch[2], 10),
-    };
-  }
-
-  const normalized = size.toLowerCase();
-  const preset = SIZE_PRESETS.find((p) =>
-    p.label.toLowerCase().includes(normalized),
-  );
-  if (preset) {
-    return { width: preset.width, height: preset.height };
-  }
-
-  return { width: 1080, height: 1080 };
-}
 
 /** A CSS color written as hex, `rgb(…)` or `hsl(…)` (064/D9); named colors are not matched. */
 const COLOR_PREFIX = /^(#|rgba?\(|hsla?\()/i;
@@ -355,11 +324,14 @@ export async function expandScene(
     },
   };
 
-  const dims = resolveSceneDimensions(
-    compact.size as string | [number, number],
-  );
-  scene.width = compact.width ?? dims.width;
-  scene.height = compact.height ?? dims.height;
+  if (compact.size !== undefined) {
+    const dims = parseSize(compact.size);
+    if ("error" in dims) throw new Error(`size: ${dims.error}`);
+    scene.width = dims.width;
+    scene.height = dims.height;
+  }
+  scene.width = compact.width ?? scene.width;
+  scene.height = compact.height ?? scene.height;
 
   if (compact.duration !== undefined) scene.duration = compact.duration;
   if (compact.fps !== undefined) scene.fps = compact.fps;
