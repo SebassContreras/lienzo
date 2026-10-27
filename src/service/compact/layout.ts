@@ -9,6 +9,7 @@ import type {
   CompactOrigin,
 } from "../../model/compact.ts";
 import type { Element, Scene } from "../../model/model.ts";
+import { round2 } from "../round.ts";
 
 export function resolveFitCanvas(
   el: Element,
@@ -90,11 +91,6 @@ export function atCenter(
     x: pos.x + offset[0] + box.w / 2,
     y: pos.y + offset[1] + box.h / 2,
   };
-}
-
-/** `n` to two decimals, so computed positions read cleanly (068/D5). */
-export function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }
 
 const roundPoint = (p: { x: number; y: number }) => ({

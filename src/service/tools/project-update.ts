@@ -4,6 +4,7 @@ import {
   ColorPaletteSchema,
   ProjectSlugSchema,
 } from "../../model/project.ts";
+import { missingFontNotice } from "../font-check.ts";
 import { availableFonts } from "../font-install.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
@@ -45,10 +46,7 @@ export const projectUpdate = defineTool({
     );
     const notices = (config.fonts ?? [])
       .filter((f) => !installed.has(f.family))
-      .map(
-        (f) =>
-          `La fuente «${f.family}» no está instalada; el texto usará Inter hasta que la instales (font_install)`,
-      );
+      .map((f) => missingFontNotice(f.family));
     return { ...asToolProject(updated), notices };
   },
 });

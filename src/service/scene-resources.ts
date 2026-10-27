@@ -5,6 +5,7 @@
  */
 import { descriptorOf } from "../components/index.ts";
 import { ICON_NAMES } from "../engine/icon-set.ts";
+import { mapElementsDeep } from "../model/element-walk.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { ProjectCtx } from "./ctx.ts";
 
@@ -16,15 +17,13 @@ const EXTERNAL = /^(?:https?:|data:|blob:)/i;
 /** Every element of `scene`, group children and symbol children included. */
 function allElements(scene: Scene): Element[] {
   const out: Element[] = [];
-  const walk = (items: readonly Element[]) => {
-    for (const el of items) {
-      out.push(el);
-      if (el.kind === "group") walk(el.children);
-    }
+  const collect = (el: Element) => {
+    out.push(el);
+    return el;
   };
-  walk(scene.elements);
+  mapElementsDeep(scene.elements, collect);
   for (const symbol of Object.values(scene.symbols ?? {}))
-    walk(symbol.children);
+    mapElementsDeep(symbol.children, collect);
   return out;
 }
 

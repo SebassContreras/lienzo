@@ -82,8 +82,9 @@ export function fontNotices(
   scene: Scene,
   installed: readonly string[],
 ): string[] {
-  return missingFonts(scene, installed).map(
-    (family) =>
-      `La fuente «${family}» no está instalada; se dibujará con otra. Usa font_install`,
-  );
+  return missingFonts(scene, installed).map(missingFontNotice);
 }
+
+/** The notice for a font family that is not installed (070/D2). */
+export const missingFontNotice = (family: string) =>
+  `La fuente «${family}» no está instalada; se dibujará con otra. Usa font_install`;

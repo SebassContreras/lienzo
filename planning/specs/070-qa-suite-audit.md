@@ -12,7 +12,7 @@ An audit of spec 069 against the architecture guide found one bug and some drift
 
 ## Design
 - D1 (R1): The function pattern takes, per argument, a number with an optional `%`/`deg`/`rad`/`grad`/`turn` unit or `none`, separated by commas, spaces or `/` (CSS Color 4 syntax).
-- D2 (R2): `unbindShot` and `allElements` use `mapElementsDeep`; `project_update` calls `fontNotices` over a scene-free list (`missingFamilyNotices(families, installed)` shared by both); `round2`/`round3` move to `src/service/round.ts`.
+- D2 (R2): `mapElementsDeep` moves to `src/model/element-walk.ts` (pure, no tool imports) so `unbindShot` in the model and `allElements` in `scene-resources.ts` use it; the schema's keyframe walk keeps its own loop because it reports paths, and `unknown_shot` reuses the layout's existing id index. `project_update` and `fontNotices` share `missingFontNotice`; `round2`/`round3` move to `src/service/round.ts`.
 - D3 (R3): `hasPositionTrack`/`trackOverridesAt` move to `src/service/elements.ts`; `buildCompact` takes `{ resources: false }` from a saving `scene_build`, whose save adds them.
 - D4 (R4): `it.each` for the color cases; results are asserted whole (`toMatchObject({ ok: true, value: … })`).
 - D5 (R5): Trade-offs added to 069 D4, D8, D12, D14 under `_Trade-offs_` / `_Mitigation_`.
@@ -21,7 +21,7 @@ An audit of spec 069 against the architecture guide found one bug and some drift
 
 ## Tasks
 - [x] 070/T001 [agent] isColor: strict function arguments, regression test, `it.each` — covers R1, D1
-- [ ] 070/T002 [agent] One tree walk, one missing-font message, one rounding module — covers R2, D2
+- [x] 070/T002 [agent] One tree walk, one missing-font message, one rounding module — covers R2, D2
 - [ ] 070/T003 [agent] Placement notices in elements.ts; resources checked once in scene_build — covers R3, D3
 - [ ] 070/T004 [agent] Test hygiene in the 069 tests; unknown_shot test — covers R4, D4
 - [ ] 070/T005 [agent] Trade-offs in spec 069 — covers R5, D5

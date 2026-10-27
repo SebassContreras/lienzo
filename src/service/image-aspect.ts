@@ -6,11 +6,9 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Element } from "../model/model.ts";
 import { assetSegments, safeAssetPath } from "./asset-path.ts";
-import { round2 } from "./compact/layout.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { imageSize } from "./image-header.ts";
-
-export const round3 = (n: number) => Math.round(n * 1000) / 1000;
+import { round2, round3 } from "./round.ts";
 
 /** Width over height of the project asset `src`, or undefined when it cannot be read. */
 async function fileAspect(

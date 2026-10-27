@@ -19,9 +19,9 @@ import type {
   Scene,
   TextEl,
 } from "../model/model.ts";
-import { round2 } from "./compact/layout.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
 import { measureStyleOf } from "./font-check.ts";
+import { round2 } from "./round.ts";
 
 export type LayoutDiagnostic = {
   code:

@@ -5,6 +5,7 @@
 import { resolveShotCamera } from "../engine/shots.ts";
 import { keyframeAt, withKeyframe } from "../engine/tracks.ts";
 import { deepMerge } from "../presets/resolve.ts";
+import { mapElementsDeep } from "./element-walk.ts";
 import type { Element, Shot, ShotCamera, ShotTransition } from "./model.ts";
 import {
   type Tracks,
@@ -167,17 +168,11 @@ export function unbindShot(
   id: string,
 ): { elements: Element[]; unbound: string[] } {
   const unbound: string[] = [];
-  const walk = (items: readonly Element[]): Element[] =>
-    items.map((el) => {
-      let out = el;
-      if (el.shot === id) {
-        const { shot: _shot, ...rest } = el;
-        out = rest as Element;
-        unbound.push(el.id);
-      }
-      return out.kind === "group"
-        ? { ...out, children: walk(out.children) }
-        : out;
-    });
-  return { elements: walk(elements), unbound };
+  const out = mapElementsDeep(elements, (el) => {
+    if (el.shot !== id) return el;
+    unbound.push(el.id);
+    const { shot: _shot, ...rest } = el;
+    return rest as Element;
+  });
+  return { elements: out, unbound };
 }

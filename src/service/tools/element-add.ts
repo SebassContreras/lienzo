@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { boxOf } from "../../engine/geometry.ts";
 import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
+import { mapElementsDeep } from "../../model/element-walk.ts";
 import {
   defaultElement,
   type Element,
@@ -10,7 +11,7 @@ import { resolveElement } from "../../presets/resolve.ts";
 import { hasPositionTrack, trackOverridesAt } from "../compact/expand.ts";
 import { applyImplied } from "../compact/implied.ts";
 import { placeAt } from "../compact/layout.ts";
-import { findElement, insertChild, mapElementsDeep } from "../element-tree.ts";
+import { findElement, insertChild } from "../element-tree.ts";
 import { COORDINATES, checkKind, patched } from "../elements.ts";
 import { withFileAspect } from "../image-aspect.ts";
 import { trimImage } from "../image-trim.ts";
