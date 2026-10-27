@@ -183,6 +183,14 @@ export type SceneShotsResult =
     }
   | { error: ShotError };
 
+/** How far `patch` moves `shot` whole: the shift of its start when its length stays, else 0. */
+function moveOf(shot: Shot, patch: ShotPatch): number {
+  const start = patch.start ?? shot.start;
+  const end = patch.end ?? shot.end;
+  const same = Math.abs(end - start - (shot.end - shot.start)) < 1e-9;
+  return same ? start - shot.start : 0;
+}
+
 const withShots = (scene: Scene, shots: Shot[]): Scene => ({
   ...scene,
   shots: shots.length > 0 ? shots : undefined,
@@ -190,13 +198,15 @@ const withShots = (scene: Scene, shots: Shot[]): Scene => ({
 
 /**
  * `scene` with shot `patch.id` created or updated, as `shot_set` and the editor's shots section
- * do: the shots must fit the scene (069/D5), and a new `start` moves the shot's camera keys and
- * the tracks of the elements bound to it (075/R2). A `camera` in the patch is taken as given.
+ * do: the shots must fit the scene (069/D5). Moving a shot (`start` and `end` shifted by the
+ * same amount) moves its camera keys and the tracks of the elements bound to it (075/R2);
+ * trimming one edge leaves them in place, as an NLE does (078/D2). A `camera` in the patch is
+ * taken as given.
  */
 export function setShotIn(scene: Scene, patch: ShotPatch): SceneShotsResult {
   const shots = scene.shots ?? [];
   const old = shots.find((sh) => sh.id === patch.id);
-  const delta = old && patch.start !== undefined ? patch.start - old.start : 0;
+  const delta = old ? moveOf(old, patch) : 0;
   const carried = shots.map((sh) =>
     sh === old && delta !== 0 && sh.camera?.tracks
       ? {

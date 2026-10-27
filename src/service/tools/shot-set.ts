@@ -23,9 +23,10 @@ export const shotSet = defineTool({
     "configure cut pacing and camera movement; camera `tracks` take the short form scene_build takes " +
     "(`{ zoom: [[3, 1], [6, 1.2, 'ease-out']] }`, easing optional) and their `t` is scene time, " +
     "not time within the shot (a notice names keys outside the shot). A shot must end within the scene and not " +
-    "overlap another. A new `start` moves the shot's camera keys and the tracks of the " +
-    "elements bound to it by the same amount (an element's tracks are timed from its shot's " +
-    "start; a notice lists them). Removing a shot unbinds the elements bound to it (listed in " +
+    "overlap another. Moving a shot (`start` and `end` shifted by the same amount) moves its " +
+    "camera keys and the tracks of the elements bound to it with it (an element's tracks are " +
+    "timed from its shot's start; a notice lists them); trimming one edge or changing the " +
+    "length leaves them where they are. Removing a shot unbinds the elements bound to it (listed in " +
     "`notices`) and moves their tracks back to the scene's start, " +
     "so they show for the whole scene. " +
     SHOT_RULES,

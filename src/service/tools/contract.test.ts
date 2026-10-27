@@ -373,3 +373,22 @@ it("element_update rejects a fill opacity above 1 (078/R1)", async () => {
     error: { path: "elements.r.fill.opacity" },
   });
 });
+
+it("shot_set trimming a shot's start leaves its elements' tracks in place (078/R2)", async () => {
+  await call("element_update", { scene: "s", id: "r", patch: { shot: "s1" } });
+  await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 1,
+    value: 50,
+  });
+
+  const r = await call("shot_set", { scene: "s", id: "s1", start: 0.5 });
+  const scene = await call("scene_get", { scene: "s", full: true });
+
+  expect(r).toMatchObject({ ok: true, value: { notices: [] } });
+  expect(scene).toMatchObject({
+    value: { elements: [{ tracks: { x: [{ t: 1 }] } }] },
+  });
+});
