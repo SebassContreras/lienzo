@@ -127,9 +127,24 @@ const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
     traits: z.array(traitUse).default([]),
     set: z.record(z.string(), z.unknown()).optional(),
   })
+  // a key a recipe does not have (`values`) is an error, not a silent no-op (074/D14)
+  .strict()
   .superRefine((recipe, ctx) => {
     const r = resolvePreset(recipe as PresetRecipe);
-    if (!("error" in r)) return;
+    if (!("error" in r)) {
+      // what it builds is checked like any element or background, at `set.<field>`
+      const built =
+        "element" in r
+          ? ElementSchema.safeParse(r.element)
+          : BackgroundSchema.safeParse(r.background);
+      for (const issue of built.success ? [] : built.error.issues)
+        ctx.addIssue({
+          code: "custom",
+          message: issue.message,
+          path: ["set", ...issue.path.map(String)],
+        });
+      return;
+    }
     // point at the trait the error names, if it names one (069/D12)
     const i = recipe.traits.findIndex((u) =>
       r.error.includes(`«${typeof u === "string" ? u : u.use}»`),

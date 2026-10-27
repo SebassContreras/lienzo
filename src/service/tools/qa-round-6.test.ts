@@ -160,3 +160,22 @@ it("notes camera keyframes outside their shot, as times are scene time (074/R8)"
 
   expect(out.notices).toEqual([expect.stringContaining("zoom en 0s")]);
 });
+
+it("rejects a recipe whose set gives a field the wrong type (074/R1)", async () => {
+  const out = await value("preset_validate", {
+    recipe: { name: "Caja", kind: "rect", traits: [], set: { w: "ancho" } },
+  });
+
+  expect(out).toMatchObject({ valid: false, path: "set.w" });
+});
+
+it("rejects a recipe with a key recipes do not have (074/R1)", async () => {
+  const out = await value("preset_validate", {
+    recipe: { name: "Caja", kind: "rect", traits: [], values: { w: 10 } },
+  });
+
+  expect(out).toMatchObject({
+    valid: false,
+    message: expect.stringContaining("values"),
+  });
+});
