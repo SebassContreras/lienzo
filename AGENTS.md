@@ -71,6 +71,10 @@ What exists today:
   symbols in `scene/symbols-section.tsx`, both over pure helpers shared with the tools
   (`src/model/shots.ts`, `src/model/symbols.ts`); symbol editing swaps the stage to a
   temporary scene and is never autosaved; `origin` in `widgets/origin-picker.tsx`
+- Tool feedback fixes (067): radial fills on ellipses, polygons and stars reach the shape's
+  edge (`reach` in `fillGradient`); layout boxes are the on-screen ones (`shotBox`); ignored
+  keys suggest a field (`closestKey`); canvas fonts fall back to Inter; installed fonts are
+  measured (`measureInstalledFonts`) and `font_install` stores ttf (opentype.js reads no woff2)
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and

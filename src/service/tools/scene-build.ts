@@ -6,7 +6,7 @@ import { slugify } from "../../presets/slug.ts";
 import { buildCompact } from "../build-compact.ts";
 import { FLAT_KINDS } from "../compact/defaults.ts";
 import { keepAudio } from "../compact/keep-audio.ts";
-import { availableFonts } from "../font-install.ts";
+import { availableFonts, measureInstalledFonts } from "../font-install.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { saveScene } from "../scenes.ts";
@@ -52,6 +52,7 @@ export const sceneBuild = defineTool({
     const effectiveCtx = await inProject(ctx, project);
 
     const fonts = await availableFonts(ctx.fonts, project);
+    await measureInstalledFonts(ctx.fonts, project);
     const built = await buildCompact(
       effectiveCtx,
       compact,

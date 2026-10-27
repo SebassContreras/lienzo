@@ -8,7 +8,7 @@ import { defineTool, fail } from "../registry.ts";
 export const fontInstall = defineTool({
   name: "font_install",
   description:
-    "Download a Google Fonts family as woff2 into fonts/ (global) or, with `project`, into " +
+    "Download a Google Fonts family as ttf into fonts/ (global) or, with `project`, into " +
     "projects/<slug>/fonts/. With `file` (a local ttf, otf, woff or woff2), installs that file " +
     "instead, as the editor's font upload does, under `family` and the first of `weights`. " +
     "Scenes then use it by its family name.",

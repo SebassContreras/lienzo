@@ -53,8 +53,44 @@ const AVAILABLE_WEIGHTS: Record<string, number[]> = {
 
 const fontCache = new Map<string, opentype.Font | null>();
 
+/** Installed fonts with metrics here, by lowercase family then weight (067/D5). */
+let installedFonts = new Map<string, Map<number, opentype.Font>>();
+
+/** A font file to measure with: a ttf, otf or woff (opentype.js cannot read woff2). */
+export type InstalledFont = { family: string; weight: number; data: Buffer };
+
 /**
- * Loads and parses an opentype font from disk in Node.js.
+ * Makes `fonts` the installed fonts text is measured with, replacing those of the previous
+ * project, and returns the files opentype cannot read; those families stay estimated (067/D5).
+ */
+export function setInstalledFonts(fonts: readonly InstalledFont[]): string[] {
+  const next = new Map<string, Map<number, opentype.Font>>();
+  const unreadable: string[] = [];
+  for (const { family, weight, data } of fonts) {
+    try {
+      const font = opentype.parse(
+        data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+      );
+      const key = family.trim().toLowerCase();
+      const weights = next.get(key) ?? new Map<number, opentype.Font>();
+      next.set(key, weights.set(weight, font));
+    } catch {
+      unreadable.push(`${family} ${weight}`);
+    }
+  }
+  installedFonts = next;
+  return unreadable;
+}
+
+/** The installed font of `family` closest to `weight`, if any. */
+function installedFont(family: string, weight: number): opentype.Font | null {
+  const weights = installedFonts.get(family);
+  if (!weights) return null;
+  return weights.get(findClosestWeight([...weights.keys()], weight)) ?? null;
+}
+
+/**
+ * Loads and parses an opentype font from disk in Node.js, or takes an installed one.
  * Caches parsed font objects in memory.
  */
 export function loadFontSync(
@@ -64,7 +100,7 @@ export function loadFontSync(
 ): opentype.Font | null {
   const normFamily = family.trim().toLowerCase();
   const pkgName = BUNDLED_FONT_PACKAGES[normFamily];
-  if (!pkgName) return null;
+  if (!pkgName) return installedFont(normFamily, weight);
 
   const weights = AVAILABLE_WEIGHTS[pkgName] ?? [400];
   const matchedWeight = findClosestWeight(weights, weight);
@@ -136,8 +172,12 @@ function getBrowserContext(): OffscreenCanvasRenderingContext2D | undefined {
   return undefined;
 }
 
+/**
+ * The canvas `font` for `style`. A family the page lacks falls back to Inter, the bundled UI
+ * font, then any sans-serif, never the browser's default serif (067/D4).
+ */
 export function fontStringOf(style: MeasureStyle): string {
-  return `${style.italic ? "italic " : ""}${style.weight} ${style.size}px "${style.font}"`;
+  return `${style.italic ? "italic " : ""}${style.weight} ${style.size}px "${style.font}", "Inter", sans-serif`;
 }
 
 /**

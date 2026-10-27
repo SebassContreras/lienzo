@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { measureInstalledFonts } from "../font-install.ts";
 import { inspectLayout, layoutBoxes } from "../layout.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
@@ -52,6 +53,7 @@ export const sceneInspectLayout = defineTool({
   }),
   async run({ scene: saved, data, project, times }, ctx) {
     const projectCtx = await inProject(ctx, project);
+    await measureInstalledFonts(ctx.fonts, project);
     const scene =
       data !== undefined
         ? checkScene(data)

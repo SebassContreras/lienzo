@@ -3,6 +3,8 @@
  * what a project can use, and the checks every new font file passes before the font
  * store writes it.
  */
+
+import { setInstalledFonts } from "../engine/text-measure.ts";
 import {
   type FontExtension,
   type FontFile,
@@ -26,6 +28,32 @@ export async function availableFonts(
     project ? store.list(project) : [],
   ]);
   return resolveFonts(FONTS, global, own, project);
+}
+
+/**
+ * Gives text measurement the installed fonts of `project` (global ones, then the project's,
+ * which win), so layout checks use their glyphs instead of an estimate (067/D5). Returns the
+ * files that cannot be measured (woff2).
+ */
+export async function measureInstalledFonts(
+  store: FontStore,
+  project?: FontScope,
+): Promise<string[]> {
+  const read = async (scope: FontScope) =>
+    Promise.all(
+      (await store.list(scope)).map(async ({ family, weight, file }) => ({
+        family,
+        weight,
+        data: await store.read(file, scope),
+      })),
+    );
+  const files = [
+    ...(await read(undefined)),
+    ...(project ? await read(project) : []),
+  ];
+  return setInstalledFonts(
+    files.flatMap((f) => (f.data ? [{ ...f, data: f.data }] : [])),
+  );
 }
 
 export const MAX_FONT_BYTES = 20 * 1024 * 1024;
@@ -72,14 +100,14 @@ export async function saveFont(
   return { family: font.family.trim(), weight: font.weight, file };
 }
 
-/** Downloads a Google Fonts family and stores each weight as `Family-Weight.woff2`. */
+/** Downloads a Google Fonts family and stores each weight as `Family-Weight.ttf`. */
 export async function installGoogleFont(
   store: FontStore,
   font: { family: string; weights: readonly number[]; project?: FontScope },
   get: typeof fetch,
 ): Promise<FontFile[]> {
   const problem = fontProblem(
-    { family: font.family, weight: 400, ext: "woff2", project: font.project },
+    { family: font.family, weight: 400, ext: "ttf", project: font.project },
     1,
   );
   if (problem) throw new Error(problem);
@@ -88,7 +116,7 @@ export async function installGoogleFont(
     files.map(({ weight, data }) =>
       saveFont(
         store,
-        { family: font.family, weight, ext: "woff2", project: font.project },
+        { family: font.family, weight, ext: "ttf", project: font.project },
         data,
       ),
     ),

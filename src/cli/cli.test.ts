@@ -373,12 +373,12 @@ describe("lienzo CLI", () => {
     await ok(["font_list"]);
     // Google Fonts is the network boundary: a recorded css2 answer and fake files.
     const css = await readFile(
-      "src/test/fixtures/google-css2-roboto.css",
+      "src/test/fixtures/google-css2-roboto-ttf.css",
       "utf8",
     );
     ctx.fetch = (async (url: string) =>
       new Response(
-        url.startsWith("https://fonts.googleapis.com/") ? css : "woff2",
+        url.startsWith("https://fonts.googleapis.com/") ? css : "ttf",
       )) as typeof fetch;
     await ok(["font_install", "--family", "Roboto"]);
     expect([...called].sort()).toEqual(

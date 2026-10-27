@@ -2,7 +2,7 @@ import { z } from "zod";
 import { CompactSceneSchema } from "../../model/compact.ts";
 import type { Scene } from "../../model/model.ts";
 import { buildCompact } from "../build-compact.ts";
-import { availableFonts } from "../font-install.ts";
+import { availableFonts, measureInstalledFonts } from "../font-install.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { sceneNotices } from "../scene-notices.ts";
@@ -28,6 +28,7 @@ export const sceneValidate = defineTool({
   run: async ({ data, compact, project }, ctx) => {
     const projectCtx = await inProject(ctx, project);
     const fonts = await availableFonts(ctx.fonts, project);
+    await measureInstalledFonts(ctx.fonts, project);
     if (compact !== undefined) {
       let built: { notices: string[] } | undefined;
       const verdict = await verdictOf(async () => {

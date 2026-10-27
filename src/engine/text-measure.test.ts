@@ -109,11 +109,11 @@ describe("text measurement (054/R1, T005)", () => {
 
   it("formats standard CSS font strings", () => {
     expect(fontStringOf({ font: "Inter", size: 64, weight: 700 })).toBe(
-      '700 64px "Inter"',
+      '700 64px "Inter", "Inter", sans-serif',
     );
     expect(
       fontStringOf({ font: "Poppins", size: 32, weight: 400, italic: true }),
-    ).toBe('italic 400 32px "Poppins"');
+    ).toBe('italic 400 32px "Poppins", "Inter", sans-serif');
   });
 
   it("handles empty strings and fallbacks gracefully", () => {

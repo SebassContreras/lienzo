@@ -1,24 +1,24 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`render audit (063/R10) > built-in preset 01-tarjeta-neon.json renders as recorded 1`] = `"260328547d20"`;
+exports[`render audit (063/R10) > built-in preset 01-tarjeta-neon.json renders as recorded 1`] = `"d7df967ae8d8"`;
 
-exports[`render audit (063/R10) > built-in preset 02-tarjeta-glass.json renders as recorded 1`] = `"96d3953ffaa1"`;
+exports[`render audit (063/R10) > built-in preset 02-tarjeta-glass.json renders as recorded 1`] = `"6c42697e2203"`;
 
-exports[`render audit (063/R10) > built-in preset 03-tarjeta-borde-animado.json renders as recorded 1`] = `"5dd335fbad17"`;
+exports[`render audit (063/R10) > built-in preset 03-tarjeta-borde-animado.json renders as recorded 1`] = `"ff39d0d2f65e"`;
 
-exports[`render audit (063/R10) > built-in preset 04-pill.json renders as recorded 1`] = `"1eec9dde8c95"`;
+exports[`render audit (063/R10) > built-in preset 04-pill.json renders as recorded 1`] = `"f208d2d3a6e1"`;
 
-exports[`render audit (063/R10) > built-in preset 05-boton-cta.json renders as recorded 1`] = `"cd6c1aa9ff55"`;
+exports[`render audit (063/R10) > built-in preset 05-boton-cta.json renders as recorded 1`] = `"baf551a09cdc"`;
 
-exports[`render audit (063/R10) > built-in preset 06-titulo.json renders as recorded 1`] = `"b353d9408fd9"`;
+exports[`render audit (063/R10) > built-in preset 06-titulo.json renders as recorded 1`] = `"ccdd2317cae7"`;
 
-exports[`render audit (063/R10) > built-in preset 07-titulo-degradado.json renders as recorded 1`] = `"952dea9f2d6f"`;
+exports[`render audit (063/R10) > built-in preset 07-titulo-degradado.json renders as recorded 1`] = `"cdfb09f881de"`;
 
-exports[`render audit (063/R10) > built-in preset 08-parrafo.json renders as recorded 1`] = `"11fa28197c78"`;
+exports[`render audit (063/R10) > built-in preset 08-parrafo.json renders as recorded 1`] = `"4879a2560d9b"`;
 
-exports[`render audit (063/R10) > built-in preset 09-manuscrito.json renders as recorded 1`] = `"040e3c979f9e"`;
+exports[`render audit (063/R10) > built-in preset 09-manuscrito.json renders as recorded 1`] = `"ff5d8a718794"`;
 
-exports[`render audit (063/R10) > built-in preset 10-pixel.json renders as recorded 1`] = `"4772e5cd00fa"`;
+exports[`render audit (063/R10) > built-in preset 10-pixel.json renders as recorded 1`] = `"51b935901860"`;
 
 exports[`render audit (063/R10) > built-in preset 11-conexion-con-pulsos.json renders as recorded 1`] = `"d74ade6382ef"`;
 
@@ -26,11 +26,11 @@ exports[`render audit (063/R10) > built-in preset 12-hormigas.json renders as re
 
 exports[`render audit (063/R10) > built-in preset 13-cometa-curvo.json renders as recorded 1`] = `"f27afa108d63"`;
 
-exports[`render audit (063/R10) > built-in preset 14-tarjeta-con-icono.json renders as recorded 1`] = `"0503a91ea8da"`;
+exports[`render audit (063/R10) > built-in preset 14-tarjeta-con-icono.json renders as recorded 1`] = `"9ef28b8a6fdb"`;
 
 exports[`render audit (063/R10) > built-in preset 15-icono-con-fondo.json renders as recorded 1`] = `"22b35aafd929"`;
 
-exports[`render audit (063/R10) > built-in preset 16-avatar-circular.json renders as recorded 1`] = `"bd7b6ef38d79"`;
+exports[`render audit (063/R10) > built-in preset 16-avatar-circular.json renders as recorded 1`] = `"ffafc46ba2f1"`;
 
 exports[`render audit (063/R10) > built-in preset 17-logo-imagen.json renders as recorded 1`] = `"85442db1f35e"`;
 
@@ -54,33 +54,33 @@ exports[`render audit (063/R10) > built-in preset 26-estrella.json renders as re
 
 exports[`render audit (063/R10) > built-in preset 27-flecha-bloque.json renders as recorded 1`] = `"a222023019b4"`;
 
-exports[`render audit (063/R10) > built-in preset 28-badge-nuevo.json renders as recorded 1`] = `"419c43ba177a"`;
+exports[`render audit (063/R10) > built-in preset 28-badge-nuevo.json renders as recorded 1`] = `"68631777191c"`;
 
 exports[`render audit (063/R10) > built-in preset 29-barra-progreso.json renders as recorded 1`] = `"772a0200e666"`;
 
-exports[`render audit (063/R10) > built-in preset 30-anillo-progreso.json renders as recorded 1`] = `"312299cc4c1d"`;
+exports[`render audit (063/R10) > built-in preset 30-anillo-progreso.json renders as recorded 1`] = `"56a5c036bfb8"`;
 
-exports[`render audit (063/R10) > built-in preset 31-contador.json renders as recorded 1`] = `"212279a8187d"`;
+exports[`render audit (063/R10) > built-in preset 31-contador.json renders as recorded 1`] = `"857f2be89eaf"`;
 
-exports[`render audit (063/R10) > built-in preset 32-burbuja-chat.json renders as recorded 1`] = `"bef05e879c12"`;
+exports[`render audit (063/R10) > built-in preset 32-burbuja-chat.json renders as recorded 1`] = `"963f10a44065"`;
 
-exports[`render audit (063/R10) > built-in preset 33-pasos.json renders as recorded 1`] = `"daf41c50d974"`;
+exports[`render audit (063/R10) > built-in preset 33-pasos.json renders as recorded 1`] = `"756775b963ab"`;
 
-exports[`render audit (063/R10) > built-in preset 34-lista-checks.json renders as recorded 1`] = `"6a7e6bb77eb8"`;
+exports[`render audit (063/R10) > built-in preset 34-lista-checks.json renders as recorded 1`] = `"ee7b17848905"`;
 
-exports[`render audit (063/R10) > built-in preset 35-tabla-precios.json renders as recorded 1`] = `"b8f49f76981b"`;
+exports[`render audit (063/R10) > built-in preset 35-tabla-precios.json renders as recorded 1`] = `"0668a68c33ab"`;
 
 exports[`render audit (063/R10) > built-in preset 36-bloque-codigo.json renders as recorded 1`] = `"1c2cea602004"`;
 
-exports[`render audit (063/R10) > built-in preset 37-grafico-barras.json renders as recorded 1`] = `"ca8d5a32f35d"`;
+exports[`render audit (063/R10) > built-in preset 37-grafico-barras.json renders as recorded 1`] = `"4d6a9183baea"`;
 
-exports[`render audit (063/R10) > built-in preset 38-grafico-donut.json renders as recorded 1`] = `"eb1c5d41bcbd"`;
+exports[`render audit (063/R10) > built-in preset 38-grafico-donut.json renders as recorded 1`] = `"b69225c0c719"`;
 
-exports[`render audit (063/R10) > built-in preset 39-ventana-navegador.json renders as recorded 1`] = `"ac4aa252b812"`;
+exports[`render audit (063/R10) > built-in preset 39-ventana-navegador.json renders as recorded 1`] = `"6f77a57ce952"`;
 
 exports[`render audit (063/R10) > built-in preset 40-ventana-terminal.json renders as recorded 1`] = `"a9517ecf82f8"`;
 
-exports[`render audit (063/R10) > built-in preset 41-movil-chat.json renders as recorded 1`] = `"3b80aad5000c"`;
+exports[`render audit (063/R10) > built-in preset 41-movil-chat.json renders as recorded 1`] = `"6f26ead148cf"`;
 
 exports[`render audit (063/R10) > built-in preset 42-corazon-trazado.json renders as recorded 1`] = `"95c97b4f5371"`;
 
@@ -100,15 +100,15 @@ exports[`render audit (063/R10) > built-in preset fondo-05-foco-central.json ren
 
 exports[`render audit (063/R10) > default arrow element renders as recorded 1`] = `"a222023019b4"`;
 
-exports[`render audit (063/R10) > default badge element renders as recorded 1`] = `"419c43ba177a"`;
+exports[`render audit (063/R10) > default badge element renders as recorded 1`] = `"68631777191c"`;
 
-exports[`render audit (063/R10) > default bubble element renders as recorded 1`] = `"bef05e879c12"`;
+exports[`render audit (063/R10) > default bubble element renders as recorded 1`] = `"963f10a44065"`;
 
-exports[`render audit (063/R10) > default chart element renders as recorded 1`] = `"10c1b0d68e8a"`;
+exports[`render audit (063/R10) > default chart element renders as recorded 1`] = `"0ab39601b3de"`;
 
 exports[`render audit (063/R10) > default code element renders as recorded 1`] = `"a8d6afd74bd4"`;
 
-exports[`render audit (063/R10) > default counter element renders as recorded 1`] = `"173cfc3251d7"`;
+exports[`render audit (063/R10) > default counter element renders as recorded 1`] = `"9475502105a2"`;
 
 exports[`render audit (063/R10) > default ellipse element renders as recorded 1`] = `"ace00a028011"`;
 
@@ -120,7 +120,7 @@ exports[`render audit (063/R10) > default image element renders as recorded 1`] 
 
 exports[`render audit (063/R10) > default line element renders as recorded 1`] = `"d74ade6382ef"`;
 
-exports[`render audit (063/R10) > default list element renders as recorded 1`] = `"67c48c7d7fb8"`;
+exports[`render audit (063/R10) > default list element renders as recorded 1`] = `"77cea027fe88"`;
 
 exports[`render audit (063/R10) > default particles element renders as recorded 1`] = `"b05da5d0ea60"`;
 
@@ -134,13 +134,13 @@ exports[`render audit (063/R10) > default rect element renders as recorded 1`] =
 
 exports[`render audit (063/R10) > default star element renders as recorded 1`] = `"4c6244bcf471"`;
 
-exports[`render audit (063/R10) > default steps element renders as recorded 1`] = `"f04fcce6b31a"`;
+exports[`render audit (063/R10) > default steps element renders as recorded 1`] = `"1cee977899e8"`;
 
 exports[`render audit (063/R10) > default subtitles element renders as recorded 1`] = `"cd1d1f2a99c7"`;
 
-exports[`render audit (063/R10) > default table element renders as recorded 1`] = `"35208afcce34"`;
+exports[`render audit (063/R10) > default table element renders as recorded 1`] = `"0289e0125f06"`;
 
-exports[`render audit (063/R10) > default text element renders as recorded 1`] = `"3f1fa3879a54"`;
+exports[`render audit (063/R10) > default text element renders as recorded 1`] = `"59a512c04987"`;
 
 exports[`render audit (063/R10) > default three element renders as recorded 1`] = `"2ece8cfbaf28"`;
 

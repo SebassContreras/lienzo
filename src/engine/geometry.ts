@@ -8,7 +8,7 @@ import type {
   TextEl,
 } from "../model/model.ts";
 import { distToPath, resolveLine, samplePath } from "./lines.ts";
-import { measureTextWidth } from "./text-measure.ts";
+import { fontStringOf, measureTextWidth } from "./text-measure.ts";
 
 export type Pt = { x: number; y: number };
 export type Box = { x: number; y: number; w: number; h: number };
@@ -17,9 +17,8 @@ export type Box = { x: number; y: number; w: number; h: number };
 export type TextStyle = Pick<TextEl, "text" | "font" | "size" | "weight"> &
   Partial<Pick<TextEl, "italic" | "letterSpacing" | "lineHeight" | "w">>;
 
-export function fontString(el: TextStyle): string {
-  return `${el.italic ? "italic " : ""}${el.weight} ${el.size}px "${el.font}"`;
-}
+/** The canvas `font` for `el`, as text is measured (067/D4). */
+export const fontString = (el: TextStyle): string => fontStringOf(el);
 
 export type TextLayout = {
   lines: string[];

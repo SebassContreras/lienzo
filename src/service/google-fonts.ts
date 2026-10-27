@@ -1,16 +1,15 @@
 /**
  * The adapter to Google Fonts (045/D6): the only module that knows its URLs and answer
- * format. The css2 API picks the font format from the user agent; a current browser's
- * gets woff2. `fetch` is injected, so tests never touch the network.
+ * format. The css2 API picks the font format from the user agent: a browser gets woff2,
+ * which opentype.js cannot read, a client with no user agent gets ttf, which the browser
+ * draws and Node measures (067/D5). `fetch` is injected, so tests never touch the network.
  */
 const CSS_API = "https://fonts.googleapis.com/css2";
-const WOFF2_USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
 export type GoogleFace = { weight: number; url: string };
 
 /**
- * The woff2 URL of each weight in a css2 answer, preferring the `latin` subset (each
+ * The ttf URL of each weight in a css2 answer, preferring the `latin` subset (each
  * `@font-face` is preceded by a `/* subset *\/` comment); fonts without subsets give one.
  */
 export function parseGoogleCss(css: string): GoogleFace[] {
@@ -19,7 +18,7 @@ export function parseGoogleCss(css: string): GoogleFace[] {
   const comments = css.split("@font-face").slice(0, -1);
   blocks.forEach((block, i) => {
     const weight = Number(block.match(/font-weight:\s*(\d+)/)?.[1]);
-    const url = block.match(/url\((https:[^)]+\.woff2)\)/)?.[1];
+    const url = block.match(/url\((https:[^)]+\.ttf)\)/)?.[1];
     if (!weight || !url) return;
     const subset = comments[i]?.match(/\/\*\s*([\w-]+)\s*\*\/\s*$/)?.[1];
     const latin = subset === "latin";
@@ -38,15 +37,13 @@ function googleCssUrl(family: string, weights: readonly number[]): string {
   return `${CSS_API}?family=${name}:wght@${list}&display=swap`;
 }
 
-/** Downloads `family` in `weights` as woff2 files. Throws when Google has no such family. */
+/** Downloads `family` in `weights` as ttf files. Throws when Google has no such family. */
 export async function downloadGoogleFont(
   family: string,
   weights: readonly number[],
   get: typeof fetch,
 ): Promise<{ weight: number; data: Buffer }[]> {
-  const res = await get(googleCssUrl(family, weights), {
-    headers: { "user-agent": WOFF2_USER_AGENT },
-  });
+  const res = await get(googleCssUrl(family, weights));
   if (!res.ok) {
     throw new Error(
       `Google Fonts no tiene «${family}» en los pesos ${weights.join(", ")} (${res.status})`,

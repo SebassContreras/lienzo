@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultLine, defaultRect, type Element } from "../model/model.ts";
-import { fitToBox } from "./geometry.ts";
+import { fitToBox, fontString } from "./geometry.ts";
 import {
   controlPoint,
   distToPath,
@@ -79,5 +79,24 @@ describe("fitToBox (059/D2)", () => {
       { x: 0, y: 30 },
       { x: 100, y: 30 },
     ]);
+  });
+});
+
+describe("font fallback (067/R4)", () => {
+  it("falls back to Inter, not the browser's serif, when the family is missing", () => {
+    // Arrange
+    const style = {
+      text: "Hola",
+      font: "Missing Font",
+      size: 64,
+      weight: 700,
+      italic: false,
+    };
+
+    // Act
+    const font = fontString(style);
+
+    // Assert
+    expect(font).toBe('700 64px "Missing Font", "Inter", sans-serif');
   });
 });

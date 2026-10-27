@@ -1,8 +1,14 @@
+import { readFileSync } from "node:fs";
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { availableFonts, saveFont } from "./font-install.ts";
+import { widthIsEstimated } from "../engine/text-measure.ts";
+import {
+  availableFonts,
+  measureInstalledFonts,
+  saveFont,
+} from "./font-install.ts";
 import { createFontStore, type FontStore } from "./font-store.ts";
 
 const BYTES = Buffer.from("font-bytes");
@@ -66,5 +72,39 @@ describe("saveFont", () => {
 
     expect(inAcme.some((f) => f.family === "Brand")).toBe(true);
     expect(elsewhere.some((f) => f.family === "Brand")).toBe(false);
+  });
+});
+
+describe("measureInstalledFonts (067/R5)", () => {
+  let root: string;
+  let store: FontStore;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), "lienzo-fonts-"));
+    store = createFontStore(root);
+  });
+
+  afterEach(() => rm(root, { recursive: true, force: true }));
+
+  it("measures text in an installed font by its own glyphs", async () => {
+    // Arrange: a real font file installed under a family no package bundles
+    const file = readFileSync(
+      new URL(
+        "../../public/fonts/inter-latin-700-normal.woff",
+        import.meta.url,
+      ),
+    );
+    await saveFont(
+      store,
+      { family: "Marca Propia", weight: 700, ext: "woff", project: "acme" },
+      file,
+    );
+    const style = { font: "Marca Propia", size: 64, weight: 700 };
+
+    // Act
+    await measureInstalledFonts(store, "acme");
+
+    // Assert
+    expect(widthIsEstimated(style)).toBe(false);
   });
 });
