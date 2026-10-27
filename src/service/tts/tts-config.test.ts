@@ -202,6 +202,7 @@ describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => 
       },
       projects: {
         get: async () => ({}),
+        checkAsset: async () => ({ ok: true }),
         projectStore: async () => ({
           animPresets: async () => [],
           readScene: async () => defaultScene(),
@@ -261,6 +262,7 @@ describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => 
       },
       projects: {
         get: async () => ({}),
+        checkAsset: async () => ({ ok: true }),
         projectStore: async () => ({
           animPresets: async () => [],
           readScene: async () => defaultScene(),

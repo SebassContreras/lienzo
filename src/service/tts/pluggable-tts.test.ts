@@ -193,6 +193,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
         },
         projects: {
           get: async () => ({}),
+          checkAsset: async () => ({ ok: true }),
           projectStore: async () => ({
             animPresets: async () => [],
             readScene: async () => defaultScene(),
@@ -254,6 +255,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
         },
         projects: {
           get: async () => ({}),
+          checkAsset: async () => ({ ok: true }),
           projectStore: async () => ({
             animPresets: async () => [],
             readScene: async () => defaultScene(),

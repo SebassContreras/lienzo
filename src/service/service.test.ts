@@ -352,8 +352,14 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
       overwrite: true,
     });
 
-    expect((await onDisk("demo")).audioTracks).toEqual([voice]);
-    expect(res.notices).toEqual([expect.stringContaining("1 pista(s)")]);
+    // a bare ref is stored with its project prefix, and the file is missing here (080/R3)
+    expect((await onDisk("demo")).audioTracks).toEqual([
+      { ...voice, assetId: "/projects/mi-proyecto/assets/voice" },
+    ]);
+    expect(res.notices).toEqual([
+      expect.stringContaining("1 pista(s)"),
+      expect.stringContaining("no sonará"),
+    ]);
   });
 
   it("warns about a text font that is not installed (issue #12)", async () => {

@@ -5,7 +5,7 @@
  * alike — so a new kind needs no change here.
  */
 import { descriptorOf } from "../components/index.ts";
-import type { Element } from "../model/model.ts";
+import type { Element, Scene } from "../model/model.ts";
 import { safeAssetPath, ASSETS_PREFIX as UNDER_ASSETS } from "./asset-path.ts";
 
 /** The path under `assets/` that `ref` names, or undefined when it names none. */
@@ -47,6 +47,14 @@ export function usesAsset(data: unknown, path: string): boolean {
 /** References that are not project files: web and inline images. */
 export const EXTERNAL_REF = /^(?:https?:|data:|blob:)/i;
 
+/** Whether `v` is a bare reference to a project file (`logos/x.png`, `0d80….mp3`). */
+const isBare = (v: string) =>
+  !EXTERNAL_REF.test(v) && !v.startsWith("/") && !UNDER_ASSETS.test(v);
+
+/** `ref` as `/projects/<project>/assets/<ref>` when bare, else as given (074/D5). */
+export const canonicalRef = (ref: string, project: string) =>
+  isBare(ref) ? `/projects/${project}/assets/${ref}` : ref;
+
 /**
  * `el` with each asset reference its kind names (`assets(el)`) written as
  * `/projects/<project>/assets/<path>` when given bare (`logos/x.png`, as `asset_add` returns
@@ -55,16 +63,44 @@ export const EXTERNAL_REF = /^(?:https?:|data:|blob:)/i;
 export function withCanonicalAssets(el: Element, project: string): Element {
   const refs = new Set(descriptorOf(el.kind)?.assets?.(el as never) ?? []);
   const bare = (v: unknown): v is string =>
-    typeof v === "string" &&
-    refs.has(v) &&
-    !EXTERNAL_REF.test(v) &&
-    !v.startsWith("/") &&
-    !UNDER_ASSETS.test(v);
+    typeof v === "string" && refs.has(v) && isBare(v);
   if (![...Object.values(el)].some(bare)) return el;
   return Object.fromEntries(
     Object.entries(el).map(([k, v]) => [
       k,
-      bare(v) ? `/projects/${project}/assets/${v}` : v,
+      bare(v) ? canonicalRef(v, project) : v,
     ]),
   ) as Element;
 }
+
+/**
+ * `scene` with its audio (`audio.assetId`, each `audioTracks[].assetId`) in the same form
+ * (080/D3): the player and the export fetch the ref as a URL, so a bare one loads nothing.
+ */
+export function withCanonicalAudio(scene: Scene, project: string): Scene {
+  return {
+    ...scene,
+    ...(scene.audio
+      ? {
+          audio: {
+            ...scene.audio,
+            assetId: canonicalRef(scene.audio.assetId, project),
+          },
+        }
+      : {}),
+    ...(scene.audioTracks
+      ? {
+          audioTracks: scene.audioTracks.map((t) => ({
+            ...t,
+            assetId: canonicalRef(t.assetId, project),
+          })),
+        }
+      : {}),
+  };
+}
+
+/** The audio refs of `scene`: `audio` first, then each track's. */
+export const audioRefs = (scene: Scene | undefined): string[] => [
+  ...(scene?.audio ? [scene.audio.assetId] : []),
+  ...(scene?.audioTracks ?? []).map((t) => t.assetId),
+];

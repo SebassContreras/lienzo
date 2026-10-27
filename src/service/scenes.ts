@@ -14,7 +14,7 @@ import { shotProblems } from "../model/shots.ts";
 import { expandAnimPresets } from "../presets/anim-presets.ts";
 import { slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
-import { withCanonicalAssets } from "./asset-refs.ts";
+import { withCanonicalAssets, withCanonicalAudio } from "./asset-refs.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
 import { fail, failAll, type Problem, problemsOf } from "./registry.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
@@ -263,12 +263,15 @@ export async function saveScene(
 ): Promise<SceneResult> {
   const prepared = await prepareScene(ctx, data, previous);
   const { notices } = prepared;
-  const scene = {
-    ...prepared.scene,
-    elements: mapElementsDeep(prepared.scene.elements, (el) =>
-      withCanonicalAssets(el, ctx.project),
-    ),
-  };
+  const scene = withCanonicalAudio(
+    {
+      ...prepared.scene,
+      elements: mapElementsDeep(prepared.scene.elements, (el) =>
+        withCanonicalAssets(el, ctx.project),
+      ),
+    },
+    ctx.project,
+  );
   notices.push(...(await resourceNotices(ctx, scene, previous)));
   return { scene: await ctx.store.writeScene(name, scene), notices };
 }

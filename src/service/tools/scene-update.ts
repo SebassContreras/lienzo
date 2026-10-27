@@ -22,7 +22,9 @@ export const sceneUpdate = defineTool({
     "`null` removes a key (JSON Merge Patch, RFC 7386), e.g. `{ symbols: { card: null } }` " +
     "deletes a symbol (a `use` that still names it draws nothing, and a notice says so). A " +
     "symbol's children may be partial (`{ id, kind, w, h }`): missing fields take their kind's " +
-    "defaults. Elements, shots and the background have their own tools. A `duration` " +
+    "defaults. A bare audio `assetId` (`voz.mp3`, as asset_add returns it) is stored with its " +
+    "project prefix, and a notice says when the file is missing. Elements, shots and the " +
+    "background have their own tools. A `duration` " +
     "shorter than the end of a shot is rejected: move or remove the shot first (shot_set).",
   input: z.object({
     scene: z.string().min(1),

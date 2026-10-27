@@ -2,7 +2,7 @@
  * One rule across the scene-writing tools (074/R15): the same wrong input fails in each, and
  * the message names the valid options. Written out per tool, no loops (070/R4).
  */
-import { cp, mkdtemp } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, it } from "vitest";
@@ -763,4 +763,66 @@ it("scene_inspect_layout takes scene_get's sparse result as data (080/R2)", asyn
   const r = await call("scene_inspect_layout", { data: got.value });
 
   expect(r).toMatchObject({ ok: true, value: { boxes: expect.any(Array) } });
+});
+
+// 080/R3: audio refs are stored like element assets, so they count as uses
+const audioFile = async (name: string) => {
+  const dir = join(ctx.root, "projects", "p", "assets");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, name), Buffer.from("ID3"));
+};
+const storedAudio = async (scene: string) => {
+  const got = (await call("scene_get", { scene, full: true })) as {
+    value: { audioTracks?: { assetId: string }[] };
+  };
+  return got.value.audioTracks?.map((t) => t.assetId);
+};
+
+it("scene_update stores a bare audio ref with its project prefix (080/R3)", async () => {
+  await audioFile("voz.mp3");
+
+  await call("scene_update", {
+    scene: "s",
+    patch: { audioTracks: [{ id: "t1", assetId: "voz.mp3" }] },
+  });
+
+  expect(await storedAudio("s")).toEqual(["/projects/p/assets/voz.mp3"]);
+});
+
+it("scene_build stores a bare audio ref with its project prefix (080/R3)", async () => {
+  await audioFile("voz.mp3");
+
+  await call("scene_build", {
+    compact: { audioTracks: [{ assetId: "voz.mp3" }] },
+    save: "b",
+  });
+
+  expect(await storedAudio("b")).toEqual(["/projects/p/assets/voz.mp3"]);
+});
+
+it("asset_delete refuses an audio file a scene uses, given bare (080/R3)", async () => {
+  await audioFile("voz.mp3");
+  await call("scene_update", {
+    scene: "s",
+    patch: { audioTracks: [{ id: "t1", assetId: "voz.mp3" }] },
+  });
+
+  expect(await call("asset_delete", { path: "voz.mp3" })).toMatchObject({
+    ok: false,
+    error: { code: "in_use" },
+  });
+});
+
+it("scene_update notes an audio file the project lacks (080/R3)", async () => {
+  const r = await call("scene_update", {
+    scene: "s",
+    patch: { audioTracks: [{ id: "t1", assetId: "falta.mp3" }] },
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      notices: [expect.stringMatching(/Audio «.*falta\.mp3».*no sonará/)],
+    },
+  });
 });
