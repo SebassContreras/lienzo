@@ -53,6 +53,17 @@ describe("compact gradient fills (059/R3)", () => {
     );
   });
 
+  it("rejects stops out of order (068/R1)", () => {
+    const backwards = [
+      { at: 0.8, color: "#000000" },
+      { at: 0.2, color: "#ffffff" },
+    ];
+
+    expect(issuePaths({ kind: "rect", fill: { stops: backwards } })).toContain(
+      "elements.0.fill.stops",
+    );
+  });
+
   it("a fill saved before 059 reads as linear with no stops (R4)", () => {
     const rect = defaultRect();
     const { type: _t, stops: _s, ...oldFill } = rect.fill;

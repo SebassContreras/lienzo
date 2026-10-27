@@ -23,7 +23,7 @@ A QA run of the tools on a scratch project found seven rough edges. When this sp
 - D6 (R7): `scene_create` deep-merges an object `data.background` onto the defaults' background before validating.
 
 ## Tasks
-- [ ] 068/T001 [agent] Ordered gradient stops — covers R1, D1
+- [x] 068/T001 [agent] Ordered gradient stops — covers R1, D1
 - [ ] 068/T002 [agent] Implied flat fill and group content size — covers R2, R3, D2
 - [ ] 068/T003 [agent] element_add: out-of-canvas notice and `patch.id` — covers R4, R5, D3, D4
 - [ ] 068/T004 [agent] Rounded placement and boxes; partial background in scene_create — covers R6, R7, D5, D6

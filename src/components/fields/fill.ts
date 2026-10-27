@@ -17,7 +17,13 @@ import {
  */
 export const StopsSchema = z
   .array(z.object({ at: z.number().min(0).max(1), color: z.string() }))
-  .min(2);
+  .min(2)
+  .refine(
+    (stops) => stops.every((s, i) => i === 0 || s.at >= stops[i - 1].at),
+    {
+      message: "Las paradas deben ir en orden de `at` (de 0 a 1)",
+    },
+  );
 
 export type GradientStop = z.infer<typeof StopsSchema>[number];
 
