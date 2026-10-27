@@ -82,7 +82,9 @@ In OpenCode (`opencode.json`) or other MCP clients, configure the server with ex
 ```
 
 Or with the compiled bundle (`pnpm build:cli` writes `dist/cli.js`; `dist/` is not committed,
-so rerun it after every pull or the server lists an older set of tools):
+so rerun it after every pull or the server lists an older set of tools). The bundle finds the
+app from its own folder, so `scene_preview` and `scene_export` render from it as they do
+under `pnpm lienzo mcp`:
 
 ```json
 {
@@ -96,7 +98,7 @@ so rerun it after every pull or the server lists an older set of tools):
 }
 ```
 
-Tools read and write the files of this repo (`projects/<project>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (the `project` of an entry in `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints.
+Tools read and write the files of this repo (`projects/<project>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (the `project` of an entry in `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints (plus `errors` when there are several problems); a key the tool does not take is named, with where it belongs (`elements` at the top of `scene_build` → inside `compact`). `project_create` needs only `name`: the `project` id is made from it (`Café Norte` → `cafe-norte`).
 
 The server runs the code it started with: after a pull, restart it (and rerun `pnpm build:cli`
 for `dist/cli.js`). Its MCP `instructions` name the commit it started from; if that differs

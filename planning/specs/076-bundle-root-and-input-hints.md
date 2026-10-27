@@ -51,5 +51,5 @@ belongs, and `project_create` takes `name` alone.
 - [x] 076/T001 [agent] App root from `findAppRoot` in `ctx.ts`, test from `dist/` and `src/service/` — covers R1, D1
 - [x] 076/T002 [agent] Misplaced-key hint in `callTool`; `content → text` alias — covers R2, R3, D2, D3
 - [x] 076/T003 [agent] `project_create` with `name` alone — covers R4, D4
-- [ ] 076/T004 [agent] Docs and descriptions — covers R5, D5
+- [x] 076/T004 [agent] Docs and descriptions — covers R5, D5
 - [ ] 076/T005 [agent] Verify: typecheck, lint on touched files, tests, `pnpm build:cli` and `node dist/cli.js scene_preview`, replay R2–R4 with `pnpm lienzo` — covers R1, R2, R3, R4, R5

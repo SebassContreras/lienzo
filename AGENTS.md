@@ -118,6 +118,9 @@ What exists today:
   `shot_set`, the shots section) carry tracks and camera keys along, with a notice;
   `checkWholeScene` (`src/service/scenes.ts`) lists schema and rule problems together, the
   rules reading what parses
+- Bundle and inputs (076): `ctx.ts` finds the app with `findAppRoot`, so `dist/cli.js` renders;
+  a failing call names top-level keys the tool does not take and where they belong
+  (`misplacedHint`, `src/service/registry.ts`); `project_create` makes `project` from `name`
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
 
 - Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and

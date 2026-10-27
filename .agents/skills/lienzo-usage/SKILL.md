@@ -31,13 +31,17 @@ Error `path`s name elements by id (`elements.a.w`, `elements.g/child.w`).
 
 ## Workflow
 
-1. **Project:** `project_list`, or `project_create` (`project_delete` removes one). `project_inspect` lists its assets,
+1. **Project:** `project_list`, or `project_create` with a `name` (the `project` id is made
+   from it, `Café Norte` → `cafe-norte`, or give one) (`project_delete` removes one). `project_inspect` lists its assets,
    scenes, presets and brand; `project_update` changes the brand, `asset_add` copies a local
    file into `assets/`, `asset_rename` moves one (scenes follow) and `asset_delete` removes
    one (refused while a scene uses it, unless `force`).
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
    `preset_get`, `preset_validate` (checks a recipe before `preset_save`), `font_list` (then `font_install` for a Google font you need).
-3. **Build:** `scene_build` with `compact` and no `save` returns the expanded scene and
+3. **Build:** `scene_build` takes the scene inside `compact` (`{ compact: { size, elements,
+   … }, project, save? }`; scene keys at the top level fail, saying they go in `compact`);
+   texts use `text` and `size`, not `content` or `fontSize` (notices suggest the field).
+   With no `save` it returns the expanded scene and
    `notices` without writing anything. What `compact` leaves out (size, duration, fps,
    background) comes from the project's canvas, as in `scene_create`; `size` is `"WxH"`,
    `[w, h]`, a ratio (`"9:16"`, `"4:5"`, `"1:1"`, `"16:9"`) or a format (`"Story"`), and

@@ -19,7 +19,8 @@ import { saveScene } from "../scenes.ts";
 export const sceneBuild = defineTool({
   name: "scene_build",
   description:
-    "Build a full scene from a compact description, over the project's canvas (size, " +
+    "Build a full scene from a compact description given in `compact` (size, elements, " +
+    "shots… go inside it, not at the top level), over the project's canvas (size, " +
     'duration, fps, palette background) for what it leaves out. `size` is "WxH", [w, h], a ' +
     'ratio ("9:16", "4:5", "1:1", "16:9") or a format ("Story"); anything else fails. ' +
     "Expands background (a background " +
