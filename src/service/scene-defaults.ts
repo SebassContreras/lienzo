@@ -5,7 +5,11 @@
  */
 import { defaultScene, type Scene } from "../model/model.ts";
 import { deepMerge } from "../presets/resolve.ts";
+import { solidBackground } from "../traits/solid.ts";
+import { resolveSceneBackground } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
+import { fail } from "./registry.ts";
+import { findPreset } from "./scenes.ts";
 
 export async function sceneDefaults(ctx: ProjectCtx): Promise<Scene> {
   const scene = defaultScene();
@@ -18,10 +22,9 @@ export async function sceneDefaults(ctx: ProjectCtx): Promise<Scene> {
     height: canvas.height,
     fps: canvas.fps,
     duration: canvas.duration,
-    background: {
-      ...scene.background,
-      color: palette.background ?? scene.background.color,
-    },
+    background: palette.background
+      ? solidBackground(scene.background, palette.background)
+      : scene.background,
   };
 }
 
@@ -38,7 +41,23 @@ export async function sceneFromData(
   const defaults = await sceneDefaults(ctx);
   const out: Record<string, unknown> = { ...defaults, ...data };
   const bg = data.background;
-  if (typeof bg === "object" && bg !== null && !Array.isArray(bg)) {
+  if (typeof bg === "string") {
+    // a color or a background preset, as `scene_build` reads it (065/D1)
+    const notices: string[] = [];
+    out.background = await resolveSceneBackground(
+      bg,
+      notices,
+      async (name) => {
+        try {
+          return (await findPreset(ctx, name)).recipe;
+        } catch {
+          return undefined;
+        }
+      },
+      defaults.background,
+    );
+    if (notices[0]) fail("invalid_input", notices[0], "data.background");
+  } else if (typeof bg === "object" && bg !== null && !Array.isArray(bg)) {
     const merged = structuredClone(defaults.background);
     deepMerge(
       merged as unknown as Record<string, unknown>,

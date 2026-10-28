@@ -61,6 +61,7 @@ import {
   saveScene,
   saveUserPreset,
 } from "../presets/store.ts";
+import { solidBackground } from "../traits/solid.ts";
 import { type AlignAction, alignElements } from "./align.ts";
 import { AnimLibrary } from "./anim-library.tsx";
 import { createDraftGuard, readAutosave, writeAutosave } from "./autosave.ts";
@@ -498,13 +499,23 @@ export function App() {
 
   /** A blank scene keeping the current mode; not autosaved, so the draft survives (043/D2). */
   const openBlankScene = useCallback(() => {
+    const start = startupState().scene;
     const blank: Scene = {
-      ...startupState().scene,
+      ...start,
+      // a project's palette background starts a new scene solid (065/D2)
+      ...(activePalette?.background
+        ? {
+            background: solidBackground(
+              start.background,
+              activePalette.background,
+            ),
+          }
+        : {}),
       ...(sceneRef.current.mode ? { mode: sceneRef.current.mode } : {}),
     };
     draftGuard.markPristine(blank);
     loadScene(blank);
-  }, [loadScene, draftGuard]);
+  }, [loadScene, draftGuard, activePalette]);
 
   /** Reopens the workspace's autosaved draft (042/D3). */
   const recoverDraft = useCallback(() => {

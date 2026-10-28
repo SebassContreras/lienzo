@@ -75,7 +75,7 @@ const COLOR_PREFIX = /^(#|rgba?\(|hsla?\()/i;
  * object merged onto a solid background (064/D10); a string that is neither keeps the
  * default and pushes a notice (064/D9).
  */
-async function resolveSceneBackground(
+export async function resolveSceneBackground(
   bgInput: unknown,
   notices: string[],
   findPreset?: PresetResolver,
