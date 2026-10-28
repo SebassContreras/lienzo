@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { groupElements } from "../../engine/groups.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail, failAll } from "../registry.ts";
-import { allElements } from "../scenes/scene-changes.ts";
-import { openScene, SceneResult, saveScene } from "../scenes/scenes.ts";
+import { groupElements } from "../../../engine/groups.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail, failAll } from "../../registry.ts";
+import { allElements } from "../../scenes/scene-changes.ts";
+import { openScene, SceneResult, saveScene } from "../../scenes/scenes.ts";
 
 export const elementGroup = defineTool({
   name: "element_group",

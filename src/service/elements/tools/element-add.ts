@@ -1,15 +1,20 @@
 import { z } from "zod";
-import { withCountUp } from "../../components/counter/count-up.ts";
-import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
+import { withCountUp } from "../../../components/counter/count-up.ts";
+import { AT_RULES, AtPlacementSchema } from "../../../model/compact.ts";
 import {
   defaultElement,
   type Element,
   type ElementKind,
-} from "../../model/model.ts";
-import { fromShotStart } from "../../model/shots.ts";
-import { resolveElement } from "../../presets/resolve.ts";
-import { applyImplied } from "../compact/implied.ts";
-import { placeAt } from "../compact/layout.ts";
+} from "../../../model/model.ts";
+import { fromShotStart } from "../../../model/shots.ts";
+import { resolveElement } from "../../../presets/resolve.ts";
+import { applyImplied } from "../../compact/implied.ts";
+import { placeAt } from "../../compact/layout.ts";
+import { withFileAspect } from "../../image-aspect.ts";
+import { trimImage } from "../../image-trim.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail, remapFailure, ToolFailure } from "../../registry.ts";
+import { editScene, findPreset, SceneResult } from "../../scenes/scenes.ts";
 import { findElement, insertChild } from "../element-tree.ts";
 import {
   COORDINATES,
@@ -18,11 +23,6 @@ import {
   patched,
   trackOverridesAt,
 } from "../elements.ts";
-import { withFileAspect } from "../image-aspect.ts";
-import { trimImage } from "../image-trim.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail, remapFailure, ToolFailure } from "../registry.ts";
-import { editScene, findPreset, SceneResult } from "../scenes/scenes.ts";
 
 /** `elements.<id>.…` (or `elements.<group>/<id>.…`) of the element `id` as `patch.…`. */
 const atPatch =

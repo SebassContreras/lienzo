@@ -3,8 +3,8 @@
  * Supports both bare unique element IDs (`s1-car`) and slash-separated group paths
  * (`shot-1/s1-car`) across nested groups of any depth.
  */
-import type { Element, GroupEl } from "../model/model.ts";
-import { fail } from "./registry.ts";
+import type { Element, GroupEl } from "../../model/model.ts";
+import { fail } from "../registry.ts";
 
 /** Locates an element in `elements` by unique `id` or slash-separated path (`group/child`). */
 function resolvePath(

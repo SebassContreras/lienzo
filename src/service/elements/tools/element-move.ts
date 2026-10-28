@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
+import { editScene, SceneResult } from "../../scenes/scenes.ts";
 import { updateSiblings } from "../element-tree.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes/scenes.ts";
 
 const STEPS = ["front", "back", "forward", "backward"] as const;
 

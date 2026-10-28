@@ -4,8 +4,8 @@
  * reading a scene does not cost ~40 lines per element. `scene_create` and `scene_validate`
  * fill the rest back in (`withElementDefaults`). Pure.
  */
-import { defaultElement, type Element, type Scene } from "../model/model.ts";
-import { deepDiff } from "../presets/diff.ts";
+import { defaultElement, type Element, type Scene } from "../../model/model.ts";
+import { deepDiff } from "../../presets/diff.ts";
 
 function sparse(el: Element): Record<string, unknown> {
   const { id, kind, ...fields } = el as Element & { children?: Element[] };

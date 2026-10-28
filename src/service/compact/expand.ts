@@ -35,7 +35,7 @@ import {
   resolvePreset,
 } from "../../presets/resolve.ts";
 import { solid } from "../../traits/solid.ts";
-import { hasPositionTrack, trackOverridesAt } from "../elements.ts";
+import { hasPositionTrack, trackOverridesAt } from "../elements/elements.ts";
 import { resolveLineConnections } from "./connections.ts";
 import { applySceneDefaults } from "./defaults.ts";
 import { expandEffects } from "./effects.ts";

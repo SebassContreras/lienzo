@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { defaultElement, type Element, type GroupEl } from "../model/model.ts";
+import {
+  defaultElement,
+  type Element,
+  type GroupEl,
+} from "../../model/model.ts";
+import { ToolFailure } from "../registry.ts";
 import {
   findElement,
   insertChild,
   updateElement,
   updateSiblings,
 } from "./element-tree.ts";
-import { ToolFailure } from "./registry.ts";
 
 function makeGroup(id: string, children: Element[]): GroupEl {
   return {

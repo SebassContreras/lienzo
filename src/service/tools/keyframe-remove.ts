@@ -6,7 +6,7 @@ import {
   trackRepeat,
   trackUntil,
 } from "../../model/track.ts";
-import { updateElement } from "../element-tree.ts";
+import { updateElement } from "../elements/element-tree.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { editScene, SceneResult } from "../scenes/scenes.ts";

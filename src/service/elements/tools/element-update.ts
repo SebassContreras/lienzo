@@ -3,10 +3,13 @@ import {
   ANIM_RULES,
   AT_RULES,
   AtPlacementSchema,
-} from "../../model/compact.ts";
-import { OPTIONS_TEXT } from "../../model/options.ts";
-import { movedNotice, rebindShot } from "../../model/shot-timing.ts";
-import { placeAt } from "../compact/layout.ts";
+} from "../../../model/compact.ts";
+import { OPTIONS_TEXT } from "../../../model/options.ts";
+import { movedNotice, rebindShot } from "../../../model/shot-timing.ts";
+import { placeAt } from "../../compact/layout.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
+import { editScene, SceneResult } from "../../scenes/scenes.ts";
 import { updateElement } from "../element-tree.ts";
 import {
   COORDINATES,
@@ -15,9 +18,6 @@ import {
   patchNotices,
   trackOverridesAt,
 } from "../elements.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes/scenes.ts";
 
 export const elementUpdate = defineTool({
   name: "element_update",

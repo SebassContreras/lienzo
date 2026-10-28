@@ -2,6 +2,14 @@
  * Every tool, one file each (A20); the CLI (008) and the MCP server (009) expose `registry`.
  * A new tool is a file here plus one line in `TOOLS`.
  */
+
+import { componentList } from "../elements/tools/component-list.ts";
+import { elementAdd } from "../elements/tools/element-add.ts";
+import { elementGroup } from "../elements/tools/element-group.ts";
+import { elementMove } from "../elements/tools/element-move.ts";
+import { elementRemove } from "../elements/tools/element-remove.ts";
+import { elementUngroup } from "../elements/tools/element-ungroup.ts";
+import { elementUpdate } from "../elements/tools/element-update.ts";
 import { createRegistry, type Tool } from "../registry.ts";
 import { backgroundSet } from "../scenes/tools/background-set.ts";
 import { sceneBuild } from "../scenes/tools/scene-build.ts";
@@ -18,13 +26,6 @@ import { animationSave } from "./animation-save.ts";
 import { assetAdd } from "./asset-add.ts";
 import { assetDelete } from "./asset-delete.ts";
 import { assetRename } from "./asset-rename.ts";
-import { componentList } from "./component-list.ts";
-import { elementAdd } from "./element-add.ts";
-import { elementGroup } from "./element-group.ts";
-import { elementMove } from "./element-move.ts";
-import { elementRemove } from "./element-remove.ts";
-import { elementUngroup } from "./element-ungroup.ts";
-import { elementUpdate } from "./element-update.ts";
 import { fontInstall } from "./font-install.ts";
 import { fontList } from "./font-list.ts";
 import { imageTrim } from "./image-trim.ts";

@@ -9,8 +9,8 @@ import {
   trackRepeat,
   trackUntil,
 } from "../../model/track.ts";
-import { updateElement } from "../element-tree.ts";
-import { checkKeyframe, checkTrackPath } from "../elements.ts";
+import { updateElement } from "../elements/element-tree.ts";
+import { checkKeyframe, checkTrackPath } from "../elements/elements.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { deadEasingNotice, deadEasings } from "../scenes/scene-notices.ts";

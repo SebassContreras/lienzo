@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { findElement, updateElement } from "../element-tree.ts";
+import { findElement, updateElement } from "../elements/element-tree.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
