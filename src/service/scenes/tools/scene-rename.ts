@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { renameIn, storedAsNotice } from "../project-files.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
+import { renameIn, storedAsNotice } from "../../project-files.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
 
 export const sceneRename = defineTool({
   name: "scene_rename",

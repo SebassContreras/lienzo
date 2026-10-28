@@ -22,7 +22,7 @@ import { withFileAspect } from "../image-aspect.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail, remapFailure, ToolFailure } from "../registry.ts";
-import { editScene, findPreset, SceneResult } from "../scenes.ts";
+import { editScene, findPreset, SceneResult } from "../scenes/scenes.ts";
 
 /** `elements.<id>.…` (or `elements.<group>/<id>.…`) of the element `id` as `patch.…`. */
 const atPatch =

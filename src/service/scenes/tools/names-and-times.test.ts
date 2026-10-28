@@ -2,9 +2,9 @@ import { cp, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, it } from "vitest";
-import { type Ctx, createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
-import { registry } from "./index.ts";
+import { type Ctx, createCtx } from "../../ctx.ts";
+import { fakeRenderer } from "../../fake-renderer.ts";
+import { registry } from "../../tools/index.ts";
 
 let ctx: Ctx;
 const call = (name: string, input: Record<string, unknown>) =>

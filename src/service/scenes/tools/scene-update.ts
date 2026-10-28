@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
 import { editScene, SceneResult } from "../scenes.ts";
 
 const SETTINGS = [

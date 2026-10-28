@@ -26,15 +26,15 @@ import {
 const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
-import { sceneDefaults } from "./scene-defaults.ts";
-import { deadKeyframeEasingNotices } from "./scene-notices.ts";
-import { resourceNotices } from "./scene-resources.ts";
+import { sceneDefaults } from "./scenes/scene-defaults.ts";
+import { deadKeyframeEasingNotices } from "./scenes/scene-notices.ts";
+import { resourceNotices } from "./scenes/scene-resources.ts";
 import {
   animLibrary,
   checkWholeScene,
   findPreset,
   rawRuleProblems,
-} from "./scenes.ts";
+} from "./scenes/scenes.ts";
 
 type Raw = Record<string, unknown>;
 const isRaw = (v: unknown): v is Raw =>
@@ -113,68 +113,68 @@ export async function buildCompact(
   const expandChecked = async (
     compact: CompactScene,
   ): Promise<{ scene: Scene; notices: string[] }> => {
-  let scene: Scene;
-  let notices: string[];
-  try {
-    const full = await expandScene(compact, {
-      findPreset: async (name) => {
-        try {
-          return (await findPreset(ctx, name)).recipe;
-        } catch {
-          return undefined;
-        }
-      },
-      presetHint: (name) =>
-        namesHint(
-          name,
-          presets.map((p) => asRecipe(p.data as PresetRecipe).name),
-          "preset_list",
+    let scene: Scene;
+    let notices: string[];
+    try {
+      const full = await expandScene(compact, {
+        findPreset: async (name) => {
+          try {
+            return (await findPreset(ctx, name)).recipe;
+          } catch {
+            return undefined;
+          }
+        },
+        presetHint: (name) =>
+          namesHint(
+            name,
+            presets.map((p) => asRecipe(p.data as PresetRecipe).name),
+            "preset_list",
+          ),
+        animLibrary: library,
+        base,
+      });
+      scene = checkWholeScene(
+        {
+          ...full.scene,
+          elements: await withFileAspects(
+            ctx,
+            full.scene.elements,
+            compact.elements ?? [],
+          ),
+        },
+        library,
+        { given: compact },
+      );
+      notices = [
+        // keys the compact element schema dropped, named as errors name them (080/D6)
+        ...ignoredFields(
+          { elements: input.elements, symbols: input.symbols },
+          { elements: compact.elements, symbols: compact.symbols },
+        ).map((f) =>
+          ignoredNotice({ ...f, path: join("compact", idPath(input, f.path)) }),
         ),
-      animLibrary: library,
-      base,
-    });
-    scene = checkWholeScene(
-      {
-        ...full.scene,
-        elements: await withFileAspects(
-          ctx,
-          full.scene.elements,
-          compact.elements ?? [],
-        ),
-      },
-      library,
-      { given: compact },
-    );
-    notices = [
-      // keys the compact element schema dropped, named as errors name them (080/D6)
-      ...ignoredFields(
-        { elements: input.elements, symbols: input.symbols },
-        { elements: compact.elements, symbols: compact.symbols },
-      ).map((f) =>
-        ignoredNotice({ ...f, path: join("compact", idPath(input, f.path)) }),
-      ),
-      ...ignoredFields(full.scene, scene).map(ignoredNotice),
-      ...full.notices,
-      ...(scene.shots ?? []).flatMap((sh) => cameraOutsideShot(sh) ?? []),
-    ];
-  } catch (err: unknown) {
-    // the failing path is the compact one, an element named by its id (069/D12, 080/D5)
-    const named = (path: string) => join("compact", idPath(input, path));
-    if (err instanceof ToolFailure)
-      throw new ToolFailure(remapFailure(err.error, named));
-    // the expansion fails with one «path: message» line per problem
-    const msg = err instanceof Error ? err.message : String(err);
-    failAll(
-      "invalid_compact_scene",
-      msg.split("\n").map((line) => {
-        const path = /^([\w./-]+): /.exec(line)?.[1];
-        return path
-          ? { path: named(path), message: line.slice(path.length + 2) }
-          : { path: "compact", message: line };
-      }),
-    );
-  }
-  return { scene, notices };
+        ...ignoredFields(full.scene, scene).map(ignoredNotice),
+        ...full.notices,
+        ...(scene.shots ?? []).flatMap((sh) => cameraOutsideShot(sh) ?? []),
+      ];
+    } catch (err: unknown) {
+      // the failing path is the compact one, an element named by its id (069/D12, 080/D5)
+      const named = (path: string) => join("compact", idPath(input, path));
+      if (err instanceof ToolFailure)
+        throw new ToolFailure(remapFailure(err.error, named));
+      // the expansion fails with one «path: message» line per problem
+      const msg = err instanceof Error ? err.message : String(err);
+      failAll(
+        "invalid_compact_scene",
+        msg.split("\n").map((line) => {
+          const path = /^([\w./-]+): /.exec(line)?.[1];
+          return path
+            ? { path: named(path), message: line.slice(path.length + 2) }
+            : { path: "compact", message: line };
+        }),
+      );
+    }
+    return { scene, notices };
   };
   const parsed = CompactSceneSchema.safeParse(input);
   if (!parsed.success) {
@@ -234,7 +234,10 @@ async function laterProblems(
   }
   rest.elements = (input.elements ?? []).map((el, i) =>
     bad.has(i)
-      ? { kind: "rect", ...(isRaw(el) && typeof el.id === "string" ? { id: el.id } : {}) }
+      ? {
+          kind: "rect",
+          ...(isRaw(el) && typeof el.id === "string" ? { id: el.id } : {}),
+        }
       : el,
   );
   const again = CompactSceneSchema.safeParse(rest);
@@ -244,6 +247,8 @@ async function laterProblems(
     return [];
   } catch (err) {
     if (!(err instanceof ToolFailure)) throw err;
-    return err.error.errors ?? [{ path: err.error.path, message: err.error.message }];
+    return (
+      err.error.errors ?? [{ path: err.error.path, message: err.error.message }]
+    );
   }
 }

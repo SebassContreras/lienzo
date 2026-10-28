@@ -3,7 +3,7 @@ import { mapElementsDeep } from "../../model/element-walk.ts";
 import { updateSiblings } from "../element-tree.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes.ts";
+import { editScene, SceneResult } from "../scenes/scenes.ts";
 
 export const elementRemove = defineTool({
   name: "element_remove",

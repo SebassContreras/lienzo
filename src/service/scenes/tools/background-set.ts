@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { ignoredFields, ignoredNotice } from "../../model/ignored.ts";
-import { type Background, defaultScene } from "../../model/model.ts";
-import { BackgroundSchema } from "../../model/schema.ts";
-import { deepMerge, resolveBackground } from "../../presets/resolve.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
+import { ignoredFields, ignoredNotice } from "../../../model/ignored.ts";
+import { type Background, defaultScene } from "../../../model/model.ts";
+import { BackgroundSchema } from "../../../model/schema.ts";
+import { deepMerge, resolveBackground } from "../../../presets/resolve.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
 import { editScene, findPreset, SceneResult } from "../scenes.ts";
 
 export const backgroundSet = defineTool({

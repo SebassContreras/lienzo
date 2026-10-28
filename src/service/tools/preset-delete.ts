@@ -2,7 +2,7 @@ import { z } from "zod";
 import { removeIn } from "../project-files.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { refuseBuiltIn } from "../scenes.ts";
+import { refuseBuiltIn } from "../scenes/scenes.ts";
 
 export const presetDelete = defineTool({
   name: "preset_delete",

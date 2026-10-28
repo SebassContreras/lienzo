@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
+import { sparseScene } from "../../sparse-scene.ts";
 import { openScene } from "../scenes.ts";
-import { sparseScene } from "../sparse-scene.ts";
 
 export const sceneGet = defineTool({
   name: "scene_get",

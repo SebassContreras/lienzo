@@ -3,7 +3,7 @@ import { findElement, updateElement } from "../element-tree.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { openScene, SceneResult, saveScene } from "../scenes.ts";
+import { openScene, SceneResult, saveScene } from "../scenes/scenes.ts";
 
 export const imageTrim = defineTool({
   name: "image_trim",

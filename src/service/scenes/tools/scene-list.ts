@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { parseScene } from "../../model/schema.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
+import { parseScene } from "../../../model/schema.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
 
 export const sceneList = defineTool({
   name: "scene_list",

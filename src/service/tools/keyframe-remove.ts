@@ -9,7 +9,7 @@ import {
 import { updateElement } from "../element-tree.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes.ts";
+import { editScene, SceneResult } from "../scenes/scenes.ts";
 
 export const keyframeRemove = defineTool({
   name: "keyframe_remove",

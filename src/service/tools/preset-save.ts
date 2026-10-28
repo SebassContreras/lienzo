@@ -9,7 +9,7 @@ import { slugify } from "../../presets/slug.ts";
 import { folderOf, storedAsNotice } from "../project-files.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail, failAll } from "../registry.ts";
-import { refuseBuiltInName } from "../scenes.ts";
+import { refuseBuiltInName } from "../scenes/scenes.ts";
 import { RECIPE_RULES } from "./preset-validate.ts";
 
 export const presetSave = defineTool({
@@ -39,8 +39,16 @@ export const presetSave = defineTool({
     const preset = await writeJson(dir, name, parsed.value);
     // a `set` key the kind has no field for is dropped when the preset is used (081/D7)
     const built = resolvePreset(parsed.value as PresetRecipe);
-    const raw = "element" in built ? built.element : "background" in built ? built.background : {};
-    const kept = "element" in built ? ElementSchema.safeParse(raw).data : BackgroundSchema.safeParse(raw).data;
+    const raw =
+      "element" in built
+        ? built.element
+        : "background" in built
+          ? built.background
+          : {};
+    const kept =
+      "element" in built
+        ? ElementSchema.safeParse(raw).data
+        : BackgroundSchema.safeParse(raw).data;
     const set = Object.keys(parsed.value.set ?? {});
     const ignored = ignoredFields(raw, kept)
       .filter((f) => set.includes(f.path.split(".")[0] ?? ""))

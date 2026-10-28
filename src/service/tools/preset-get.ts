@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { findPreset } from "../scenes.ts";
+import { findPreset } from "../scenes/scenes.ts";
 
 export const presetGet = defineTool({
   name: "preset_get",

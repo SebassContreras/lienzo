@@ -3,10 +3,10 @@
  * the project lacks (drawn as a placeholder until it is added, or audio that does not play,
  * 080/D3) and a line end whose element this write removed. Unknown shots, icons and targets fail instead (`checkReferences`).
  */
-import { descriptorOf } from "../components/index.ts";
-import type { Scene } from "../model/model.ts";
-import { audioRefs, EXTERNAL_REF } from "./asset-refs.ts";
-import type { ProjectCtx } from "./ctx.ts";
+import { descriptorOf } from "../../components/index.ts";
+import type { Scene } from "../../model/model.ts";
+import { audioRefs, EXTERNAL_REF } from "../asset-refs.ts";
+import type { ProjectCtx } from "../ctx.ts";
 import { allElements, changedSince, idsOf } from "./scene-changes.ts";
 
 /**

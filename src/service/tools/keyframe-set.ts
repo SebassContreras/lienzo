@@ -13,8 +13,8 @@ import { updateElement } from "../element-tree.ts";
 import { checkKeyframe, checkTrackPath } from "../elements.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
-import { deadEasingNotice, deadEasings } from "../scene-notices.ts";
-import { editScene, SceneResult } from "../scenes.ts";
+import { deadEasingNotice, deadEasings } from "../scenes/scene-notices.ts";
+import { editScene, SceneResult } from "../scenes/scenes.ts";
 
 export const keyframeSet = defineTool({
   name: "keyframe_set",
@@ -111,9 +111,10 @@ export const keyframeSet = defineTool({
     const leaf = id.split("/").at(-1);
     // only a call that wrote a keyframe can have set it (081/D4)
     const wroteKey = t !== undefined && value !== undefined;
-    const dead = edited && wroteKey
-      ? deadEasings(edited).filter((d) => d.path === path && d.id === leaf)
-      : [];
+    const dead =
+      edited && wroteKey
+        ? deadEasings(edited).filter((d) => d.path === path && d.id === leaf)
+        : [];
     return {
       ...result,
       notices: [...result.notices, ...dead.map(deadEasingNotice)],

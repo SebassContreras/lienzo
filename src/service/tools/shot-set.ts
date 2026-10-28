@@ -12,7 +12,7 @@ import {
 } from "../../model/shots.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes.ts";
+import { editScene, SceneResult } from "../scenes/scenes.ts";
 
 export const shotSet = defineTool({
   name: "shot_set",

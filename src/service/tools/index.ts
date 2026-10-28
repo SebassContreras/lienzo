@@ -3,13 +3,21 @@
  * A new tool is a file here plus one line in `TOOLS`.
  */
 import { createRegistry, type Tool } from "../registry.ts";
+import { backgroundSet } from "../scenes/tools/background-set.ts";
+import { sceneBuild } from "../scenes/tools/scene-build.ts";
+import { sceneCreate } from "../scenes/tools/scene-create.ts";
+import { sceneDelete } from "../scenes/tools/scene-delete.ts";
+import { sceneGet } from "../scenes/tools/scene-get.ts";
+import { sceneList } from "../scenes/tools/scene-list.ts";
+import { sceneRename } from "../scenes/tools/scene-rename.ts";
+import { sceneUpdate } from "../scenes/tools/scene-update.ts";
+import { sceneValidate } from "../scenes/tools/scene-validate.ts";
 import { animationDelete } from "./animation-delete.ts";
 import { animationList } from "./animation-list.ts";
 import { animationSave } from "./animation-save.ts";
 import { assetAdd } from "./asset-add.ts";
 import { assetDelete } from "./asset-delete.ts";
 import { assetRename } from "./asset-rename.ts";
-import { backgroundSet } from "./background-set.ts";
 import { componentList } from "./component-list.ts";
 import { elementAdd } from "./element-add.ts";
 import { elementGroup } from "./element-group.ts";
@@ -33,18 +41,10 @@ import { projectDelete } from "./project-delete.ts";
 import { projectInspect } from "./project-inspect.ts";
 import { projectList } from "./project-list.ts";
 import { projectUpdate } from "./project-update.ts";
-import { sceneBuild } from "./scene-build.ts";
-import { sceneCreate } from "./scene-create.ts";
-import { sceneDelete } from "./scene-delete.ts";
 import { sceneExport } from "./scene-export.ts";
 import { sceneGenerateSpeech } from "./scene-generate-speech.ts";
-import { sceneGet } from "./scene-get.ts";
 import { sceneInspectLayout } from "./scene-inspect-layout.ts";
-import { sceneList } from "./scene-list.ts";
 import { scenePreview } from "./scene-preview.ts";
-import { sceneRename } from "./scene-rename.ts";
-import { sceneUpdate } from "./scene-update.ts";
-import { sceneValidate } from "./scene-validate.ts";
 import { shotSet } from "./shot-set.ts";
 
 const TOOLS: readonly Tool[] = [

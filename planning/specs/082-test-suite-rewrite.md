@@ -58,9 +58,12 @@ When this spec is done:
   (registry, ctx, store, verdict, round). `git mv` one functionality per commit; `pnpm
   typecheck` proves the imports. The layered top level (`model`, `engine`, `components`,
   `editor`) stays as AGENTS.md documents it; only its loose tests move.
+  Each functionality is `src/service/<feature>/` with its logic and tests, and
+  `src/service/<feature>/tools/` with its tool files and their tests (a tool and its logic share
+  names, e.g. `image-trim.ts`, so they cannot share a folder).
   - _Trade-offs_: tool files leave `src/service/tools/` for their functionality, which changes
-    A20's "one file per tool in `tools/`". _Mitigation_: `tools/index.ts` keeps the one `TOOLS`
-    list; A20 is updated in the same commit.
+    A20's "one file per tool in `tools/`". _Mitigation_: `src/service/tools/index.ts` keeps the
+    one `TOOLS` list; A20 is updated in T015, when the last tool has moved.
 - D4 (R4): `Tool` gets a required `effects: readonly Effect[]` (`scene`, `asset`, `preset`,
   `project`, `font`, `export`; empty for a read tool).
 - D5 (R5): `src/service/contract/inputs.ts` builds, from `z.toJSONSchema(tool.input)`, one valid
@@ -81,14 +84,36 @@ When this spec is done:
   `prepareScene`; (3) text or docs; (4) a design decision → `## Ideas`. A round ends when the
   corpus is green, the matrix is complete and a QA run finds no new class.
 
+## Layout (T004)
+
+Inventory of `src/service` (165 files, tests included) read on 2026-10-28. A file goes to the functionality named; `core` holds what every feature uses (`ProjectCtx` is in `project-scope.ts`); `contract` holds the tests that cross functionalities and become the generated suite of T017–T023 (their cases are redistributed in T024–T034). `tools/*.ts` move to their functionality; `tools/index.ts` keeps the one `TOOLS` list.
+
+| Functionality | Files |
+|---|---|
+| `scenes` (23) | patch-notices.test.ts, scene-changes.ts, scene-defaults.test.ts, scene-defaults.ts, scene-notices.test.ts, scene-notices.ts, scene-references.ts, scene-resources.test.ts, scene-resources.ts, scene-watch.test.ts, scene-watch.ts, scenes.ts, tools/background-set.ts, tools/names-and-times.test.ts, tools/scene-build-result.test.ts, tools/scene-build.ts, tools/scene-create.ts, tools/scene-delete.ts, tools/scene-get.ts, tools/scene-list.ts, tools/scene-rename.ts, tools/scene-update.ts, tools/scene-validate.ts |
+| `elements` (12) | element-tree.test.ts, element-tree.ts, elements.ts, sparse-scene.ts, tools/component-list.ts, tools/counter-count-up.test.ts, tools/element-add.ts, tools/element-group.ts, tools/element-move.ts, tools/element-remove.ts, tools/element-ungroup.ts, tools/element-update.ts |
+| `shots` (5) | shots.test.ts, tools/keyframe-remove.ts, tools/keyframe-set.ts, tools/shot-duration.test.ts, tools/shot-set.ts |
+| `assets` (19) | asset-helpers.test.ts, asset-helpers.ts, asset-path.test.ts, asset-path.ts, asset-refs.ts, asset-tools.test.ts, image-aspect.test.ts, image-aspect.ts, image-header.test.ts, image-header.ts, image-probe.test.ts, image-probe.ts, image-trim.ts, project-assets.ts, tools/asset-add.ts, tools/asset-delete.ts, tools/asset-rename.ts, tools/image-trim.test.ts, tools/image-trim.ts |
+| `fonts` (10) | font-check.test.ts, font-check.ts, font-install.test.ts, font-install.ts, font-middleware.ts, font-store.ts, google-fonts.test.ts, google-fonts.ts, tools/font-install.ts, tools/font-list.ts |
+| `presets` (11) | built-in.ts, tools/animation-delete.ts, tools/animation-list.ts, tools/animation-save.ts, tools/animation-tools.test.ts, tools/preset-delete.ts, tools/preset-get.ts, tools/preset-list.ts, tools/preset-rename.ts, tools/preset-save.ts, tools/preset-validate.ts |
+| `projects` (14) | project-boundary.test.ts, project-files.ts, project-middleware.test.ts, project-middleware.ts, project-result.ts, project-store.ts, project-tools.test.ts, root.test.ts, root.ts, tools/project-create.ts, tools/project-delete.ts, tools/project-inspect.ts, tools/project-list.ts, tools/project-update.ts |
+| `speech` (18) | tools/scene-generate-speech.ts, tts/asset-store.ts, tts/audio-duration.test.ts, tts/audio-duration.ts, tts/config.ts, tts/factory.ts, tts/local-adapter.ts, tts/openrouter-adapter.ts, tts/pluggable-tts.test.ts, tts/preferences.ts, tts/scene-audio.test.ts, tts/scene-audio.ts, tts/speech-alignment.ts, tts/tts-config.test.ts, tts/tts.test.ts, tts/types.ts, tts-proxy.test.ts, tts-proxy.ts |
+| `render` (9) | exports.test.ts, exports.ts, fake-renderer.ts, image.ts, render-target.ts, renderer.test.ts, renderer.ts, tools/scene-export.ts, tools/scene-preview.ts |
+| `compact` (19) | build-compact.ts, compact/background.test.ts, compact/connections.ts, compact/defaults.test.ts, compact/defaults.ts, compact/effects.test.ts, compact/effects.ts, compact/errors.test.ts, compact/expand.test.ts, compact/expand.ts, compact/flat-glow.test.ts, compact/gradients.test.ts, compact/honest-defaults.test.ts, compact/implied.test.ts, compact/implied.ts, compact/keep-audio.test.ts, compact/keep-audio.ts, compact/layout.ts, tools/compact-input.test.ts |
+| `layout` (10) | brand-constraining.test.ts, contrast.test.ts, contrast.ts, estimated-width.test.ts, layout.test.ts, layout.ts, symbols-layout.test.ts, text-extents.ts, text-layout.test.ts, tools/scene-inspect-layout.ts |
+| `core` (7) | ctx.ts, project-scope.ts, registry.ts, round.ts, store.ts, tools/index.ts, verdict.ts |
+| `contract` (8) | editor-parity.test.ts, parity-tools.test.ts, service.test.ts, tools/contract.test.ts, tools/descriptions.test.ts, tools/qa-round-3.test.ts, tools/qa-round-5.test.ts, tools/qa-round-6.test.ts |
+
+Outside `src/service` (T016): `src/test/registry.test.ts` goes to `core`, `src/test/more-elements.test.ts` to `src/components`; `render.test.ts`, `golden-scenes.ts`, `render.golden.json` and the harness stay in `src/test/`; `src/presets/render-audit.test.ts` and `round-trip.test.ts` stay with `src/presets/`; the other tests already sit beside their module.
+
 ## Tasks
 Order: T001–T004, then the moves (T005–T016), the tool field and generated suite (T017–T023),
 the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T001 [agent] Policy: A14 and the AGENTS.md test rule rewritten, entry in `planning/changes.md` — covers R1, D1
 - [x] 082/T002 [agent] Tooling: `@vitest/coverage-v8` and Stryker with the Vitest runner, scripts `test:cov` and `test:mutate`, a config that excludes `renderer.test.ts` — covers R2, D2
 - [ ] 082/T003 [agent] Verify: baseline — coverage per folder and mutation score per functionality with the current suite, time per run, recorded in this spec's Changes — covers R2
-- [ ] 082/T004 [agent] Inventory: every test file and source file of `src/service` assigned to a functionality (table in this spec) — covers R3, D3
-- [ ] 082/T005 [agent] Move `scenes` (scene tools, `scenes.ts`, defaults, references, resources, notices, watch, changes) — covers R3, D3
+- [x] 082/T004 [agent] Inventory: every test file and source file of `src/service` assigned to a functionality (table in this spec) — covers R3, D3
+- [x] 082/T005 [agent] Move `scenes` (scene tools, `scenes.ts`, defaults, references, resources, notices, watch, changes) — covers R3, D3
 - [ ] 082/T006 [agent] Move `elements` (element tools, element-tree, elements.ts, image-trim, sparse-scene) — covers R3, D3
 - [ ] 082/T007 [agent] Move `shots` and `keyframes` — covers R3, D3
 - [ ] 082/T008 [agent] Move `assets` (asset tools, asset-*, image-header, image-aspect, image-probe, project-assets) — covers R3, D3

@@ -3,29 +3,29 @@
  * parses as an editor scene, with its animation presets copied in first.
  */
 import { z } from "zod";
-import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
-import { mapElementsDeep } from "../model/element-walk.ts";
-import { withElementDefaults } from "../model/fill-defaults.ts";
-import { idPath } from "../model/id-path.ts";
-import { duplicateIds } from "../model/ids.ts";
-import { namesHint } from "../model/ignored.ts";
-import type { Element, Scene } from "../model/model.ts";
-import type { PresetRecipe } from "../model/preset.ts";
-import { parseScene, ShotSchema } from "../model/schema.ts";
-import { shotProblems } from "../model/shots.ts";
-import { expandAnimPresets } from "../presets/anim-presets.ts";
-import { sameName, slugify } from "../presets/slug.ts";
-import { asRecipe } from "../presets/store.ts";
-import { withCanonicalAssets, withCanonicalAudio } from "./asset-refs.ts";
-import type { Ctx, ProjectCtx } from "./ctx.ts";
-import { fontNotices } from "./font-check.ts";
-import { availableFonts } from "./font-install.ts";
-import { fail, failAll, type Problem, problemsOf } from "./registry.ts";
+import { type AnimPreset, parseAnimPreset } from "../../model/anim-preset.ts";
+import { mapElementsDeep } from "../../model/element-walk.ts";
+import { withElementDefaults } from "../../model/fill-defaults.ts";
+import { idPath } from "../../model/id-path.ts";
+import { duplicateIds } from "../../model/ids.ts";
+import { namesHint } from "../../model/ignored.ts";
+import type { Element, Scene } from "../../model/model.ts";
+import type { PresetRecipe } from "../../model/preset.ts";
+import { parseScene, ShotSchema } from "../../model/schema.ts";
+import { shotProblems } from "../../model/shots.ts";
+import { expandAnimPresets } from "../../presets/anim-presets.ts";
+import { sameName, slugify } from "../../presets/slug.ts";
+import { asRecipe } from "../../presets/store.ts";
+import { withCanonicalAssets, withCanonicalAudio } from "../asset-refs.ts";
+import type { Ctx, ProjectCtx } from "../ctx.ts";
+import { fontNotices } from "../font-check.ts";
+import { availableFonts } from "../font-install.ts";
+import { fail, failAll, type Problem, problemsOf } from "../registry.ts";
+import type { PresetSource } from "../store.ts";
 import { allElements, changedSince } from "./scene-changes.ts";
 import { offCanvasNotices, shotNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
-import type { PresetSource } from "./store.ts";
 
 const under = (prefix: string, path: string) =>
   [prefix, path].filter(Boolean).join(".");
@@ -370,7 +370,9 @@ export async function refuseBuiltInName(
   field: string,
 ): Promise<void> {
   const builtIn = (await ctx.store.presets()).some(
-    (p) => p.source === "built-in" && sameName(asRecipe(p.data as PresetRecipe).name, name),
+    (p) =>
+      p.source === "built-in" &&
+      sameName(asRecipe(p.data as PresetRecipe).name, name),
   );
   if (builtIn)
     fail(

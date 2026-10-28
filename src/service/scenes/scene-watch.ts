@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { relative, sep } from "node:path";
 import type { Plugin } from "vite";
-import { SCENE_CHANGED, type SceneChanged } from "../model/scene-changed.ts";
+import { SCENE_CHANGED, type SceneChanged } from "../../model/scene-changed.ts";
 
 type SceneChange = { project: string; name: string };
 

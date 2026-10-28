@@ -1,20 +1,20 @@
 import { z } from "zod";
-import { SHOT_RULES } from "../../engine/shots.ts";
+import { SHOT_RULES } from "../../../engine/shots.ts";
 import {
   ANIM_RULES,
   AT_RULES,
   CompactSceneInputSchema,
-} from "../../model/compact.ts";
-import { OPTIONS_TEXT } from "../../model/options.ts";
-import { parseScene, SceneSchema } from "../../model/schema.ts";
-import { slugify } from "../../presets/slug.ts";
-import { buildCompact } from "../build-compact.ts";
-import { FLAT_KINDS } from "../compact/defaults.ts";
-import { keepAudio } from "../compact/keep-audio.ts";
-import { availableFonts, measureInstalledFonts } from "../font-install.ts";
-import { storedAsNotice } from "../project-files.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
+} from "../../../model/compact.ts";
+import { OPTIONS_TEXT } from "../../../model/options.ts";
+import { parseScene, SceneSchema } from "../../../model/schema.ts";
+import { slugify } from "../../../presets/slug.ts";
+import { buildCompact } from "../../build-compact.ts";
+import { FLAT_KINDS } from "../../compact/defaults.ts";
+import { keepAudio } from "../../compact/keep-audio.ts";
+import { availableFonts, measureInstalledFonts } from "../../font-install.ts";
+import { storedAsNotice } from "../../project-files.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
 import { saveScene } from "../scenes.ts";
 
 export const sceneBuild = defineTool({

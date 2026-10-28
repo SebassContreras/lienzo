@@ -17,7 +17,7 @@ import {
 } from "../elements.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes.ts";
+import { editScene, SceneResult } from "../scenes/scenes.ts";
 
 export const elementUpdate = defineTool({
   name: "element_update",

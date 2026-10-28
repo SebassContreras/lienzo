@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createElement } from "../components/index.ts";
-import { defaultScene, type Element } from "../model/model.ts";
+import { createElement } from "../../components/index.ts";
+import { defaultScene, type Element } from "../../model/model.ts";
 import { deadKeyframeEasingNotices } from "./scene-notices.ts";
 
 const withTracks = (tracks: Element["tracks"], id = "a") => ({

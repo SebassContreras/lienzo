@@ -6,8 +6,8 @@ import { inspectLayout, layoutBoxes } from "../layout.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { assertTimeWithin } from "../render-target.ts";
-import { sceneFromData } from "../scene-defaults.ts";
-import { checkScene, openScene } from "../scenes.ts";
+import { sceneFromData } from "../scenes/scene-defaults.ts";
+import { checkScene, openScene } from "../scenes/scenes.ts";
 
 /**
  * `data` as a scene, the project's canvas for what it leaves out and partial elements filled

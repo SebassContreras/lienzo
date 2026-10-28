@@ -2,7 +2,7 @@
  * What a scene write changed (071/D3): every element of a scene and a test for whether the
  * previous scene had it the same. Shared by the reference checks and the resource notices.
  */
-import type { Element, Scene } from "../model/model.ts";
+import type { Element, Scene } from "../../model/model.ts";
 
 /** Every element of `scene` with its path (`elements.0.children.1`, `symbols.s.children.0`). */
 export function placedElements(scene: Scene): { el: Element; path: string }[] {

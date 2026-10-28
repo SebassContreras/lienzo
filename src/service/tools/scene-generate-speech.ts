@@ -2,7 +2,7 @@ import { z } from "zod";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { round2 } from "../round.ts";
-import { editScene, openScene, SceneResult } from "../scenes.ts";
+import { editScene, openScene, SceneResult } from "../scenes/scenes.ts";
 import { saveAudioAsset } from "../tts/asset-store.ts";
 import { audioDuration } from "../tts/audio-duration.ts";
 import {

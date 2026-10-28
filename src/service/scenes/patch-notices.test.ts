@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
-import { createElement } from "../components/index.ts";
-import { patchNotices } from "./elements.ts";
+import { createElement } from "../../components/index.ts";
+import { patchNotices } from "../elements.ts";
 
 it("notes unknown keys and an id or kind that does not change (069/D7)", () => {
   const el = { ...createElement("rect"), id: "r" };
