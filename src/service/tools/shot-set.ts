@@ -12,7 +12,6 @@ import {
 } from "../../model/shots.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
-import { shotNotices } from "../scene-notices.ts";
 import { editScene, SceneResult } from "../scenes.ts";
 
 export const shotSet = defineTool({
@@ -73,10 +72,6 @@ export const shotSet = defineTool({
       : edit?.scene.shots?.find((sh) => sh.id === id);
     const outside = shot && cameraOutsideShot(shot);
     if (outside) result.notices.push(outside);
-    if (shot && edit)
-      result.notices.push(
-        ...shotNotices({ ...edit.scene, shots: [shot] }).map((n) => n.message),
-      );
     const moved = movedNotice(edit?.moved ?? []);
     if (moved) result.notices.push(moved);
     if (unbound.length > 0)

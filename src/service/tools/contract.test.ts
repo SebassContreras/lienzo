@@ -1730,3 +1730,12 @@ it("scene_generate_speech names baseUrl and how to start the service when the lo
     },
   });
 });
+
+it("scene_update notices a long transition and a camera channel the camera lacks", async () => {
+  const shots = [{ id: "a", name: "a", start: 0, end: 2, camera: { tracks: { rotation: [[0, 1]] } }, transition: { kind: "fade", duration: 5 } }];
+  const r = await call("scene_create", { scene: "z", data: { shots } });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: expect.arrayContaining([expect.stringMatching(/transición/), expect.stringMatching(/«rotation»/)]) },
+  });
+});

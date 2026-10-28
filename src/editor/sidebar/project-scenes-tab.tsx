@@ -92,7 +92,12 @@ export function ProjectScenesTab({
           );
           return;
         }
-        const repeated = duplicateIds(parsed.value.elements)[0];
+        const repeated = [
+          duplicateIds(parsed.value.elements),
+          ...Object.entries(parsed.value.symbols ?? {}).map(([n, d]) =>
+            duplicateIds(d.children, `symbols.${n}.children`),
+          ),
+        ].flat()[0];
         if (repeated) {
           setStatus(
             `«${file.name}» repite el id «${repeated.id}» (${repeated.first} y ${repeated.path})`,

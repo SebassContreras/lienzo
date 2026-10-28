@@ -335,19 +335,24 @@ describe("lienzo CLI", () => {
       "--project",
       "p",
       "--json",
-      JSON.stringify({ recipe: (recipe as { recipe: unknown }).recipe }),
+      JSON.stringify({
+        recipe: {
+          ...(recipe as { recipe: object }).recipe,
+          name: "Tarjeta propia",
+        },
+      }),
     ]);
     await ok([
       "preset_rename",
       "--project",
       "p",
       "--from",
-      "Tarjeta neón",
+      "Tarjeta propia",
       "--to",
       "otro",
     ]);
     await ok(["preset_delete", "--project", "p", "--name", "otro"]);
-    await ok(["animation_save", "--json", '{"recipe":{"name":"Salto"}}']);
+    await ok(["animation_save", "--json", '{"recipe":{"name":"Salto","anim":{"in":{"kind":"fade"}}}}']);
     await ok(["animation_list"]);
     await ok(["animation_delete", "--name", "salto"]);
     await ok(["project_update", "--project", "p", "--name", "P2"]);

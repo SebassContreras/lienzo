@@ -77,6 +77,6 @@ it("lists, gets and inspects a project preset saved without traits (069/D6)", as
   expect(got).toMatchObject({ ok: true, value: { file: "caja" } });
   expect(inspected).toMatchObject({
     ok: true,
-    value: { presets: ["caja.json"] },
+    value: { presets: ["caja"] },
   });
 });

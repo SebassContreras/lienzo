@@ -22,7 +22,7 @@ import { fontNotices } from "./font-check.ts";
 import { availableFonts } from "./font-install.ts";
 import { fail, failAll, type Problem, problemsOf } from "./registry.ts";
 import { allElements, changedSince } from "./scene-changes.ts";
-import { offCanvasNotices } from "./scene-notices.ts";
+import { offCanvasNotices, shotNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
@@ -318,6 +318,7 @@ export async function saveScene(
   notices.push(
     ...fontNotices({ ...scene, elements: changedTop }, faces),
     ...offCanvasNotices(scene, changedTop),
+    ...shotNotices(scene).map((n) => n.message),
     ...(await resourceNotices(ctx, scene, previous)),
   );
   const unique = [...new Set(notices)];
