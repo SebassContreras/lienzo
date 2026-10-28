@@ -17,8 +17,8 @@ import {
   type ProjectManifest,
   ProjectSlugSchema,
   parseProjectManifest,
-} from "../model/project.ts";
-import { assetSegments, safeAssetPath } from "./assets/asset-path.ts";
+} from "../../model/project.ts";
+import { assetSegments, safeAssetPath } from "../assets/asset-path.ts";
 
 export type ProjectSummary = {
   slug: string;
@@ -61,7 +61,7 @@ export type ProjectStore = {
   ): string;
 
   /** Create a Store scoped to a project workspace (projects/<slug>/) with fallback to global built-ins. */
-  projectStore(slug: string): Promise<import("./store.ts").Store>;
+  projectStore(slug: string): Promise<import("../store.ts").Store>;
 
   /**
    * Validates whether an asset file reference belongs to the project's local assets.
@@ -245,14 +245,14 @@ export function createProjectStore(root: string): ProjectStore {
       return true;
     },
 
-    async projectStore(slug: string): Promise<import("./store.ts").Store> {
+    async projectStore(slug: string): Promise<import("../store.ts").Store> {
       ProjectSlugSchema.parse(slug);
       const base = projectPath(slug);
       if (!(await exists(base))) {
         throw new Error(`No existe el proyecto «${slug}»`);
       }
-      const { createStore } = await import("./store.ts");
-      const { listJson } = await import("../presets/json-fs.ts");
+      const { createStore } = await import("../store.ts");
+      const { listJson } = await import("../../presets/json-fs.ts");
       const globalStore = createStore(root);
       const projectPresetsDir = join(base, "presets");
       const projectScenesDir = join(base, "scenes");
@@ -277,11 +277,11 @@ export function createProjectStore(root: string): ProjectStore {
         },
         scenes: () => listJson(projectScenesDir),
         readScene: async (name) => {
-          const { readJson } = await import("../presets/json-fs.ts");
+          const { readJson } = await import("../../presets/json-fs.ts");
           return readJson(projectScenesDir, name);
         },
         writeScene: async (name, scene) => {
-          const { writeJson } = await import("../presets/json-fs.ts");
+          const { writeJson } = await import("../../presets/json-fs.ts");
           return writeJson(projectScenesDir, name, scene);
         },
       };

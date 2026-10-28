@@ -3,10 +3,10 @@
  * `json-fs.ts` operations the editor's tabs reach through the dev server (062/D10).
  */
 import { join } from "node:path";
-import { removeJson, renameJson } from "../presets/json-fs.ts";
-import type { Ctx, ProjectCtx } from "./ctx.ts";
-import { inProject } from "./project-scope.ts";
-import { fail } from "./registry.ts";
+import { removeJson, renameJson } from "../../presets/json-fs.ts";
+import type { Ctx, ProjectCtx } from "../ctx.ts";
+import { inProject } from "../project-scope.ts";
+import { fail } from "../registry.ts";
 
 export type ProjectFolder = "scenes" | "presets";
 

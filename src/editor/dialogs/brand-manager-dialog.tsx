@@ -6,7 +6,7 @@ import type {
 } from "../../model/project.ts";
 import { PROJECT_SLUG_REGEX } from "../../model/project.ts";
 import { projectSlug } from "../../presets/slug.ts";
-import type { ProjectDetails } from "../../service/project-store.ts";
+import type { ProjectDetails } from "../../service/projects/project-store.ts";
 import { BrandAssetManager } from "../brand/brand-asset-manager.tsx";
 import { BrandFontManager } from "../brand/brand-font-manager.tsx";
 import { BrandPaletteEditor } from "../brand/brand-palette-editor.tsx";

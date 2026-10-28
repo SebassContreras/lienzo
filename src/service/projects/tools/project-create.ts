@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { durationValue, fpsValue, side } from "../../model/limits.ts";
+import { durationValue, fpsValue, side } from "../../../model/limits.ts";
 import {
   ColorPaletteSchema,
   ProjectConfigSchema,
   ProjectSlugSchema,
-} from "../../model/project.ts";
-import { projectSlug } from "../../presets/slug.ts";
+} from "../../../model/project.ts";
+import { projectSlug } from "../../../presets/slug.ts";
+import { defineTool, fail } from "../../registry.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
-import { defineTool, fail } from "../registry.ts";
 
 export const projectCreate = defineTool({
   name: "project_create",

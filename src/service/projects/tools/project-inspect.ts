@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { ProjectSlugSchema } from "../../model/project.ts";
-import { listJson } from "../../presets/json-fs.ts";
+import { ProjectSlugSchema } from "../../../model/project.ts";
+import { listJson } from "../../../presets/json-fs.ts";
+import { defineTool, fail } from "../../registry.ts";
 import { animationsDir } from "../project-files.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
-import { defineTool, fail } from "../registry.ts";
 
 const ProjectDetailsSchema = z.object({
   manifest: ToolProjectSchema,

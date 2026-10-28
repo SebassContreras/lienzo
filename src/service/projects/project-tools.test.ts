@@ -2,11 +2,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { parseProjectManifest } from "../model/project.ts";
-import { type Ctx, createCtx } from "./ctx.ts";
-import { fakeRenderer } from "./fake-renderer.ts";
+import { parseProjectManifest } from "../../model/project.ts";
+import { type Ctx, createCtx } from "../ctx.ts";
+import { fakeRenderer } from "../fake-renderer.ts";
+import { registry } from "../tools/index.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
-import { registry } from "./tools/index.ts";
 
 describe("ProjectStore & Lifecycle Tools", () => {
   let tempRoot: string;

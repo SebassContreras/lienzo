@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { removeJson } from "../../../presets/json-fs.ts";
-import { animationsDir } from "../../project-files.ts";
 import { PROJECT } from "../../project-scope.ts";
+import { animationsDir } from "../../projects/project-files.ts";
 import { defineTool, fail } from "../../registry.ts";
 
 export const animationDelete = defineTool({

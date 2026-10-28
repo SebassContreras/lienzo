@@ -6,7 +6,7 @@
 import { crc32, deflateSync } from "node:zlib";
 import { chromium } from "playwright-core";
 import { afterAll, describe, expect, it } from "vitest";
-import { findAppRoot } from "../root.ts";
+import { findAppRoot } from "../projects/root.ts";
 import { createBrowserImageProbe } from "./image-probe.ts";
 
 const APP_ROOT = findAppRoot(import.meta.dirname);

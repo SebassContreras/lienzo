@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ProjectSlugSchema } from "../../model/project.ts";
-import { defineTool, fail } from "../registry.ts";
+import { ProjectSlugSchema } from "../../../model/project.ts";
+import { defineTool, fail } from "../../registry.ts";
 
 export const projectDelete = defineTool({
   name: "project_delete",

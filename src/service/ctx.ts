@@ -3,9 +3,12 @@ import {
   type ImageProbe,
 } from "./assets/image-probe.ts";
 import { createFontStore, type FontStore } from "./fonts/font-store.ts";
-import { createProjectStore, type ProjectStore } from "./project-store.ts";
+import {
+  createProjectStore,
+  type ProjectStore,
+} from "./projects/project-store.ts";
+import { findAppRoot } from "./projects/root.ts";
 import { createRenderer, type Renderer } from "./renderer.ts";
-import { findAppRoot } from "./root.ts";
 import { createStore, type PresetStore, type Store } from "./store.ts";
 
 /**

@@ -15,8 +15,8 @@ import {
   availableFonts,
   measureInstalledFonts,
 } from "../../fonts/font-install.ts";
-import { storedAsNotice } from "../../project-files.ts";
 import { inProject, PROJECT } from "../../project-scope.ts";
+import { storedAsNotice } from "../../projects/project-files.ts";
 import { defineTool, fail } from "../../registry.ts";
 import { saveScene } from "../scenes.ts";
 

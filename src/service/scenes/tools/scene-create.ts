@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { slugify } from "../../../presets/slug.ts";
-import { storedAsNotice } from "../../project-files.ts";
 import { inProject, PROJECT } from "../../project-scope.ts";
+import { storedAsNotice } from "../../projects/project-files.ts";
 import { defineTool, fail } from "../../registry.ts";
 import { sceneFromData } from "../scene-defaults.ts";
 import { SceneResult, saveScene } from "../scenes.ts";

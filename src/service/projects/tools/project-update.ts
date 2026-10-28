@@ -1,17 +1,17 @@
 import { z } from "zod";
-import { durationValue, fpsValue, side } from "../../model/limits.ts";
+import { durationValue, fpsValue, side } from "../../../model/limits.ts";
 import {
   BrandFontSchema,
   ColorPaletteSchema,
   ProjectSlugSchema,
-} from "../../model/project.ts";
+} from "../../../model/project.ts";
 import {
   missingBrandWeightNotices,
   missingFontNotice,
-} from "../fonts/font-check.ts";
-import { availableFonts } from "../fonts/font-install.ts";
+} from "../../fonts/font-check.ts";
+import { availableFonts } from "../../fonts/font-install.ts";
+import { defineTool, fail } from "../../registry.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
-import { defineTool, fail } from "../registry.ts";
 
 /** The canvas fields given; the others keep their stored values (069/D3). */
 const CanvasPatchSchema = z.object({

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { removeIn } from "../../project-files.ts";
 import { inProject, PROJECT } from "../../project-scope.ts";
+import { removeIn } from "../../projects/project-files.ts";
 import { defineTool } from "../../registry.ts";
 
 export const sceneDelete = defineTool({

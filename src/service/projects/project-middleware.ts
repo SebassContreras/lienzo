@@ -6,11 +6,11 @@ import {
   MAX_ASSET_BYTES,
   normalizeExtension,
   writeAsset,
-} from "./assets/asset-helpers.ts";
-import { safeAssetPath } from "./assets/asset-path.ts";
-import { deleteAsset, renameAsset } from "./assets/project-assets.ts";
+} from "../assets/asset-helpers.ts";
+import { safeAssetPath } from "../assets/asset-path.ts";
+import { deleteAsset, renameAsset } from "../assets/project-assets.ts";
+import { ToolFailure } from "../registry.ts";
 import type { ProjectStore } from "./project-store.ts";
-import { ToolFailure } from "./registry.ts";
 
 export async function handleProjectApi(
   store: ProjectStore,
@@ -91,7 +91,7 @@ export async function handleProjectApi(
     if (segments.length >= 2 && segments[1] === "scenes") {
       const slug = segments[0];
       const projectScenesDir = store.resolvePath(slug, "scenes");
-      const { handleStore } = await import("../presets/json-store.ts");
+      const { handleStore } = await import("../../presets/json-store.ts");
 
       // Adapt URL pathname so handleStore parses action/name params naturally
       const subUrl = new URL(url.toString());
@@ -114,7 +114,7 @@ export async function handleProjectApi(
     if (segments.length >= 2 && segments[1] === "presets") {
       const slug = segments[0];
       const projectPresetsDir = store.resolvePath(slug, "presets");
-      const { handleStore } = await import("../presets/json-store.ts");
+      const { handleStore } = await import("../../presets/json-store.ts");
 
       // Adapt URL pathname so handleStore parses action/name params naturally
       const subUrl = new URL(url.toString());

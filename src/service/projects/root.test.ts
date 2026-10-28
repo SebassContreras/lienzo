@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { APP_ROOT } from "./ctx.ts";
+import { APP_ROOT } from "../ctx.ts";
 import { findAppRoot } from "./root.ts";
 
 it("finds the app with vite.config.ts from the CLI bundle's folder (076/R1)", () => {

@@ -1,6 +1,6 @@
 import { z } from "zod";
+import { defineTool } from "../../registry.ts";
 import { asToolProject } from "../project-result.ts";
-import { defineTool } from "../registry.ts";
 
 const ProjectSummarySchema = z.object({
   project: z.string(),
