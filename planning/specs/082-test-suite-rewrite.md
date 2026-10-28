@@ -37,10 +37,11 @@ When this spec is done:
   identity.
 - R8: Every case of the QA reports of rounds 6–9 is an entry of a replay corpus that runs in
   Vitest and with `pnpm lienzo`.
-- R9: Each old test file is deleted only after the new tests of its functionality kill at least
+- ~~R9: Each old test file is deleted only after the new tests of its functionality kill at least~~ → R12
   the mutants the old ones killed.
 - R10: Folders with no tests (`traits`, `export`) and component kinds without one have them.
 - R11: QA has a written process: a closed list, a classification of each finding, a log
+- R12 (R9): The tests of `src/service/contract/` that predate the matrix are replaced by cases of the matrix, of the corpus or of the tests of their functionality, and deleted; the other test files are renamed by behavior (no spec number, no round) and stay, not rewritten. The mutation score of the rule modules after is at least the one before.
   instead of a spec per round, and a stop criterion.
 
 ## Design
@@ -80,15 +81,17 @@ When this spec is done:
 - D7 (R8): `src/service/contract/corpus/*.json` = `{ tool, input, expect }`; one runner in Vitest
   and `scripts/replay` through `pnpm lienzo`, so a replay never depends on a long-running MCP
   server.
-- D8 (R9, R10): Per functionality: run Stryker on its rule files with the old suite (the old
+- ~~D8 (R9, R10): Per functionality: run Stryker on its rule files with the old suite (the old
   score), write the new suite, run it again, and delete the old files when new ≥ old and
   every rule tag of the old titles (`078/R1`…) is covered by a new test. Line coverage cannot
   be the gate: `service/tools` was at 94.6% and `model` at 98.8% of lines when the QA rounds
-  found their bugs (T003).
+  found their bugs (T003).~~ → D10
 - D9 (R11): `planning/qa-log.md` holds one line per finding with its class: (1) a matrix cell is
   missing → add it for every writer; (2) a rule is missing → add it to `RULES` and apply it in
   `prepareScene`; (3) text or docs; (4) a design decision → `## Ideas`. A round ends when the
   corpus is green, the matrix is complete and a QA run finds no new class.
+- D10 (R10, R12): The cases of `contract.test.ts`, `qa-round-*.test.ts` and `service.test.ts` go where they belong: a rule that every writer applies → `RULES` (already there when the matrix holds it, and the case is deleted); a QA report case → the corpus; the behavior of one tool → `<feature>/tools/<tool>.test.ts`, named by what it does. The tests of `engine`, `model`, `components`, `presets` and `editor` already sit beside their module and cover it (coverage in T003 and the rounds' bugs were in the rules, not there): they are renamed by behavior, and the real gaps (`export`, most of `editor`) get tests. The mutation score of the rule modules (`src/model/ids.ts`, `shots.ts`, `shot-timing.ts`, `limits.ts`, `size.ts`, `scenes/scenes.ts`, `scene-references.ts`, `scene-notices.ts`) is taken before the first old test is deleted and again at the end.
+  - _Pros_: the effort goes where the bugs were; no rewrite of tests that cover their module. _Cons_: the old unit tests keep their style. _Mitigation_: they are renamed, and the gate is the mutation score of the rules, not the style.
 
 ## Layout (T004)
 
@@ -137,7 +140,7 @@ Reading: the plan said `src/traits` has no tests and `src/components` has 11 tes
 
 ## Tasks
 Order: T001–T004, then the moves (T005–T016), the tool field and generated suite (T017–T023),
-the rewrites (T024–T040), the close (T041–T044).
+the matrix and the old tests (T024–T032), the close (T041–T044).
 - [x] 082/T001 [agent] Policy: A14 and the AGENTS.md test rule rewritten, entry in `planning/changes.md` — covers R1, D1
 - [x] 082/T002 [agent] Tooling: `@vitest/coverage-v8` and Stryker with the Vitest runner, scripts `test:cov` and `test:mutate`, a config that excludes `renderer.test.ts` — covers R2, D2
 - [x] 082/T003 [agent] Verify: baseline — coverage per folder and mutation score per functionality with the current suite, time per run, recorded in this spec's Changes — covers R2
@@ -162,27 +165,19 @@ the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T021 [agent] Rules added to the matrix: shot spans and references, limits, fractions, easing, icon and line targets, assets, fonts — covers R6, D6
 - [x] 082/T022 [agent] Metamorphic relations (writers agree, group/ungroup, rename and back) — covers R7, D6
 - [x] 082/T023 [agent] Replay corpus: the runner, the Vitest suite, `pnpm replay`, and the cases of round 9 (reports A and B of 081) that need only JSON; the cases of rounds 6–8 enter as each old test of `contract.test.ts` and `qa-round-*.test.ts` is rewritten (T024–T034) — covers R8, D7
-- [ ] 082/T024 [agent] Rewrite `scenes` tests; delete old files when new ≥ old — covers R9, D8
-- [ ] 082/T025 [agent] Rewrite `elements` tests — covers R9, D8
-- [ ] 082/T026 [agent] Rewrite `shots` tests — covers R9, D8
-- [ ] 082/T027 [agent] Rewrite `presets` tests — covers R9, D8
-- [ ] 082/T028 [agent] Rewrite `assets` tests — covers R9, D8
-- [ ] 082/T029 [agent] Rewrite `projects` tests — covers R9, D8
-- [ ] 082/T030 [agent] Rewrite `fonts` tests — covers R9, D8
-- [ ] 082/T031 [agent] Rewrite `speech` tests — covers R9, D8
-- [ ] 082/T032 [agent] Rewrite `render` tests — covers R9, D8
-- [ ] 082/T033 [agent] Rewrite `compact` and `layout` tests — covers R9, D8
-- [ ] 082/T034 [agent] Rewrite `core`, cli and mcp tests; delete `contract.test.ts`, `qa-round-*.test.ts` and the spec-numbered describes — covers R9, D8
-- [ ] 082/T035 [agent] Rewrite `engine` tests — covers R9, D8
-- [ ] 082/T036 [agent] Rewrite `model` tests — covers R9, D8
-- [ ] 082/T037 [agent] Rewrite `components` tests; a test per kind that was missing — covers R9, R10, D8
-- [ ] 082/T038 [agent] Tests for `traits` — covers R10
-- [ ] 082/T039 [agent] Tests for `export` — covers R10
-- [ ] 082/T040 [agent] Rewrite `editor` tests — covers R9, D8
-- [ ] 082/T041 [agent] Quality gate: minimum coverage per folder and, for the rule files, minimum mutation score, from the T003 baseline — covers R2
+- [ ] 082/T024 [agent] Matrix rules: a `use` of a missing symbol, an override naming a child the symbol lacks, a track path the kind has no field for, an unknown `animPreset`, a bare audio reference, an asset the project lacks — covers R6, D6
+- [ ] 082/T025 [agent] Verify: mutation score of the rule modules (D10) with the suite as it stands, before any old test is deleted, recorded under Baseline — covers R2, R12
+- [ ] 082/T026 [agent] `contract.test.ts`: each case the matrix holds is deleted, the rest moves to `<feature>/tools/<tool>.test.ts` named by behavior; the file is deleted — covers R12, D10
+- [ ] 082/T027 [agent] `qa-round-3/5/6.test.ts`, `service.test.ts`, `parity-tools.test.ts`, `editor-parity.test.ts`: same; the files are deleted — covers R12, D10
+- [ ] 082/T028 [agent] `engine` tests renamed by behavior, spec numbers and rounds out of titles — covers R12, D10
+- [ ] 082/T029 [agent] `model`, `presets` and the remaining `service` tests renamed the same way — covers R12, D10
+- [ ] 082/T030 [agent] `components` tests renamed the same way — covers R12, D10
+- [ ] 082/T031 [agent] Tests for `export` (0% of lines in the baseline) — covers R10
+- [ ] 082/T032 [agent] `editor` tests renamed, and tests for brand, dialogs, footer, timeline and widgets (0–2% in the baseline) — covers R10, R12
+- [ ] 082/T041 [agent] Quality gate: minimum coverage per folder and, for the rule modules, the mutation score of T025 as the minimum — covers R2, R12
 - [ ] 082/T042 [agent] QA process: `planning/qa-log.md`, README and AGENTS.md section, the closed list — covers R11, D9
-- [ ] 082/T043 [agent] Review: a fresh agent reads the new suite against R1–R11 and tries to break the matrix (remove a rule from `prepareScene`, add a writer with no adapter) — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11
-- [ ] 082/T044 [agent] Verify: typecheck, tests, replay with `pnpm lienzo` on a restarted MCP (commit = `HEAD`), mutation scores against the baseline — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11
+- [ ] 082/T043 [agent] Review: a fresh agent reads the new suite against R1–R11 and tries to break the matrix (remove a rule from `prepareScene`, add a writer with no adapter) — covers R1, R2, R3, R4, R5, R6, R7, R8, R10, R11, R12
+- [ ] 082/T044 [agent] Verify: typecheck, tests, replay with `pnpm lienzo` on a restarted MCP (commit = `HEAD`), mutation scores against the baseline — covers R1, R2, R3, R4, R5, R6, R7, R8, R10, R11, R12
 
 ## Changes
 - 2026-10-28: D2 tooling findings (T002). Stryker 10.1.1 breaks on TypeScript 7 (`ts.parseConfigFileTextToJson` is gone), so `stryker.config.json` points `tsconfigFile` at a file that does not exist, which skips that step and keeps the run in the `.stryker-tmp` copy (not `inPlace`); with pnpm's strict layout the runner must be named in `plugins`. `@vitest/coverage-v8` must match Vitest exactly (5.0.3). A smoke run on `src/model/size.ts` (48 mutants, 85.42%) took 5 minutes because each mutant reruns the heavy contract tests (about 9 per mutant): the baseline of T003 measures time per folder first and runs the service folders with the contract tests only where the rule lives. Why: T003 cannot assume a whole-folder run is cheap. Work: T003.
@@ -190,3 +185,4 @@ the rewrites (T024–T040), the close (T041–T044).
 - 2026-10-28: first run of the invariants over the 43 tools (T019, 510 generated cases, 28 s): no tool failed one. The only failures were the generator's: `null` for a key typed `z.unknown()` (`recipe`) is a value the schema accepts, so the rejection comes later by rule (`invalid_preset`, `invalid_animation`, `valid: false`), not as `invalid_input`; the generator now breaks an untyped key only by removing it. Reading: the schema-level failures of the tools are sound; the bugs the QA rounds found are rules and writers, which T020–T022 cover. Why: this shows what the generated suite can and cannot find. Work: T020–T022.
 - 2026-10-28: first findings of the matrix (T020, T021; 16 rules, 138 cells). Writers differed in which notices they gave because three places built the list: `saveScene` (fonts, off-canvas, shots, resources), `buildCompact` (fonts, estimated widths, dead easings, resources) and `sceneNotices` (what `scene_validate` data and the editor's review give). Gaps found: no dead-easing notice from `scene_create`, `element_add`, `element_update` or `scene_update` symbols; no shot notice (unknown camera channel, long transition, camera dead easing) from `scene_build` or `scene_validate` compact; no off-canvas notice from `scene_build` without `save` or from `scene_validate`. Fix at the point every writer passes: `contentNotices` (`src/service/scenes/scene-notices.ts`) holds fonts and weights, off-canvas, dead easings (element tracks, now also symbol bodies), shot problems and estimated widths, and `saveScene`, `buildCompact` and `sceneNotices` call it, limited to what the write changed (changed top-level elements and symbols). `keyframe_set` no longer builds its own dead-easing notice. Behavior that changes: a write of a text whose font is not installed also notices that its width is estimated, as `scene_build` did; `scene_create`, `element_add` and `element_update` of an element with a dead easing notice it. Tests changed: the three «notices a font that is not installed» cases in `contract.test.ts` (element_add, element_update, scene_create) expected a list of exactly the font notice and now expect it among the notices; why: the estimated-width notice joins every writer. Work: T020, T021.
 - 2026-10-28: the corpus (T023) runs through `pnpm replay`, a `tsx` script, not through `pnpm lienzo`: it uses the same `createCtx` on a temp dir, so it never writes into the repo and costs 9 s for 24 cases instead of one process per call. Round 9's cases that need a binary file (A5, A6), a font installed (A15), a speech provider (A9) or the Google Fonts service (A19) stay in the tests of `assets`, `fonts` and `speech` (T028, T030, T031). Finding: `scene_validate` answers a failure in two shapes depending on the kind of problem: with `compact`, an expansion problem (`fps: 500`, a bad size) is an error (`ok: false`) and a rule problem (a shot that does not last, a repeated shot id) is a verdict (`ok: true, valid: false`); with `data` every problem is a verdict. Not changed here; listed for the debate on tool surface (083). Why: the corpus records the behavior as it is. Work: T023.
+- 2026-10-28: R9 → R12 and D8 → D10; T024–T040 replaced by T024–T032. Why: the measurements of T003, T019 and T021 (Stryker costs 5–7 minutes per 30–48 mutants; line coverage was 94–99% where the QA rounds found bugs; the generated suite found none at schema level and one class of bug in the rules; the unit tests of `engine`, `model` and `components` already cover their module) show that rewriting every test file buys little. The effort goes to the matrix, to the old contract tests, and to the real gaps (`export`, `editor`); the `traits` task is dropped (85.9% of lines and 100% of branches by indirect tests). Work: T024–T032.
