@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { type ToolHarness, toolHarness } from "../test/tool-harness.ts";
+import { type ToolHarness, toolHarness } from "../../test/tool-harness.ts";
 
 let ok: ToolHarness["ok"];
 

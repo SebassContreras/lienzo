@@ -10,7 +10,7 @@ import {
   type Shot,
 } from "../../model/model.ts";
 import { type Ctx, createCtx } from "../ctx.ts";
-import { inspectLayout } from "../layout.ts";
+import { inspectLayout } from "../layout/layout.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "./index.ts";
 

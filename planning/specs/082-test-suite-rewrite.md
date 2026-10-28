@@ -152,7 +152,7 @@ the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T011 [agent] Move `projects` (project tools, project-*, root) — covers R3, D3
 - [x] 082/T012 [agent] Move `speech` (scene_generate_speech, `tts/`, tts-proxy) — covers R3, D3
 - [x] 082/T013 [agent] Move `render` (renderer, exports, image, render-target, fake-renderer, scene_preview, scene_export) — covers R3, D3
-- [ ] 082/T014 [agent] Move `compact` and `layout` (layout, contrast, text-extents, scene_inspect_layout) — covers R3, D3
+- [x] 082/T014 [agent] Move `compact` and `layout` (layout, contrast, text-extents, scene_inspect_layout) — covers R3, D3
 - [ ] 082/T015 [agent] Move `core` (registry, ctx, store, verdict, round) and the cli/mcp tests; update A20, AGENTS.md Layout and README paths — covers R3, D3
 - [ ] 082/T016 [agent] Reach: loose tests of `engine`, `model`, `components`, `editor`, `presets` and `src/test/` beside their module; no file without a related one — covers R3, D3
 - [ ] 082/T017 [agent] `effects` on `Tool`, declared by the 43 tools; a test that lists them — covers R4, D4

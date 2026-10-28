@@ -3,15 +3,15 @@ import {
   contrastRatio,
   parseColor,
   relativeLuminance,
-} from "../engine/color.ts";
+} from "../../engine/color.ts";
 import {
   defaultImage,
   defaultParticles,
   defaultRect,
   defaultScene,
   defaultText,
-} from "../model/model.ts";
-import { installCanvasFakes } from "../test/recording-ctx.ts";
+} from "../../model/model.ts";
+import { installCanvasFakes } from "../../test/recording-ctx.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
 import {
   inspectLayout,

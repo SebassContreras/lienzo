@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { withElementDefaults } from "../../model/fill-defaults.ts";
-import type { ProjectCtx } from "../ctx.ts";
-import { measureInstalledFonts } from "../fonts/font-install.ts";
+import { withElementDefaults } from "../../../model/fill-defaults.ts";
+import type { ProjectCtx } from "../../ctx.ts";
+import { measureInstalledFonts } from "../../fonts/font-install.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
+import { assertTimeWithin } from "../../render/render-target.ts";
+import { sceneFromData } from "../../scenes/scene-defaults.ts";
+import { checkScene, openScene } from "../../scenes/scenes.ts";
 import { inspectLayout, layoutBoxes } from "../layout.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
-import { assertTimeWithin } from "../render/render-target.ts";
-import { sceneFromData } from "../scenes/scene-defaults.ts";
-import { checkScene, openScene } from "../scenes/scenes.ts";
 
 /**
  * `data` as a scene, the project's canvas for what it leaves out and partial elements filled

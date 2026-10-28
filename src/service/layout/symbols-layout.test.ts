@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createElement } from "../components/index.ts";
-import type { UseEl } from "../components/use/descriptor.ts";
-import { defaultRect, defaultScene, type Scene } from "../model/model.ts";
+import { createElement } from "../../components/index.ts";
+import type { UseEl } from "../../components/use/descriptor.ts";
+import { defaultRect, defaultScene, type Scene } from "../../model/model.ts";
 import { inspectLayout } from "./layout.ts";
 
 describe("Layout inspection for symbols (056/T008 - R3)", () => {

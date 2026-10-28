@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createElement } from "../components/index.ts";
-import type { Element, GroupEl } from "../model/model.ts";
+import { createElement } from "../../components/index.ts";
+import type { Element, GroupEl } from "../../model/model.ts";
 import {
   defaultElement,
   defaultLine,
   defaultRect,
   defaultScene,
   defaultText,
-} from "../model/model.ts";
-import { installCanvasFakes } from "../test/recording-ctx.ts";
+} from "../../model/model.ts";
+import { installCanvasFakes } from "../../test/recording-ctx.ts";
+import { registry } from "../tools/index.ts";
 import { inspectLayout, layoutBoxes } from "./layout.ts";
-import { registry } from "./tools/index.ts";
 
 installCanvasFakes();
 

@@ -8,7 +8,7 @@ import {
 import { OPTIONS_TEXT } from "../../../model/options.ts";
 import { parseScene, SceneSchema } from "../../../model/schema.ts";
 import { slugify } from "../../../presets/slug.ts";
-import { buildCompact } from "../../build-compact.ts";
+import { buildCompact } from "../../compact/build-compact.ts";
 import { FLAT_KINDS } from "../../compact/defaults.ts";
 import { keepAudio } from "../../compact/keep-audio.ts";
 import {

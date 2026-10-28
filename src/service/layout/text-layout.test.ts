@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { TextEl } from "../components/text/descriptor.ts";
-import { defaultElement, defaultScene } from "../model/model.ts";
-import { expandScene } from "./compact/expand.ts";
+import type { TextEl } from "../../components/text/descriptor.ts";
+import { defaultElement, defaultScene } from "../../model/model.ts";
+import { expandScene } from "../compact/expand.ts";
 import { layoutBoxes } from "./layout.ts";
 
 describe("text layout and compact placement (054/R4, T007)", () => {

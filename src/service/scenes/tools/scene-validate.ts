@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CompactSceneInputSchema } from "../../../model/compact.ts";
 import type { Scene } from "../../../model/model.ts";
-import { buildCompact } from "../../build-compact.ts";
+import { buildCompact } from "../../compact/build-compact.ts";
 import {
   availableFonts,
   measureInstalledFonts,

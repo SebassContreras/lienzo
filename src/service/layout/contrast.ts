@@ -13,9 +13,9 @@ import {
   type Rgba,
   relativeLuminance,
   toHex,
-} from "../engine/color.ts";
-import { type Box, boxesTouch } from "../engine/geometry.ts";
-import type { Background, Scene } from "../model/model.ts";
+} from "../../engine/color.ts";
+import { type Box, boxesTouch } from "../../engine/geometry.ts";
+import type { Background, Scene } from "../../model/model.ts";
 import type { PlacedElement } from "./layout.ts";
 
 export type BackdropColorResult =

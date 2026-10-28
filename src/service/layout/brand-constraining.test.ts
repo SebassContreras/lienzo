@@ -2,9 +2,9 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { type Ctx, createCtx } from "./ctx.ts";
-import { fakeRenderer } from "./render/fake-renderer.ts";
-import { registry } from "./tools/index.ts";
+import { type Ctx, createCtx } from "../ctx.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
+import { registry } from "../tools/index.ts";
 
 describe("Brand constraining and asset guardrails", () => {
   let tempRoot: string;

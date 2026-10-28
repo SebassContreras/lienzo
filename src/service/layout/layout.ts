@@ -1,27 +1,32 @@
-import type { UseEl } from "../components/use/descriptor.ts";
-import { instantiateSymbolElements } from "../components/use/draw.ts";
-import { animate } from "../engine/animate.ts";
+import type { UseEl } from "../../components/use/descriptor.ts";
+import { instantiateSymbolElements } from "../../components/use/draw.ts";
+import { animate } from "../../engine/animate.ts";
 import {
   contrastRatio,
   parseColor,
   relativeLuminance,
   suggestAccessibleColor,
   toHex,
-} from "../engine/color.ts";
-import { type Box, boxesTouch, boxOf, placeChild } from "../engine/geometry.ts";
-import { resolveLine } from "../engine/lines.ts";
-import { isElementActiveInShot, shotBox } from "../engine/shots.ts";
-import { widthIsEstimated } from "../engine/text-measure.ts";
+} from "../../engine/color.ts";
+import {
+  type Box,
+  boxesTouch,
+  boxOf,
+  placeChild,
+} from "../../engine/geometry.ts";
+import { resolveLine } from "../../engine/lines.ts";
+import { isElementActiveInShot, shotBox } from "../../engine/shots.ts";
+import { widthIsEstimated } from "../../engine/text-measure.ts";
 import type {
   Element,
   GroupEl,
   LineEl,
   Scene,
   TextEl,
-} from "../model/model.ts";
+} from "../../model/model.ts";
+import { measureStyleOf } from "../fonts/font-check.ts";
+import { round2 } from "../round.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
-import { measureStyleOf } from "./fonts/font-check.ts";
-import { round2 } from "./round.ts";
 import { textExtentsOf } from "./text-extents.ts";
 
 export type LayoutDiagnostic = {

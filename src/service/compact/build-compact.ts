@@ -1,44 +1,48 @@
-import type { AnimPreset } from "../model/anim-preset.ts";
+import type { AnimPreset } from "../../model/anim-preset.ts";
 import {
   type CompactScene,
   type CompactSceneInput,
   CompactSceneSchema,
-} from "../model/compact.ts";
-import { idPath } from "../model/id-path.ts";
-import { ignoredFields, ignoredNotice, namesHint } from "../model/ignored.ts";
-import type { Scene } from "../model/model.ts";
-import type { PresetRecipe } from "../model/preset.ts";
-import { cameraOutsideShot } from "../model/shots.ts";
-import { parseSize } from "../model/size.ts";
-import { flatIssues } from "../model/zod-issues.ts";
-import { asRecipe } from "../presets/store.ts";
-import { withFileAspects } from "./assets/image-aspect.ts";
-import { expandScene } from "./compact/expand.ts";
-import type { ProjectCtx } from "./ctx.ts";
+} from "../../model/compact.ts";
+import { idPath } from "../../model/id-path.ts";
+import {
+  ignoredFields,
+  ignoredNotice,
+  namesHint,
+} from "../../model/ignored.ts";
+import type { Scene } from "../../model/model.ts";
+import type { PresetRecipe } from "../../model/preset.ts";
+import { cameraOutsideShot } from "../../model/shots.ts";
+import { parseSize } from "../../model/size.ts";
+import { flatIssues } from "../../model/zod-issues.ts";
+import { asRecipe } from "../../presets/store.ts";
+import { withFileAspects } from "../assets/image-aspect.ts";
+import type { ProjectCtx } from "../ctx.ts";
 import {
   estimatedWidthNotices,
   type Face,
   fontNotices,
-} from "./fonts/font-check.ts";
+} from "../fonts/font-check.ts";
 import {
   failAll,
   type Problem,
   remapFailure,
   ToolFailure,
-} from "./registry.ts";
+} from "../registry.ts";
+import { expandScene } from "./expand.ts";
 
 const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
-import { sceneDefaults } from "./scenes/scene-defaults.ts";
-import { deadKeyframeEasingNotices } from "./scenes/scene-notices.ts";
-import { resourceNotices } from "./scenes/scene-resources.ts";
+import { sceneDefaults } from "../scenes/scene-defaults.ts";
+import { deadKeyframeEasingNotices } from "../scenes/scene-notices.ts";
+import { resourceNotices } from "../scenes/scene-resources.ts";
 import {
   animLibrary,
   checkWholeScene,
   findPreset,
   rawRuleProblems,
-} from "./scenes/scenes.ts";
+} from "../scenes/scenes.ts";
 
 type Raw = Record<string, unknown>;
 const isRaw = (v: unknown): v is Raw =>

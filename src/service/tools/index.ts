@@ -16,6 +16,7 @@ import { elementUngroup } from "../elements/tools/element-ungroup.ts";
 import { elementUpdate } from "../elements/tools/element-update.ts";
 import { fontInstall } from "../fonts/tools/font-install.ts";
 import { fontList } from "../fonts/tools/font-list.ts";
+import { sceneInspectLayout } from "../layout/tools/scene-inspect-layout.ts";
 import { animationDelete } from "../presets/tools/animation-delete.ts";
 import { animationList } from "../presets/tools/animation-list.ts";
 import { animationSave } from "../presets/tools/animation-save.ts";
@@ -46,7 +47,6 @@ import { keyframeRemove } from "../shots/tools/keyframe-remove.ts";
 import { keyframeSet } from "../shots/tools/keyframe-set.ts";
 import { shotSet } from "../shots/tools/shot-set.ts";
 import { sceneGenerateSpeech } from "../speech/tools/scene-generate-speech.ts";
-import { sceneInspectLayout } from "./scene-inspect-layout.ts";
 
 const TOOLS: readonly Tool[] = [
   componentList,
