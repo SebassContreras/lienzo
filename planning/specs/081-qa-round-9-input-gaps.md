@@ -281,7 +281,7 @@ one rule), T012–T015, docs, review, verify.
 - [x] 081/T012 [agent] Messages: read `unrecognized_keys` in `node_modules/zod`, tests for each R10 case, the one-line fixes and `zod-issues.ts` mapping — covers R10, D10
 - [x] 081/T013 [agent] Times and names: tests (`times: [99]` fails `invalid_time`; element on a missing shot has only `unknown_shot`; `project_inspect` names), `assertTimeWithin`, `inspectLayout`, `project_inspect` — covers R11, R14, D11
 - [x] 081/T014 [agent] Options module and descriptions: tests in `descriptions.test.ts`, `src/model/options.ts`, schemas and descriptions from it — covers R13, D12
-- [ ] 081/T015 [agent] Speech: tests with a fake TTS (missing scene fails before synthesis; paths `apiKey`/`baseUrl`; local-down message), reorder in the tool — covers R15, D13
+- [x] 081/T015 [agent] Speech: tests with a fake TTS (missing scene fails before synthesis; paths `apiKey`/`baseUrl`; local-down message), reorder in the tool — covers R15, D13
 - [ ] 081/T016 [agent] Group order: the two tests (ids in the other order; a non-member between two members) pass on `HEAD`; change only the descriptions — covers R17, D14
 - [ ] 081/T017 [agent] Docs: README, `docs/components.md`, usage skill, `RULES`, tool descriptions, AGENTS.md rule points, the new `project_inspect` names — covers R16, D15
 - [ ] 081/T018 [agent] Review: a fresh agent reads every file this spec touched against R1–R17 and the ten principles — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R13, R14, R15, R16, R17

@@ -1699,3 +1699,34 @@ it("project_inspect names scenes and presets without .json", async () => {
     value: { scenes: ["s"], presets: ["mia"] },
   });
 });
+
+// 081/D13: speech opens the scene first and names the parameter at fault
+
+it("scene_generate_speech fails on a missing scene before it synthesizes", async () => {
+  const r = await call("scene_generate_speech", {
+    scene: "nada",
+    script: "Hola",
+    provider: "local",
+    baseUrl: "http://127.0.0.1:9",
+  });
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "not_found", path: "scene" },
+  });
+});
+
+it("scene_generate_speech names baseUrl and how to start the service when the local one is down", async () => {
+  const r = await call("scene_generate_speech", {
+    scene: "s",
+    script: "Hola",
+    provider: "local",
+    baseUrl: "http://127.0.0.1:9",
+  });
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      path: "baseUrl",
+      message: expect.stringMatching(/127\.0\.0\.1:9.*Arranca el servicio/),
+    },
+  });
+});

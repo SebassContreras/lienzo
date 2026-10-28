@@ -2,7 +2,7 @@ import { z } from "zod";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 import { round2 } from "../round.ts";
-import { editScene, SceneResult } from "../scenes.ts";
+import { editScene, openScene, SceneResult } from "../scenes.ts";
 import { saveAudioAsset } from "../tts/asset-store.ts";
 import { audioDuration } from "../tts/audio-duration.ts";
 import {
@@ -59,6 +59,10 @@ export function createSceneGenerateSpeechTool(
       cuesCount: z.number(),
     }),
     async run(input, ctx) {
+      // 0. The scene has to exist before anything is synthesized (081/D13)
+      const effectiveCtx = await inProject(ctx, input.project);
+      await openScene(effectiveCtx, input.scene);
+
       // 1. Resolve active TTS service instance (ctx -> options -> factory)
       const service =
         ctx.tts ??
@@ -108,10 +112,19 @@ export function createSceneGenerateSpeechTool(
           baseUrl,
         });
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        // the path names the parameter at fault (081/D13)
+        const path = /Clave de API/.test(message)
+          ? "apiKey"
+          : /No se pudo conectar/.test(message)
+            ? "baseUrl"
+            : "script";
         return fail(
           "tts_generation_failed",
-          err instanceof Error ? err.message : String(err),
-          "script",
+          path === "baseUrl"
+            ? `${message}. Arranca el servicio (p. ej. Kokoro en http://localhost:8880, ver el README) o pasa baseUrl`
+            : message,
+          path,
         );
       }
 
@@ -127,9 +140,6 @@ export function createSceneGenerateSpeechTool(
                 Math.round((speechResult.audioBuffer.length / 16000) * 10) / 10,
               )),
       );
-
-      // 4. Resolve the project scope (046/D1)
-      const effectiveCtx = await inProject(ctx, input.project);
 
       // 5. Save audio buffer into projects/<slug>/assets/
       let assetId: string;
