@@ -21,7 +21,9 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 078 | qa-round-7-fixes | done        | 077 |
 | 079 | descriptions-after-078 | done        | 078 |
 | 080 | qa-round-8-every-writer | done        | 079 |
+| 081 | qa-round-9-input-gaps | todo | 080 |
 
 ## Ideas
 
 Anything worth doing later.
+- Shot and element id charset: ids are free text today (`"Bad Id!"` is stored); revisit if a tool needs ids as paths with spaces (081, Not doing).
