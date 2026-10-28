@@ -34,7 +34,8 @@ User feedback showed friction in tool ergonomics and defaults: `scene_create` re
 - [x] 065/T003 [agent] Test and descriptor update for clean `counter` suffix default (`""`) — covers R3, D3
 - [x] 065/T004 [agent] Tests: dead keyframe easing notices in validation and `keyframe_set` — covers R4
 - [x] 065/T005 [agent] Implement `deadKeyframeEasingNotices`, connect to `sceneNotices`, `keyframe_set`, and docs — covers D4
-- [ ] 065/T006 [agent] Verification, typecheck and test suite run — covers R1, R2, R3, R4
+- [x] 065/T006 [agent] Verification, typecheck and test suite run — covers R1, R2, R3, R4
+      verified: `pnpm typecheck`, `pnpm test` (1365 tests) at 42f72c4; replayed over the stdio MCP server: `scene_create` with the palette background (`#112233`) and with `background: "#abcdef"` gives a solid background, a new counter has suffix `""`, `scene_build` notes `ease-out` on a track's last keyframe — found: the editor's `openBlankScene` change (`solidBackground` from `src/traits/solid.ts`) has no automated test and was not opened in a browser
 
 ## Changes
 - 2026-10-27: 065/R3 and 065/D3 (counter `suffix: ""`) are done by 080/T018, which ticks 065/T003. Why: QA round 8 reported the `+` again; 080 fixes it with the other defaults. Work: 080/T018.
