@@ -172,7 +172,7 @@ the matrix and the old tests (T024–T032), the close (T041–T044).
 - [x] 082/T028 [agent] `engine` tests renamed by behavior, spec numbers and rounds out of titles — covers R12, D10
 - [x] 082/T029 [agent] `model`, `presets` and the remaining `service` tests renamed the same way — covers R12, D10
 - [x] 082/T030 [agent] `components` tests renamed the same way — covers R12, D10
-- [ ] 082/T031 [agent] Tests for `export` (0% of lines in the baseline) — covers R10
+- [x] 082/T031 [agent] Tests for `export` (0% of lines in the baseline) — covers R10
 - [ ] 082/T032 [agent] `editor` tests renamed, and tests for brand, dialogs, footer, timeline and widgets (0–2% in the baseline) — covers R10, R12
 - [ ] 082/T041 [agent] Quality gate: minimum coverage per folder and, for the rule modules, the mutation score of T025 as the minimum — covers R2, R12
 - [ ] 082/T042 [agent] QA process: `planning/qa-log.md`, README and AGENTS.md section, the closed list — covers R11, D9
