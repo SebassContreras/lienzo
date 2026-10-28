@@ -11,6 +11,7 @@ import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 
 export const projectCreate = defineTool({
   name: "project_create",
+  effects: ["project"],
   description:
     "Create a new isolated project workspace in projects/<project>/ with its brand guide, " +
     "color palette, and directories for assets, presets, and scenes. `project` (lowercase " +

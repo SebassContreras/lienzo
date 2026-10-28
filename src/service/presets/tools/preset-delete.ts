@@ -6,6 +6,7 @@ import { refuseBuiltIn } from "../../scenes/scenes.ts";
 
 export const presetDelete = defineTool({
   name: "preset_delete",
+  effects: ["preset"],
   description:
     "Delete a preset from the project's presets/ by name or file name. A built-in preset is " +
     "not in the project and cannot be deleted: it fails with `built_in`.",

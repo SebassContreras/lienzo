@@ -23,6 +23,7 @@ const CanvasPatchSchema = z.object({
 
 export const projectUpdate = defineTool({
   name: "project_update",
+  effects: ["project"],
   description:
     "Change a project's name, description, palette, brand fonts or canvas defaults, as the " +
     "editor's brand dialog does. Each field given replaces the stored one, except `canvas`, " +

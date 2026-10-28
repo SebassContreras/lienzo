@@ -6,6 +6,7 @@ import { animationsDir } from "../../projects/project-files.ts";
 
 export const animationDelete = defineTool({
   name: "animation_delete",
+  effects: ["preset"],
   description:
     "Delete an animation preset by file name (see animation_list) from the project's " +
     "presets/animations/ with `project`, else from the global presets/animations/. Scenes " +

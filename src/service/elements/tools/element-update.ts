@@ -21,6 +21,7 @@ import {
 
 export const elementUpdate = defineTool({
   name: "element_update",
+  effects: ["scene"],
   description:
     "Change an element (at root or inside nested groups, by `id` or `group/child` path) with a " +
     "partial patch, deep-merged: objects merge key by key, anything else (arrays, tracks' " +

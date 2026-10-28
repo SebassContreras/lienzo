@@ -10,6 +10,7 @@ import {
 
 export const scenePreview = defineTool({
   name: "scene_preview",
+  effects: ["export"],
   description:
     "Render a saved scene at time `t` (seconds, default 0) as a PNG image to look at what " +
     "it shows. `scale` (default 0.5) sizes it relative to the scene. A `t` past the " +

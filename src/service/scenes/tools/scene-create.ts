@@ -8,6 +8,7 @@ import { SceneResult, saveScene } from "../scenes.ts";
 
 export const sceneCreate = defineTool({
   name: "scene_create",
+  effects: ["scene"],
   description:
     "Create scene `scene` in the project's scenes/. Fields given in `data` (width, height, duration, fps, " +
     "background, elements, mode) replace the defaults: an empty scene on the project's canvas (size, duration, fps and palette background, see project_inspect). " +

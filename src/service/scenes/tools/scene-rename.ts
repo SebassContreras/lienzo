@@ -5,6 +5,7 @@ import { renameIn, storedAsNotice } from "../../projects/project-files.ts";
 
 export const sceneRename = defineTool({
   name: "scene_rename",
+  effects: ["scene"],
   description:
     "Rename a scene in the project's scenes/ (its file and its stored name), as the editor's " +
     "Escenas tab does. Fails when `to` is taken; the old name stops working, and `notices` says when `to` was stored under another name.",

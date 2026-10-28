@@ -28,6 +28,7 @@ export function createSceneGenerateSpeechTool(
 ) {
   return defineTool({
     name: "scene_generate_speech",
+    effects: ["scene", "asset"],
     description:
       "Generate synthetic voiceover narration from a text script using OpenRouter or local/Kokoro TTS " +
       "and attach the resulting audio and synchronized subtitle cues to a scene. By default it " +

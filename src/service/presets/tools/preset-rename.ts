@@ -6,6 +6,7 @@ import { refuseBuiltIn, refuseBuiltInName } from "../../scenes/scenes.ts";
 
 export const presetRename = defineTool({
   name: "preset_rename",
+  effects: ["preset"],
   description:
     "Rename a preset in the project's presets/ (its file and its stored name), by name or " +
     "file name. A built-in preset is not in the project and cannot be renamed: it fails with " +

@@ -6,6 +6,7 @@ import { defineTool } from "../../core/registry.ts";
 
 export const presetList = defineTool({
   name: "preset_list",
+  effects: [],
   description:
     "List every element and background preset, built-in first, then the user's; with " +
     "`project`, the user's are that project's presets/. " +

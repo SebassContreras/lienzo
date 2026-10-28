@@ -16,6 +16,7 @@ import { editScene, SceneResult } from "../../scenes/scenes.ts";
 
 export const shotSet = defineTool({
   name: "shot_set",
+  effects: ["scene"],
   description:
     "Create, update, or remove a shot in a scene. Specify `id`, `start`, and `end` " +
     "to create or update a shot; pass `remove: true` to delete it. Optional `name`, `transition` " +

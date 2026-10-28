@@ -4,6 +4,7 @@ import { defineTool, fail } from "../../core/registry.ts";
 
 export const projectDelete = defineTool({
   name: "project_delete",
+  effects: ["project"],
   description:
     "Delete an existing project workspace cleanly from projects/<project>/.",
   input: z.object({

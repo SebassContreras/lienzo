@@ -15,6 +15,7 @@ import { imageSize, isImageExtension } from "../image-header.ts";
 
 export const assetAdd = defineTool({
   name: "asset_add",
+  effects: ["asset"],
   description:
     "Copy a local file (`file`, a path on this machine) into the project's assets/, or into " +
     "`folder` inside it, named by its content hash as the editor's upload names it. Accepts " +

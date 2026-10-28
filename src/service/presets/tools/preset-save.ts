@@ -14,6 +14,7 @@ import { RECIPE_RULES } from "./preset-validate.ts";
 
 export const presetSave = defineTool({
   name: "preset_save",
+  effects: ["preset"],
   description:
     "Save a preset recipe (checked as preset_validate checks it) into the project's presets/, " +
     'as the editor\'s "Guardar como preset" does. The file is named after `file`, else the ' +

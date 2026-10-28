@@ -51,6 +51,7 @@ function stringSchema() {
 
 export const sceneInspectLayout = defineTool({
   name: "scene_inspect_layout",
+  effects: [],
   description:
     "Analyse layout and spatial diagnostics of a scene at given times (default: start, middle " +
     "and end of loop): `text_overlap`, `shape_overlap` (shapes stacked on each other; a " +

@@ -39,6 +39,7 @@ const atPatch =
 
 export const elementAdd = defineTool({
   name: "element_add",
+  effects: ["scene"],
   description:
     "Add an element on top of a scene (or inside a `group` when `parent` is given by `id` or " +
     "`group/child` path), built from a preset (see preset_list) or from a component kind's " +

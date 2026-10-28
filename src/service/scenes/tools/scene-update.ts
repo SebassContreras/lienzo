@@ -16,6 +16,7 @@ const SETTINGS = [
 
 export const sceneUpdate = defineTool({
   name: "scene_update",
+  effects: ["scene"],
   description:
     "Change a saved scene's settings with a partial patch: width, height, duration, fps, mode, " +
     "audio, audioTracks and symbols. Objects merge key by key, anything else is replaced, and " +

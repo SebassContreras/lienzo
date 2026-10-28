@@ -24,6 +24,7 @@ function target(to: (typeof STEPS)[number] | number, i: number, n: number) {
 
 export const elementMove = defineTool({
   name: "element_move",
+  effects: ["scene"],
   description:
     "Move an element (at root or inside a group, by `id` or `group/child` path) in its sibling " +
     "layer order: `front` (drawn last, on top), `back`, one step `forward` or `backward`, or to " +

@@ -27,6 +27,7 @@ const NOTES: Record<string, string> = {
 
 export const componentList = defineTool({
   name: "component_list",
+  effects: [],
   description:
     "List every component kind element_add accepts, with its Spanish label and the paths " +
     "keyframe_set can animate on it, and a `note` on defaults worth knowing. " +

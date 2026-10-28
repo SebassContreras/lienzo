@@ -16,6 +16,7 @@ import { prepareScene } from "../scenes.ts";
 
 export const sceneValidate = defineTool({
   name: "scene_validate",
+  effects: [],
   description:
     "Check a whole scene without saving it, as the editor would open it (animation " +
     "presets it names must exist, shots must end within the scene and not overlap, and the " +

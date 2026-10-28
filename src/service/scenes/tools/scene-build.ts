@@ -22,6 +22,7 @@ import { saveScene } from "../scenes.ts";
 
 export const sceneBuild = defineTool({
   name: "scene_build",
+  effects: ["scene"],
   description:
     "Build a full scene from a compact description given in `compact` (size, elements, " +
     "shots… go inside it, not at the top level), over the project's canvas (size, " +

@@ -14,6 +14,7 @@ export const RECIPE_RULES =
 
 export const presetValidate = defineTool({
   name: "preset_validate",
+  effects: [],
   description:
     "Check a preset recipe without saving it: its shape, that its traits resolve and that the " +
     "element or background it builds is valid (a wrong `set` value fails at `set.<field>`). " +

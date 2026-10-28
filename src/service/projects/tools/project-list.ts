@@ -12,6 +12,7 @@ const ProjectSummarySchema = z.object({
 
 export const projectList = defineTool({
   name: "project_list",
+  effects: [],
   description:
     "List all existing project workspaces with summary brand metadata.",
   input: z.object({}),

@@ -7,6 +7,7 @@ import { updateSiblings } from "../element-tree.ts";
 
 export const elementRemove = defineTool({
   name: "element_remove",
+  effects: ["scene"],
   description:
     "Remove an element from a scene by `id` or `group/child` path (at root or inside nested " +
     "groups). A line attached to it is left with a loose end, named in `notices`.",

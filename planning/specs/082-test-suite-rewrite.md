@@ -155,7 +155,7 @@ the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T014 [agent] Move `compact` and `layout` (layout, contrast, text-extents, scene_inspect_layout) — covers R3, D3
 - [x] 082/T015 [agent] Move `core` (registry, ctx, store, verdict, round) and the cli/mcp tests; update A20, AGENTS.md Layout and README paths — covers R3, D3
 - [x] 082/T016 [agent] Reach: loose tests of `engine`, `model`, `components`, `editor`, `presets` and `src/test/` beside their module; no file without a related one — covers R3, D3
-- [ ] 082/T017 [agent] `effects` on `Tool`, declared by the 43 tools; a test that lists them — covers R4, D4
+- [x] 082/T017 [agent] `effects` on `Tool`, declared by the 43 tools; a test that lists them — covers R4, D4
 - [ ] 082/T018 [agent] Input generator from the input schema, with its own unit tests — covers R5, D5
 - [ ] 082/T019 [agent] Invariants over every tool: never throws, error shape, Spanish message, no side effects, every problem listed, JSON string argument — covers R5, D5
 - [ ] 082/T020 [agent] `RULES` and writer adapters; the matrix test; first rules — covers R6, D6

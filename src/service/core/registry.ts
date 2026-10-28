@@ -27,11 +27,26 @@ export type ToolError = {
 
 type ToolResult<O> = { ok: true; value: O } | { ok: false; error: ToolError };
 
+/**
+ * What a tool changes (082/D4): a scene file, an asset, a preset or animation preset, a
+ * project manifest, an installed font, or a file in `exports/`. A read tool declares none.
+ * The contract suite walks this list, so a tool that writes without declaring it fails it.
+ */
+export type Effect =
+  | "scene"
+  | "asset"
+  | "preset"
+  | "project"
+  | "font"
+  | "export";
+
 export type Tool<
   I extends z.ZodType = z.ZodType,
   O extends z.ZodType = z.ZodType,
 > = {
   name: string;
+  /** What running the tool changes; empty for a tool that only reads. */
+  effects: readonly Effect[];
   description: string;
   input: I;
   output: O;

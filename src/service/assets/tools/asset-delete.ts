@@ -5,6 +5,7 @@ import { deleteAsset } from "../project-assets.ts";
 
 export const assetDelete = defineTool({
   name: "asset_delete",
+  effects: ["asset"],
   description:
     "Delete a project asset (`path` inside assets/). Refuses while any scene references it " +
     "and names those scenes; `force: true` deletes anyway and leaves those references broken.",

@@ -8,6 +8,7 @@ import { animationsDir, storedAsNotice } from "../../projects/project-files.ts";
 
 export const animationSave = defineTool({
   name: "animation_save",
+  effects: ["preset"],
   description:
     "Save an animation preset given in `recipe` ({ name, category?, anim?, tracks? }, checked as the editor's " +
     "import checks it; an `anim.in`/`loop`/`out` given in part takes the defaults for the rest; " +

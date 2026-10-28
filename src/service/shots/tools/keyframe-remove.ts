@@ -13,6 +13,7 @@ import { editScene, SceneResult } from "../../scenes/scenes.ts";
 
 export const keyframeRemove = defineTool({
   name: "keyframe_remove",
+  effects: ["scene"],
   description:
     "Remove an element's keyframe on `path` at time `t` (by `id` or `group/child` path); " +
     "a track left empty is removed. `t` must match a keyframe; otherwise it fails listing the " +

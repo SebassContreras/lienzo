@@ -16,6 +16,7 @@ const ProjectDetailsSchema = z.object({
 
 export const projectInspect = defineTool({
   name: "project_inspect",
+  effects: [],
   description:
     "Inspect a project workspace: returns full manifest, brand guide, and inventory of " +
     "local assets, presets, animation presets, fonts and scenes.",

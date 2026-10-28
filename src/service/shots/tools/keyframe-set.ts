@@ -18,6 +18,7 @@ import { editScene, SceneResult } from "../../scenes/scenes.ts";
 
 export const keyframeSet = defineTool({
   name: "keyframe_set",
+  effects: ["scene"],
   description:
     "Set a keyframe or configure loop options on an element's track (at root or inside nested " +
     "groups, by `id` or `group/child` path): `path` is an animatable field path or channel of " +

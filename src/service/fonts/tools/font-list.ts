@@ -5,6 +5,7 @@ import { availableFonts } from "../font-install.ts";
 
 export const fontList = defineTool({
   name: "font_list",
+  effects: [],
   description:
     "List the fonts a scene can use: bundled, global (fonts/) and, with `project`, that " +
     "project's own (projects/<project>/fonts/), which hide global ones of the same family.",

@@ -7,6 +7,7 @@ import { trimImage } from "../image-trim.ts";
 
 export const imageTrim = defineTool({
   name: "image_trim",
+  effects: ["scene"],
   description:
     "Crop an image element (at root or inside nested groups, by `id` or `group/child` path) to " +
     "its visible pixels, removing the transparent margin of the picture. The asset file is not " +

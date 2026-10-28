@@ -5,6 +5,7 @@ import { removeIn } from "../../projects/project-files.ts";
 
 export const sceneDelete = defineTool({
   name: "scene_delete",
+  effects: ["scene"],
   description:
     "Delete a scene from the project's scenes/ (by name or file name), as the editor's " +
     "Escenas tab does; a missing one fails at `scene`.",

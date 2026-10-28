@@ -9,6 +9,7 @@ import { editScene, findPreset, SceneResult } from "../scenes.ts";
 
 export const backgroundSet = defineTool({
   name: "background_set",
+  effects: ["scene"],
   description:
     "Set a scene's background from a background preset (see preset_list, kind " +
     "`background`) and/or `patch` (color, color2, gradient, angle, dots, dotColor, " +

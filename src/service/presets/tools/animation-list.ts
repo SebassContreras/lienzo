@@ -7,6 +7,7 @@ import { animationsDir } from "../../projects/project-files.ts";
 
 export const animationList = defineTool({
   name: "animation_list",
+  effects: [],
   description:
     "List the animation presets (the editor's animation library) with their file name, name, " +
     "category and `source`: the global ones, and with `project` that project's own too; files " +

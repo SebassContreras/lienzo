@@ -6,6 +6,7 @@ import { openScene, SceneResult, saveScene } from "../../scenes/scenes.ts";
 
 export const elementUngroup = defineTool({
   name: "element_ungroup",
+  effects: ["scene"],
   description:
     "Replace a top-level group (by `id`) with its children placed where they are drawn, as " +
     "the editor's Ctrl+Shift+G does; the group's own animation is dropped and its shot goes to " +

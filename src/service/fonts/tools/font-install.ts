@@ -7,6 +7,7 @@ import { installGoogleFont, saveFont } from "../font-install.ts";
 
 export const fontInstall = defineTool({
   name: "font_install",
+  effects: ["font"],
   description:
     "Download a Google Fonts family as ttf into fonts/ (global) or, with `project`, into " +
     "projects/<project>/fonts/. With `file` (a local ttf, otf, woff or woff2), installs that file " +

@@ -5,6 +5,7 @@ import { defineTool } from "../../core/registry.ts";
 
 export const sceneList = defineTool({
   name: "scene_list",
+  effects: [],
   description:
     "List the saved scenes in the project's scenes/ with their size, duration and element count; " +
     "`valid` is false for a file the editor would refuse.",

@@ -7,6 +7,7 @@ import { openScene, SceneResult, saveScene } from "../../scenes/scenes.ts";
 
 export const elementGroup = defineTool({
   name: "element_group",
+  effects: ["scene"],
   description:
     "Put two or more top-level elements (by `id`) into one new group, as the editor's Ctrl+G " +
     "does: the group takes their bounding box and the topmost one's layer, and lines keep " +

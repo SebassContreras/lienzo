@@ -17,6 +17,7 @@ const EXTENSIONS: Record<string, string> = {
 
 export const sceneExport = defineTool({
   name: "scene_export",
+  effects: ["export"],
   description:
     "Export a saved scene as a PNG (one frame at time `t`, default 0; past the duration fails), a GIF or an MP4 " +
     "(the whole loop) and return the written file. MP4 falls back to WebM, with a notice, " +

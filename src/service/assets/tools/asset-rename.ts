@@ -5,6 +5,7 @@ import { renameAsset } from "../project-assets.ts";
 
 export const assetRename = defineTool({
   name: "asset_rename",
+  effects: ["asset", "scene"],
   description:
     "Rename or move a project asset: `from` and `to` are paths inside the project's assets/ " +
     "(subfolders allowed, e.g. `logos/acme.png`). Every scene referencing it is rewritten " +

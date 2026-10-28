@@ -6,6 +6,7 @@ import { openScene } from "../scenes.ts";
 
 export const sceneGet = defineTool({
   name: "scene_get",
+  effects: [],
   description:
     "Get a saved scene as JSON (size, timing, background, shots, elements). Each element comes " +
     "as its `id`, `kind` and the fields that differ from its kind's defaults (component_list " +

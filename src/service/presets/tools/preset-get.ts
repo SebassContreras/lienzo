@@ -5,6 +5,7 @@ import { findPreset } from "../../scenes/scenes.ts";
 
 export const presetGet = defineTool({
   name: "preset_get",
+  effects: [],
   description:
     "Get one preset's recipe (kind, traits and own values) by its name or file name; with " +
     "`project`, that project's presets are searched too. A missing one fails at `name`, " +
