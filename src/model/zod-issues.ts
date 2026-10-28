@@ -12,13 +12,9 @@ type Issue = z.core.$ZodIssue;
 const wrongType = (branch: readonly Issue[]) =>
   branch.some((i) => i.path.length === 0 && i.code === "invalid_type");
 
-let generic: string | undefined;
-/** Zod's own message for a failed union, in the active locale; a union with its own keeps it. */
-const genericUnion = () => {
-  generic ??= z.union([z.string(), z.number()]).safeParse(null).error
-    ?.issues[0]?.message;
-  return generic;
-};
+/** Zod's own message for a failed union in the active locale (not cached: the locale can change, 081/D1). */
+const genericUnion = () =>
+  z.union([z.string(), z.number()]).safeParse(null).error?.issues[0]?.message;
 
 /** `issues` with every union failure that one branch explains replaced by that branch's. */
 export function flatIssues(issues: readonly Issue[]): Issue[] {

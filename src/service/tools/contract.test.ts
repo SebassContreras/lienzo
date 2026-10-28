@@ -1123,3 +1123,83 @@ it("scene_build notes an easing on the last keyframe of a compact track (065/R4)
     },
   });
 });
+
+// 081/D3: a shot has to last, shot ids are unique, `name` and an audio track's `id` are optional
+
+const NO_SPAN = /«a».*no dura/;
+const REPEATED_SHOT = /dos tomas con el id «a»/;
+
+it("scene_validate data fails on a shot that ends before it starts", async () => {
+  const data = { shots: [{ id: "a", start: 3, end: 1 }] };
+  expect(await call("scene_validate", { data })).toMatchObject(
+    invalid(NO_SPAN),
+  );
+});
+
+it("scene_validate compact fails on a zero-length shot", async () => {
+  const compact = { shots: [{ id: "a", start: 2, end: 2 }] };
+  expect(await call("scene_validate", { compact })).toMatchObject(
+    invalid(NO_SPAN),
+  );
+});
+
+it("scene_build fails on a shot that ends before it starts", async () => {
+  const compact = { shots: [{ id: "a", start: 3, end: 1 }] };
+  expect(await call("scene_build", { compact })).toMatchObject(fails(NO_SPAN));
+});
+
+it("scene_create fails on a zero-length shot", async () => {
+  const data = { shots: [{ id: "a", name: "a", start: 1, end: 1 }] };
+  expect(await call("scene_create", { scene: "z", data })).toMatchObject(
+    fails(NO_SPAN),
+  );
+});
+
+it("shot_set fails on a zero-length shot", async () => {
+  const r = await call("shot_set", { scene: "s", id: "a", start: 4, end: 4 });
+  expect(r).toMatchObject(fails(NO_SPAN));
+});
+
+it("scene_validate data fails on two shots with one id", async () => {
+  const data = {
+    shots: [
+      { id: "a", start: 0, end: 1 },
+      { id: "a", start: 2, end: 3 },
+    ],
+  };
+  expect(await call("scene_validate", { data })).toMatchObject(
+    invalid(REPEATED_SHOT),
+  );
+});
+
+it("scene_build fails on two shots with one id", async () => {
+  const compact = {
+    shots: [
+      { id: "a", start: 0, end: 1 },
+      { id: "a", start: 2, end: 3 },
+    ],
+  };
+  expect(await call("scene_build", { compact })).toMatchObject(
+    fails(REPEATED_SHOT),
+  );
+});
+
+it("scene_create names a shot after its id when it has no name", async () => {
+  await call("scene_create", {
+    scene: "z",
+    data: { shots: [{ id: "a", start: 0, end: 1 }] },
+  });
+  const got = await call("scene_get", { scene: "z" });
+  expect(got).toMatchObject({
+    ok: true,
+    value: { shots: [{ id: "a", name: "a" }] },
+  });
+});
+
+it("scene_update takes an audio track without an id", async () => {
+  const r = await call("scene_update", {
+    scene: "s",
+    patch: { audioTracks: [{ assetId: "voz.mp3" }] },
+  });
+  expect(r).toMatchObject({ ok: true });
+});

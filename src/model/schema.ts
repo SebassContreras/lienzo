@@ -37,7 +37,7 @@ const SceneAudioSchema = z.object({
 });
 
 const AudioTrackItemSchema = z.object({
-  id: z.string().min(1),
+  id: z.string().min(1).default(() => newId()),
   assetId: z.string().min(1),
   name: z.string().optional(),
   volume: z.number().min(0).max(1).optional(),
@@ -46,6 +46,7 @@ const AudioTrackItemSchema = z.object({
   muted: z.boolean().optional(),
 });
 
+import { newId } from "./id.ts";
 import { TracksSchema, trackKeys } from "./track.ts";
 
 export const ShotTransitionSchema = z.object({
@@ -60,14 +61,17 @@ export const ShotCameraSchema = z.object({
   tracks: TracksSchema.optional(),
 });
 
-export const ShotSchema = z.object({
+export const ShotSchema = z
+  .object({
   id: z.string().min(1),
-  name: z.string(),
+  name: z.string().optional(),
   start: z.number().min(0),
   end: z.number().min(0),
   transition: ShotTransitionSchema.optional(),
   camera: ShotCameraSchema.optional(),
-});
+})
+  // a shot without a name is named after its id (081/D3)
+  .transform((shot) => ({ ...shot, name: shot.name ?? shot.id }));
 
 export const SymbolDefinitionSchema = z.object({
   w: z.number().positive(),

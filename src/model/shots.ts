@@ -74,17 +74,21 @@ export function setShot(shots: readonly Shot[], patch: ShotPatch): ShotsResult {
     }
   }
   const shot = next.find((sh) => sh.id === id) as Shot;
-  if (shot.end < shot.start) {
-    return {
-      error: {
-        code: "invalid_input",
-        message: `'end' (${shot.end}) no puede ser menor que 'start' (${shot.start})`,
-        path: "end",
-      },
-    };
-  }
+  const span = shotSpan(shot);
+  if (span) return { error: span };
   next.sort((a, b) => a.start - b.start);
   return { shots: next };
+}
+
+/** The problem of a shot that does not last: `end` must be after `start` (081/D3). */
+export function shotSpan(shot: Shot): ShotError | undefined {
+  return shot.end > shot.start
+    ? undefined
+    : {
+        code: "invalid_input",
+        message: `La toma «${shot.id}» no dura: 'end' (${shot.end}) debe ser mayor que 'start' (${shot.start})`,
+        path: "end",
+      };
 }
 
 /** Removes the shot `id` from `shots`; `removeShotIn` also unbinds its elements. */
@@ -162,6 +166,18 @@ export function shotProblems(
       message: `La toma «${sh.id}» termina en ${sh.end}s, después de la escena (${duration}s)`,
       path: "end",
     }));
+  const empty = shots.flatMap((sh) => shotSpan(sh) ?? []);
+  const repeated = shots.flatMap((sh, i) =>
+    shots.findIndex((o) => o.id === sh.id) < i
+      ? [
+          {
+            code: "invalid_input",
+            message: `Hay dos tomas con el id «${sh.id}»`,
+            path: "id",
+          },
+        ]
+      : [],
+  );
   const sorted = [...shots].sort((a, b) => a.start - b.start);
   const overlaps = sorted.flatMap((sh, i) => {
     const next = sorted[i + 1];
@@ -175,7 +191,7 @@ export function shotProblems(
         ]
       : [];
   });
-  return [...late, ...overlaps];
+  return [...empty, ...repeated, ...late, ...overlaps];
 }
 
 /** The first of `shotProblems`, as `shot_set` reports it at its own input. */
