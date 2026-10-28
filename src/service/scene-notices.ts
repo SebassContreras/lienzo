@@ -70,6 +70,50 @@ export function deadKeyframeEasingNotices(scene: Scene): SceneNotice[] {
   }));
 }
 
+const CAMERA_CHANNELS = ["x", "y", "zoom"];
+
+/**
+ * What a shot says that cannot work (081/D4): a transition longer than the shot, a camera
+ * track on a channel the camera does not have, an easing on a camera track's last keyframe.
+ */
+export function shotNotices(scene: Scene): SceneNotice[] {
+  return (scene.shots ?? []).flatMap((shot) => {
+    const long =
+      shot.transition && shot.transition.duration > shot.end - shot.start
+        ? [
+            {
+              message: `La transición de la toma «${shot.id}» dura ${shot.transition.duration}s y la toma ${round(shot.end - shot.start)}s; se solapa con las tomas vecinas`,
+            },
+          ]
+        : [];
+    const tracks = Object.entries(shot.camera?.tracks ?? {});
+    const unknown = tracks
+      .filter(([path]) => !CAMERA_CHANNELS.includes(path))
+      .map(([path]) => ({
+        message: `La cámara de la toma «${shot.id}» no tiene la pista «${path}»; se ignora (tiene: ${CAMERA_CHANNELS.join(", ")})`,
+      }));
+    const dead = tracks.flatMap(([path, track]) => {
+      const last = [...trackKeys(track)].sort((a, b) => a.t - b.t).at(-1);
+      return last && last.easing !== "auto" && last.easing !== "linear"
+        ? [
+            {
+              message: deadEasingNotice({
+                id: `cámara de ${shot.id}`,
+                topId: shot.id,
+                path,
+                t: last.t,
+                easing: last.easing,
+              }),
+            },
+          ]
+        : [];
+    });
+    return [...long, ...unknown, ...dead];
+  });
+}
+
+const round = (n: number) => Math.round(n * 100) / 100;
+
 /** The notices for `scene`, parsed from `raw`; `installed` lists the usable font faces. */
 export function sceneNotices(
   raw: unknown,
@@ -105,6 +149,7 @@ export function sceneNotices(
       })),
     ),
     ...deadKeyframeEasingNotices(scene),
+    ...shotNotices(scene),
     ...byFamily(
       estimatedFonts(scene).map((family, i) => ({
         family,

@@ -1203,3 +1203,49 @@ it("scene_update takes an audio track without an id", async () => {
   });
   expect(r).toMatchObject({ ok: true });
 });
+
+// 081/D4: shot notices
+
+it("shot_set notices a transition longer than its shot", async () => {
+  const r = await call("shot_set", {
+    scene: "s",
+    id: "a",
+    start: 3,
+    end: 4,
+    transition: { kind: "fade", duration: 5 },
+  });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/transición.*«a».*5s/)] },
+  });
+});
+
+it("shot_set notices a camera track the camera does not have", async () => {
+  const r = await call("shot_set", {
+    scene: "s",
+    id: "s1",
+    camera: { tracks: { rotation: [[0, 1]] } },
+  });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/pista «rotation»/)] },
+  });
+});
+
+it("scene_validate notices an easing on a camera track's last keyframe", async () => {
+  const data = {
+    shots: [
+      {
+        id: "a",
+        start: 0,
+        end: 3,
+        camera: { tracks: { zoom: [[0, 1], [3, 2, "ease-out"]] } },
+      },
+    ],
+  };
+  const r = await call("scene_validate", { data });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { valid: true, notices: [expect.stringMatching(/«ease-out»/)] },
+  });
+});

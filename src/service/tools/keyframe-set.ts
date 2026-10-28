@@ -109,7 +109,9 @@ export const keyframeSet = defineTool({
     );
     // an easing on the track's last keyframe shapes nothing (065/D4)
     const leaf = id.split("/").at(-1);
-    const dead = edited
+    // only a call that wrote a keyframe can have set it (081/D4)
+    const wroteKey = t !== undefined && value !== undefined;
+    const dead = edited && wroteKey
       ? deadEasings(edited).filter((d) => d.path === path && d.id === leaf)
       : [];
     return {

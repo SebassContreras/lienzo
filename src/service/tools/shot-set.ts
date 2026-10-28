@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { shotNotices } from "../scene-notices.ts";
 import { SHOT_RULES } from "../../engine/shots.ts";
 import { CompactShotCameraSchema } from "../../model/compact.ts";
 import { ShotTransitionSchema } from "../../model/schema.ts";
@@ -70,6 +71,10 @@ export const shotSet = defineTool({
       : edit?.scene.shots?.find((sh) => sh.id === id);
     const outside = shot && cameraOutsideShot(shot);
     if (outside) result.notices.push(outside);
+    if (shot && edit)
+      result.notices.push(
+        ...shotNotices({ ...edit.scene, shots: [shot] }).map((n) => n.message),
+      );
     const moved = movedNotice(edit?.moved ?? []);
     if (moved) result.notices.push(moved);
     if (unbound.length > 0)
