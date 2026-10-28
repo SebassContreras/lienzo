@@ -4,6 +4,7 @@ import {
   AT_RULES,
   AtPlacementSchema,
 } from "../../model/compact.ts";
+import { OPTIONS_TEXT } from "../../model/options.ts";
 import { movedNotice, rebindShot } from "../../model/shot-timing.ts";
 import { placeAt } from "../compact/layout.ts";
 import { updateElement } from "../element-tree.ts";
@@ -32,7 +33,8 @@ export const elementUpdate = defineTool({
     ANIM_RULES +
     AT_RULES +
     "It places the patched element against the scene and wins over an `x`/`y` in the patch. " +
-    COORDINATES,
+    COORDINATES +
+    OPTIONS_TEXT,
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,

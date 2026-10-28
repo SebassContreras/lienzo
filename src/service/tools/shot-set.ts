@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { SHOT_RULES } from "../../engine/shots.ts";
 import { CompactShotCameraSchema } from "../../model/compact.ts";
+import { OPTIONS_TEXT } from "../../model/options.ts";
 import { ShotTransitionSchema } from "../../model/schema.ts";
 import { movedNotice } from "../../model/shot-timing.ts";
 import {
@@ -29,7 +30,8 @@ export const shotSet = defineTool({
     "length leaves them where they are. Removing a shot unbinds the elements bound to it (listed in " +
     "`notices`) and moves their tracks back to the scene's start, " +
     "so they show for the whole scene. " +
-    SHOT_RULES,
+    SHOT_RULES +
+    OPTIONS_TEXT,
   input: z.object({
     scene: z.string().min(1),
     project: PROJECT,

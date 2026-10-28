@@ -280,7 +280,7 @@ one rule), T012–T015, docs, review, verify.
 - [x] 081/T011 [agent] Complete lists: tests (compact bad `size` plus bad element; `preset_validate` bad trait plus bad `set`; `scene_validate` data bad opacity plus shots; `data` plus `compact`; `scene` plus `data`), compact size as a `Problem`, `preset_validate`/`_save` stages, `exactlyOne` — covers R9, D9
 - [x] 081/T012 [agent] Messages: read `unrecognized_keys` in `node_modules/zod`, tests for each R10 case, the one-line fixes and `zod-issues.ts` mapping — covers R10, D10
 - [x] 081/T013 [agent] Times and names: tests (`times: [99]` fails `invalid_time`; element on a missing shot has only `unknown_shot`; `project_inspect` names), `assertTimeWithin`, `inspectLayout`, `project_inspect` — covers R11, R14, D11
-- [ ] 081/T014 [agent] Options module and descriptions: tests in `descriptions.test.ts`, `src/model/options.ts`, schemas and descriptions from it — covers R13, D12
+- [x] 081/T014 [agent] Options module and descriptions: tests in `descriptions.test.ts`, `src/model/options.ts`, schemas and descriptions from it — covers R13, D12
 - [ ] 081/T015 [agent] Speech: tests with a fake TTS (missing scene fails before synthesis; paths `apiKey`/`baseUrl`; local-down message), reorder in the tool — covers R15, D13
 - [ ] 081/T016 [agent] Group order: the two tests (ids in the other order; a non-member between two members) pass on `HEAD`; change only the descriptions — covers R17, D14
 - [ ] 081/T017 [agent] Docs: README, `docs/components.md`, usage skill, `RULES`, tool descriptions, AGENTS.md rule points, the new `project_inspect` names — covers R16, D15

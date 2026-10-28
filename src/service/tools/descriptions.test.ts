@@ -49,3 +49,15 @@ describe("tool descriptions (064/R2, R3)", () => {
     expect(text).toContain("`{ name, kind, category?, traits?, set? }`");
   });
 });
+
+describe("closed sets in descriptions (081/R13)", () => {
+  it("lists animation kinds, easings and transitions in shot_set", () => {
+    expect(shotSet.description).toContain("`fade`");
+    expect(shotSet.description).toContain("`ease-out`");
+    expect(shotSet.description).toContain("`slide`");
+  });
+
+  it("lists the loop kinds in scene_build", () => {
+    expect(sceneBuild.description).toContain("`float`");
+  });
+});

@@ -50,8 +50,10 @@ import { newId } from "./id.ts";
 import { durationValue, fpsValue, side } from "./limits.ts";
 import { TracksSchema, trackKeys } from "./track.ts";
 
+export const TRANSITION_KINDS = ["cut", "fade", "slide", "zoom"] as const;
+
 export const ShotTransitionSchema = z.object({
-  kind: z.enum(["cut", "fade", "slide", "zoom"]),
+  kind: z.enum(TRANSITION_KINDS),
   duration: z.number().min(0),
 });
 

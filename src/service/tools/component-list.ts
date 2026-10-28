@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { trackPaths } from "../../components/descriptor.ts";
 import { COMPONENTS } from "../../components/index.ts";
+import { OPTIONS_TEXT } from "../../model/options.ts";
 import { COORDINATES } from "../elements.ts";
 import { defineTool } from "../registry.ts";
 
@@ -29,7 +30,8 @@ export const componentList = defineTool({
   description:
     "List every component kind element_add accepts, with its Spanish label and the paths " +
     "keyframe_set can animate on it, and a `note` on defaults worth knowing. " +
-    COORDINATES,
+    COORDINATES +
+    OPTIONS_TEXT,
   input: z.object({}),
   output: z.array(
     z.object({
