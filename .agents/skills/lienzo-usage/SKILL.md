@@ -36,7 +36,7 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
 
 1. **Project:** `project_list`, or `project_create` with a `name` (the `project` id is made
    from it, `Café Norte` → `cafe-norte`, or give one) (`project_delete` removes one). `project_inspect` lists its assets,
-   scenes, presets and brand; `project_update` changes the brand, `asset_add` copies a local
+   scenes, presets, animation presets, fonts and brand; `project_update` changes the brand, `asset_add` copies a local
    file into `assets/`, `asset_rename` moves one (scenes follow) and `asset_delete` removes
    one (refused while a scene uses it, unless `force`).
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
@@ -52,7 +52,7 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
    likely meant, missing fonts, which draw in Inter, text widths estimated for a font with no
    metrics: check those with `scene_preview`).
 4. **Check:** `scene_inspect_layout` (text overlaps, `shape_overlap` for shapes stacked on
-   each other, out of canvas, contrast, drawn boxes as the shot camera shows them; a group's
+   each other, `text_overflow` for text a component draws outside its box, out of canvas, contrast, drawn boxes as the shot camera shows them; a group's
    box holds children animated out of it unless it clips) at the times that matter; `scene_preview` at a time `t` to look at a frame (`out` saves the
    PNG in `exports/`).
 5. **Save:** `scene_build` with `save: "<name>"` (`overwrite: true` to replace; the stored

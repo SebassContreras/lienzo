@@ -370,8 +370,8 @@ Changes (074 did the same), never weakened to pass.
 - [x] 080/T016 [agent] `matchedWeight`; missing-weight notice; preset weight; `font_install` weights and HTTP status — covers R16, D16
 - [x] 080/T017 [agent] `project_inspect` lists animations and fonts — covers R17, D17
 - [x] 080/T018 [agent] Counter suffix `""` (ticks 065/T003), icon padding by size, `flat` icon tile — covers R18, D18, 065/R3, 065/D3
-- [ ] 080/T019 [agent] Replay the English-message cases over the stdio MCP server; test and fix only if one reproduces — covers R19, D19
-- [ ] 080/T020 [agent] Docs: README, usage skill, `docs/components.md`, tool descriptions, AGENTS.md rule points and QA line — covers R1, R2, R3, R4, R5, R10, R15, R16, R17, R18, R20, D20
+- [x] 080/T019 [agent] Replay the English-message cases over the stdio MCP server; test and fix only if one reproduces — covers R19, D19
+- [x] 080/T020 [agent] Docs: README, usage skill, `docs/components.md`, tool descriptions, AGENTS.md rule points and QA line — covers R1, R2, R3, R4, R5, R10, R15, R16, R17, R18, R20, D20
 - [ ] 080/T021 [agent] Verify: typecheck, biome on touched files, `pnpm test`, every round-8 case replayed through an MCP client on a restarted server (commit = `HEAD`) and with `pnpm lienzo`, `voz` in `prueba-herramientas-nandu` re-saved and `asset_delete` of its audio refused — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R20
 
 ## Changes

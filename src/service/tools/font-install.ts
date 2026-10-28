@@ -10,7 +10,7 @@ export const fontInstall = defineTool({
   description:
     "Download a Google Fonts family as ttf into fonts/ (global) or, with `project`, into " +
     "projects/<project>/fonts/. With `file` (a local ttf, otf, woff or woff2), installs that file " +
-    "instead, as the editor's font upload does, under `family` and the first of `weights`. " +
+    "instead, as the editor's font upload does, under `family` and the one weight in `weights` (a file is one weight; several fail). " +
     "Scenes then use it by its family name.",
   input: z.object({
     family: z.string().min(1),

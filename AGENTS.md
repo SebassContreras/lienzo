@@ -132,6 +132,14 @@ What exists today:
   tracks only for a shot moved whole, a trim leaves them; `use` of a missing symbol fails;
   `remapFailure` re-roots failure paths (`compact.…`, `patch.…`); zod speaks Spanish
   (`src/model/zod-locale.ts`); `jsonArgs` reads object arguments sent as JSON strings
+- QA round 8 (080): short keyframes are read by `TracksSchema` itself; defaults are filled in
+  `prepareScene`; speech cues span the clip (`alignScriptToCues`) with unique ids
+  (`mergeCues`); `text_overflow` in `scene_inspect_layout` comes from the text a kind draws,
+  recorded by `src/service/text-extents.ts` (matrix math in `src/engine/matrix.ts`);
+  `matchedWeight` (`src/model/fonts.ts`) is the one CSS weight rule for measuring and
+  notices; one-color particles are checked against their dot color (`contrast.ts`);
+  `project_inspect` lists animations and fonts; counters have no default suffix and icons
+  pad their tile by size (`impliedFields`)
 - MCP instructions (079): `RULES` in `src/mcp/server.ts` states the rules every tool shares,
   after the starting commit
 - How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
@@ -248,6 +256,10 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   as a pure function both call; never re-implement it in a tool or a component. A QA fix
   names the rule it restores and adds one case per writer (each tool and the editor helper)
   to `src/service/tools/contract.test.ts`, so the next path that writes it is covered too.
+  Where each shared rule is applied (080): keyframes in the track schema
+  (`src/model/track.ts`), element defaults in `prepareScene` (`src/service/scenes.ts`),
+  audio refs in `saveScene` (`withCanonicalAudio`), a group's shot in `src/engine/groups.ts`,
+  compact problems in `buildCompact`, element names in errors and notices in `idPath`.
   Specs 071–074 patched one path at a time and the same family came back each round.
 - Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
   it started with, and a stale server reports fixed bugs as open (071).

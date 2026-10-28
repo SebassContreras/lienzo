@@ -6,6 +6,8 @@ import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, it } from "vitest";
+import { groupElements, ungroupElement } from "../../engine/groups.ts";
+import { defaultRect, defaultScene } from "../../model/model.ts";
 import { type Ctx, createCtx } from "../ctx.ts";
 import { fakeRenderer } from "../fake-renderer.ts";
 import { registry } from "./index.ts";
@@ -827,6 +829,30 @@ it("scene_update notes an audio file the project lacks (080/R3)", async () => {
   });
 });
 
+it("scene_generate_speech stores its audio ref with the project prefix (080/R3)", async () => {
+  ctx.tts = {
+    synthesizeSpeech: async () => ({
+      audioBuffer: new Uint8Array(32000),
+      format: "opus",
+      mimeType: "audio/ogg",
+    }),
+    listModels: async () => [],
+  };
+
+  await call("scene_generate_speech", {
+    scene: "s",
+    script: "Hola",
+    provider: "local",
+    asTrack: true,
+  });
+
+  expect(
+    (await storedAudio("s"))?.every((id) =>
+      id.startsWith("/projects/p/assets/"),
+    ),
+  ).toBe(true);
+});
+
 // 080/R4: a group's shot goes back to its children on ungroup, in the tools as in the editor
 it("element_ungroup gives the group's shot back to its children (080/R4)", async () => {
   await call("element_update", { scene: "s", id: "r", patch: { shot: "s1" } });
@@ -984,4 +1010,38 @@ it("element_update rebinding an element with no tracks gives no moved notice (08
   });
 
   expect(r).toMatchObject({ ok: true, value: { notices: [] } });
+});
+
+it("element_group gives the group the shot its members share (080/R4)", async () => {
+  await call("element_update", { scene: "s", id: "r", patch: { shot: "s1" } });
+  await call("element_add", {
+    scene: "s",
+    kind: "rect",
+    patch: { id: "q", shot: "s1", x: 300 },
+  });
+
+  await call("element_group", { scene: "s", ids: ["r", "q"], id: "g" });
+  const got = (await call("scene_get", { scene: "s" })) as {
+    value: { elements: { id: string; shot?: string }[] };
+  };
+
+  expect(got.value.elements.map(({ id, shot }) => ({ id, shot }))).toEqual([
+    { id: "g", shot: "s1" },
+  ]);
+});
+
+it("the editor's groupElements and ungroupElement carry the shot as the tools do (080/R4)", () => {
+  const scene = {
+    ...defaultScene(),
+    elements: [
+      { ...defaultRect(), id: "r", shot: "s1" },
+      { ...defaultRect(), id: "q", shot: "s1", x: 300 },
+    ],
+  };
+
+  const grouped = groupElements(scene, ["r", "q"], "g");
+  const ungrouped = ungroupElement(grouped.scene, "g");
+
+  expect(grouped.group?.shot).toBe("s1");
+  expect(ungrouped.scene.elements.map((el) => el.shot)).toEqual(["s1", "s1"]);
 });

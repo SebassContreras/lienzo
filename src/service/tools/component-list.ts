@@ -16,7 +16,8 @@ const NOTES: Record<string, string> = {
   icon:
     "`icon` is a lucide name (lucide.dev/icons), in any case or kebab-case (`star`, " +
     "`arrow-right` are stored as `Star`, `ArrowRight`); an unknown name fails, naming the closest one when one is close and " +
-    "otherwise examples (names are lucide's, in English: `star`, not `estrella`).",
+    "otherwise examples (names are lucide's, in English: `star`, not `estrella`). The rounded " +
+    "tile behind it is on by default (`tile.enabled: false` hides it).",
   image:
     "Given a project asset `src` and no `aspect`, element_add and scene_build read the " +
     "picture's own proportion and size `h` (or `w`) to it.",

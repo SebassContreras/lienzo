@@ -53,7 +53,8 @@ export const sceneInspectLayout = defineTool({
   description:
     "Analyse layout and spatial diagnostics of a scene at given times (default: start, middle " +
     "and end of loop): `text_overlap`, `shape_overlap` (shapes stacked on each other; a " +
-    "clearly smaller box inside a bigger one is not reported), `out_of_bounds`, " +
+    "clearly smaller box inside a bigger one is not reported), `out_of_bounds`, `text_overflow` (text a component draws outside its own box: a bubble's " +
+    "text past its height, code past its right edge, a steps label outside it), " +
     "`dangling_attachment` (a line end on a missing id), `low_contrast` / " +
     "`unverifiable_contrast`, `missing_symbol` and `unknown_shot`, counting only the elements " +
     "whose shot is on screen at that time. Pass a saved scene name in `scene` or a scene object in `data` " +

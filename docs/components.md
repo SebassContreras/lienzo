@@ -28,7 +28,10 @@ background glow, shadow and inner text (`label`).
 
 **Icono.** Any [Lucide](https://lucide.dev) icon from a searchable picker, with stroke,
 color, glow and an optional rounded tile (color or gradient). Tools take the name in any
-case or kebab-case (`star` → `Star`); an unknown name fails.
+case or kebab-case (`star` → `Star`); an unknown name fails. The tile is on by default
+(`tile.enabled: false` hides it). An icon given a size and no `tile.padding` pads its tile
+28/120 of its shorter side, as the default 120 px icon does; `defaults: "flat"` draws the tile
+as a flat color.
 
 ## `image`
 
@@ -99,7 +102,8 @@ thickness and an optional number.
 decimals and a thousands separator. A counter added by `element_add` or `scene_build` with no `progress`
 of its own gets a 0 → 1 track over 1.5 s from the start of its shot (or of the scene),
 capped by the shot's end; the «Contador animado» preset's own track also starts at its
-shot's start. In compact scenes `from` / `to` are its numbers (`to: 1500`).
+shot's start. In compact scenes `from` / `to` are its numbers (`to: 1500`). A new counter has
+no suffix (`suffix: "+"` adds one); the «Contador animado» preset keeps its «+».
 
 ## `bubble`
 

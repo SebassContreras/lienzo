@@ -139,7 +139,9 @@ How the tools behave, in short:
 - **Layout check:** `scene_inspect_layout` reports text and shape overlaps (two shapes of
   about the same size count, a card holding smaller content does not), out-of-canvas boxes
   (a group's box includes children animated out of it, unless the group clips), contrast
-  and loose references.
+  and loose references. It also reports `text_overflow` for text a component draws outside
+  its own box (chat bubble text past its height, code past its right edge, a steps label
+  outside the box), measured from the text the component draws.
 
 To remove the transparent margin of a PNG, call `image_trim` on an image element, or pass `trim: true` to `element_add`; the asset file is not changed, only the element's `crop`. In the editor, the same trim is the **Recortar transparencia** button of an image, and double-clicking an image opens its manual crop handles.
 
@@ -227,7 +229,12 @@ The same options work in compact scenes (`scene_build`) and through the element 
   appends one voice track per shot instead of replacing `scene.audio`; `scene_build` keeps
   existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not
   installed (`font_install`, which stores Google fonts as ttf so their text is measured);
-  until then they draw in Inter.
+  until then they draw in Inter. A weight an installed family lacks (Poppins 900) gets a
+  notice naming the weight drawn (800), picked by the CSS weight rule in the editor, in
+  exports and in measurement alike. Speech cues fill the clip, from `startOffset` to
+  `startOffset` plus the audio's length, and cue ids stay unique when clips are added with
+  `asTrack: true`; audio references are stored like element assets, with the project
+  prefix, so `asset_delete` refuses a file a scene plays.
 - **Size:** `size` is `"WxH"`, `[w, h]`, a ratio (`"9:16"`, `"4:5"`, `"1:1"`, `"16:9"`) or a
   format (`"Story"`); what a compact scene leaves out comes from the project's canvas.
 - **Checking a scene:** `scene_validate` (every problem in `errors`; unknown keys name the
@@ -245,7 +252,8 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
 
 `pnpm lienzo --help` (or the MCP tool list) shows each one with its input. By area:
 
-- Projects: `project_list`, `project_create`, `project_inspect`, `project_update`,
+- Projects: `project_list`, `project_create`, `project_inspect` (assets, scenes, presets,
+  animation presets and fonts), `project_update`,
   `project_delete`, `asset_add`, `asset_rename`, `asset_delete`
 - Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_update`,
   `scene_rename`, `scene_delete`, `scene_validate`,
@@ -256,7 +264,7 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
 - Catalog: `component_list`, `preset_list`, `preset_get`, `preset_validate`, `preset_save`,
   `preset_rename`, `preset_delete`, `animation_list`, `animation_save`, `animation_delete`,
   `font_list`,
-  `font_install` (a Google family, or a local `file`)
+  `font_install` (a Google family, or a local `file`, which is one weight)
 
 Everything the editor saves has a tool, and the editor's "Revisión" section runs the same
 layout check as `scene_inspect_layout`.
