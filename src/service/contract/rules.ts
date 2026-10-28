@@ -160,6 +160,10 @@ export const RULES: readonly Rule[] = [
         label: "start equals end",
         shotContent: [{ id: "s1", start: 2, end: 2 }],
       },
+      {
+        label: "end before start",
+        shotContent: [{ id: "s1", start: 3, end: 1 }],
+      },
     ],
   },
   {
