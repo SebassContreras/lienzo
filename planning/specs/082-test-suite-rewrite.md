@@ -51,8 +51,12 @@ When this spec is done:
 - D2 (R2, R9): `@vitest/coverage-v8` (MIT) and Stryker with its Vitest runner (Apache-2.0,
   development only, never in `dist/`) are devDependencies. Stryker runs per folder, on demand
   (`pnpm test:mutate <folder>`), not on every commit.
-  - _Trade-offs_: mutation runs are slow; the renderer suite times out on some machines.
-    _Mitigation_: the browser suite is excluded from Stryker; T003 measures the time first.
+  - _Trade-offs_: mutation runs are slow (measured in T003: 5 to 7 minutes for a file of 30–48
+    mutants, because every mutant reruns the 9–44 tests that reach it, mostly the contract
+    tests); the renderer suite times out on some machines. _Mitigation_: the browser suite is
+    excluded from Stryker; mutation is run on the files that hold rules (`src/model`,
+    `scenes/`, the checks of `prepareScene`) and, in each rewrite task, on that functionality's
+    files only, in the background; coverage (65 s for the whole suite) is the broad measure.
 - D3 (R3): `src/service` is split into `scenes`, `elements`, `shots`, `assets`, `fonts`,
   `presets` (with animations), `projects`, `speech`, `render`, `compact`, `layout`, `core`
   (registry, ctx, store, verdict, round). `git mv` one functionality per commit; `pnpm
@@ -76,9 +80,11 @@ When this spec is done:
 - D7 (R8): `src/service/contract/corpus/*.json` = `{ tool, input, expect }`; one runner in Vitest
   and `scripts/replay` through `pnpm lienzo`, so a replay never depends on a long-running MCP
   server.
-- D8 (R9, R10): Per functionality: write the new suite, run Stryker on the folder for old and new,
-  delete the old files when new ≥ old and every rule tag of the old titles (`078/R1`…) is
-  covered by a new test.
+- D8 (R9, R10): Per functionality: run Stryker on its rule files with the old suite (the old
+  score), write the new suite, run it again, and delete the old files when new ≥ old and
+  every rule tag of the old titles (`078/R1`…) is covered by a new test. Line coverage cannot
+  be the gate: `service/tools` was at 94.6% and `model` at 98.8% of lines when the QA rounds
+  found their bugs (T003).
 - D9 (R11): `planning/qa-log.md` holds one line per finding with its class: (1) a matrix cell is
   missing → add it for every writer; (2) a rule is missing → add it to `RULES` and apply it in
   `prepareScene`; (3) text or docs; (4) a design decision → `## Ideas`. A round ends when the
@@ -106,12 +112,36 @@ Inventory of `src/service` (165 files, tests included) read on 2026-10-28. A fil
 
 Outside `src/service` (T016): `src/test/registry.test.ts` goes to `core`, `src/test/more-elements.test.ts` to `src/components`; `render.test.ts`, `golden-scenes.ts`, `render.golden.json` and the harness stay in `src/test/`; `src/presets/render-audit.test.ts` and `round-trip.test.ts` stay with `src/presets/`; the other tests already sit beside their module.
 
+## Baseline (T003)
+Taken on 2026-10-28 at `0aa3bbd`, before any file moved. Whole suite without `renderer.test.ts` (it times out on this machine): 161 files, 1434 tests, 65 s with coverage.
+
+Total: statements 67.7%, branches 59.1%, functions 62.7%, lines 68.5%.
+
+| Folder | Files | Files at 0% | Lines % | Branches % |
+|---|---|---|---|---|
+| `editor` (brand, dialogs, footer, timeline, widgets) | 12 | 10 | 0–2 | 0 |
+| `export` | 7 | 6 | 0 | 0 |
+| `editor` (root, scene, sidebar) | 35 | 13 | 15–17 | 14–21 |
+| `components/three` | 10 | 3 | 23.7 | 8.3 |
+| `engine/audio` | 4 | 0 | 64.0 | 48.8 |
+| `mcp`, `cli` | 6 | 1 | 68.6, 83.5 | 77.8, 82.5 |
+| `components` (path, chart, badge, image, list) | 14 | 0 | 72.8–80.4 | 35.7–62.5 |
+| `presets`, `engine` (root), `traits`, `service` (root) | 106 | 3 | 85.2–87.4 | 74.9–100 |
+| `service/tools`, `service/compact`, `service/tts` | 61 | 0 | 92.2–94.6 | 82.3–88.1 |
+| `model` | 28 | 0 | 98.8 | 90.2 |
+| `animations` | 6 | 0 | 100 | 100 |
+
+Mutation (Stryker 10.1.1, Vitest runner, `pnpm test:mutate`): `src/model/size.ts` 85.42% (48 mutants: 34 killed, 7 timeout, 6 survived, 1 not covered; 5 m 09 s); `src/model/ids.ts` 100% (30 mutants: 21 killed, 9 timeout; 7 m 21 s; 43.8 tests per mutant). The surviving `size.ts` mutants are in the preset-name lookup (`?.` and `toLowerCase`).
+
+Reading: the plan said `src/traits` has no tests and `src/components` has 11 tests for 79 files; coverage shows both are exercised indirectly (traits 85.9% of lines through presets and the golden render; most component kinds above 90%). What is really empty is `export` (0%) and most of `editor` (0–17%).
+
 ## Tasks
 Order: T001–T004, then the moves (T005–T016), the tool field and generated suite (T017–T023),
 the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T001 [agent] Policy: A14 and the AGENTS.md test rule rewritten, entry in `planning/changes.md` — covers R1, D1
 - [x] 082/T002 [agent] Tooling: `@vitest/coverage-v8` and Stryker with the Vitest runner, scripts `test:cov` and `test:mutate`, a config that excludes `renderer.test.ts` — covers R2, D2
-- [ ] 082/T003 [agent] Verify: baseline — coverage per folder and mutation score per functionality with the current suite, time per run, recorded in this spec's Changes — covers R2
+- [x] 082/T003 [agent] Verify: baseline — coverage per folder and mutation score per functionality with the current suite, time per run, recorded in this spec's Changes — covers R2
+      verified: `pnpm exec vitest run --coverage` (161 files, 1434 tests, renderer.test.ts excluded, 65 s) and `pnpm test:mutate src/model/size.ts` and `src/model/ids.ts` — found line coverage is high where the QA rounds found bugs (service/tools 94.6%, model 98.8%), mutation runs cost 5–7 minutes per 30–48 mutants, so the mutation baseline is taken per functionality inside each rewrite task (D8); numbers under Baseline
 - [x] 082/T004 [agent] Inventory: every test file and source file of `src/service` assigned to a functionality (table in this spec) — covers R3, D3
 - [x] 082/T005 [agent] Move `scenes` (scene tools, `scenes.ts`, defaults, references, resources, notices, watch, changes) — covers R3, D3
 - [x] 082/T006 [agent] Move `elements` (element tools, element-tree, elements.ts, image-trim, sparse-scene) — covers R3, D3
@@ -149,7 +179,7 @@ the rewrites (T024–T040), the close (T041–T044).
 - [ ] 082/T038 [agent] Tests for `traits` — covers R10
 - [ ] 082/T039 [agent] Tests for `export` — covers R10
 - [ ] 082/T040 [agent] Rewrite `editor` tests — covers R9, D8
-- [ ] 082/T041 [agent] Quality gate: minimum coverage per folder and mutation score for `service`, `model`, `engine`, from the T003 baseline — covers R2
+- [ ] 082/T041 [agent] Quality gate: minimum coverage per folder and, for the rule files, minimum mutation score, from the T003 baseline — covers R2
 - [ ] 082/T042 [agent] QA process: `planning/qa-log.md`, README and AGENTS.md section, the closed list — covers R11, D9
 - [ ] 082/T043 [agent] Review: a fresh agent reads the new suite against R1–R11 and tries to break the matrix (remove a rule from `prepareScene`, add a writer with no adapter) — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11
 - [ ] 082/T044 [agent] Verify: typecheck, tests, replay with `pnpm lienzo` on a restarted MCP (commit = `HEAD`), mutation scores against the baseline — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11
