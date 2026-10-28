@@ -85,7 +85,7 @@ When this spec is done:
 Order: T001–T004, then the moves (T005–T016), the tool field and generated suite (T017–T023),
 the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T001 [agent] Policy: A14 and the AGENTS.md test rule rewritten, entry in `planning/changes.md` — covers R1, D1
-- [ ] 082/T002 [agent] Tooling: `@vitest/coverage-v8` and Stryker with the Vitest runner, scripts `test:cov` and `test:mutate`, a config that excludes `renderer.test.ts` — covers R2, D2
+- [x] 082/T002 [agent] Tooling: `@vitest/coverage-v8` and Stryker with the Vitest runner, scripts `test:cov` and `test:mutate`, a config that excludes `renderer.test.ts` — covers R2, D2
 - [ ] 082/T003 [agent] Verify: baseline — coverage per folder and mutation score per functionality with the current suite, time per run, recorded in this spec's Changes — covers R2
 - [ ] 082/T004 [agent] Inventory: every test file and source file of `src/service` assigned to a functionality (table in this spec) — covers R3, D3
 - [ ] 082/T005 [agent] Move `scenes` (scene tools, `scenes.ts`, defaults, references, resources, notices, watch, changes) — covers R3, D3
@@ -128,3 +128,6 @@ the rewrites (T024–T040), the close (T041–T044).
 - [ ] 082/T042 [agent] QA process: `planning/qa-log.md`, README and AGENTS.md section, the closed list — covers R11, D9
 - [ ] 082/T043 [agent] Review: a fresh agent reads the new suite against R1–R11 and tries to break the matrix (remove a rule from `prepareScene`, add a writer with no adapter) — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11
 - [ ] 082/T044 [agent] Verify: typecheck, tests, replay with `pnpm lienzo` on a restarted MCP (commit = `HEAD`), mutation scores against the baseline — covers R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11
+
+## Changes
+- 2026-10-28: D2 tooling findings (T002). Stryker 10.1.1 breaks on TypeScript 7 (`ts.parseConfigFileTextToJson` is gone), so `stryker.config.json` points `tsconfigFile` at a file that does not exist, which skips that step and keeps the run in the `.stryker-tmp` copy (not `inPlace`); with pnpm's strict layout the runner must be named in `plugins`. `@vitest/coverage-v8` must match Vitest exactly (5.0.3). A smoke run on `src/model/size.ts` (48 mutants, 85.42%) took 5 minutes because each mutant reruns the heavy contract tests (about 9 per mutant): the baseline of T003 measures time per folder first and runs the service folders with the contract tests only where the rule lives. Why: T003 cannot assume a whole-folder run is cheap. Work: T003.

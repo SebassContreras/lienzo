@@ -30,3 +30,7 @@ projects/*
 fonts/*
 !fonts/.gitkeep
 projects/mi-proyecto/fonts/
+
+# coverage and mutation reports (082)
+reports/
+.stryker-tmp/
