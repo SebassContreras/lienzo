@@ -29,6 +29,9 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
   too), `scene` is a saved scene's name, `data` is a whole scene object (`scene_create`,
   `scene_validate`, `scene_inspect_layout`), `recipe` a preset object, `patch` the values
   merged onto an element, scene or background, `id` an element, `at` a placement.
+- Element ids are unique in a scene (a repeat fails); a shot must last (`end` after `start`); a
+  scene is at most 7680 px a side, 60 fps and 600 s. `element_group` keeps the members' draw
+  order and puts the group where its topmost member was.
 - Write scenes in compact form with `scene_build`; use the element tools for small edits
   to a saved scene.
 

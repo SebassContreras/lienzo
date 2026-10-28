@@ -268,6 +268,15 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
   `font_list`,
   `font_install` (a Google family, or a local `file`, which is one weight)
 
+Rules every writer applies (spec 081): element ids are unique in a scene; a shot lasts (`end` is
+after `start`) and its id is unique; a scene is at most 7680 px a side, 60 fps and 600 s; an
+asset keeps its type on `asset_rename`, and `asset_add` takes audio only with an audio header;
+a user preset cannot take a built-in preset's name; a failing call lists every problem it finds,
+in Spanish, each at the path of what you sent. `project_inspect` names scenes and presets the
+way the other tools take them (no `.json`). `scene_generate_speech` needs a TTS service: a
+Kokoro-compatible server at `http://localhost:8880` (provider `local`) or an OpenRouter key
+(`OPENROUTER_API_KEY` or `apiKey`).
+
 Everything the editor saves has a tool, and the editor's "Revisión" section runs the same
 layout check as `scene_inspect_layout`.
 

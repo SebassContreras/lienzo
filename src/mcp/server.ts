@@ -31,7 +31,9 @@ const RULES =
   "`{ code, message, path }`, and a scene or recipe check adds `errors`, one per problem at its " +
   "path, an element named by the id you gave or else by its index; messages are Spanish; `notices` name what was " +
   "ignored or may surprise, never a failure. Coordinates: `x, y` is an element's top-left " +
-  "corner; use `at` to place by anchor. Workflow: .agents/skills/lienzo-usage/SKILL.md.";
+  "corner; use `at` to place by anchor. Element ids are unique in a scene; a shot has `end` > `start`; " +
+  "a scene is at most 7680 px a side, 60 fps and 600 s. A name that is stored differently (`Caja Ámbar` → " +
+  "`caja-ambar`) is returned, with a notice. Workflow: .agents/skills/lienzo-usage/SKILL.md.";
 
 /** A registry tool as MCP lists it: same name and description, its input as JSON Schema. */
 function mcpToolOf(tool: Tool): McpTool {
