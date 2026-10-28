@@ -8,7 +8,7 @@ import {
   type ProjectStore,
 } from "./projects/project-store.ts";
 import { findAppRoot } from "./projects/root.ts";
-import { createRenderer, type Renderer } from "./renderer.ts";
+import { createRenderer, type Renderer } from "./render/renderer.ts";
 import { createStore, type PresetStore, type Store } from "./store.ts";
 
 /**

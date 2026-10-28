@@ -9,7 +9,7 @@ import {
 } from "../../engine/shots.ts";
 import { defaultElement, type Scene, type Shot } from "../../model/model.ts";
 import { type Ctx, createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 
 describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {

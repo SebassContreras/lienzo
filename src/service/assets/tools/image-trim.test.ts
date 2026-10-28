@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { Crop } from "../../../components/image/descriptor.ts";
 import type { ImageEl, Scene } from "../../../model/model.ts";
 import { type Ctx, createCtx } from "../../ctx.ts";
-import { fakeRenderer } from "../../fake-renderer.ts";
+import { fakeRenderer } from "../../render/fake-renderer.ts";
 import { registry } from "../../tools/index.ts";
 import type { ImageProbe } from "../image-probe.ts";
 

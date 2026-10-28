@@ -10,8 +10,8 @@ import {
   type Shot,
 } from "../../model/model.ts";
 import { type Ctx, createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
 import { inspectLayout } from "../layout.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "./index.ts";
 
 /** Cases the fifth QA run reported, held at the tool boundary (073). */

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, it } from "vitest";
 import { type Ctx, createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "./index.ts";
 
 /** Cases the sixth QA run reported, held at the tool boundary (074). */

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, it } from "vitest";
 import { PNG_1X1 } from "../../test/png.ts";
 import { createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 
 it("gives an image its picture's aspect unless the input sets one (069/D14)", async () => {

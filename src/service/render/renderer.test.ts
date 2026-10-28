@@ -10,12 +10,13 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { chromium } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { Scene } from "../model/model.ts";
-import { type Ctx, createCtx } from "./ctx.ts";
+import type { Scene } from "../../model/model.ts";
+import { type Ctx, createCtx } from "../ctx.ts";
+import { findAppRoot } from "../projects/root.ts";
+import { registry } from "../tools/index.ts";
 import { type AppSession, closeApp, openApp } from "./renderer.ts";
-import { registry } from "./tools/index.ts";
 
-const APP_ROOT = join(import.meta.dirname, "..", "..");
+const APP_ROOT = findAppRoot(import.meta.dirname);
 
 async function hasBrowser(): Promise<boolean> {
   for (const channel of ["chrome", "msedge", undefined]) {

@@ -5,7 +5,7 @@ import { measureInstalledFonts } from "../fonts/font-install.ts";
 import { inspectLayout, layoutBoxes } from "../layout.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
-import { assertTimeWithin } from "../render-target.ts";
+import { assertTimeWithin } from "../render/render-target.ts";
 import { sceneFromData } from "../scenes/scene-defaults.ts";
 import { checkScene, openScene } from "../scenes/scenes.ts";
 

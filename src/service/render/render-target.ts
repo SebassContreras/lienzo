@@ -1,10 +1,10 @@
-import type { ExportOptions } from "../export/export.ts";
-import type { Scene } from "../model/model.ts";
-import type { ProjectCtx } from "./ctx.ts";
-import { fail } from "./registry.ts";
+import type { ExportOptions } from "../../export/export.ts";
+import type { Scene } from "../../model/model.ts";
+import type { ProjectCtx } from "../ctx.ts";
+import { fail } from "../registry.ts";
+import { resourceNotices } from "../scenes/scene-resources.ts";
+import { openScene } from "../scenes/scenes.ts";
 import type { Rendered } from "./renderer.ts";
-import { resourceNotices } from "./scenes/scene-resources.ts";
-import { openScene } from "./scenes/scenes.ts";
 
 const GIF_MAX_FPS = 25;
 

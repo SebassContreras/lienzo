@@ -1,5 +1,5 @@
 import type { Crop } from "../../components/image/descriptor.ts";
-import { lazyRenderPage } from "../renderer.ts";
+import { lazyRenderPage } from "../render/renderer.ts";
 
 /**
  * Reads what tools need from a picture (049/D1). Tools depend on this port, not on the

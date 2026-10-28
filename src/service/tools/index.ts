@@ -31,6 +31,8 @@ import { projectInspect } from "../projects/tools/project-inspect.ts";
 import { projectList } from "../projects/tools/project-list.ts";
 import { projectUpdate } from "../projects/tools/project-update.ts";
 import { createRegistry, type Tool } from "../registry.ts";
+import { sceneExport } from "../render/tools/scene-export.ts";
+import { scenePreview } from "../render/tools/scene-preview.ts";
 import { backgroundSet } from "../scenes/tools/background-set.ts";
 import { sceneBuild } from "../scenes/tools/scene-build.ts";
 import { sceneCreate } from "../scenes/tools/scene-create.ts";
@@ -44,9 +46,7 @@ import { keyframeRemove } from "../shots/tools/keyframe-remove.ts";
 import { keyframeSet } from "../shots/tools/keyframe-set.ts";
 import { shotSet } from "../shots/tools/shot-set.ts";
 import { sceneGenerateSpeech } from "../speech/tools/scene-generate-speech.ts";
-import { sceneExport } from "./scene-export.ts";
 import { sceneInspectLayout } from "./scene-inspect-layout.ts";
-import { scenePreview } from "./scene-preview.ts";
 
 const TOOLS: readonly Tool[] = [
   componentList,

@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
 import { extensionNotice, writeExport } from "../exports.ts";
 import { ImageResult } from "../image.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
 import {
   missingAssetNotices,
   resolveAndRenderScene,
@@ -27,11 +27,15 @@ export const scenePreview = defineTool({
   async run({ scene: name, project, t = 0, scale = 0.5, out }, ctx) {
     const effectiveCtx = await inProject(ctx, project);
 
-    const { scene, rendered } = await resolveAndRenderScene(effectiveCtx, name, {
-      format: "png",
-      scale,
-      time: t,
-    });
+    const { scene, rendered } = await resolveAndRenderScene(
+      effectiveCtx,
+      name,
+      {
+        format: "png",
+        scale,
+        time: t,
+      },
+    );
     const file = out
       ? await writeExport(effectiveCtx, out, rendered.bytes, "png")
       : undefined;

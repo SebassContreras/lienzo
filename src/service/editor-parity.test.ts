@@ -18,7 +18,7 @@ import { trackEntry, trackKeys } from "../model/track.ts";
 import { recipeFromElement } from "../presets/diff.ts";
 import { resolveOrigin } from "./compact/layout.ts";
 import { type Ctx, createCtx } from "./ctx.ts";
-import { fakeRenderer } from "./fake-renderer.ts";
+import { fakeRenderer } from "./render/fake-renderer.ts";
 import { registry } from "./tools/index.ts";
 
 const project = "parity";

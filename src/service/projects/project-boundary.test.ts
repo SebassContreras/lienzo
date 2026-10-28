@@ -2,8 +2,8 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
 import { inProject } from "../project-scope.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
 
 describe("040 project-boundary and scope resolution", () => {
   it("scopes a ctx to an existing project and has no default project", async () => {

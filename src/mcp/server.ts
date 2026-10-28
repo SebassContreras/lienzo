@@ -18,8 +18,8 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import type { Ctx } from "../service/ctx.ts";
-import { ImageResult } from "../service/image.ts";
 import type { Registry, Tool } from "../service/registry.ts";
+import { ImageResult } from "../service/render/image.ts";
 import { gitCommit } from "./build-id.ts";
 
 const VERSION = "0.1.0";

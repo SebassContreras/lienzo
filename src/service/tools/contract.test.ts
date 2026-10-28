@@ -9,7 +9,7 @@ import { beforeEach, expect, it } from "vitest";
 import { groupElements, ungroupElement } from "../../engine/groups.ts";
 import { defaultRect, defaultScene } from "../../model/model.ts";
 import { type Ctx, createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "./index.ts";
 
 let ctx: Ctx;
@@ -1239,7 +1239,14 @@ it("scene_validate notices an easing on a camera track's last keyframe", async (
         id: "a",
         start: 0,
         end: 3,
-        camera: { tracks: { zoom: [[0, 1], [3, 2, "ease-out"]] } },
+        camera: {
+          tracks: {
+            zoom: [
+              [0, 1],
+              [3, 2, "ease-out"],
+            ],
+          },
+        },
       },
     ],
   };
@@ -1259,7 +1266,10 @@ const twoX = [
 ];
 
 it("scene_create fails on two elements with one id", async () => {
-  const r = await call("scene_create", { scene: "z", data: { elements: twoX } });
+  const r = await call("scene_create", {
+    scene: "z",
+    data: { elements: twoX },
+  });
   expect(r).toMatchObject(fails(REPEATED_ID));
 });
 
@@ -1296,14 +1306,16 @@ it("element_group fails on a group id the scene has", async () => {
   expect(r).toMatchObject({ ok: false, error: { code: "duplicate_id" } });
 });
 
-
 // 081/D5: one set of limits for every writer
 
 const TOO_BIG = /Demasiado grande/;
 
 it("scene_validate compact fails on an fps above 60", async () => {
   const r = await call("scene_validate", { compact: { fps: 500 } });
-  expect(r).toMatchObject({ ok: false, error: { message: expect.stringMatching(TOO_BIG) } });
+  expect(r).toMatchObject({
+    ok: false,
+    error: { message: expect.stringMatching(TOO_BIG) },
+  });
 });
 
 it("scene_build fails on a duration above ten minutes", async () => {
@@ -1323,7 +1335,10 @@ it("scene_validate data fails on a spotlight above 1", async () => {
 });
 
 it("background_set fails on a spotlight above 1", async () => {
-  const r = await call("background_set", { scene: "s", patch: { spotlight: 7 } });
+  const r = await call("background_set", {
+    scene: "s",
+    patch: { spotlight: 7 },
+  });
   expect(r).toMatchObject(fails(TOO_BIG));
 });
 
@@ -1419,7 +1434,9 @@ it("preset_save notices a set key the kind has no field for", async () => {
   });
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: expect.arrayContaining([expect.stringMatching(/set.zzz/)]) },
+    value: {
+      notices: expect.arrayContaining([expect.stringMatching(/set.zzz/)]),
+    },
   });
 });
 
@@ -1429,12 +1446,22 @@ it("preset_save notices when the file is named differently", async () => {
   });
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: expect.arrayContaining([expect.stringMatching(/caja-ambar/)]) },
+    value: {
+      notices: expect.arrayContaining([expect.stringMatching(/caja-ambar/)]),
+    },
   });
 });
 
 it("animation_save refuses two keyframes at one time", async () => {
-  const recipe = { name: "Dos", tracks: { x: [[0, 1], [0, 2]] } };
+  const recipe = {
+    name: "Dos",
+    tracks: {
+      x: [
+        [0, 1],
+        [0, 2],
+      ],
+    },
+  };
   expect(await call("animation_save", { recipe })).toMatchObject({
     ok: false,
     error: { message: expect.stringMatching(/dos keyframes en t=0/) },
@@ -1517,8 +1544,12 @@ it("element_update fails on a track path the kind cannot animate", async () => {
 
 it("scene_build fails on a use override naming a child the symbol lacks", async () => {
   const compact = {
-    symbols: { card: { w: 100, h: 50, children: [{ id: "c1", kind: "rect" }] } },
-    elements: [{ id: "u", kind: "use", symbol: "card", overrides: { nope: {} } }],
+    symbols: {
+      card: { w: 100, h: 50, children: [{ id: "c1", kind: "rect" }] },
+    },
+    elements: [
+      { id: "u", kind: "use", symbol: "card", overrides: { nope: {} } },
+    ],
   };
   const r = await call("scene_build", { compact });
   expect(r).toMatchObject(fails(/«card» no tiene el elemento «nope».*«c1»/));
@@ -1541,7 +1572,10 @@ it("project_update notices a brand font weight that is not installed", async () 
 it("scene_validate compact lists a bad size with a bad element", async () => {
   const compact = {
     size: "banana",
-    elements: [{ id: "a", kind: "nokind" }, { id: "b", kind: "rect", w: "big" }],
+    elements: [
+      { id: "a", kind: "nokind" },
+      { id: "b", kind: "rect", w: "big" },
+    ],
   };
   const r = await call("scene_validate", { compact });
   expect(r).toMatchObject({
@@ -1564,7 +1598,9 @@ it("scene_build lists an element value problem with an unknown animation kind", 
   expect(r).toMatchObject({
     ok: false,
     error: {
-      message: expect.stringMatching(/compact\.elements\.f\.fit[\s\S]*wobble|compact\.elements\.f\.fit[\s\S]*anim/),
+      message: expect.stringMatching(
+        /compact\.elements\.f\.fit[\s\S]*wobble|compact\.elements\.f\.fit[\s\S]*anim/,
+      ),
     },
   });
 });
@@ -1582,13 +1618,20 @@ it("preset_validate lists a bad trait with a bad set value", async () => {
     ok: true,
     value: {
       valid: false,
-      message: expect.stringMatching(/nonexistent[\s\S]*set\.w|set\.w[\s\S]*nonexistent/),
+      message: expect.stringMatching(
+        /nonexistent[\s\S]*set\.w|set\.w[\s\S]*nonexistent/,
+      ),
     },
   });
 });
 
 it("preset_save lists a bad trait with a bad set value", async () => {
-  const recipe = { name: "X", kind: "rect", traits: ["nonexistent"], set: { w: "abc" } };
+  const recipe = {
+    name: "X",
+    kind: "rect",
+    traits: ["nonexistent"],
+    set: { w: "abc" },
+  };
   const r = await call("preset_save", { recipe });
   expect(r).toMatchObject(fails(/nonexistent[\s\S]*set\.w/));
 });
@@ -1604,7 +1647,10 @@ it("scene_validate data lists a bad opacity with a shot that ends after the scen
 });
 
 it("scene_inspect_layout fails when given scene and data", async () => {
-  const r = await call("scene_inspect_layout", { scene: "s", data: { elements: [] } });
+  const r = await call("scene_inspect_layout", {
+    scene: "s",
+    data: { elements: [] },
+  });
   expect(r).toMatchObject(fails(/no ambos/));
 });
 
@@ -1619,7 +1665,14 @@ it("animation_save names the extra key as the path", async () => {
 
 it("scene_build says a loop cycles value must be a whole number", async () => {
   const compact = {
-    elements: [{ id: "e", kind: "text", text: "hi", anim: { loop: { kind: "float", cycles: 0.5 } } }],
+    elements: [
+      {
+        id: "e",
+        kind: "text",
+        text: "hi",
+        anim: { loop: { kind: "float", cycles: 0.5 } },
+      },
+    ],
   };
   expect(await call("scene_build", { compact })).toMatchObject(
     fails(/cycles: Debe ser un número entero/),
@@ -1631,7 +1684,9 @@ it("scene_build explains a track that is not a list of keyframes", async () => {
   const r = await call("scene_build", { compact });
   expect(r).toMatchObject({
     ok: false,
-    error: { message: expect.stringMatching(/Una pista es una lista de keyframes/) },
+    error: {
+      message: expect.stringMatching(/Una pista es una lista de keyframes/),
+    },
   });
 });
 
@@ -1732,10 +1787,24 @@ it("scene_generate_speech names baseUrl and how to start the service when the lo
 });
 
 it("scene_update notices a long transition and a camera channel the camera lacks", async () => {
-  const shots = [{ id: "a", name: "a", start: 0, end: 2, camera: { tracks: { rotation: [[0, 1]] } }, transition: { kind: "fade", duration: 5 } }];
+  const shots = [
+    {
+      id: "a",
+      name: "a",
+      start: 0,
+      end: 2,
+      camera: { tracks: { rotation: [[0, 1]] } },
+      transition: { kind: "fade", duration: 5 },
+    },
+  ];
   const r = await call("scene_create", { scene: "z", data: { shots } });
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: expect.arrayContaining([expect.stringMatching(/transición/), expect.stringMatching(/«rotation»/)]) },
+    value: {
+      notices: expect.arrayContaining([
+        expect.stringMatching(/transición/),
+        expect.stringMatching(/«rotation»/),
+      ]),
+    },
   });
 });

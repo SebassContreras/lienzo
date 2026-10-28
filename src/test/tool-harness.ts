@@ -3,7 +3,7 @@ import { cp, mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type Ctx, createCtx } from "../service/ctx.ts";
-import { fakeRenderer } from "../service/fake-renderer.ts";
+import { fakeRenderer } from "../service/render/fake-renderer.ts";
 import { registry } from "../service/tools/index.ts";
 
 /** Every call names the test project (046/R1); tools without `project` ignore it. */
