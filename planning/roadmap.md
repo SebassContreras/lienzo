@@ -5,7 +5,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | ID  | Spec | Status | Depends on |
 |-----|------|--------|------------|
 | 050 | joint-mode | done | — |
-| 065 | defaults-and-easing-notices | todo | — |
+| 065 | defaults-and-easing-notices | done | — |
 | 066 | lazy-vendor-chunks | done        | — |
 | 067 | tool-feedback-fixes | done | — |
 | 068 | qa-feedback-fixes | done        | — |
@@ -20,7 +20,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 077 | docs-and-descriptions-audit | done        | 076 |
 | 078 | qa-round-7-fixes | done        | 077 |
 | 079 | descriptions-after-078 | done        | 078 |
-| 080 | qa-round-8-every-writer | in progress | 079 |
+| 080 | qa-round-8-every-writer | done        | 079 |
 
 ## Ideas
 
