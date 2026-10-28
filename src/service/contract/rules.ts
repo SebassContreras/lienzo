@@ -26,7 +26,11 @@ export type Violation = {
   before?: Fields[];
   /** A keyframe set on an element's track. */
   keyframe?: Fields;
-  /** The content is about where it sits on the canvas, so a writer that does not place it skips it. */
+  /** Fields that make the last element valid, for a writer that creates it before updating it. */
+  valid?: Fields;
+  /** Symbols the scene has before the broken content arrives. */
+  symbols?: Fields;
+  /** The elements are on the scene itself, not inside a symbol's body: a writer that only fills symbol bodies skips it. */
   onCanvas?: boolean;
   /** Existing elements grouped under an `id`. */
   group?: { members: string[]; id: string };
@@ -300,6 +304,112 @@ export const RULES: readonly Rule[] = [
       {
         label: "five seconds in two",
         shotContent: [{ ...SHOT, transition: { kind: "fade", duration: 5 } }],
+      },
+    ],
+  },
+  {
+    id: "a `use` names a symbol that exists",
+    outcome: "refused",
+    message: /símbolo «nope», que no existe/,
+    violations: [
+      {
+        label: "missing symbol",
+        onCanvas: true,
+        symbols: {
+          chip: {
+            w: 10,
+            h: 10,
+            children: [{ id: "d", kind: "ellipse", w: 5, h: 5 }],
+          },
+        },
+        valid: { symbol: "chip" },
+        elements: [{ id: "u", kind: "use", symbol: "nope" }],
+      },
+    ],
+  },
+  {
+    id: "a `use` override names a child its symbol has",
+    outcome: "refused",
+    message: /no tiene el elemento «nochild»/,
+    violations: [
+      {
+        label: "override",
+        onCanvas: true,
+        valid: { symbol: "chip" },
+        symbols: {
+          chip: {
+            w: 10,
+            h: 10,
+            children: [{ id: "d", kind: "ellipse", w: 5, h: 5 }],
+          },
+        },
+        elements: [
+          {
+            id: "u",
+            kind: "use",
+            symbol: "chip",
+            overrides: { nochild: { fill: "red" } },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "a track is on a field the kind can animate",
+    outcome: "refused",
+    message: /«nofield» no se puede animar en «rect»/,
+    violations: [
+      {
+        label: "element track",
+        elements: [
+          {
+            id: "x",
+            kind: "rect",
+            tracks: {
+              nofield: [
+                [0, 0],
+                [1, 1],
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "an animation preset exists",
+    outcome: "refused",
+    message: /usa la animación «nope», que no está en la biblioteca/,
+    violations: [
+      {
+        label: "element",
+        elements: [
+          { id: "x", kind: "rect", animPreset: { name: "nope", start: 0 } },
+        ],
+      },
+    ],
+  },
+  {
+    id: "an audio file the project lacks gets a notice",
+    outcome: "notice",
+    message: /Audio «.*falta\.mp3».*no sonará/,
+    violations: [
+      {
+        label: "audio track",
+        scene: { audioTracks: [{ id: "t1", assetId: "falta.mp3" }] },
+      },
+    ],
+  },
+  {
+    id: "an image file the project lacks gets a notice",
+    outcome: "notice",
+    message: /se dibuja un marcador/,
+    violations: [
+      {
+        label: "image",
+        elements: [
+          { id: "x", kind: "image", src: "/projects/p/assets/falta.png" },
+        ],
       },
     ],
   },

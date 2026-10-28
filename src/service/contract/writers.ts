@@ -26,6 +26,19 @@ export type Writer = {
 const shotCalls = (shots: Fields[] = []): Call[] =>
   shots.map((shot) => ({ tool: "shot_set", input: { scene: "s", ...shot } }));
 
+/** The scene's symbols and shots a violation relies on, set up through the tools that own them. */
+const contextCalls = (v: Violation): Call[] => [
+  ...(v.symbols
+    ? [
+        {
+          tool: "scene_update",
+          input: { scene: "s", patch: { symbols: v.symbols } },
+        },
+      ]
+    : []),
+  ...shotCalls(v.shots),
+];
+
 const withoutKind = ({ kind: _kind, ...rest }: Fields) => rest;
 
 const add = (e: Fields): Call => ({
@@ -47,6 +60,7 @@ const repeatsIds = (elements: Fields[] = []) => {
 
 const data = (v: Violation) => ({
   ...(v.scene ?? {}),
+  ...(v.symbols ? { symbols: v.symbols } : {}),
   ...((v.shotContent ?? v.shots) ? { shots: v.shotContent ?? v.shots } : {}),
   ...(v.elements ? { elements: v.elements } : {}),
   ...(v.background ? { background: v.background } : {}),
@@ -105,7 +119,7 @@ export const WRITERS: readonly Writer[] = [
       if (!last) return undefined;
       return {
         arrange: [
-          ...shotCalls(v.shots),
+          ...contextCalls(v),
           ...(v.elements ?? []).slice(0, -1).map(add),
         ],
         call: add(last),
@@ -122,9 +136,12 @@ export const WRITERS: readonly Writer[] = [
       const { id, kind, ...patch } = last;
       return {
         arrange: [
-          ...shotCalls(v.shots),
+          ...contextCalls(v),
           ...(v.elements ?? []).slice(0, -1).map(add),
-          { tool: "element_add", input: { scene: "s", kind, patch: { id } } },
+          {
+            tool: "element_add",
+            input: { scene: "s", kind, patch: { id, ...v.valid } },
+          },
         ],
         call: { tool: "element_update", input: { scene: "s", id, patch } },
       };
@@ -222,6 +239,10 @@ export const NOT_CARRIED: Record<string, Record<string, string>> = {
   scene_update: {
     "an element off the canvas gets a notice — rect":
       "a symbol's body is drawn where a `use` places it, not on the canvas",
+    "a `use` names a symbol that exists — missing symbol":
+      "scene_update fills symbol bodies; a `use` placed on the scene is not in its input",
+    "a `use` override names a child its symbol has — override":
+      "scene_update fills symbol bodies; a `use` placed on the scene is not in its input",
   },
   element_update: {
     "element ids are unique — two at the root":

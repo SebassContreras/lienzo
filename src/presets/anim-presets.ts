@@ -258,5 +258,16 @@ export function expandAnimPresets(
     for (const s of skipped) notices.push(`${el.name}: ${s}`);
     return out;
   };
-  return { scene: { ...scene, elements: scene.elements.map(expand) }, notices };
+  const symbols = scene.symbols && {
+    symbols: Object.fromEntries(
+      Object.entries(scene.symbols).map(([name, body]) => [
+        name,
+        { ...body, children: body.children.map(expand) },
+      ]),
+    ),
+  };
+  return {
+    scene: { ...scene, ...symbols, elements: scene.elements.map(expand) },
+    notices,
+  };
 }

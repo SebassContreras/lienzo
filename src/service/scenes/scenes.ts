@@ -179,11 +179,14 @@ export function checkAnimPresets(
   library: readonly AnimPreset[],
 ): void {
   const names = library.map((p) => p.name);
-  const missing = unknownPresets(
-    scene.elements,
-    new Set(names.map(slugify)),
-    "elements.",
-  );
+  const known = new Set(names.map(slugify));
+  // a symbol's body is checked like the scene's own elements (082/D6)
+  const missing = [
+    ...unknownPresets(scene.elements, known, "elements."),
+    ...Object.entries(scene.symbols ?? {}).flatMap(([name, body]) =>
+      unknownPresets(body.children, known, `symbols.${name}.children.`),
+    ),
+  ];
   if (missing.length > 0)
     failAll(
       "unknown_anim_preset",
