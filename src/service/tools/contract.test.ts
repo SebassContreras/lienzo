@@ -1523,3 +1523,15 @@ it("scene_build fails on a use override naming a child the symbol lacks", async 
   const r = await call("scene_build", { compact });
   expect(r).toMatchObject(fails(/«card» no tiene el elemento «nope».*«c1»/));
 });
+
+// 081/D8: brand font weights
+
+it("project_update notices a brand font weight that is not installed", async () => {
+  const r = await call("project_update", {
+    fonts: [{ family: "Inter", role: "body", weights: [400, 300] }],
+  });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«Inter».*pesos 300/)] },
+  });
+});

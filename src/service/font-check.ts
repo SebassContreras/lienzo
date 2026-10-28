@@ -125,6 +125,25 @@ export function fontNotices(
   ];
 }
 
+/**
+ * One notice per installed brand font whose declared weights are not all installed (081/D8):
+ * `font_install` takes only 400 unless `weights` says more.
+ */
+export function missingBrandWeightNotices(
+  fonts: readonly { family: string; weights: readonly number[] }[],
+  installed: readonly Face[],
+): string[] {
+  return fonts.flatMap((f) => {
+    const have = installed.filter((i) => i.family === f.family).map((i) => i.weight);
+    const lacking = f.weights.filter((w) => !have.includes(w));
+    return have.length > 0 && lacking.length > 0
+      ? [
+          `La fuente de marca «${f.family}» declara los pesos ${lacking.join(", ")}, que no están instalados; instálalos con font_install y el parámetro weights`,
+        ]
+      : [];
+  });
+}
+
 /** The notice for a font family that is not installed (070/D2). */
 export const missingFontNotice = (family: string) =>
   `La fuente «${family}» no está instalada; se dibujará con otra. Usa font_install`;

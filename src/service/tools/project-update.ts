@@ -5,7 +5,7 @@ import {
   ColorPaletteSchema,
   ProjectSlugSchema,
 } from "../../model/project.ts";
-import { missingFontNotice } from "../font-check.ts";
+import { missingBrandWeightNotices, missingFontNotice } from "../font-check.ts";
 import { availableFonts } from "../font-install.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
@@ -42,12 +42,12 @@ export const projectUpdate = defineTool({
       ...config,
       ...(canvas ? { canvas: { ...stored.manifest.canvas, ...canvas } } : {}),
     });
-    const installed = new Set(
-      (await availableFonts(ctx.fonts, project)).map((f) => f.family),
-    );
+    const faces = await availableFonts(ctx.fonts, project);
+    const installed = new Set(faces.map((f) => f.family));
     const notices = (config.fonts ?? [])
       .filter((f) => !installed.has(f.family))
       .map((f) => missingFontNotice(f.family));
+    notices.push(...missingBrandWeightNotices(config.fonts ?? [], faces));
     return { ...asToolProject(updated), notices };
   },
 });
