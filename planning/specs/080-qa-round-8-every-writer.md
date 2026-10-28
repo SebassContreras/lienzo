@@ -365,7 +365,7 @@ Changes (074 did the same), never weakened to pass.
 - [x] 080/T011 [agent] `use` instances held by their `use` in layout — covers R11, D11
 - [x] 080/T012 [agent] Moved-tracks notice only for moved keys — covers R12, D12
 - [x] 080/T013 [agent] Speech cues over the clip; unique cue ids after merge — covers R13, D13
-- [ ] 080/T014 [agent] Contrast over one-color particles — covers R14, D14
+- [x] 080/T014 [agent] Contrast over one-color particles — covers R14, D14
 - [ ] 080/T015 [agent] Failing tests with the bubble, code and steps cases, then `text_overflow` from recorded text extents; `matrix.ts` shared with `recording-ctx.ts` — covers R15, D15
 - [ ] 080/T016 [agent] `matchedWeight`; missing-weight notice; preset weight; `font_install` weights and HTTP status — covers R16, D16
 - [ ] 080/T017 [agent] `project_inspect` lists animations and fonts — covers R17, D17

@@ -6,6 +6,7 @@ import {
 } from "../engine/color.ts";
 import {
   defaultImage,
+  defaultParticles,
   defaultRect,
   defaultScene,
   defaultText,
@@ -271,5 +272,52 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     expect(contrastRatio(sugLum, bgLum)).toBeGreaterThanOrEqual(
       diag?.required as number,
     );
+  });
+});
+
+describe("text over one-color particles (080/R14)", () => {
+  const sceneWith = (particles: ReturnType<typeof defaultParticles>) => {
+    const scene = defaultScene();
+    scene.background = {
+      ...scene.background,
+      color: "#000000",
+      gradient: false,
+    };
+    const text = {
+      ...defaultText(),
+      id: "over-dots",
+      x: 100,
+      y: 100,
+      text: "Sobre puntos",
+      color: "#202020",
+      size: 16,
+      weight: 400,
+    };
+    scene.elements = [
+      { ...particles, id: "dots", x: 0, y: 0, w: 800, h: 600 },
+      text,
+    ];
+    return scene;
+  };
+
+  it("counts the dot color when it is the worse backdrop", () => {
+    const particles = defaultParticles();
+    particles.dot = { ...particles.dot, color: "#303030", opacity: 1 };
+
+    const diags = inspectLayout(sceneWith(particles), [0]);
+
+    expect(diags.find((d) => d.code === "low_contrast")?.elementId).toBe(
+      "over-dots",
+    );
+    expect(diags.some((d) => d.code === "unverifiable_contrast")).toBe(false);
+  });
+
+  it("stays unverifiable when the dots vary in hue", () => {
+    const particles = defaultParticles();
+    particles.variation = { ...particles.variation, hueShift: 90 };
+
+    const diags = inspectLayout(sceneWith(particles), [0]);
+
+    expect(diags.some((d) => d.code === "unverifiable_contrast")).toBe(true);
   });
 });

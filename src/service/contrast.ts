@@ -25,8 +25,27 @@ export type BackdropColorResult =
 /**
  * Checks if an element kind is impossible to reduce to a flat/gradient color backdrop.
  */
-function isUnverifiableKind(kind: string): boolean {
-  return kind === "image" || kind === "particles" || kind === "three";
+function isUnverifiableKind(el: { kind: string }): boolean {
+  if (el.kind === "particles") return dotColorOf(el) === undefined;
+  return el.kind === "image" || el.kind === "three";
+}
+
+/**
+ * The one color a particles element's dots have: no template and no hue variation. Other
+ * particles have no single color, so they stay unverifiable (080/D14).
+ */
+function dotColorOf(el: object): Rgba | undefined {
+  const p = el as {
+    kind: string;
+    template?: unknown;
+    variation?: { hueShift?: number };
+    dot?: { color?: string; opacity?: number };
+  };
+  if (p.kind !== "particles" || p.template != null) return undefined;
+  if ((p.variation?.hueShift ?? 0) !== 0 || !p.dot?.color) return undefined;
+  const c = parseColor(p.dot.color);
+  c[3] *= p.dot.opacity ?? 1;
+  return c;
 }
 
 /**
@@ -97,7 +116,8 @@ function getElementFills(el: Record<string, unknown>): {
  * Resolves the effective backdrop color(s) under a text box at time `t`.
  * Walks elements in draw order up to the target text element.
  * For each intersecting element below:
- * - If image, 3D or particles: returns { kind: "unverifiable" }
+ * - If image, 3D or particles with no single dot color: returns { kind: "unverifiable" }
+ * - One-color particles: the backdrop with and without a dot both count.
  * - Otherwise: composites its fill over the accumulated background.
  * If gradients exist (in background or elements), evaluates worst contrast against `fgLum`.
  */
@@ -112,7 +132,7 @@ export function resolveBackdropUnder(
   for (let i = 0; i < targetIndex; i++) {
     const item = placedBelow[i];
     if (!item) continue;
-    if (boxesTouch(textBox, item.box) && isUnverifiableKind(item.el.kind)) {
+    if (boxesTouch(textBox, item.box) && isUnverifiableKind(item.el)) {
       return {
         kind: "unverifiable",
         reason: `El fondo contiene un elemento «${item.el.kind}» (${item.el.id}) que no se reduce a un color plano`,
@@ -131,6 +151,15 @@ export function resolveBackdropUnder(
     const item = placedBelow[i];
     if (!item) continue;
     if (!boxesTouch(textBox, item.box)) continue;
+
+    const dot = dotColorOf(item.el);
+    if (dot) {
+      candidateBgs = [
+        ...candidateBgs,
+        ...candidateBgs.map((curBg) => compositeRgba(dot, curBg)),
+      ].slice(0, 8);
+      continue;
+    }
 
     // Element has effective opacity from itself and its anim / group
     const { fills, hasFill } = getElementFills(
