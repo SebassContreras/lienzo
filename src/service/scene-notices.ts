@@ -11,8 +11,8 @@ import {
   estimatedFonts,
   estimatedWidthNotices,
   type Face,
-  missingFonts,
   missingFontNotice,
+  missingFonts,
   missingWeightNotice,
   missingWeights,
 } from "./font-check.ts";

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { EasingSchema } from "../../engine/easing.ts";
 import { withKeyframe } from "../../engine/tracks.ts";
+import type { Scene } from "../../model/model.ts";
 import {
   TrackRepeatSchema,
   trackEntry,
@@ -8,7 +9,6 @@ import {
   trackRepeat,
   trackUntil,
 } from "../../model/track.ts";
-import type { Scene } from "../../model/model.ts";
 import { updateElement } from "../element-tree.ts";
 import { checkKeyframe, checkTrackPath } from "../elements.ts";
 import { inProject, PROJECT } from "../project-scope.ts";

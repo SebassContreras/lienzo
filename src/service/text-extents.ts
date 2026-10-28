@@ -5,8 +5,8 @@
  * nothing here knows about bubbles, code or steps.
  */
 
-import { descriptorOf } from "../components/index.ts";
 import { rest } from "../animations/index.ts";
+import { descriptorOf } from "../components/index.ts";
 import type { Box } from "../engine/geometry.ts";
 import {
   applyToPoint,
@@ -18,7 +18,7 @@ import {
   translation,
 } from "../engine/matrix.ts";
 import type { Ctx } from "../engine/paint.ts";
-import { measureTextWidth, type MeasureStyle } from "../engine/text-measure.ts";
+import { type MeasureStyle, measureTextWidth } from "../engine/text-measure.ts";
 import type { Element, Scene } from "../model/model.ts";
 
 export type TextExtent = { text: string; box: Box };

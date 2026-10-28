@@ -10,7 +10,7 @@ import {
   Undo2,
   Upload,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { COMPONENTS, createElement } from "../components/index.ts";
 import { imageSize } from "../engine/assets.ts";
 import { loadFonts, missingFonts } from "../engine/fonts.ts";

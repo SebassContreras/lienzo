@@ -7,8 +7,8 @@
 import { ScanSearch } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Scene } from "../../model/model.ts";
-import { inspectLayout, type LayoutDiagnostic } from "../../service/layout.ts";
 import type { Face } from "../../service/font-check.ts";
+import { inspectLayout, type LayoutDiagnostic } from "../../service/layout.ts";
 import { sceneNotices } from "../../service/scene-notices.ts";
 import { Section } from "../controls.tsx";
 
