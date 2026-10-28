@@ -340,11 +340,14 @@ export async function expandScene(
     },
   };
 
+  const failures: string[] = [];
   if (compact.size !== undefined) {
     const dims = parseSize(compact.size);
-    if ("error" in dims) throw new Error(`size: ${dims.error}`);
-    scene.width = dims.width;
-    scene.height = dims.height;
+    if ("error" in dims) failures.push(`size: ${dims.error}`);
+    else {
+      scene.width = dims.width;
+      scene.height = dims.height;
+    }
   }
   scene.width = compact.width ?? scene.width;
   scene.height = compact.height ?? scene.height;
@@ -396,7 +399,6 @@ export async function expandScene(
   }
 
   state.symbols = scene.symbols;
-  const failures: string[] = [];
   for (const [i, given] of (compact.elements ?? []).entries()) {
     // with no placement at all, a top-level element is centred, as element_add does (069/D11)
     const unplaced =
@@ -415,9 +417,10 @@ export async function expandScene(
 
     if (rawEl.id) {
       if (seenIds.has(el.id)) {
-        throw new Error(
+        failures.push(
           `elements.${i}.id: ID duplicado «${el.id}» en la escena compacta`,
         );
+        continue;
       }
       seenIds.add(el.id);
     } else if (!el.id) {

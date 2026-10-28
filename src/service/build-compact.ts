@@ -9,6 +9,7 @@ import { ignoredFields, ignoredNotice, namesHint } from "../model/ignored.ts";
 import type { Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
 import { cameraOutsideShot } from "../model/shots.ts";
+import { parseSize } from "../model/size.ts";
 import { flatIssues } from "../model/zod-issues.ts";
 import { asRecipe } from "../presets/store.ts";
 import { expandScene } from "./compact/expand.ts";
@@ -72,14 +73,18 @@ function asRuleData(input: CompactSceneInput, duration: number): unknown {
  * element problem and each rule it breaks, under `compact`, an element named by the id the
  * input gave.
  */
-function failCompact(
+function compactProblems(
   input: CompactSceneInput,
   issues: Parameters<typeof flatIssues>[0],
   library: readonly AnimPreset[],
   duration: number,
-): never {
+): Problem[] {
   const named = (path: string) => join("compact", idPath(input, path));
+  const size = input.size === undefined ? undefined : parseSize(input.size);
   const problems: Problem[] = [
+    ...(size && "error" in size
+      ? [{ path: "compact.size", message: size.error }]
+      : []),
     ...flatIssues(issues).map((i) => ({
       path: named(i.path.map(String).join(".")),
       message: i.message,
@@ -89,7 +94,7 @@ function failCompact(
       path: named(p.path),
     })),
   ];
-  failAll("invalid_scene", problems);
+  return problems;
 }
 
 /**
@@ -102,15 +107,14 @@ export async function buildCompact(
   fonts: readonly Face[],
   { resources = true } = {},
 ): Promise<{ scene: Scene; compact: CompactScene; notices: string[] }> {
-  let scene: Scene;
-  let notices: string[];
   const library = await animLibrary(ctx);
   const base = await sceneDefaults(ctx);
   const presets = await ctx.store.presets();
-  const parsed = CompactSceneSchema.safeParse(input);
-  if (!parsed.success)
-    failCompact(input, parsed.error.issues, library, base.duration);
-  const compact = parsed.data;
+  const expandChecked = async (
+    compact: CompactScene,
+  ): Promise<{ scene: Scene; notices: string[] }> => {
+  let scene: Scene;
+  let notices: string[];
   try {
     const full = await expandScene(compact, {
       findPreset: async (name) => {
@@ -170,6 +174,37 @@ export async function buildCompact(
       }),
     );
   }
+  return { scene, notices };
+  };
+  const parsed = CompactSceneSchema.safeParse(input);
+  if (!parsed.success) {
+    const early = compactProblems(
+      input,
+      parsed.error.issues,
+      library,
+      base.duration,
+    );
+    // the elements that did parse still get the expansion stage (081/D9)
+    const later = await laterProblems(
+      input,
+      parsed.error.issues,
+      expandChecked,
+    );
+    const seen = new Set<string>();
+    failAll(
+      "invalid_scene",
+      [...early, ...later].filter((p) => {
+        const key = `${p.path}|${p.message}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }),
+    );
+  }
+  const compact = parsed.data;
+  const checked = await expandChecked(compact);
+  const scene = checked.scene;
+  const notices = checked.notices;
   notices.push(
     ...fontNotices(scene, fonts),
     ...estimatedWidthNotices(scene),
@@ -178,4 +213,37 @@ export async function buildCompact(
     ...(resources ? await resourceNotices(ctx, scene) : []),
   );
   return { scene, compact, notices };
+}
+
+/**
+ * The problems the expansion stage finds in the elements of `input` whose schema problems are
+ * already listed (081/D9): each of those is replaced by a plain rect of its id, which keeps
+ * every index and name, and a key of the scene that failed is left out.
+ */
+async function laterProblems(
+  input: CompactSceneInput,
+  issues: Parameters<typeof flatIssues>[0],
+  expandChecked: (compact: CompactScene) => Promise<unknown>,
+): Promise<Problem[]> {
+  const bad = new Set<number>();
+  const rest: Raw = { ...input };
+  for (const issue of issues) {
+    const [head, index] = issue.path;
+    if (head === "elements" && typeof index === "number") bad.add(index);
+    else if (typeof head === "string") delete rest[head];
+  }
+  rest.elements = (input.elements ?? []).map((el, i) =>
+    bad.has(i)
+      ? { kind: "rect", ...(isRaw(el) && typeof el.id === "string" ? { id: el.id } : {}) }
+      : el,
+  );
+  const again = CompactSceneSchema.safeParse(rest);
+  if (!again.success) return [];
+  try {
+    await expandChecked(again.data);
+    return [];
+  } catch (err) {
+    if (!(err instanceof ToolFailure)) throw err;
+    return err.error.errors ?? [{ path: err.error.path, message: err.error.message }];
+  }
 }

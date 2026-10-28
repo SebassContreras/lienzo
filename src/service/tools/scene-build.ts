@@ -92,7 +92,7 @@ export const sceneBuild = defineTool({
       const result = await saveScene(effectiveCtx, save, expanded);
       saved = result.scene;
       notices.push(...storedAsNotice(save, saved));
-      notices.push(...result.notices);
+      notices.push(...result.notices.filter((n) => !notices.includes(n)));
     }
 
     // Concise by default once saved (064/D5): scene_get gives the full scene

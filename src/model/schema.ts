@@ -126,17 +126,20 @@ const traitUse = z.union([
  * A recipe's shape; `set` (group children in their compact form included) is left loose
  * here and checked by resolving the recipe, which must succeed.
  */
-const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
-  .object({
-    name: z.string().min(1),
-    category: z.string().optional(),
-    kind: z.lazy(() => z.enum([...KINDS, "background"])),
-    traits: z.array(traitUse).default([]),
-    set: z.record(z.string(), z.unknown()).optional(),
-  })
-  // a key a recipe does not have (`values`) is an error, not a silent no-op (074/D14)
-  .strict()
-  .superRefine((recipe, ctx) => {
+const RecipeShape = z.object({
+  name: z.string().min(1),
+  category: z.string().optional(),
+  kind: z.lazy(() => z.enum([...KINDS, "background"])),
+  traits: z.array(traitUse).default([]),
+  set: z.record(z.string(), z.unknown()).optional(),
+});
+
+/** What resolving a recipe finds wrong: a trait that does not resolve, a `set` value that does not fit (081/D9). */
+function recipeRules(
+  recipe: z.infer<typeof RecipeShape>,
+  ctx: z.RefinementCtx,
+): void {
+  {
     const r = resolvePreset(recipe as PresetRecipe);
     if (!("error" in r)) {
       // what it builds is checked like any element or background, at `set.<field>`
@@ -161,7 +164,34 @@ const PresetRecipeSchema: z.ZodType<PresetRecipe> = z
       message: r.error,
       ...(i >= 0 ? { path: ["traits", i] } : {}),
     });
-  }) as z.ZodType<PresetRecipe>;
+    // the `set` values are still checked, without the trait that does not resolve
+    if (i >= 0) {
+      const rest = resolvePreset({
+        ...recipe,
+        traits: recipe.traits.filter((_, k) => k !== i),
+      } as PresetRecipe);
+      const built =
+        "element" in rest
+          ? ElementSchema.safeParse(rest.element)
+          : "background" in rest
+            ? BackgroundSchema.safeParse(rest.background)
+            : undefined;
+      for (const issue of built && !built.success ? built.error.issues : [])
+        ctx.addIssue({
+          code: "custom",
+          message: issue.message,
+          path: ["set", ...issue.path.map(String)],
+        });
+    }
+  }
+}
+
+// a key a recipe does not have (`values`) is an error, not a silent no-op (074/D14)
+const PresetRecipeSchema = RecipeShape.strict().superRefine(
+  recipeRules,
+) as z.ZodType<PresetRecipe>;
+// the same rules on a recipe with extra keys, so those problems are listed with the keys
+const LooseRecipeSchema = RecipeShape.loose().superRefine(recipeRules);
 
 /** A failure's `path` is the first failing issue's ("elements.2.fill.color"; "" at the root). */
 export type Parsed<T> =
@@ -200,5 +230,23 @@ export function parseWith<T>(schema: z.ZodType<T>, data: unknown): Parsed<T> {
 }
 
 export const parseScene = (data: unknown) => parseWith(SceneSchema, data);
-export const parsePresetRecipe = (data: unknown) =>
-  parseWith(PresetRecipeSchema, data);
+export function parsePresetRecipe(data: unknown): Parsed<PresetRecipe> {
+  const strict = parseWith(PresetRecipeSchema, data);
+  if (strict.ok) return strict;
+  const loose = LooseRecipeSchema.safeParse(data);
+  if (loose.success) return strict;
+  const more = flatIssues(loose.error.issues).map((i) => ({
+    path: i.path.map(String).join("."),
+    message: i.message,
+  }));
+  const seen = new Set(strict.issues.map((i) => `${i.path}|${i.message}`));
+  const issues = [
+    ...strict.issues,
+    ...more.filter((i) => !seen.has(`${i.path}|${i.message}`)),
+  ];
+  return {
+    ...strict,
+    issues,
+    error: issues.map((i) => (i.path ? `${i.path}: ${i.message}` : i.message)).join("\n"),
+  };
+}

@@ -75,6 +75,8 @@ export const sceneInspectLayout = defineTool({
     boxes: z.array(BoxSchema),
   }),
   async run({ scene: saved, data, project, times }, ctx) {
+    if (saved !== undefined && data !== undefined)
+      fail("invalid_input", "Pasa `scene` o `data`, no ambos", "data");
     const projectCtx = await inProject(ctx, project);
     await measureInstalledFonts(ctx.fonts, project);
     const scene =

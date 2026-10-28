@@ -1535,3 +1535,75 @@ it("project_update notices a brand font weight that is not installed", async () 
     value: { notices: [expect.stringMatching(/«Inter».*pesos 300/)] },
   });
 });
+
+// 081/D9: a failing call lists every problem it can find
+
+it("scene_validate compact lists a bad size with a bad element", async () => {
+  const compact = {
+    size: "banana",
+    elements: [{ id: "a", kind: "nokind" }, { id: "b", kind: "rect", w: "big" }],
+  };
+  const r = await call("scene_validate", { compact });
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      valid: false,
+      message: expect.stringMatching(/size.*banana[\s\S]*nokind/),
+    },
+  });
+});
+
+it("scene_build lists an element value problem with an unknown animation kind", async () => {
+  const compact = {
+    elements: [
+      { id: "f", kind: "rect", fit: "box" },
+      { id: "b", kind: "text", text: "hi", anim: "wobble" },
+    ],
+  };
+  const r = await call("scene_build", { compact });
+  expect(r).toMatchObject({
+    ok: false,
+    error: {
+      message: expect.stringMatching(/compact\.elements\.f\.fit[\s\S]*wobble|compact\.elements\.f\.fit[\s\S]*anim/),
+    },
+  });
+});
+
+it("preset_validate lists a bad trait with a bad set value", async () => {
+  const recipe = {
+    name: "X",
+    kind: "rect",
+    traits: ["glow", "nonexistent"],
+    set: { w: "abc" },
+    extra: 1,
+  };
+  const r = await call("preset_validate", { recipe });
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      valid: false,
+      message: expect.stringMatching(/nonexistent[\s\S]*set\.w|set\.w[\s\S]*nonexistent/),
+    },
+  });
+});
+
+it("preset_save lists a bad trait with a bad set value", async () => {
+  const recipe = { name: "X", kind: "rect", traits: ["nonexistent"], set: { w: "abc" } };
+  const r = await call("preset_save", { recipe });
+  expect(r).toMatchObject(fails(/nonexistent[\s\S]*set\.w/));
+});
+
+it("scene_validate data lists a bad opacity with a shot that ends after the scene", async () => {
+  const data = {
+    duration: 2,
+    elements: [{ id: "a", kind: "rect", opacity: 5 }],
+    shots: [{ id: "x", start: 0, end: 9 }],
+  };
+  const r = await call("scene_validate", { data });
+  expect(r).toMatchObject(invalid(/opacity[\s\S]*«x» termina en 9s/));
+});
+
+it("scene_inspect_layout fails when given scene and data", async () => {
+  const r = await call("scene_inspect_layout", { scene: "s", data: { elements: [] } });
+  expect(r).toMatchObject(fails(/no ambos/));
+});
