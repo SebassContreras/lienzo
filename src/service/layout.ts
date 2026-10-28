@@ -22,6 +22,7 @@ import type {
 import { resolveBackdropUnder } from "./contrast.ts";
 import { measureStyleOf } from "./font-check.ts";
 import { round2 } from "./round.ts";
+import { textExtentsOf } from "./text-extents.ts";
 
 export type LayoutDiagnostic = {
   code:
@@ -29,6 +30,7 @@ export type LayoutDiagnostic = {
     | "shape_overlap"
     | "out_of_bounds"
     | "dangling_attachment"
+    | "text_overflow"
     | "low_contrast"
     | "unverifiable_contrast"
     | "missing_symbol"
@@ -421,6 +423,25 @@ export function shapesStack(a: Box, b: Box): boolean {
   return w * h >= 0.5 * Math.min(area(a), area(b));
 }
 
+/** Kinds whose text is not checked against their box: text sizes its own box, the others hold elements. */
+const NO_EXTENT_CHECK = new Set(["text", "group", "use"]);
+
+/** The first text `el` draws past its own box by more than a pixel, if any. */
+function textOutsideBox(
+  el: Element,
+  scene: Scene,
+  t: number,
+): string | undefined {
+  const own = boxOf(el);
+  return textExtentsOf(el, scene, t).find(
+    ({ box }) =>
+      box.x < own.x - 1 ||
+      box.y < own.y - 1 ||
+      box.x + box.w > own.x + own.w + 1 ||
+      box.y + box.h > own.y + own.h + 1,
+  )?.text;
+}
+
 function defaultInspectionTimes(duration: number): number[] {
   if (duration <= 0) return [0];
   const half = duration / 2;
@@ -522,6 +543,19 @@ export function inspectLayout(
           message: `Se superpone con «${b.el.id}» en más de la mitad del menor, sin que uno contenga al otro`,
         });
       }
+    }
+
+    // 3c. Check the text a kind draws stays inside its own box (080/D15)
+    for (const item of placed) {
+      if (item.heldBy || NO_EXTENT_CHECK.has(item.el.kind)) continue;
+      const out = textOutsideBox(item.el, scene, t);
+      if (out)
+        diagnostics.push({
+          code: "text_overflow",
+          elementId: item.el.id,
+          t,
+          message: `El texto «${out}» queda fuera de la caja del elemento: se corta o se sale de ella`,
+        });
     }
 
     // 4. Check contrast for each text item (D5, D6)

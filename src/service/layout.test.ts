@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { GroupEl } from "../model/model.ts";
+import { createElement } from "../components/index.ts";
+import type { Element, GroupEl } from "../model/model.ts";
 import {
   defaultElement,
   defaultLine,
@@ -480,5 +481,69 @@ describe("a group's box with animated children (072/D5)", () => {
     const g = layoutBoxes(sceneWith(false), [3]).find((b) => b.id === "g");
 
     expect(g).toMatchObject({ x: 500, w: 700 });
+  });
+});
+
+describe("text_overflow (080/R15)", () => {
+  const overflowing = (el: Element) => {
+    const scene = defaultScene();
+    scene.elements = [el];
+    return inspectLayout(scene, [0]).filter((d) => d.code === "text_overflow");
+  };
+
+  it("reports bubble text that runs past the bubble's height", () => {
+    const bubble = {
+      ...createElement("bubble"),
+      id: "chat",
+      x: 100,
+      y: 100,
+      w: 200,
+      h: 40,
+      text: "Una frase larga que se parte en muchas líneas dentro de la burbuja pequeña",
+    };
+
+    expect(overflowing(bubble).map((d) => d.elementId)).toEqual(["chat"]);
+  });
+
+  it("reports code that runs past the right edge", () => {
+    const code = {
+      ...createElement("code"),
+      id: "snippet",
+      x: 100,
+      y: 100,
+      w: 120,
+      code: "const aVeryLongIdentifierName = anotherVeryLongFunctionName(argument);",
+    };
+
+    expect(overflowing(code).map((d) => d.elementId)).toEqual(["snippet"]);
+  });
+
+  it("reports a steps label outside the box", () => {
+    const steps = {
+      ...createElement("steps"),
+      id: "flow",
+      x: 100,
+      y: 100,
+      w: 80,
+      h: 200,
+      layout: "vertical" as const,
+      labels: "Primer paso con una etiqueta muy larga\nSegundo paso",
+    };
+
+    expect(overflowing(steps).map((d) => d.elementId)).toEqual(["flow"]);
+  });
+
+  it("stays quiet when the text fits", () => {
+    const bubble = {
+      ...createElement("bubble"),
+      id: "chat",
+      x: 100,
+      y: 100,
+      w: 300,
+      h: 120,
+      text: "Hola",
+    };
+
+    expect(overflowing(bubble)).toEqual([]);
   });
 });

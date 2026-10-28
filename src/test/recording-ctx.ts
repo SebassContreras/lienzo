@@ -4,7 +4,14 @@
  * mean identical pixels.
  */
 
-type M = [number, number, number, number, number, number];
+import {
+  IDENTITY,
+  type Matrix as M,
+  multiply as mul,
+  rotation,
+  scaling,
+  translation,
+} from "../engine/matrix.ts";
 
 const fmt = (v: unknown): string => {
   if (typeof v === "number") return Number(v.toFixed(6)).toString();
@@ -58,15 +65,6 @@ class FakeGradient extends Recorder {
   }
 }
 
-const mul = (a: M, b: M): M => [
-  a[0] * b[0] + a[2] * b[1],
-  a[1] * b[0] + a[3] * b[1],
-  a[0] * b[2] + a[2] * b[3],
-  a[1] * b[2] + a[3] * b[3],
-  a[0] * b[4] + a[2] * b[5] + a[4],
-  a[1] * b[4] + a[3] * b[5] + a[5],
-];
-
 /** Widths are a fixed function of the text and font size, like a monospace font. */
 function measure(font: string, text: string) {
   const size = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? 10);
@@ -95,7 +93,7 @@ const STATE = [
 
 // biome-ignore lint/suspicious/noUnsafeDeclarationMerging: dynamic canvas method declarations
 export class RecordingCtx extends Recorder {
-  private m: M = [1, 0, 0, 1, 0, 0];
+  private m: M = IDENTITY;
   private props: Record<string, unknown> = {
     globalAlpha: 1,
     lineWidth: 1,
@@ -133,17 +131,15 @@ export class RecordingCtx extends Recorder {
     this.rec("restore", []);
   }
   translate(x: number, y: number) {
-    this.m = mul(this.m, [1, 0, 0, 1, x, y]);
+    this.m = mul(this.m, translation(x, y));
     this.rec("translate", [x, y]);
   }
   scale(x: number, y: number) {
-    this.m = mul(this.m, [x, 0, 0, y, 0, 0]);
+    this.m = mul(this.m, scaling(x, y));
     this.rec("scale", [x, y]);
   }
   rotate(a: number) {
-    const c = Math.cos(a);
-    const s = Math.sin(a);
-    this.m = mul(this.m, [c, s, -s, c, 0, 0]);
+    this.m = mul(this.m, rotation(a));
     this.rec("rotate", [a]);
   }
   transform(a: number, b: number, c: number, d: number, e: number, f: number) {
@@ -151,7 +147,7 @@ export class RecordingCtx extends Recorder {
     this.rec("transform", [a, b, c, d, e, f]);
   }
   setTransform(...args: number[]) {
-    this.m = (args.length === 6 ? args : [1, 0, 0, 1, 0, 0]) as M;
+    this.m = (args.length === 6 ? args : IDENTITY) as M;
     this.rec("setTransform", args);
   }
   getTransform() {
