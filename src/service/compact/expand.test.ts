@@ -3,7 +3,7 @@ import type { CompactScene } from "../../model/compact.ts";
 import type { PresetRecipe } from "../../model/preset.ts";
 import { expandScene } from "./expand.ts";
 
-describe("expandScene pure expansion (011/T002)", () => {
+describe("expandScene pure expansion", () => {
   it("expands canvas size from preset name or custom dimensions", async () => {
     const compact1: CompactScene = {
       size: "Story",
@@ -22,7 +22,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(scene2.height).toBe(600);
   });
 
-  it("expands background with deep merge onto a solid background (064/R9)", async () => {
+  it("expands background with deep merge onto a solid background", async () => {
     const compact: CompactScene = {
       background: {
         color: "#123456",
@@ -127,7 +127,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(tmpl.points).toBe(6);
   });
 
-  it("handles short keyframe tracks and anim shorthand (011/T003)", async () => {
+  it("handles short keyframe tracks and anim shorthand", async () => {
     const compact: CompactScene = {
       elements: [
         {
@@ -173,7 +173,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(txt.anim?.in?.kind).toBe("pop-in");
   });
 
-  it("handles placement: at anchors with offset and fit: canvas (011/T004)", async () => {
+  it("handles placement: at anchors with offset and fit: canvas", async () => {
     const compact: CompactScene = {
       size: "1000x800",
       elements: [
@@ -225,7 +225,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(fullCanvas.h).toBe(800);
   });
 
-  it("preserves readable ids and links from / to line connections (011/T005)", async () => {
+  it("preserves readable ids and links from / to line connections", async () => {
     const compact: CompactScene = {
       elements: [
         {
@@ -262,7 +262,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(line.b.attach).toBe("card-b");
   });
 
-  it("builds the README example post successfully (011/T008, R7)", async () => {
+  it("builds the README example post successfully", async () => {
     const readmePost: CompactScene = {
       size: "Story",
       duration: 4,
@@ -322,7 +322,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(line.b.attach).toBe("card");
   });
 
-  it("expands animPreset through expandAnimPresets (011/T009, R9)", async () => {
+  it("expands animPreset through expandAnimPresets", async () => {
     const fakeAnimLibrary = [
       {
         name: "salto-feliz",
@@ -369,7 +369,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(el.tracks?.["@scale"]).toHaveLength(2);
   });
 
-  it("deep-merges partial anim definitions preserving defaults (039/R1, D1)", async () => {
+  it("deep-merges partial anim definitions preserving defaults", async () => {
     const compact: CompactScene = {
       elements: [
         {
@@ -400,7 +400,7 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(rect.anim?.out?.kind).toBe("none");
   });
 
-  it("expands track object form with repeat, until, and step/hold easing (052/R3, R4)", async () => {
+  it("expands track object form with repeat, until, and step/hold easing", async () => {
     const compact: CompactScene = {
       elements: [
         {
@@ -455,8 +455,8 @@ describe("expandScene pure expansion (011/T002)", () => {
     expect(rect.tracks?.w).toEqual([{ t: 0, value: 100, easing: "auto" }]);
   });
 
-  describe("spec 053: origin and opacity compact expansion", () => {
-    it("expands origin from [x, y] tuple and { x, y } object (053/R2)", async () => {
+  describe("origin and opacity compact expansion", () => {
+    it("expands origin from [x, y] tuple and { x, y } object", async () => {
       const compact: CompactScene = {
         elements: [
           {
@@ -475,7 +475,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       expect(scene.elements[1]?.origin).toEqual({ x: 0.1, y: 0.9 });
     });
 
-    it("expands origin from all 9 named anchors (053/R2)", async () => {
+    it("expands origin from all 9 named anchors", async () => {
       const anchors: [
         import("../../model/compact.ts").AnchorName,
         { x: number; y: number },
@@ -504,7 +504,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       });
     });
 
-    it("expands opacity and tracks.opacity on elements and groups (053/R3)", async () => {
+    it("expands opacity and tracks.opacity on elements and groups", async () => {
       const compact: CompactScene = {
         elements: [
           {
@@ -554,7 +554,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       expect(textChild.opacity).toBe(0.5);
     });
 
-    it("resolves nested group child at placement relative to group bounds (055/R4, T010)", async () => {
+    it("resolves nested group child at placement relative to group bounds", async () => {
       const compact: CompactScene = {
         size: "1080x1080",
         elements: [
@@ -604,7 +604,7 @@ describe("expandScene pure expansion (011/T002)", () => {
       expect(child2.y).toBe(235);
     });
 
-    it("expands compact scene shots and camera tracks (055/R3, T010)", async () => {
+    it("expands compact scene shots and camera tracks", async () => {
       // camera keys in the short form a caller writes; the scene schema reads it (080/D1)
       const compact = {
         size: "1920x1080",
@@ -688,7 +688,7 @@ describe("compact fit and use sizing", () => {
   });
 });
 
-describe("placement defaults (069/D11)", () => {
+describe("placement defaults", () => {
   it("centres an unplaced element and notes `at` with a position track", async () => {
     const { scene, notices } = await expandScene({
       width: 1000,

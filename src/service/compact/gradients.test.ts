@@ -19,7 +19,7 @@ function issuePaths(el: Record<string, unknown>): string[] {
   return r.success ? [] : r.error.issues.map((i) => i.path.join("."));
 }
 
-describe("compact gradient fills (059/R3)", () => {
+describe("compact gradient fills", () => {
   it("builds a rect with a radial multi-stop fill and keeps it", async () => {
     const { scene } = await expandScene({
       elements: [
@@ -53,7 +53,7 @@ describe("compact gradient fills (059/R3)", () => {
     );
   });
 
-  it("rejects stops out of order (068/R1)", () => {
+  it("rejects stops out of order", () => {
     const backwards = [
       { at: 0.8, color: "#000000" },
       { at: 0.2, color: "#ffffff" },
@@ -64,7 +64,7 @@ describe("compact gradient fills (059/R3)", () => {
     );
   });
 
-  it("a fill saved before 059 reads as linear with no stops (R4)", () => {
+  it("an older fill reads as linear with no stops", () => {
     const rect = defaultRect();
     const { type: _t, stops: _s, ...oldFill } = rect.fill;
 

@@ -7,7 +7,7 @@ import {
   measureWithOpentype,
 } from "./text-measure.ts";
 
-describe("text measurement (054/R1, T005)", () => {
+describe("text measurement", () => {
   it("loads bundled font tables in Node", () => {
     const inter = loadFontSync("Inter", 400);
     expect(inter).not.toBeNull();

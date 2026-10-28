@@ -77,7 +77,7 @@ describe("Subtitles domain tests", () => {
     expect(layout.lines[0]?.words[0]?.word).toBe("Uno");
   });
 
-  it("reserves clearance padding between words when highlightScale > 1 (039/R3, D3)", () => {
+  it("reserves clearance padding between words when highlightScale > 1", () => {
     const cue: SubtitleCue = {
       start: 0,
       end: 2,
@@ -235,7 +235,7 @@ describe("Subtitles domain tests", () => {
     }
   });
 
-  it("paginates long cues into active word window to prevent overflow (R3@2, D2@3)", () => {
+  it("paginates long cues into active word window to prevent overflow", () => {
     const longCue: SubtitleCue = {
       id: "cue-long",
       start: 0,
@@ -274,7 +274,7 @@ describe("Subtitles domain tests", () => {
     expect(page3.words?.[1]?.word).toBe("diez");
   });
 
-  it("keeps keyframe tracks locked to canvas time t while rendering recalibrated cues (R5@1, D4@1)", () => {
+  it("keeps keyframe tracks locked to canvas time t while rendering recalibrated cues", () => {
     // Recalibrate cues by 2.0x (duration shrinks from 4s to 2s)
     const originalCues: SubtitleCue[] = [
       { id: "c1", start: 0, end: 2, text: "Parte 1" },
@@ -313,7 +313,7 @@ describe("Subtitles domain tests", () => {
     expect(cueAt15?.text).toBe("Parte 2");
   });
 
-  it("verifies single-text subtitle editing generates proper word timings and renders cleanly (027/R5@2, D4@2)", () => {
+  it("verifies single-text subtitle editing generates proper word timings and renders cleanly", () => {
     // When editing a single subtitle element's text directly
     const text = "Texto simple y directo";
     const words = text.split(" ");

@@ -23,7 +23,7 @@ function exchange(body: string, method = "POST") {
   return { req, res, out };
 }
 
-describe("TTS proxy (046/R4)", () => {
+describe("TTS proxy", () => {
   let original: string | undefined;
   beforeEach(() => {
     original = process.env.OPENROUTER_API_KEY;

@@ -4,7 +4,7 @@ import { ignoredFields, ignoredNotice, ignoredPaths } from "./ignored.ts";
 import { defaultText } from "./model.ts";
 import { parseScene } from "./schema.ts";
 
-describe("ignoredPaths (063/R6)", () => {
+describe("ignoredPaths", () => {
   it("names a key the parsed value dropped by its full path", () => {
     // Arrange
     const input = {
@@ -34,7 +34,7 @@ describe("ignoredPaths (063/R6)", () => {
   });
 });
 
-describe("ignored field suggestions (067/R3)", () => {
+describe("ignored field suggestions", () => {
   /** The notices for a text element carrying `extra` on top of its own fields. */
   function noticesFor(extra: Record<string, unknown>): string[] {
     const scene = {

@@ -10,7 +10,7 @@ beforeEach(async () => {
 const build = (background: string) =>
   ok("scene_build", { compact: { background, elements: [] } });
 
-describe("compact background strings (064/R8)", () => {
+describe("compact background strings", () => {
   it("makes a solid background from a color", async () => {
     // Act
     const res = await build("#111827");
@@ -54,7 +54,7 @@ describe("compact background strings (064/R8)", () => {
 const buildObject = (background: object) =>
   ok("scene_build", { compact: { background, elements: [] } });
 
-describe("compact background objects (064/R9)", () => {
+describe("compact background objects", () => {
   it("makes a solid background from a color alone", async () => {
     // Act
     const res = await buildObject({ color: "#111827" });

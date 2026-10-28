@@ -75,7 +75,7 @@ describe("linkAlpha", () => {
   });
 });
 
-describe("still particles (057/R3)", () => {
+describe("still particles", () => {
   it("keeps «static» points in place over the loop", () => {
     const still = { ...field, motion: "static" as const };
 
@@ -120,8 +120,8 @@ describe("still particles (057/R3)", () => {
   });
 });
 
-describe("drift saved before 057 (057/R4)", () => {
-  it("puts points exactly where they were before 057", () => {
+describe("drift of scenes saved before particles twinkled", () => {
+  it("puts points exactly where older scenes had them", () => {
     const el = { ...defaultParticles(), w: 500, h: 300, count: 3, speed: 4 };
 
     // recorded with the code before 057

@@ -49,7 +49,7 @@ describe("font_install with a local file", () => {
     });
   });
 
-  it("fails when asked for several weights, since a file is one weight (080/R16)", async () => {
+  it("fails when asked for several weights, since a file is one weight", async () => {
     const file = join(root, "mine.woff2");
     await writeFile(file, "font bytes");
 

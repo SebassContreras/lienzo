@@ -28,7 +28,7 @@ beforeEach(async () => {
   });
 });
 
-describe("scene_create backgrounds (065/R1, R2)", () => {
+describe("scene_create backgrounds", () => {
   it("starts from the palette background as a solid color", async () => {
     await call("scene_create", { scene: "s" });
 

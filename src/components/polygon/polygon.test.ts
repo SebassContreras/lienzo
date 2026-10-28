@@ -10,8 +10,8 @@ function polygon(over: Partial<PolygonEl>): PolygonEl {
   return { ...(defaultElement("polygon") as PolygonEl), ...box, ...over };
 }
 
-describe("polygon fit (059/R1)", () => {
-  it("a box-fitted triangle's base sits on the box bottom and its apex on the top (issue #8)", () => {
+describe("polygon fit", () => {
+  it("a box-fitted triangle's base sits on the box bottom and its apex on the top", () => {
     const roof = polygon({ sides: 3, fit: "box" });
 
     const ys = polygonPoints(roof).map((p) => p.y);
@@ -29,7 +29,7 @@ describe("polygon fit (059/R1)", () => {
     expect(Math.max(...xs)).toBeCloseTo(box.x + box.w, 6);
   });
 
-  it("a polygon saved before 059 reads as circle-fitted and keeps its inscribed points (R4)", () => {
+  it("an older polygon reads as circle-fitted and keeps its inscribed points", () => {
     const { fit: _, ...old } = polygon({ sides: 3 });
 
     const parsed = ElementSchema.parse(old) as PolygonEl;

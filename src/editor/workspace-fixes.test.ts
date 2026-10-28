@@ -3,7 +3,7 @@ import { createElement } from "../components/index.ts";
 import type { ImageEl } from "../model/model.ts";
 import { ASSET_MIME, PRESET_MIME } from "./stage.tsx";
 
-describe("041 workspace fixes and project assets/presets behavior", () => {
+describe("workspace fixes and project assets/presets behavior", () => {
   it("defines distinct mime types for presets and project assets", () => {
     expect(PRESET_MIME).toBe("application/x-lienzo-element");
     expect(ASSET_MIME).toBe("application/x-lienzo-asset");

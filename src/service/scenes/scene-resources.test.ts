@@ -19,7 +19,7 @@ beforeEach(async () => {
   await registry.call("project_create", { project: "p", name: "P" }, ctx);
 });
 
-it("notes a missing image (069/D8)", async () => {
+it("notes a missing image", async () => {
   const r = await build({
     elements: [{ kind: "image", id: "img", src: "missing.png" }],
   });
@@ -30,7 +30,7 @@ it("notes a missing image (069/D8)", async () => {
   });
 });
 
-it("rejects an unknown icon, suggesting the closest name (074/R1)", async () => {
+it("rejects an unknown icon, suggesting the closest name", async () => {
   const r = await build({
     elements: [{ kind: "icon", id: "i", icon: "Wrenchh" }],
   });
@@ -44,7 +44,7 @@ it("rejects an unknown icon, suggesting the closest name (074/R1)", async () => 
   });
 });
 
-it("takes an icon name in any case or kebab-case (074/R1)", async () => {
+it("takes an icon name in any case or kebab-case", async () => {
   const r = await build(
     { elements: [{ kind: "icon", id: "i", icon: "arrow-right" }] },
     "s",
@@ -62,7 +62,7 @@ it("takes an icon name in any case or kebab-case (074/R1)", async () => {
   });
 });
 
-it("rejects a line attached to an id the scene lacks, listing the ids (074/R1)", async () => {
+it("rejects a line attached to an id the scene lacks, listing the ids", async () => {
   const r = await build({
     elements: [
       { kind: "rect", id: "r" },
@@ -76,7 +76,7 @@ it("rejects a line attached to an id the scene lacks, listing the ids (074/R1)",
   });
 });
 
-it("notes a missing resource once when the build is saved (070/D3)", async () => {
+it("notes a missing resource once when the build is saved", async () => {
   const r = await build(
     { elements: [{ kind: "image", id: "img", src: "missing.png" }] },
     "s",
@@ -102,7 +102,7 @@ const savedWithMissingImage = () =>
     "s",
   );
 
-it("leaves out notices about elements a write did not change (071/D3)", async () => {
+it("leaves out notices about elements a write did not change", async () => {
   await savedWithMissingImage();
 
   const r = await call("element_update", { id: "r", patch: { w: 120 } });
@@ -110,7 +110,7 @@ it("leaves out notices about elements a write did not change (071/D3)", async ()
   expect(r).toMatchObject({ ok: true, value: { notices: [] } });
 });
 
-it("notes a missing resource on the element a write changed (071/D3)", async () => {
+it("notes a missing resource on the element a write changed", async () => {
   await savedWithMissingImage();
 
   const r = await call("element_update", { id: "img", patch: { w: 80 } });
@@ -121,7 +121,7 @@ it("notes a missing resource on the element a write changed (071/D3)", async () 
   });
 });
 
-it("notes a line end left loose by removing its element (071/D3)", async () => {
+it("notes a line end left loose by removing its element", async () => {
   await savedWithMissingImage();
 
   const r = await call("element_remove", { id: "r" });

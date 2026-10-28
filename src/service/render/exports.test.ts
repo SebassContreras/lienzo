@@ -15,7 +15,7 @@ beforeEach(async () => {
   exportsDir = join(root, "projects", "p", "exports");
 });
 
-describe("writeExport (046/D2, 058/D6)", () => {
+describe("writeExport", () => {
   it("writes inside the project's exports/ with the real extension", async () => {
     const file = await writeExport(
       ctx,

@@ -145,3 +145,149 @@ exports[`render audit (063/R10) > default text element renders as recorded 1`] =
 exports[`render audit (063/R10) > default three element renders as recorded 1`] = `"2ece8cfbaf28"`;
 
 exports[`render audit (063/R10) > default use element renders as recorded 1`] = `"8256578a136e"`;
+
+exports[`render audit > built-in preset 01-tarjeta-neon.json renders as recorded 1`] = `"d7df967ae8d8"`;
+
+exports[`render audit > built-in preset 02-tarjeta-glass.json renders as recorded 1`] = `"6c42697e2203"`;
+
+exports[`render audit > built-in preset 03-tarjeta-borde-animado.json renders as recorded 1`] = `"ff39d0d2f65e"`;
+
+exports[`render audit > built-in preset 04-pill.json renders as recorded 1`] = `"f208d2d3a6e1"`;
+
+exports[`render audit > built-in preset 05-boton-cta.json renders as recorded 1`] = `"baf551a09cdc"`;
+
+exports[`render audit > built-in preset 06-titulo.json renders as recorded 1`] = `"ccdd2317cae7"`;
+
+exports[`render audit > built-in preset 07-titulo-degradado.json renders as recorded 1`] = `"cdfb09f881de"`;
+
+exports[`render audit > built-in preset 08-parrafo.json renders as recorded 1`] = `"4879a2560d9b"`;
+
+exports[`render audit > built-in preset 09-manuscrito.json renders as recorded 1`] = `"ff5d8a718794"`;
+
+exports[`render audit > built-in preset 10-pixel.json renders as recorded 1`] = `"51b935901860"`;
+
+exports[`render audit > built-in preset 11-conexion-con-pulsos.json renders as recorded 1`] = `"d74ade6382ef"`;
+
+exports[`render audit > built-in preset 12-hormigas.json renders as recorded 1`] = `"19fdc6cdb4f4"`;
+
+exports[`render audit > built-in preset 13-cometa-curvo.json renders as recorded 1`] = `"f27afa108d63"`;
+
+exports[`render audit > built-in preset 14-tarjeta-con-icono.json renders as recorded 1`] = `"9ef28b8a6fdb"`;
+
+exports[`render audit > built-in preset 15-icono-con-fondo.json renders as recorded 1`] = `"22b35aafd929"`;
+
+exports[`render audit > built-in preset 16-avatar-circular.json renders as recorded 1`] = `"ffafc46ba2f1"`;
+
+exports[`render audit > built-in preset 17-logo-imagen.json renders as recorded 1`] = `"85442db1f35e"`;
+
+exports[`render audit > built-in preset 18-constelacion.json renders as recorded 1`] = `"d51b7d835743"`;
+
+exports[`render audit > built-in preset 19-polvo-flotante.json renders as recorded 1`] = `"8c245bae73fb"`;
+
+exports[`render audit > built-in preset 20-red-densa.json renders as recorded 1`] = `"5e7bdf676f2c"`;
+
+exports[`render audit > built-in preset 21-chispas.json renders as recorded 1`] = `"25095f8a04b1"`;
+
+exports[`render audit > built-in preset 22-iconos-flotantes.json renders as recorded 1`] = `"9b4464cdc9ec"`;
+
+exports[`render audit > built-in preset 23-cubo-giratorio.json renders as recorded 1`] = `"2ece8cfbaf28"`;
+
+exports[`render audit > built-in preset 24-logo-3d.json renders as recorded 1`] = `"9af301f746fa"`;
+
+exports[`render audit > built-in preset 25-hexagono.json renders as recorded 1`] = `"f40f17a919aa"`;
+
+exports[`render audit > built-in preset 26-estrella.json renders as recorded 1`] = `"5e6575aec8e1"`;
+
+exports[`render audit > built-in preset 27-flecha-bloque.json renders as recorded 1`] = `"a222023019b4"`;
+
+exports[`render audit > built-in preset 28-badge-nuevo.json renders as recorded 1`] = `"68631777191c"`;
+
+exports[`render audit > built-in preset 29-barra-progreso.json renders as recorded 1`] = `"772a0200e666"`;
+
+exports[`render audit > built-in preset 30-anillo-progreso.json renders as recorded 1`] = `"56a5c036bfb8"`;
+
+exports[`render audit > built-in preset 31-contador.json renders as recorded 1`] = `"857f2be89eaf"`;
+
+exports[`render audit > built-in preset 32-burbuja-chat.json renders as recorded 1`] = `"963f10a44065"`;
+
+exports[`render audit > built-in preset 33-pasos.json renders as recorded 1`] = `"756775b963ab"`;
+
+exports[`render audit > built-in preset 34-lista-checks.json renders as recorded 1`] = `"ee7b17848905"`;
+
+exports[`render audit > built-in preset 35-tabla-precios.json renders as recorded 1`] = `"0668a68c33ab"`;
+
+exports[`render audit > built-in preset 36-bloque-codigo.json renders as recorded 1`] = `"1c2cea602004"`;
+
+exports[`render audit > built-in preset 37-grafico-barras.json renders as recorded 1`] = `"4d6a9183baea"`;
+
+exports[`render audit > built-in preset 38-grafico-donut.json renders as recorded 1`] = `"b69225c0c719"`;
+
+exports[`render audit > built-in preset 39-ventana-navegador.json renders as recorded 1`] = `"6f77a57ce952"`;
+
+exports[`render audit > built-in preset 40-ventana-terminal.json renders as recorded 1`] = `"a9517ecf82f8"`;
+
+exports[`render audit > built-in preset 41-movil-chat.json renders as recorded 1`] = `"6f26ead148cf"`;
+
+exports[`render audit > built-in preset 42-corazon-trazado.json renders as recorded 1`] = `"95c97b4f5371"`;
+
+exports[`render audit > built-in preset 43-forma-morphing.json renders as recorded 1`] = `"e4c66e1d61c5"`;
+
+exports[`render audit > built-in preset 44-subtitulos-virales.json renders as recorded 1`] = `"60356d876dd9"`;
+
+exports[`render audit > built-in preset fondo-01-azul-noche.json renders as recorded 1`] = `"background"`;
+
+exports[`render audit > built-in preset fondo-02-negro-liso.json renders as recorded 1`] = `"background"`;
+
+exports[`render audit > built-in preset fondo-03-degradado-violeta.json renders as recorded 1`] = `"background"`;
+
+exports[`render audit > built-in preset fondo-04-puntos-sobre-gris.json renders as recorded 1`] = `"background"`;
+
+exports[`render audit > built-in preset fondo-05-foco-central.json renders as recorded 1`] = `"background"`;
+
+exports[`render audit > default arrow element renders as recorded 1`] = `"a222023019b4"`;
+
+exports[`render audit > default badge element renders as recorded 1`] = `"68631777191c"`;
+
+exports[`render audit > default bubble element renders as recorded 1`] = `"963f10a44065"`;
+
+exports[`render audit > default chart element renders as recorded 1`] = `"0ab39601b3de"`;
+
+exports[`render audit > default code element renders as recorded 1`] = `"a8d6afd74bd4"`;
+
+exports[`render audit > default counter element renders as recorded 1`] = `"016a0a113f33"`;
+
+exports[`render audit > default ellipse element renders as recorded 1`] = `"ace00a028011"`;
+
+exports[`render audit > default group element renders as recorded 1`] = `"8237f2e476a9"`;
+
+exports[`render audit > default icon element renders as recorded 1`] = `"628cbd3da259"`;
+
+exports[`render audit > default image element renders as recorded 1`] = `"194d305b079c"`;
+
+exports[`render audit > default line element renders as recorded 1`] = `"d74ade6382ef"`;
+
+exports[`render audit > default list element renders as recorded 1`] = `"77cea027fe88"`;
+
+exports[`render audit > default particles element renders as recorded 1`] = `"b05da5d0ea60"`;
+
+exports[`render audit > default path element renders as recorded 1`] = `"f946d8a90eaf"`;
+
+exports[`render audit > default polygon element renders as recorded 1`] = `"f40f17a919aa"`;
+
+exports[`render audit > default progress element renders as recorded 1`] = `"af5644ee5553"`;
+
+exports[`render audit > default rect element renders as recorded 1`] = `"4d429ac29a2e"`;
+
+exports[`render audit > default star element renders as recorded 1`] = `"4c6244bcf471"`;
+
+exports[`render audit > default steps element renders as recorded 1`] = `"1cee977899e8"`;
+
+exports[`render audit > default subtitles element renders as recorded 1`] = `"cd1d1f2a99c7"`;
+
+exports[`render audit > default table element renders as recorded 1`] = `"0289e0125f06"`;
+
+exports[`render audit > default text element renders as recorded 1`] = `"59a512c04987"`;
+
+exports[`render audit > default three element renders as recorded 1`] = `"2ece8cfbaf28"`;
+
+exports[`render audit > default use element renders as recorded 1`] = `"8256578a136e"`;

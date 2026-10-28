@@ -14,7 +14,7 @@ const sceneWith = (...elements: Element[]) => ({
   elements,
 });
 
-describe("deadKeyframeEasingNotices (065/R4)", () => {
+describe("deadKeyframeEasingNotices", () => {
   it("notes an easing on the last keyframe of a track", () => {
     const rect = withTracks({
       x: [

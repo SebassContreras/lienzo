@@ -8,7 +8,7 @@ import {
   CompactTracksSchema,
 } from "./compact.ts";
 
-describe("Compact Schema derived from descriptor registry (011/T001)", () => {
+describe("Compact Schema derived from descriptor registry", () => {
   it("validates a compact scene with defaults and partial values", () => {
     const compact = {
       size: "1080x1080",
@@ -84,7 +84,7 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("dynamically accepts a new test-only component registered at runtime (R8)", () => {
+  it("dynamically accepts a new test-only component registered at runtime", () => {
     const testKind = `test_widget_${Date.now()}`;
     const testDescriptor = defineComponent({
       kind: testKind,
@@ -110,7 +110,7 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("validates recursive compact group children (039/R2, D2)", () => {
+  it("validates recursive compact group children", () => {
     const groupElement = {
       kind: "group",
       children: [
@@ -135,7 +135,7 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("reports the deepest field path inside nested group children when a known kind has an invalid field (051/R3)", () => {
+  it("reports the deepest field path inside nested group children when a known kind has an invalid field", () => {
     const compact = {
       elements: [
         { kind: "rect" },
@@ -160,7 +160,7 @@ describe("Compact Schema derived from descriptor registry (011/T001)", () => {
     }
   });
 
-  it("reports missing or unknown kind at the exact element path (051/R4)", () => {
+  it("reports missing or unknown kind at the exact element path", () => {
     const missingKind = CompactSceneSchema.safeParse({
       elements: [{ kind: "group", children: [{ w: 100 }] }],
     });

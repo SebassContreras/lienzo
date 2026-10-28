@@ -16,7 +16,7 @@ const field = {
 const plain = (pos: Float64Array) =>
   Array.from(pos, (v) => (Number.isNaN(v) ? null : Number(v.toFixed(6))));
 
-describe("falling particles (057/R3)", () => {
+describe("falling particles", () => {
   it.each([90, 0, 45])("closes the loop when falling at %i°", (direction) => {
     const el = { ...field, direction, speed: 2.5 };
 

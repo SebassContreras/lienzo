@@ -52,7 +52,7 @@ function wav(seconds: number, byteRate: number): Uint8Array {
   return b;
 }
 
-describe("audioDuration (060/R2)", () => {
+describe("audioDuration", () => {
   it("measures MPEG-1 Layer III frames at 1152 samples each", () => {
     const seconds = audioDuration(frames(100, MPEG1_64K), "mp3");
 
@@ -85,7 +85,7 @@ describe("audioDuration (060/R2)", () => {
     expect(audioDuration(bytes, "mp3")).toBeCloseTo((10 * 1152) / 44100, 6);
   });
 
-  it("counts every frame of a merged clip whose Xing header claims fewer (issue #11)", () => {
+  it("counts every frame of a merged clip whose Xing header claims fewer", () => {
     const merged = concat(xingFrame(50), frames(99, MPEG1_64K));
 
     expect(audioDuration(merged, "mp3")).toBeCloseTo((100 * 1152) / 44100, 6);
@@ -104,7 +104,7 @@ describe("audioDuration (060/R2)", () => {
   });
 });
 
-describe("scene_generate_speech duration (060/R2)", () => {
+describe("scene_generate_speech duration", () => {
   async function generate(audioBuffer: Uint8Array, format: string) {
     const root = await mkdtemp(join(tmpdir(), "lienzo-speech-"));
     const ctx = createCtx(root, fakeRenderer());
@@ -128,7 +128,7 @@ describe("scene_generate_speech duration (060/R2)", () => {
     return res.value as { audioDuration: number };
   }
 
-  it("reports the frames' length, not the byte-rate estimate (issue #11)", async () => {
+  it("reports the frames' length, not the byte-rate estimate", async () => {
     const res = await generate(frames(100, MPEG1_64K), "mp3");
 
     // rounded to hundredths (069/D14)

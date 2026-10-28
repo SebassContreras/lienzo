@@ -12,7 +12,7 @@ const withUnknownField = {
   audioTracks: [],
 };
 
-describe("scene_build notices (064/R5)", () => {
+describe("scene_build notices", () => {
   it("names the saved scene in `saved`", async () => {
     // Act
     const res = await ok("scene_build", {
@@ -49,7 +49,7 @@ const twoCards = {
   ],
 };
 
-describe("scene_build concise result (064/R6)", () => {
+describe("scene_build concise result", () => {
   it("returns no scene and the top-level elements when it saves", async () => {
     // Act
     const res = await ok("scene_build", { compact: twoCards, save: "demo" });

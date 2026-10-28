@@ -30,7 +30,7 @@ const resolve = (l: LineEl, ...els: Element[]) =>
 
 const GAP = 10; // 8 + width 2
 
-describe("anchors (R1)", () => {
+describe("anchors", () => {
   const outline = { box: { x: 100, y: 100, w: 200, h: 100 }, round: false };
 
   it("places each fixed anchor on the outline", () => {
@@ -55,7 +55,7 @@ describe("anchors (R1)", () => {
   });
 });
 
-describe("ends follow their target (R2)", () => {
+describe("ends follow their target", () => {
   it("tracks a moved and a resized target at the anchor", () => {
     const l = line("straight", "right", "left");
     const a = card("A", 0, 0);
@@ -68,7 +68,7 @@ describe("ends follow their target (R2)", () => {
   });
 });
 
-describe("routes (R3, R6)", () => {
+describe("routes", () => {
   const a = card("A", 0, 0);
   const b = card("B", 500, 300);
 

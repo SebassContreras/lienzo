@@ -7,7 +7,7 @@ function sceneWith(over: Record<string, unknown>) {
   return { ...defaultScene(), elements: [{ ...defaultParticles(), ...over }] };
 }
 
-describe("particles schema (057/R2)", () => {
+describe("particles schema", () => {
   it("accepts a speed of 0", () => {
     expect(parseScene(sceneWith({ speed: 0 })).ok).toBe(true);
   });
@@ -32,7 +32,7 @@ describe("particles schema (057/R2)", () => {
     expect(parseScene(sceneWith({ motion: "swirl" })).ok).toBe(false);
   });
 
-  it("reads a particles element saved before 057 as drifting, untwinkling points", () => {
+  it("reads an older particles element as drifting, untwinkling points", () => {
     const old = sceneWith({});
     const el = old.elements[0] as unknown as Record<string, unknown>;
     delete el.motion;

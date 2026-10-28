@@ -6,7 +6,7 @@ import { LayersPanel } from "./layers-panel.tsx";
 
 afterEach(cleanup);
 
-describe("LayersPanel search, shot grouping, and auto-reveal (055/R6, T012)", () => {
+describe("LayersPanel search, shot grouping, and auto-reveal", () => {
   it("filters elements by text search on name or id", () => {
     const scene: Scene = {
       ...defaultScene(),

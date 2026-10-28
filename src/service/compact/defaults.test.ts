@@ -15,7 +15,7 @@ const flatLook = (el: Element) => {
   };
 };
 
-describe("compact scene defaults (058/R2)", () => {
+describe("compact scene defaults", () => {
   it("turns off gradient, shadow and border on a flat shape", async () => {
     const { scene } = await expandScene({
       defaults: "flat",

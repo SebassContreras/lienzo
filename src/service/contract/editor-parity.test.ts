@@ -61,7 +61,7 @@ describe("editor and tools write the same JSON", () => {
     expect(fromEditor).toMatchObject({ scene: await saved() });
   });
 
-  it("a shot moved in the editor moves its elements' tracks as shot_set does (075/R2)", async () => {
+  it("a shot moved in the editor moves its elements' tracks as shot_set does", async () => {
     await ok("shot_set", { scene: "s", id: "a", start: 0, end: 2 });
     await ok("element_add", {
       scene: "s",
@@ -83,7 +83,7 @@ describe("editor and tools write the same JSON", () => {
     expect(fromEditor).toMatchObject({ scene: await saved() });
   });
 
-  it("a shot removed in the editor unbinds its elements as shot_set does (075/R3)", async () => {
+  it("a shot removed in the editor unbinds its elements as shot_set does", async () => {
     await ok("shot_set", { scene: "s", id: "a", start: 1, end: 3 });
     await ok("element_add", {
       scene: "s",

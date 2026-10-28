@@ -50,7 +50,7 @@ describe("line geometry", () => {
   });
 });
 
-describe("fitToBox (059/D2)", () => {
+describe("fitToBox", () => {
   it("stretches the points' bounds onto the box", () => {
     const pts = [
       { x: 10, y: 10 },
@@ -82,7 +82,7 @@ describe("fitToBox (059/D2)", () => {
   });
 });
 
-describe("font fallback (067/R4)", () => {
+describe("font fallback", () => {
   it("falls back to Inter, not the browser's serif, when the family is missing", () => {
     // Arrange
     const style = {

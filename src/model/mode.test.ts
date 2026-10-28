@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isStaticMode } from "./mode.ts";
 import { SceneSchema } from "./schema.ts";
 
-describe("SceneMode domain logic & schema validation (033, R1, D1)", () => {
+describe("SceneMode domain logic & schema validation", () => {
   it("defaults to false ('video' mode) when target is undefined or null", () => {
     expect(isStaticMode(undefined)).toBe(false);
     expect(isStaticMode(null)).toBe(false);

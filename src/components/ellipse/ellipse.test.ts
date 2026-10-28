@@ -14,7 +14,7 @@ function radialsOf(el: EllipseEl): string[] {
   return ctx.log.join(";").match(/radial\(100,100,[^)]*\)/g) ?? [];
 }
 
-describe("ellipse radial fill (067/R1)", () => {
+describe("ellipse radial fill", () => {
   it("ends the radial gradient on the circle's edge, so its last color shows", () => {
     // Arrange
     const base = defaultElement("ellipse") as EllipseEl;

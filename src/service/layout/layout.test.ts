@@ -14,7 +14,7 @@ import { inspectLayout, layoutBoxes } from "./layout.ts";
 
 installCanvasFakes();
 
-describe("pure inspectLayout (023/T006, R2, R3)", () => {
+describe("pure inspectLayout", () => {
   it("detects text overlap when two text elements intersect", () => {
     const scene = defaultScene();
     const t1 = { ...defaultText(), id: "text-1", x: 100, y: 100, text: "Hola" };
@@ -92,7 +92,7 @@ describe("pure inspectLayout (023/T006, R2, R3)", () => {
     expect(dangling?.message).toContain("nonexistent-id");
   });
 
-  it("flags an element entering from outside only at the times it is outside (R2)", () => {
+  it("flags an element entering from outside only at the times it is outside", () => {
     const scene = defaultScene();
     scene.width = 1000;
     scene.height = 1000;
@@ -129,14 +129,14 @@ describe("pure inspectLayout (023/T006, R2, R3)", () => {
     expect(diagsT2.some((d) => d.code === "out_of_bounds")).toBe(false);
   });
 
-  it("is registered as scene_inspect_layout in the tool registry (R3)", () => {
+  it("is registered as scene_inspect_layout in the tool registry", () => {
     const tool = registry.get("scene_inspect_layout");
     expect(tool).toBeDefined();
     expect(tool?.name).toBe("scene_inspect_layout");
   });
 });
 
-describe("pure layoutBoxes (023/T009, R2)", () => {
+describe("pure layoutBoxes", () => {
   const sliding = {
     ...defaultRect(),
     id: "flyer",
@@ -176,7 +176,7 @@ describe("pure layoutBoxes (023/T009, R2)", () => {
     expect(boxes.map((b) => b.x)).toEqual([-380, 20]);
   });
 
-  it("skips zero-opacity, before-in, after-out, and off-shot inactive elements and tags diagnostics with shot (055/R5, T011)", () => {
+  it("skips zero-opacity, before-in, after-out, and off-shot inactive elements and tags diagnostics with shot", () => {
     const scene = {
       ...defaultScene(),
       width: 1080,
@@ -292,7 +292,7 @@ describe("pure layoutBoxes (023/T009, R2)", () => {
   });
 });
 
-describe("layout under a shot camera (067/R2)", () => {
+describe("layout under a shot camera", () => {
   /** A 1080×1080 scene whose one shot zooms its bound elements 2× about the centre. */
   function zoomedScene(rect: { x: number; w: number }) {
     return {
@@ -334,7 +334,7 @@ describe("layout under a shot camera (067/R2)", () => {
   });
 });
 
-describe("unknown shots (069/D4)", () => {
+describe("unknown shots", () => {
   it("reports an element bound to a shot the scene lacks", () => {
     const scene = defaultScene();
     scene.elements = [{ ...defaultRect(), id: "card", shot: "gone" }];
@@ -347,7 +347,7 @@ describe("unknown shots (069/D4)", () => {
   });
 });
 
-describe("shape_overlap (071/D4)", () => {
+describe("shape_overlap", () => {
   const rectAt = (id: string, x: number, y: number, w: number, h: number) => ({
     ...defaultRect(),
     id,
@@ -386,7 +386,7 @@ describe("shape_overlap (071/D4)", () => {
     expect(codes).not.toContain("shape_overlap");
   });
 
-  it("does not report a use overlapping its own symbol's instances (080/R11)", () => {
+  it("does not report a use overlapping its own symbol's instances", () => {
     const chip = {
       ...defaultElement("use"),
       id: "chip",
@@ -415,7 +415,7 @@ describe("shape_overlap (071/D4)", () => {
     expect(codes).not.toContain("shape_overlap");
   });
 
-  it("reports two shapes with the same box (072/D2)", () => {
+  it("reports two shapes with the same box", () => {
     const codes = codesOf([
       rectAt("rect", 340, 760, 400, 400),
       rectAt("ellipse", 340, 760, 400, 400),
@@ -434,7 +434,7 @@ describe("shape_overlap (071/D4)", () => {
   });
 });
 
-describe("a group's box with animated children (072/D5)", () => {
+describe("a group's box with animated children", () => {
   const sceneWith = (clip: boolean) => {
     const child = {
       ...defaultRect(),
@@ -484,7 +484,7 @@ describe("a group's box with animated children (072/D5)", () => {
   });
 });
 
-describe("text_overflow (080/R15)", () => {
+describe("text_overflow", () => {
   const overflowing = (el: Element) => {
     const scene = defaultScene();
     scene.elements = [el];

@@ -11,7 +11,7 @@ const SQUARE_SHIFTED = "M100 100 H0 V0 H100 Z";
 const CIRCLE = "M50 0 A50 50 0 1 1 50 100 A50 50 0 1 1 50 0 Z";
 const RING = `${CIRCLE} M50 25 A25 25 0 1 0 50 75 A25 25 0 1 0 50 25 Z`;
 
-describe("parsing (R5, R10)", () => {
+describe("parsing", () => {
   it("reads every command, absolute and relative, as cubics", () => {
     const d =
       "M0 0 L10 0 l0 10 H20 h5 V30 v5 C40 40 50 40 60 30 c5 0 10 5 10 10 S90 60 100 50 s10 10 20 0 Q130 40 140 50 q5 5 10 0 T170 50 t10 0 A10 10 0 0 1 200 50 a10 10 0 0 1 20 0 Z m10 10 l5 5 z";
@@ -93,7 +93,7 @@ describe("morphing (R4–R8)", () => {
   });
 });
 
-describe("cache (R9)", () => {
+describe("cache", () => {
   it("prepares a pair once and hands back the same arrays", () => {
     const a = morphPairs(SQUARE, RING, ["A", "B"]);
     expect(morphPairs(SQUARE, RING, ["A", "B"])).toBe(a);

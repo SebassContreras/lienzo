@@ -58,7 +58,7 @@ describe("animation presets", () => {
     });
   });
 
-  it("inspects layout and detects out-of-bounds elements (023/D2, R3)", async () => {
+  it("inspects layout and detects out-of-bounds elements", async () => {
     await ok("scene_create", { scene: "oob_demo" });
     await ok("element_add", {
       scene: "oob_demo",
@@ -75,7 +75,7 @@ describe("animation presets", () => {
     );
   });
 
-  it("returns every top-level element's box beside the diagnostics (023/R2)", async () => {
+  it("returns every top-level element's box beside the diagnostics", async () => {
     await ok("scene_create", { scene: "boxes" });
     const { id } = await ok("element_add", {
       scene: "boxes",
@@ -91,7 +91,7 @@ describe("animation presets", () => {
     expect(result.boxes).toEqual([{ id, t: 0, x: 10, y: 20, w: 30, h: 40 }]);
   });
 
-  it("builds a scene from compact format with scene_build and saves it (011/T006)", async () => {
+  it("builds a scene from compact format with scene_build and saves it", async () => {
     const res = await ok("scene_build", {
       compact: {
         size: "1080x1080",

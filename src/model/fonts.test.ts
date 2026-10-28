@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { matchedWeight } from "./fonts.ts";
 
-describe("matchedWeight (080/R16, CSS Fonts 4 §5.2)", () => {
+describe("matchedWeight (CSS Fonts 4 §5.2)", () => {
   it("keeps a weight the family has", () => {
     expect(matchedWeight([400, 700], 700)).toBe(700);
   });

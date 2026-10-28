@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { expect, it } from "vitest";
 import { readJson } from "./json-fs.ts";
 
-it("finds a file stored under the slug used before accents were folded (074/D6)", async () => {
+it("finds a file stored under the slug used before accents were folded", async () => {
   const dir = await mkdtemp(join(tmpdir(), "lienzo-slug-"));
   await writeFile(join(dir, "tarjeta-ne-n.json"), '{"name":"Tarjeta Neón"}');
 

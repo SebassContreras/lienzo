@@ -51,7 +51,7 @@ const zoomShot: Shot = {
   camera: { zoom: 2 },
 };
 
-describe("shot camera scope (063/R2, R3)", () => {
+describe("shot camera scope", () => {
   it("transforms a grouped element exactly as its ungrouped copy", () => {
     // Arrange
     const child = rect("child");
@@ -92,7 +92,7 @@ describe("shot camera scope (063/R2, R3)", () => {
   });
 });
 
-describe("shot transitions on screen (063/R1)", () => {
+describe("shot transitions on screen", () => {
   it("draws an entering slide shot offset by the transition", () => {
     // Arrange
     const shot: Shot = {
@@ -112,7 +112,7 @@ describe("shot transitions on screen (063/R1)", () => {
   });
 });
 
-describe("grouped children of different shots (071/D2)", () => {
+describe("grouped children of different shots", () => {
   /** The texts drawn at `t`. */
   function textsAt(scene: Scene, t: number): string[] {
     const ctx = new RecordingCtx();

@@ -37,7 +37,7 @@ async function toolNotices(scene: Scene): Promise<unknown> {
   return res.ok ? (res.value as { notices?: string[] }).notices : res.error;
 }
 
-describe("editor notices (063/R8)", () => {
+describe("editor notices", () => {
   it("lists the same notices scene_validate returns", async () => {
     // Arrange
     const scene = sceneWithMissingFont();

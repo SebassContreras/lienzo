@@ -81,7 +81,7 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
     return { ...value, bytes: await readFile(value.file) };
   }
 
-  it("exports PNG, GIF and MP4 (or WebM, with a notice) (R1)", async () => {
+  it("exports PNG, GIF and MP4 (or WebM, with a notice)", async () => {
     const png = await exported({ format: "png", t: 1 });
     expect(png.type).toBe("image/png");
     expect(png.bytes.subarray(1, 4).toString()).toBe("PNG");
@@ -97,7 +97,7 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
     }
   });
 
-  it("previews a PNG as image data (R2)", async () => {
+  it("previews a PNG as image data", async () => {
     const r = await registry.call(
       "scene_preview",
       { scene: "demo", project: "p", t: 1 },
@@ -110,7 +110,7 @@ describe.skipIf(!browser)("headless export (010)", { timeout: 180_000 }, () => {
     );
   });
 
-  it("writes the same PNG as the editor's export at the same t (R3)", async () => {
+  it("writes the same PNG as the editor's export at the same t", async () => {
     const t = 1.5;
     const tool = await exported({ format: "png", t });
     // What the editor's PNG button calls, with its options (scale 1, scene fps).

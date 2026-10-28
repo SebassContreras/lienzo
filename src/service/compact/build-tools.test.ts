@@ -49,7 +49,7 @@ describe("scene_build effects and notices", () => {
 });
 
 describe("scene_build audio and fonts", () => {
-  it("keeps a scene's audioTracks when overwriting it without audioTracks (issue #10)", async () => {
+  it("keeps a scene's audioTracks when overwriting it without audioTracks", async () => {
     const voice = { id: "v1", assetId: "voice", startOffset: 2 };
     await ok("scene_build", {
       compact: { audioTracks: [voice] },
@@ -72,7 +72,7 @@ describe("scene_build audio and fonts", () => {
     ]);
   });
 
-  it("warns about a text font that is not installed (issue #12)", async () => {
+  it("warns about a text font that is not installed", async () => {
     const res = await ok("scene_build", {
       compact: { elements: [{ kind: "text", font: "Montserrat" }] },
     });
@@ -83,7 +83,7 @@ describe("scene_build audio and fonts", () => {
     ]);
   });
 
-  it("gives no missing-font notice for a family installed in the project, only its estimated width (064/R4)", async () => {
+  it("gives no missing-font notice for a family installed in the project, only its estimated width", async () => {
     await mkdir(join(h.ctx.root, "projects", PROJECT, "fonts"), {
       recursive: true,
     });

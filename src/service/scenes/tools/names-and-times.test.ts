@@ -34,7 +34,7 @@ beforeEach(async () => {
   });
 });
 
-it("rejects a still past the scene's end (069/D9)", async () => {
+it("rejects a still past the scene's end", async () => {
   const r = await call("scene_export", { scene: "s", format: "png", t: 50 });
 
   expect(r).toMatchObject({
@@ -43,13 +43,13 @@ it("rejects a still past the scene's end (069/D9)", async () => {
   });
 });
 
-it("renders a still at the scene's last moment (069/D9)", async () => {
+it("renders a still at the scene's last moment", async () => {
   const r = await call("scene_preview", { scene: "s", t: 6 });
 
   expect(r).toMatchObject({ ok: true });
 });
 
-it("says when a name is stored under another one (069/D13)", async () => {
+it("says when a name is stored under another one", async () => {
   const r = await call("scene_rename", { from: "s", to: "Main Scene/../x" });
 
   expect(r).toMatchObject({
@@ -61,7 +61,7 @@ it("says when a name is stored under another one (069/D13)", async () => {
   });
 });
 
-it("moves a shared shot to the group (069/D13)", async () => {
+it("moves a shared shot to the group", async () => {
   const grouped = await call("element_group", { scene: "s", ids: ["a", "b"] });
   const got = await call("scene_get", { scene: "s" });
 
@@ -76,7 +76,7 @@ it("moves a shared shot to the group (069/D13)", async () => {
   });
 });
 
-it("notes a group of elements from different shots (069/D13)", async () => {
+it("notes a group of elements from different shots", async () => {
   const r = await call("element_group", { scene: "s", ids: ["b", "c"] });
 
   expect(r).toMatchObject({

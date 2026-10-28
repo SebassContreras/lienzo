@@ -53,7 +53,7 @@ describe("scene_preview out", () => {
 });
 
 describe("scene_export", () => {
-  it("writes inside the project's exports/ and rejects an `out` outside it (046/R2)", async () => {
+  it("writes inside the project's exports/ and rejects an `out` outside it", async () => {
     const exports = join(h.ctx.root, "projects", "mi-proyecto", "exports");
     await ok("scene_create", { scene: "demo" });
     const png = await ok("scene_export", { scene: "demo", format: "png" });

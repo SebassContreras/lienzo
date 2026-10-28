@@ -45,7 +45,7 @@ describe("downloadGoogleFont", () => {
     ).rejects.toThrow("No Existe");
   });
 
-  it("names the HTTP status as such (080/R16)", async () => {
+  it("names the HTTP status as such", async () => {
     const fakeFetch = (async () =>
       new Response("", { status: 400 })) as typeof fetch;
 
@@ -55,7 +55,7 @@ describe("downloadGoogleFont", () => {
   });
 });
 
-describe("downloadGoogleFont format (067/R5)", () => {
+describe("downloadGoogleFont format", () => {
   it("asks Google for ttf, not the woff2 a browser gets", async () => {
     // Arrange
     const asked: (string | null)[] = [];

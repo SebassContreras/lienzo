@@ -122,7 +122,7 @@ describe("image_trim", () => {
     });
   });
 
-  it("trims an image nested inside a group by id or slash path (051/R1)", async () => {
+  it("trims an image nested inside a group by id or slash path", async () => {
     const g = await call("element_add", {
       scene: SCENE,
       kind: "group",

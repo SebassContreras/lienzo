@@ -20,7 +20,7 @@ function createMockAudioBuffer(opts: {
   } as unknown as AudioBuffer;
 }
 
-describe("mixAudioTracksForExport (035/D4, 035/R6)", () => {
+describe("mixAudioTracksForExport", () => {
   it("returns null when tracks array is empty or all muted", () => {
     expect(mixAudioTracksForExport([], 5)).toBeNull();
 

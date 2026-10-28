@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { defaultScene, type Scene } from "../model/model.ts";
 import { attachSpeechToScene } from "../service/speech/scene-audio.ts";
 
-describe("Topbar AI Voice Integration (037/T009 - D6@1, R2@2, R3@1)", () => {
+describe("Topbar AI Voice Integration", () => {
   it("verifies scene audio attaches unversioned asset hash path, never binary bytes", () => {
     // Scene audio attaches unversioned asset hash path, never binary bytes
     const baseScene: Scene = defaultScene();
@@ -21,7 +21,7 @@ describe("Topbar AI Voice Integration (037/T009 - D6@1, R2@2, R3@1)", () => {
     expect(sceneJson).toContain("/assets/abc123hash.mp3");
   });
 
-  it("confirms .gitignore excludes user workspaces and generated assets from git tracking (R3@1, 040/R6)", () => {
+  it("confirms .gitignore excludes user workspaces and generated assets from git tracking", () => {
     const gitignorePath = join(process.cwd(), ".gitignore");
     const gitignore = readFileSync(gitignorePath, "utf-8");
 

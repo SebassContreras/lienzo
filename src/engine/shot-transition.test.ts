@@ -14,7 +14,7 @@ function shotWith(kind: "cut" | "fade" | "slide" | "zoom"): Shot {
   };
 }
 
-describe("shotTransitionAt (063/R1)", () => {
+describe("shotTransitionAt", () => {
   it("fades a shot in halfway through its entering window", () => {
     // Arrange
     const shot = shotWith("fade");

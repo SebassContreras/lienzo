@@ -5,7 +5,7 @@ import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
 import { attachSpeechToScene } from "./scene-audio.ts";
 import { alignScriptToCues, splitIntoSentences } from "./speech-alignment.ts";
 
-describe("OpenRouter configuration and key resolution (R1, D1)", () => {
+describe("OpenRouter configuration and key resolution", () => {
   it("resolves explicit API key with top priority", () => {
     const key = resolveOpenRouterApiKey("sk-explicit-test-key");
     expect(key).toBe("sk-explicit-test-key");
@@ -27,7 +27,7 @@ describe("OpenRouter configuration and key resolution (R1, D1)", () => {
   });
 });
 
-describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
+describe("OpenRouter TTS Adapter", () => {
   it("lists popular models and voices", async () => {
     const adapter = new OpenRouterTtsAdapter();
     const models = await adapter.listModels();
@@ -62,7 +62,7 @@ describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
     ).rejects.toThrow(/OPENROUTER_API_KEY.*kokoro/);
   });
 
-  it("goes through the dev-server proxy without a key or Authorization (046/R4)", async () => {
+  it("goes through the dev-server proxy without a key or Authorization", async () => {
     const origEnv = process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_API_KEY;
     let seen: { url: string; headers: Record<string, string> } | undefined;
@@ -116,7 +116,7 @@ describe("OpenRouter TTS Adapter (R2, R3, D2)", () => {
   });
 });
 
-describe("Pure Speech Alignment (R5, D4)", () => {
+describe("Pure Speech Alignment", () => {
   it("splits text into sentences properly", () => {
     const text = "Hola mundo. Esto es una prueba! Funciona genial?";
     const sentences = splitIntoSentences(text);
@@ -148,7 +148,7 @@ describe("Pure Speech Alignment (R5, D4)", () => {
   });
 });
 
-describe("alignScriptToCues over the clip (080/R13)", () => {
+describe("alignScriptToCues over the clip", () => {
   it("fills the clip from startOffset to startOffset + duration", () => {
     const cues = alignScriptToCues("Una sola frase.", {
       totalDuration: 1.32,
@@ -160,7 +160,7 @@ describe("alignScriptToCues over the clip (080/R13)", () => {
   });
 });
 
-describe("Scene Audio Attachment and Duration Adjustment (R4, D3)", () => {
+describe("Scene Audio Attachment and Duration Adjustment", () => {
   it("attaches audio asset and extends scene duration to match speech length", () => {
     const scene = defaultScene();
     scene.duration = 4.0;

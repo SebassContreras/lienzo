@@ -3,7 +3,7 @@ import { defaultScene } from "./model.ts";
 import { parseScene } from "./schema.ts";
 
 describe("scene audio schema validation", () => {
-  it("validates a scene with a valid audio track (R1)", () => {
+  it("validates a scene with a valid audio track", () => {
     const scene = {
       ...defaultScene(),
       audio: {
@@ -78,7 +78,7 @@ describe("scene audio schema validation", () => {
     }
   });
 
-  it("prepares AudioBuffer for video export matching duration and startOffset (R4)", async () => {
+  it("prepares AudioBuffer for video export matching duration and startOffset", async () => {
     const { prepareAudioBufferForExport } = await import(
       "../engine/audio/audio-export.ts"
     );

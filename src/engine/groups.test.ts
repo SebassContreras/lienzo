@@ -6,10 +6,13 @@ const rect = (id: string, x: number) => ({ ...defaultRect(), id, x, y: 0 });
 const ids = (scene: { elements: { id: string }[] }) =>
   scene.elements.map((el) => el.id);
 
-describe("group order (081/R17)", () => {
+describe("group order", () => {
   it("keeps the members' draw order whatever order the ids are given in", () => {
     // Arrange
-    const scene = { ...defaultScene(), elements: [rect("r1", 0), rect("t1", 50)] };
+    const scene = {
+      ...defaultScene(),
+      elements: [rect("r1", 0), rect("t1", 50)],
+    };
 
     // Act
     const grouped = groupElements(scene, ["t1", "r1"], "g");

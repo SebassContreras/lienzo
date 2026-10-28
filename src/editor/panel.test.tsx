@@ -38,7 +38,7 @@ const setup = () => {
 
 afterEach(cleanup);
 
-describe("Panel undo steps (020/R2)", () => {
+describe("Panel undo steps", () => {
   it("keeps the first typed change and records one step for it", () => {
     const { checkpoint, get } = setup();
     const name = get("name");

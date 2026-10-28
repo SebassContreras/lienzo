@@ -13,8 +13,8 @@ const cue = (start: number, end: number, text: string) => ({
 const subtitlesOf = (scene: Scene) =>
   scene.elements.find((el) => el.kind === "subtitles") as SubtitlesEl;
 
-describe("attachSpeechToScene with asTrack (060/R1)", () => {
-  it("keeps one voice track per call with its startOffset (issue #10)", () => {
+describe("attachSpeechToScene with asTrack", () => {
+  it("keeps one voice track per call with its startOffset", () => {
     const first = attachSpeechToScene(defaultScene(), {
       assetId: "voice-1",
       audioDuration: 2,
@@ -108,7 +108,7 @@ describe("attachSpeechToScene with asTrack (060/R1)", () => {
   });
 });
 
-describe("attachSpeechToScene cue ids (080/R13)", () => {
+describe("attachSpeechToScene cue ids", () => {
   it("numbers the merged cues so every id is unique", () => {
     const first = attachSpeechToScene(defaultScene(), {
       assetId: "voice-1",

@@ -21,7 +21,7 @@ import {
 import { createSceneGenerateSpeechTool } from "./tools/scene-generate-speech.ts";
 import type { SynthesizeSpeechRequest, TtsService } from "./types.ts";
 
-describe("Runtime environment loading and resolution (R1, R2, D1)", () => {
+describe("Runtime environment loading and resolution", () => {
   beforeEach(() => {
     delete process.env.OPENROUTER_API_KEY;
     delete process.env.OPENROUTER_API_BASE_URL;
@@ -69,7 +69,7 @@ describe("Runtime environment loading and resolution (R1, R2, D1)", () => {
   });
 });
 
-describe("Dynamic base URL support in OpenRouter adapter (R2, D2)", () => {
+describe("Dynamic base URL support in OpenRouter adapter", () => {
   it("uses custom baseUrl passed to synthesizeSpeech", async () => {
     let requestedUrl = "";
     const fakeAudioData = new Uint8Array([10, 20, 30]);
@@ -99,7 +99,7 @@ describe("Dynamic base URL support in OpenRouter adapter (R2, D2)", () => {
   });
 });
 
-describe("Browser UI preferences persistence (R5, D3)", () => {
+describe("Browser UI preferences persistence", () => {
   // Simple mock storage for Node vitest environment
   const mockStorage: Record<string, string> = {};
   const fakeLocalStorage = {
@@ -151,7 +151,7 @@ describe("Browser UI preferences persistence (R5, D3)", () => {
     expect(loaded.isCustomVoice).toBe(true);
   });
 
-  it("moves a key from the old slot into the preferences and removes the slot (061/R3)", () => {
+  it("moves a key from the old slot into the preferences and removes the slot", () => {
     fakeLocalStorage.setItem(STORAGE_KEY_OPENROUTER_API_KEY, " sk-legacy ");
 
     expect(loadTtsPreferences().apiKey).toBe("sk-legacy");
@@ -163,7 +163,7 @@ describe("Browser UI preferences persistence (R5, D3)", () => {
   });
 });
 
-describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => {
+describe("Environment resolution in scene_generate_speech tool", () => {
   beforeEach(() => {
     delete process.env.OPENROUTER_TTS_MODEL;
     delete process.env.OPENROUTER_TTS_VOICE;

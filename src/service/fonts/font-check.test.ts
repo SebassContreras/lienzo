@@ -15,8 +15,8 @@ function sceneWith(elements: Scene["elements"]): Scene {
   return { ...defaultScene(), elements };
 }
 
-describe("missingFonts (060/R4)", () => {
-  it("names a text font that is not installed (issue #12)", () => {
+describe("missingFonts", () => {
+  it("names a text font that is not installed", () => {
     const scene = sceneWith([text("Montserrat")]);
 
     expect(missingFonts(scene, ["Inter"])).toEqual(["Montserrat"]);
@@ -52,7 +52,7 @@ describe("missingFonts (060/R4)", () => {
   });
 });
 
-describe("fontNotices weights (080/R16)", () => {
+describe("fontNotices weights", () => {
   const poppins = [400, 600, 800].map((weight) => ({
     family: "Poppins",
     weight,

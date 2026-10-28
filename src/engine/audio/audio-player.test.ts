@@ -3,7 +3,7 @@ import type { Scene } from "../../model/model.ts";
 import { defaultScene } from "../../model/model.ts";
 import { WebAudioPlayer } from "./audio-player.ts";
 
-describe("WebAudioPlayer multi-audio playback synchronization (035/D3, 035/R5)", () => {
+describe("WebAudioPlayer multi-audio playback synchronization", () => {
   it("initializes without errors in non-browser or mock environment", () => {
     const player = new WebAudioPlayer();
     expect(player).toBeDefined();

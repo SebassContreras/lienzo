@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
-describe("standalone CLI and MCP distribution bundle (029)", () => {
+describe("standalone CLI and MCP distribution bundle", () => {
   const cliPath = resolve(process.cwd(), "dist/cli.js");
 
   beforeAll(() => {

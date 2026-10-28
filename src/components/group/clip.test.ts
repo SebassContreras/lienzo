@@ -32,7 +32,7 @@ function clipsOf(el: GroupEl): string[] {
   return ctx.log.filter((l) => l.startsWith("clip("));
 }
 
-describe("group clip (059/R2)", () => {
+describe("group clip", () => {
   it("clips the children to the group's rounded box when `clip` is on and there is no frame", () => {
     const clipped = group({ clip: true, radius: 12 });
 
@@ -45,13 +45,13 @@ describe("group clip (059/R2)", () => {
     expect(clipsOf(pill)).toEqual(["clip({roundRect(10,20,200,100,50)})"]);
   });
 
-  it("does not clip when `clip` is off (R4)", () => {
+  it("does not clip when `clip` is off", () => {
     const open = group({ clip: false });
 
     expect(clipsOf(open)).toEqual([]);
   });
 
-  it("a group saved before 059 reads with `clip: false` and `radius: 0` (R4)", () => {
+  it("a group saved without clip reads with `clip: false` and `radius: 0`", () => {
     const { clip: _c, radius: _r, ...old } = group({});
 
     const parsed = ElementSchema.parse(old) as GroupEl;

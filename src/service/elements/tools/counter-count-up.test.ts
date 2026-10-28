@@ -26,7 +26,7 @@ beforeEach(async () => {
   await call("scene_create", { scene: "s" });
 });
 
-it("gives a counter added with no progress a count-up track (071/D5)", async () => {
+it("gives a counter added with no progress a count-up track", async () => {
   await call("element_add", { scene: "s", kind: "counter" });
 
   expect(await counterOf()).toMatchObject({
@@ -39,7 +39,7 @@ it("gives a counter added with no progress a count-up track (071/D5)", async () 
   });
 });
 
-it("keeps a counter given a progress value still (071/D5)", async () => {
+it("keeps a counter given a progress value still", async () => {
   await call("element_add", {
     scene: "s",
     kind: "counter",
@@ -49,7 +49,7 @@ it("keeps a counter given a progress value still (071/D5)", async () => {
   expect(await counterOf()).not.toHaveProperty("tracks.progress");
 });
 
-it("gives a built counter with no progress a count-up track (071/D5)", async () => {
+it("gives a built counter with no progress a count-up track", async () => {
   await call("scene_build", {
     compact: { duration: 1, elements: [{ kind: "counter" }] },
     save: "s",
@@ -66,7 +66,7 @@ it("gives a built counter with no progress a count-up track (071/D5)", async () 
   });
 });
 
-it("starts a new counter's count-up when its shot starts (072/D3)", async () => {
+it("starts a new counter's count-up when its shot starts", async () => {
   await call("scene_build", {
     compact: {
       duration: 6,
@@ -90,7 +90,7 @@ it("starts a new counter's count-up when its shot starts (072/D3)", async () => 
   });
 });
 
-it("ends an added counter's count-up with its shot (072/D3)", async () => {
+it("ends an added counter's count-up with its shot", async () => {
   await call("scene_update", { scene: "s", patch: { duration: 6 } });
   await call("shot_set", {
     scene: "s",

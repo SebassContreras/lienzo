@@ -66,7 +66,7 @@ describe("assetSegments for a reference relative to the project", () => {
   });
 });
 
-describe("assetSegments under a project whose slug is assets (063/R11)", () => {
+describe("assetSegments under a project whose slug is assets", () => {
   it("does not mistake the slug for the folder in a project path", () => {
     // Arrange
     const ref = "/projects/assets/assets/brand/a.png";

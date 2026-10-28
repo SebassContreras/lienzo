@@ -66,7 +66,7 @@ function expectState(a: AnimState, b: AnimState, msg = "") {
 }
 
 describe("animState", () => {
-  it("an old flat animation, moved into its slot, plays exactly as before (R5)", () => {
+  it("an old flat animation, moved into its slot, plays exactly as before", () => {
     for (const kind of ANIM_KINDS) {
       for (const [amount, cycles, delay] of [
         [12, 1, 0],
@@ -94,7 +94,7 @@ describe("animState", () => {
     expect(anim.out.kind).toBe("none");
   });
 
-  it("entry, loop and exit combine on one element (R1)", () => {
+  it("entry, loop and exit combine on one element", () => {
     const a = withSlots({
       in: { kind: "fade", delay: 0, duration: 1 },
       loop: { kind: "float", amount: 10 },
@@ -110,7 +110,7 @@ describe("animState", () => {
     expect(animState(a, 4, 4).alpha).toBe(0);
   });
 
-  it("an entry hides before its start and holds its end; an exit holds hidden (R3)", () => {
+  it("an entry hides before its start and holds its end; an exit holds hidden", () => {
     for (const kind of ["fade", "pop", "slide"] as const) {
       const entry = withSlots({ in: { kind, delay: 1, duration: 0.5 } });
       expect(animState(entry, 0.5, 4).alpha, kind).toBe(0);
@@ -134,7 +134,7 @@ describe("animState", () => {
     }
   });
 
-  it("start, duration and easing shape the entry (R2)", () => {
+  it("start, duration and easing shape the entry", () => {
     const linear = withSlots({
       in: { kind: "fade", delay: 1, duration: 2, easing: "linear" },
     });
@@ -149,7 +149,7 @@ describe("animState", () => {
     expect(animState(quad, 0.5, 4).alpha).toBeCloseTo(0.25);
   });
 
-  it("a loop that plays forever closes exactly at the scene's end (R4, A6)", () => {
+  it("a loop that plays forever closes exactly at the scene's end", () => {
     for (const kind of ["float", "pulse", "breathe"] as const) {
       for (const cycles of [1, 2, 3]) {
         for (const direction of ["normal", "reverse", "alternate"] as const) {
@@ -164,7 +164,7 @@ describe("animState", () => {
     }
   });
 
-  it("a loop of N iterations rests after them; reverse mirrors it (R4)", () => {
+  it("a loop of N iterations rests after them; reverse mirrors it", () => {
     const twice = withSlots({
       loop: { kind: "float", amount: 10, cycles: 4, iterations: 2 },
     });
@@ -177,7 +177,7 @@ describe("animState", () => {
     expect(animState(reverse, 1, 4).dy).toBeCloseTo(10);
   });
 
-  it("warns about entries and exits that end after the scene (R6)", () => {
+  it("warns about entries and exits that end after the scene", () => {
     expect(lateSlots(base(), 4)).toEqual([]);
     const late = withSlots({
       in: { kind: "fade", delay: 3.5, duration: 0.8 },

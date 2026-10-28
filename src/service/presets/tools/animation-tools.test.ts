@@ -25,13 +25,13 @@ beforeEach(async () => {
   await call("project_create", { project: PROJECT, name: "P" });
 });
 
-it("saves a project animation with a partial slot (069/D6)", async () => {
+it("saves a project animation with a partial slot", async () => {
   const saved = await savePulse();
 
   expect(saved).toMatchObject({ ok: true, value: { animation: "pulso" } });
 });
 
-it("lists a project animation only with its project (069/D6)", async () => {
+it("lists a project animation only with its project", async () => {
   await savePulse();
 
   const scoped = await call("animation_list", { project: PROJECT });
@@ -44,7 +44,7 @@ it("lists a project animation only with its project (069/D6)", async () => {
   expect(global).toMatchObject({ ok: true, value: { animations: [] } });
 });
 
-it("deletes a project animation, then fails on the gone name (069/D6)", async () => {
+it("deletes a project animation, then fails on the gone name", async () => {
   await savePulse();
 
   const first = await call("animation_delete", {
@@ -60,7 +60,7 @@ it("deletes a project animation, then fails on the gone name (069/D6)", async ()
   expect(again).toMatchObject({ ok: false, error: { code: "not_found" } });
 });
 
-it("lists, gets and inspects a project preset saved without traits (069/D6)", async () => {
+it("lists, gets and inspects a project preset saved without traits", async () => {
   await call("preset_save", {
     project: PROJECT,
     recipe: { name: "Caja", kind: "rect" },

@@ -80,7 +80,7 @@ describe("new components (R1–R10)", () => {
     },
   );
 
-  it("has a built-in preset for every new component (R13)", () => {
+  it("has a built-in preset for every new component", () => {
     const kinds = new Set(BUILT_IN_RECIPES.map((r) => r.kind));
     for (const kind of NEW_KINDS) expect(kinds).toContain(kind);
     const frames = BUILT_IN_RECIPES.map(
@@ -135,7 +135,7 @@ describe("pure parts", () => {
     expect([0, 1, 2, 3].map((i) => rowAlpha(0.5, i, 4))).toEqual([1, 1, 0, 0]);
   });
 
-  it("places a window's children in its body, below the title bar (R7)", () => {
+  it("places a window's children in its body, below the title bar", () => {
     const child = { ...createElement("rect"), x: 0, y: 0, w: 100, h: 100 };
     const group = {
       ...createElement("group"),

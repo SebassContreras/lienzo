@@ -97,7 +97,7 @@ describe("service tools", () => {
     ]);
   });
 
-  it("re-centres an updated text's box on the point given as `at` (R3)", async () => {
+  it("re-centres an updated text's box on the point given as `at`", async () => {
     await ok("scene_create", { scene: "demo" });
     const { id } = await ok("element_add", {
       scene: "demo",
@@ -119,7 +119,7 @@ describe("service tools", () => {
     expect(c.y).toBeCloseTo(300, 2);
   });
 
-  it("keeps an updated element's position when no `at` is given (R3)", async () => {
+  it("keeps an updated element's position when no `at` is given", async () => {
     await ok("scene_create", { scene: "demo" });
     const { id } = await ok("element_add", {
       scene: "demo",
@@ -133,7 +133,7 @@ describe("service tools", () => {
     expect(boxOf(el)).toMatchObject({ x: 20, y: 30, w: 50 });
   });
 
-  it("writes nothing when an edit would make the scene invalid (R4)", async () => {
+  it("writes nothing when an edit would make the scene invalid", async () => {
     await ok("scene_create", { scene: "demo" });
     const { id } = await ok("element_add", { scene: "demo", kind: "rect" });
     const scenePath = join(

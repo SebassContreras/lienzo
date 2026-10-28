@@ -171,7 +171,7 @@ describe("descriptors", () => {
 });
 
 describe("use element", () => {
-  it("stores its symbol as free text picked by the symbol widget (062/R9)", () => {
+  it("stores its symbol as free text picked by the symbol widget", () => {
     const field = COMPONENTS.find((d) => d.kind === "use")?.fields.symbol;
 
     expect(field).toMatchObject({ type: "text", widget: "symbol" });

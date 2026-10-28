@@ -8,7 +8,7 @@ beforeEach(async () => {
   ({ call, ok } = await toolHarness());
 });
 
-describe("scene_validate takes a compact scene (064/R10)", () => {
+describe("scene_validate takes a compact scene", () => {
   it("gives the notices scene_build gives", async () => {
     // Arrange
     const compact = { background: "notacolor", elements: [] };
@@ -35,7 +35,7 @@ describe("scene_validate takes a compact scene (064/R10)", () => {
   });
 });
 
-describe("`at` is the same in every tool (064/R11)", () => {
+describe("`at` is the same in every tool", () => {
   const rect = { kind: "rect", w: 200, h: 100 };
   const built = async (at: unknown) => {
     const res = await ok("scene_build", {
@@ -105,12 +105,12 @@ describe("`at` is the same in every tool (064/R11)", () => {
   });
 });
 
-describe("element_add feedback (068)", () => {
+describe("element_add feedback", () => {
   beforeEach(async () => {
     await ok("scene_create", { scene: "s" });
   });
 
-  it("names an element that leaves the canvas (R4)", async () => {
+  it("names an element that leaves the canvas", async () => {
     // Act
     const res = await ok("element_add", {
       scene: "s",
@@ -122,7 +122,7 @@ describe("element_add feedback (068)", () => {
     expect((res.notices as string[]).join()).toContain("se sale del lienzo");
   });
 
-  it("takes patch.id, and fails when it is taken (R5)", async () => {
+  it("takes patch.id, and fails when it is taken", async () => {
     // Act
     const first = await ok("element_add", {
       scene: "s",
@@ -141,8 +141,8 @@ describe("element_add feedback (068)", () => {
   });
 });
 
-describe("rounded positions and partial backgrounds (068)", () => {
-  it("rounds what `at` computes (R6)", async () => {
+describe("rounded positions and partial backgrounds", () => {
+  it("rounds what `at` computes", async () => {
     // Act
     const res = await ok("scene_build", {
       compact: {
@@ -158,7 +158,7 @@ describe("rounded positions and partial backgrounds (068)", () => {
     expect(el.y).toBe(468);
   });
 
-  it("fills a partial background in scene_create (R7)", async () => {
+  it("fills a partial background in scene_create", async () => {
     // Act
     await ok("scene_create", {
       scene: "bg",

@@ -63,7 +63,7 @@ async function cli(argv: string[], stdin = "") {
 }
 
 describe("lienzo CLI", () => {
-  it("lists every registry tool in --help, and each tool's flags (R2)", async () => {
+  it("lists every registry tool in --help, and each tool's flags", async () => {
     const all = await cli(["--help"]);
     expect(all.code).toBe(0);
     for (const t of registry.tools) {
@@ -74,7 +74,7 @@ describe("lienzo CLI", () => {
     }
   });
 
-  it("calls every registry tool, from flags or --json (R1)", async () => {
+  it("calls every registry tool, from flags or --json", async () => {
     const called = new Set<string>();
     const ok = async (argv: string[], stdin?: string) => {
       const r = await cli(argv, stdin);
@@ -397,7 +397,7 @@ describe("lienzo CLI", () => {
     );
   });
 
-  it("reports errors as JSON on stderr with exit code 1 (R3)", async () => {
+  it("reports errors as JSON on stderr with exit code 1", async () => {
     for (const argv of [
       ["no_such_tool"],
       ["scene_get", "--scene", "missing"],
@@ -414,7 +414,7 @@ describe("lienzo CLI", () => {
     }
   });
 
-  it("loads in Node through tsx, outside Vite (A22)", async () => {
+  it("loads in Node through tsx, outside Vite", async () => {
     const { stdout } = await promisify(execFile)(process.execPath, [
       "--import",
       "tsx",

@@ -13,7 +13,7 @@ import { loadTtsPreferences, saveTtsPreferences } from "./preferences.ts";
 import { createSceneGenerateSpeechTool } from "./tools/scene-generate-speech.ts";
 import type { SynthesizeSpeechRequest, TtsService } from "./types.ts";
 
-describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
+describe("Pluggable TTS Providers & Local Adapter", () => {
   beforeEach(() => {
     delete process.env.TTS_PROVIDER;
     delete process.env.KOKORO_PROVIDER;
@@ -25,7 +25,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
     delete process.env.OPENROUTER_API_KEY;
   });
 
-  describe("Config & Provider Resolution (R1, R2, D2)", () => {
+  describe("Config & Provider Resolution", () => {
     it("resolves default provider to openrouter when unspecified", () => {
       expect(resolveTtsProvider()).toBe("openrouter");
     });
@@ -37,7 +37,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       expect(resolveTtsProvider("openrouter")).toBe("openrouter");
     });
 
-    it("resolves provider from TTS_PROVIDER and ignores undocumented aliases (046/R5)", () => {
+    it("resolves provider from TTS_PROVIDER and ignores undocumented aliases", () => {
       process.env.TTS_PROVIDER = "local";
       expect(resolveTtsProvider()).toBe("local");
 
@@ -49,7 +49,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       delete process.env.KOKORO_PROVIDER;
     });
 
-    it("takes the local voice and model from KOKORO_TTS_VOICE/MODEL (046/R5)", async () => {
+    it("takes the local voice and model from KOKORO_TTS_VOICE/MODEL", async () => {
       let body: Record<string, unknown> = {};
       const fakeFetch = async (_: RequestInfo | URL, init?: RequestInit) => {
         body = JSON.parse(String(init?.body));
@@ -82,7 +82,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
     });
   });
 
-  describe("LocalTtsAdapter (R3, R6, D3)", () => {
+  describe("LocalTtsAdapter", () => {
     it("lists available Kokoro local models and voices", async () => {
       const adapter = new LocalTtsAdapter();
       const models = await adapter.listModels();
@@ -141,7 +141,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
     });
   });
 
-  describe("TTS Provider Factory (R1, R3, D1)", () => {
+  describe("TTS Provider Factory", () => {
     it("creates LocalTtsAdapter when provider is local or kokoro", () => {
       const service = createTtsService({ provider: "local" });
       expect(service).toBeInstanceOf(LocalTtsAdapter);
@@ -159,7 +159,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
     });
   });
 
-  describe("scene_generate_speech Tool Integration (R4, D4)", () => {
+  describe("scene_generate_speech Tool Integration", () => {
     it("routes speech generation through injected service or factory", async () => {
       let callCount = 0;
       let receivedRequest: SynthesizeSpeechRequest | undefined;
@@ -228,7 +228,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       expect(res.assetId).toBeDefined();
     });
 
-    it("consumes TtsService injected via Ctx (039/R5, D5)", async () => {
+    it("consumes TtsService injected via Ctx", async () => {
       let callCount = 0;
       const mockTtsService: TtsService = {
         async synthesizeSpeech() {
@@ -285,7 +285,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
     });
   });
 
-  describe("Preferences Persistence for Providers (R5, D5)", () => {
+  describe("Preferences Persistence for Providers", () => {
     const mockStorage: Record<string, string> = {};
     const fakeLocalStorage = {
       getItem: (k: string) => mockStorage[k] ?? null,
@@ -321,7 +321,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
   });
 });
 
-describe("local voice check (071/D6)", () => {
+describe("local voice check", () => {
   it("fails an unknown voice with the server's voices and never posts", async () => {
     const methods: string[] = [];
     const fakeFetch = async (_input: RequestInfo | URL, init?: RequestInit) => {

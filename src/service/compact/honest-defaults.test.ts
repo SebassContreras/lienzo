@@ -9,7 +9,7 @@ async function firstElement(compact: CompactScene) {
   return scene.elements[0];
 }
 
-describe("engine-wide defaults (063/R5)", () => {
+describe("engine-wide defaults", () => {
   it("fills a new shape fully opaque", async () => {
     // Arrange
     const compact: CompactScene = { elements: [{ kind: "rect" }] };

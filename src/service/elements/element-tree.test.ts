@@ -42,7 +42,7 @@ function expectFailure(fn: () => unknown): {
   throw new Error("Expected ToolFailure to be thrown");
 }
 
-describe("element-tree (051/D1, R1, R2)", () => {
+describe("element-tree", () => {
   it("finds a deeply nested element by unique id and by slash-separated path", () => {
     const car = makeRect("s1-car", 42);
     const innerGroup = makeGroup("layer-a", [car]);

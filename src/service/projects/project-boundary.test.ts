@@ -5,7 +5,7 @@ import { createCtx } from "../core/ctx.ts";
 import { inProject } from "../core/project-scope.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 
-describe("040 project-boundary and scope resolution", () => {
+describe("project boundary and scope resolution", () => {
   it("scopes a ctx to an existing project and has no default project", async () => {
     const tmp = join(process.cwd(), "tmp-test-project-boundary");
     await rm(tmp, { recursive: true, force: true });

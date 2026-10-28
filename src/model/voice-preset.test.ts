@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseVoicePreset, type VoicePreset } from "./voice-preset.ts";
 
-describe("VoicePreset schema and parser (037/T002)", () => {
+describe("VoicePreset schema and parser", () => {
   it("parses valid voice preset data with defaults", () => {
     const raw = {
       name: "Locutor Español",

@@ -7,7 +7,7 @@ import { drawScene } from "./render.ts";
 
 installCanvasFakes();
 
-describe("effects field group and withEffects (025/T001, D1, D3)", () => {
+describe("effects field group and withEffects", () => {
   it("does not save or restore ctx when blur is 0 and blend is normal", () => {
     const ctx = new RecordingCtx();
     withEffects(ctx as unknown as Ctx, { blur: 0, blend: "normal" }, () => {
@@ -77,7 +77,7 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
     expect(hasRestore).toBe(true);
   });
 
-  it("skips drawing mask elements directly and clips masked elements (025/T002, D2)", () => {
+  it("skips drawing mask elements directly and clips masked elements", () => {
     const ctx = new RecordingCtx();
     const scene = defaultScene();
     const maskRect = {
@@ -115,7 +115,7 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
     expect(fills.length).toBe(expectedFills);
   });
 
-  it("applies blur, blend and mask to every registered component kind (025/T003, R1, R2, R3)", async () => {
+  it("applies blur, blend and mask to every registered component kind", async () => {
     // Dynamically check every kind in KINDS
     const { KINDS, createElement } = await import("../components/index.ts");
     for (const kind of KINDS) {
@@ -153,7 +153,7 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
     }
   });
 
-  it("applies blur, blend and mask to a test-only descriptor registered at runtime (025/T003, R3)", async () => {
+  it("applies blur, blend and mask to a test-only descriptor registered at runtime", async () => {
     const { registerComponent, createElement } = await import(
       "../components/index.ts"
     );
@@ -206,7 +206,7 @@ describe("effects field group and withEffects (025/T001, D1, D3)", () => {
     expect(ctx.log.includes("globalCompositeOperation=(screen)")).toBe(true);
   });
 
-  it("leaves a valid scene and draws without crashing when mask target is deleted (025/T003, R2)", async () => {
+  it("leaves a valid scene and draws without crashing when mask target is deleted", async () => {
     const { SceneSchema } = await import("../model/schema.ts");
     const scene = defaultScene();
     const el = {

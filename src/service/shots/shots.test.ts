@@ -12,7 +12,7 @@ import { type Ctx, createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 
-describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
+describe("shots and camera engine & tool", () => {
   const PROJECT = "test-project";
   let ctx: Ctx;
 
@@ -204,7 +204,7 @@ describe("shots and camera engine & tool (055/R1, R2, R3, T009)", () => {
     expect((s3.value as Scene).shots).toBeUndefined();
   });
 
-  describe("shot rules (069/D4, D5)", () => {
+  describe("shot rules", () => {
     const call = (input: Record<string, unknown>) =>
       registry.call(
         "shot_set",

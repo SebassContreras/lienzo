@@ -10,8 +10,8 @@ import { drawScene } from "./render.ts";
 
 installCanvasFakes();
 
-describe("origin and opacity (053/D1, D3, D4)", () => {
-  describe("R1@1: transform origin pivot math", () => {
+describe("origin and opacity", () => {
+  describe("transform origin pivot math", () => {
     it("pivots around box centre by default (0.5, 0.5)", () => {
       // Arrange
       const el = defaultElement("rect") as RectEl;
@@ -73,7 +73,7 @@ describe("origin and opacity (053/D1, D3, D4)", () => {
     });
   });
 
-  describe("R3@1: unified opacity field across all kinds", () => {
+  describe("unified opacity field across all kinds", () => {
     it.each(KINDS)(
       "ensures kind «%s» defines opacity with default and section",
       (kind) => {
@@ -125,7 +125,7 @@ describe("origin and opacity (053/D1, D3, D4)", () => {
     });
   });
 
-  describe("R4@1: effective opacity and zero-opacity short-circuit", () => {
+  describe("effective opacity and zero-opacity short-circuit", () => {
     it("draws nothing when element opacity is 0", () => {
       // Arrange
       const el = defaultElement("rect") as RectEl;
@@ -198,7 +198,7 @@ describe("origin and opacity (053/D1, D3, D4)", () => {
     });
   });
 
-  describe("R5@1: pre-053 backward compatibility", () => {
+  describe("scenes saved without origin and opacity draw as before", () => {
     it("renders default scene without origin or opacity with identical transform", () => {
       // Arrange
       const el = defaultElement("rect") as RectEl;

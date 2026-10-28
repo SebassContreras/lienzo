@@ -3,7 +3,7 @@ import { withElementDefaults } from "./fill-defaults.ts";
 import { defaultScene } from "./model.ts";
 import { parseScene } from "./schema.ts";
 
-it("makes a scene with one partial text valid (074/R9)", () => {
+it("makes a scene with one partial text valid", () => {
   const data = {
     ...defaultScene(),
     elements: [{ id: "t", kind: "text", text: "Hola" }],
@@ -12,7 +12,7 @@ it("makes a scene with one partial text valid (074/R9)", () => {
   expect(parseScene(withElementDefaults(data))).toMatchObject({ ok: true });
 });
 
-it("fills group children from their kind's default (074/R9)", () => {
+it("fills group children from their kind's default", () => {
   const data = {
     ...defaultScene(),
     elements: [

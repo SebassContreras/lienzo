@@ -21,8 +21,8 @@ import {
 
 installCanvasFakes();
 
-describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8, R9, R10, R11)", () => {
-  it("verifies WCAG ratios against known color pairs and thresholds (R6)", () => {
+describe("comprehensive contrast and WCAG verification", () => {
+  it("verifies WCAG ratios against known color pairs and thresholds", () => {
     // Pure black on white: ~21:1
     const whiteLum = relativeLuminance(255, 255, 255);
     const blackLum = relativeLuminance(0, 0, 0);
@@ -36,7 +36,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     expect(requiredContrastRatio(19, 400)).toBe(4.5);
   });
 
-  it("checks text on a card on a contrasting background (R5)", () => {
+  it("checks text on a card on a contrasting background", () => {
     // White background, black card on top, dark text on card -> low contrast against card
     const scene = defaultScene();
     scene.background = {
@@ -80,7 +80,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     expect(low?.suggestion).toBeDefined();
   });
 
-  it("accounts for effective opacity when compositing layers (R7)", () => {
+  it("accounts for effective opacity when compositing layers", () => {
     const scene = defaultScene();
     scene.background = {
       ...scene.background,
@@ -117,7 +117,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     }
   });
 
-  it("evaluates gradient worst point over the text box (R8)", () => {
+  it("evaluates gradient worst point over the text box", () => {
     const scene = defaultScene();
     scene.background = {
       ...scene.background,
@@ -143,7 +143,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     expect(low?.bg).toBe("#ffffff");
   });
 
-  it("reports unverifiable contrast under an image (R8)", () => {
+  it("reports unverifiable contrast under an image", () => {
     const scene = defaultScene();
     const img = {
       ...defaultImage(),
@@ -171,7 +171,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     expect(unv?.elementId).toBe("text-over-img");
   });
 
-  it("uses the better of fill and stroke contrast when stroke is present (R9)", () => {
+  it("uses the better of fill and stroke contrast when stroke is present", () => {
     const scene = defaultScene();
     scene.background = {
       ...scene.background,
@@ -198,7 +198,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     expect(diags.filter((d) => d.code === "low_contrast")).toHaveLength(0);
   });
 
-  it("reports fade-in text only at times when it is unreadable (R10)", () => {
+  it("reports fade-in text only at times when it is unreadable", () => {
     const scene = defaultScene();
     scene.background = {
       ...scene.background,
@@ -241,7 +241,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
     expect(diagsT2.some((d) => d.code === "low_contrast")).toBe(true);
   });
 
-  it("suggested color meets the required threshold (R11)", () => {
+  it("suggested color meets the required threshold", () => {
     const scene = defaultScene();
     scene.background = {
       ...scene.background,
@@ -275,7 +275,7 @@ describe("comprehensive contrast and WCAG verification (023/T007, R5, R6, R7, R8
   });
 });
 
-describe("text over one-color particles (080/R14)", () => {
+describe("text over one-color particles", () => {
   const sceneWith = (particles: ReturnType<typeof defaultParticles>) => {
     const scene = defaultScene();
     scene.background = {

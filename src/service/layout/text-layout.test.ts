@@ -4,8 +4,8 @@ import { defaultElement, defaultScene } from "../../model/model.ts";
 import { expandScene } from "../compact/expand.ts";
 import { layoutBoxes } from "./layout.ts";
 
-describe("text layout and compact placement (054/R4, T007)", () => {
-  it("centers unwrapped text in compact scenes using accurate measured metrics (R1, R4)", async () => {
+describe("text layout and compact placement", () => {
+  it("centers unwrapped text in compact scenes using accurate measured metrics", async () => {
     // When expanding a compact scene with at: "center" on text
     const { scene: expanded } = await expandScene({
       size: "1080x1080",
@@ -32,7 +32,7 @@ describe("text layout and compact placement (054/R4, T007)", () => {
     expect(box.y + box.h / 2).toBeCloseTo(540, 0);
   });
 
-  it("places wrapped text in compact scenes using box width w (R2, R4)", async () => {
+  it("places wrapped text in compact scenes using box width w", async () => {
     const { scene: expanded } = await expandScene({
       size: "1080x1080",
       elements: [

@@ -4,7 +4,7 @@ import type { UseEl } from "../../components/use/descriptor.ts";
 import { defaultRect, defaultScene, type Scene } from "../../model/model.ts";
 import { inspectLayout } from "./layout.ts";
 
-describe("Layout inspection for symbols (056/T008 - R3)", () => {
+describe("Layout inspection for symbols", () => {
   it("emits missing_symbol diagnostic when use element references unknown symbol", () => {
     const scene: Scene = {
       ...defaultScene(),

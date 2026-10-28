@@ -61,7 +61,7 @@ describe("the animation registry", () => {
     }
   });
 
-  it("attention kinds leave the element at rest at both ends, so loops close (A6)", () => {
+  it("attention kinds leave the element at rest at both ends, so loops close", () => {
     for (const id of LOOP_IDS) {
       const def = LOOPS[id];
       for (const a of AMOUNTS) {

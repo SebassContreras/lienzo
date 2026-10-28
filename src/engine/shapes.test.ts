@@ -152,7 +152,7 @@ describe("group coordinate mapping", () => {
   });
 });
 
-describe("position tracks across groups (071/D1)", () => {
+describe("position tracks across groups", () => {
   const key = (t: number, value: number) => ({
     t,
     value,
@@ -211,7 +211,7 @@ describe("position tracks across groups (071/D1)", () => {
   });
 });
 
-describe("shots across groups (080/R4)", () => {
+describe("shots across groups", () => {
   const inShot = (x: number) => ({ ...defaultRect(), x, shot: "s1" });
 
   it("grouping elements of one shot gives the group that shot", () => {

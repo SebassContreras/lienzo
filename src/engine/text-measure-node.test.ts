@@ -16,7 +16,7 @@ function measureInPlainNode(text: string): number {
   return Number(out.trim());
 }
 
-describe("text measurement outside Vitest (063/R4)", () => {
+describe("text measurement outside Vitest", () => {
   it("measures a bundled font with its glyph metrics in plain Node", () => {
     // Arrange
     const text = "Automatiza tus envíos hoy";

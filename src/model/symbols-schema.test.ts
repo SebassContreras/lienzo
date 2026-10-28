@@ -9,7 +9,7 @@ import {
 } from "./model.ts";
 import { parseScene } from "./schema.ts";
 
-describe("Symbol schema and expansion (056/T006 - R1)", () => {
+describe("Symbol schema and expansion", () => {
   it("validates canonical scene with symbols dictionary", () => {
     const scene = defaultScene();
     scene.symbols = {

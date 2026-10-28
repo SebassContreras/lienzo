@@ -75,7 +75,7 @@ describe("saveFont", () => {
   });
 });
 
-describe("measureInstalledFonts (067/R5)", () => {
+describe("measureInstalledFonts", () => {
   let root: string;
   let store: FontStore;
 

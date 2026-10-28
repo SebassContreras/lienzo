@@ -3,7 +3,7 @@ import { getSceneAudioTracks } from "../../engine/audio/audio-tracks.ts";
 import { defaultScene, type Scene } from "../../model/model.ts";
 import { EditorFooter } from "./editor-footer.tsx";
 
-describe("EditorFooter Component (035/D2@2, R3@2, R4@1)", () => {
+describe("EditorFooter Component", () => {
   it("exports EditorFooter as a React functional component", () => {
     expect(typeof EditorFooter).toBe("function");
   });

@@ -3,8 +3,8 @@ import type { TextEl } from "../components/text/descriptor.ts";
 import { defaultElement } from "../model/model.ts";
 import { boxOf, textLayout } from "./geometry.ts";
 
-describe("text wrapping and box width (054/R2, R3, T006)", () => {
-  it("keeps unwrapped behavior when w is omitted or 0 (R3)", () => {
+describe("text wrapping and box width", () => {
+  it("keeps unwrapped behavior when w is omitted or 0", () => {
     const el = defaultElement("text") as TextEl;
     el.text = "Primer línea\nSegunda línea más larga";
     delete el.w;
@@ -18,7 +18,7 @@ describe("text wrapping and box width (054/R2, R3, T006)", () => {
     expect(box.h).toBe(layout.h);
   });
 
-  it("wraps words within box width w at word boundaries (R2)", () => {
+  it("wraps words within box width w at word boundaries", () => {
     const el = defaultElement("text") as TextEl;
     el.font = "Inter";
     el.size = 32;
@@ -48,7 +48,7 @@ describe("text wrapping and box width (054/R2, R3, T006)", () => {
     expect(box.h).toBe(wrapped.h);
   });
 
-  it("preserves explicit line breaks while wrapping paragraphs (R2)", () => {
+  it("preserves explicit line breaks while wrapping paragraphs", () => {
     const el = defaultElement("text") as TextEl;
     el.font = "Inter";
     el.size = 32;

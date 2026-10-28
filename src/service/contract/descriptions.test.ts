@@ -3,7 +3,7 @@ import { presetValidate } from "../presets/tools/preset-validate.ts";
 import { sceneBuild } from "../scenes/tools/scene-build.ts";
 import { shotSet } from "../shots/tools/shot-set.ts";
 
-describe("tool descriptions (064/R2, R3)", () => {
+describe("tool descriptions", () => {
   it("tells shot_set when a transition runs and what the camera moves", () => {
     // Act
     const text = shotSet.description;
@@ -32,7 +32,7 @@ describe("tool descriptions (064/R2, R3)", () => {
     expect(text).toContain("gradient, shadow, border and border glow");
   });
 
-  it("tells scene_build the sizes it takes and the two animation models (074/R14)", () => {
+  it("tells scene_build the sizes it takes and the two animation models", () => {
     // Act
     const text = sceneBuild.description;
 
@@ -41,7 +41,7 @@ describe("tool descriptions (064/R2, R3)", () => {
     expect(text).toContain('anim: "fade"');
   });
 
-  it("tells preset_validate what a recipe holds (074/R14)", () => {
+  it("tells preset_validate what a recipe holds", () => {
     // Act
     const text = presetValidate.description;
 
@@ -50,7 +50,7 @@ describe("tool descriptions (064/R2, R3)", () => {
   });
 });
 
-describe("closed sets in descriptions (081/R13)", () => {
+describe("closed sets in descriptions", () => {
   it("lists animation kinds, easings and transitions in shot_set", () => {
     expect(shotSet.description).toContain("`fade`");
     expect(shotSet.description).toContain("`ease-out`");

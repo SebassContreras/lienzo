@@ -13,7 +13,7 @@ function uncheckedOpacities(prefix: string, fields: Fields): string[] {
   });
 }
 
-it("checks every opacity field of every kind as 0–1 (078/R1)", () => {
+it("checks every opacity field of every kind as 0–1", () => {
   const unchecked = COMPONENTS.flatMap((d) =>
     uncheckedOpacities(d.kind, d.fields),
   );
@@ -30,7 +30,7 @@ function unboundedNumbers(fields: Fields): string[] {
   });
 }
 
-it("leaves only coordinates, angles, timing and counts with no lower bound (080/R9)", () => {
+it("leaves only coordinates, angles, timing and counts with no lower bound", () => {
   const names = new Set(COMPONENTS.flatMap((d) => unboundedNumbers(d.fields)));
 
   // a new number field that may go below 0 joins this list on purpose

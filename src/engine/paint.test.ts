@@ -18,7 +18,7 @@ function logOf(g: CanvasGradient): string[] {
 
 const ctx = () => new RecordingCtx() as unknown as Ctx;
 
-describe("gradient stops (059/D5)", () => {
+describe("gradient stops", () => {
   it("runs from `color` to `color2` when the fill has no stops", () => {
     expect(gradientStops(twoColor)).toEqual([
       { at: 0, color: "#000000" },
@@ -38,7 +38,7 @@ describe("gradient stops (059/D5)", () => {
   });
 });
 
-describe("fill gradient (059/R3)", () => {
+describe("fill gradient", () => {
   it("a radial fill grows from the box centre out to its farthest corner", () => {
     const g = fillGradient(ctx(), box, { ...twoColor, type: "radial" });
 
@@ -47,7 +47,7 @@ describe("fill gradient (059/R3)", () => {
     );
   });
 
-  it("a linear fill keeps the two-color endpoints it had before 059 (R4)", () => {
+  it("a linear fill keeps the two-color endpoints it had in older scenes", () => {
     const g = fillGradient(ctx(), box, twoColor);
 
     expect(logOf(g)).toEqual([

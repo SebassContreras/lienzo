@@ -7,7 +7,7 @@ import type { RectEl } from "../rect/descriptor.ts";
 import type { UseEl } from "./descriptor.ts";
 import { drawUse, instantiateSymbolElements } from "./draw.ts";
 
-describe("Use component & drawing (056/T007 - R2, R3)", () => {
+describe("Use component & drawing", () => {
   it("registers `use` component descriptor with appropriate defaults", () => {
     const desc = descriptorOf("use");
     expect(desc).toBeDefined();

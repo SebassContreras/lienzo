@@ -4,7 +4,7 @@ import { CompactElementSchema } from "../../model/compact.ts";
 import { expandEffects } from "./effects.ts";
 import { expandScene } from "./expand.ts";
 
-describe("compact effects (058/R1)", () => {
+describe("compact effects", () => {
   it("merges partial effects over the defaults", () => {
     const { effects, notices } = expandEffects(undefined, { blur: 6 }, "e");
 

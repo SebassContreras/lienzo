@@ -113,7 +113,7 @@ describe("nested element tools and group parent insertion", () => {
     expect(group.children.map((c) => c.id)).toEqual(["s1-bg"]);
   });
 
-  it("rejects `element_add` when `parent` does not exist or is not a group and leaves the scene unchanged (051/R2)", async () => {
+  it("rejects `element_add` when `parent` does not exist or is not a group and leaves the scene unchanged", async () => {
     await ok("scene_create", { scene: "flat" });
     const { id: rectId } = await ok("element_add", {
       scene: "flat",
@@ -144,7 +144,7 @@ describe("nested element tools and group parent insertion", () => {
     expect(await onDisk("flat")).toEqual(before);
   });
 
-  it("sets and clears track repeat, until, and step/hold easings via keyframe_set and scene_build (052/R3, R4)", async () => {
+  it("sets and clears track repeat, until, and step/hold easings via keyframe_set and scene_build", async () => {
     await ok("scene_build", {
       compact: {
         size: "1080x1080",

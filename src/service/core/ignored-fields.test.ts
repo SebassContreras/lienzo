@@ -44,7 +44,7 @@ describe("ignored fields", () => {
     });
   });
 
-  it("warns about a misspelled compact key in scene_validate, naming the field it means (067/R3)", async () => {
+  it("warns about a misspelled compact key in scene_validate, naming the field it means", async () => {
     // Arrange
     const compact = {
       elements: [{ kind: "text", text: "Hola", fontSize: 40 }],

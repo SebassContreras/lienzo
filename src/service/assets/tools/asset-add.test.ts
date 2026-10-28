@@ -54,7 +54,7 @@ describe("asset_add", () => {
     expect(src).toBe(`/projects/${project}/assets/${filename}`);
   });
 
-  it("refuses a file that only has an image extension (069/D8)", async () => {
+  it("refuses a file that only has an image extension", async () => {
     const file = join(root, "fake.png");
     await writeFile(file, "not a png");
 

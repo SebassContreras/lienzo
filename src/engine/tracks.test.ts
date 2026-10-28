@@ -75,7 +75,7 @@ describe("track values", () => {
     expect(paths).toContain("@scale");
   });
 
-  it("hold the starting value until the next keyframe timestamp with step and hold easings (052/R4)", () => {
+  it("hold the starting value until the next keyframe timestamp with step and hold easings", () => {
     expect(EASING_NAMES).toContain("step");
     expect(EASING_NAMES).toContain("hold");
     const stepKeys = [kf(1, 10, "step"), kf(3, 90)];
@@ -88,7 +88,7 @@ describe("track values", () => {
     expect(valueAt(holdColors, 2, "color")).toBe("#00ff00");
   });
 
-  it("wrap elapsed time modulo track span when repeat is loop (052/R1, R2)", () => {
+  it("wrap elapsed time modulo track span when repeat is loop", () => {
     const loopTrack: Track = {
       keys: [kf(1, 0), kf(3, 100)],
       repeat: "loop",
@@ -101,7 +101,7 @@ describe("track values", () => {
     expect(valueAt(loopTrack, 5.5, "number")).toBeCloseTo(25, 9);
   });
 
-  it("alternate forward and backward cycles when repeat is pingpong (052/R1, R2)", () => {
+  it("alternate forward and backward cycles when repeat is pingpong", () => {
     const pingpongTrack: Track = {
       keys: [kf(1, 0), kf(3, 100)],
       repeat: "pingpong",
@@ -116,7 +116,7 @@ describe("track values", () => {
     expect(valueAt(pingpongTrack, 5.5, "number")).toBeCloseTo(25, 9);
   });
 
-  it("freeze the track at the value at until when t is at or past until (052/R1, R2)", () => {
+  it("freeze the track at the value at until when t is at or past until", () => {
     const loopUntil: Track = {
       keys: [kf(1, 0), kf(3, 100)],
       repeat: "loop",
@@ -265,7 +265,7 @@ describe("animate with tracks", () => {
 });
 
 describe("scenes", () => {
-  it("written before 015 still read, with no tracks", () => {
+  it("a scene saved before keyframes still reads, with no tracks", () => {
     const old = { ...scene, elements: [{ ...rect() }] };
     delete (old.elements[0] as { tracks?: unknown }).tracks;
     expect(parseScene(old).ok).toBe(true);

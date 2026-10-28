@@ -16,7 +16,7 @@ const titleIn = (font: string) => ({
 const estimatedNotice = (notices: unknown) =>
   (notices as string[]).filter((n) => n.includes("scene_preview"));
 
-describe("estimated text widths (064/R4)", () => {
+describe("estimated text widths", () => {
   it("warns in scene_build that a font with no metrics has an estimated width", async () => {
     // Act
     const built = await ok("scene_build", { compact: titleIn("Georgia") });

@@ -55,7 +55,7 @@ describe("resolveFonts", () => {
     ]);
   });
 
-  it("lists every bundled weight (069/D10)", () => {
+  it("lists every bundled weight", () => {
     expect(resolveFonts(["Inter"], []).map((f) => f.weight)).toEqual([
       400, 600, 700, 800,
     ]);

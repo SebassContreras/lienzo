@@ -4,7 +4,7 @@ import { isColor } from "./color.ts";
 import { defaultScene } from "./model.ts";
 import { parseScene } from "./schema.ts";
 
-describe("isColor (069/D1, 070/D1)", () => {
+describe("isColor", () => {
   it.each([
     "#fff",
     "#ffff",
@@ -36,7 +36,7 @@ describe("isColor (069/D1, 070/D1)", () => {
   });
 });
 
-describe("scene values (069/D2)", () => {
+describe("scene values", () => {
   const sceneWith = (patch: Record<string, unknown>) => {
     const scene = defaultScene();
     scene.elements = [{ ...createElement("rect"), ...patch } as never];

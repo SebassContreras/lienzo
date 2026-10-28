@@ -3,7 +3,7 @@ import { defaultScene } from "../../model/model.ts";
 import { parseScene } from "../../model/schema.ts";
 import { createAudioTrack, getSceneAudioTracks } from "./audio-tracks.ts";
 
-describe("audio tracks normalization and validation (035/R1, 035/R2)", () => {
+describe("audio tracks normalization and validation", () => {
   it("normalizes legacy single audio track into audioTracks list", () => {
     const scene = {
       ...defaultScene(),

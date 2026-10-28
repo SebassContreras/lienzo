@@ -39,7 +39,7 @@ function presetElement(file: string): Element | undefined {
  * Render audit (063/R10): a change in how a built-in preset or a default element looks shows
  * up as a snapshot diff, so look changes are always deliberate (update with `-u`).
  */
-describe("render audit (063/R10)", () => {
+describe("render audit", () => {
   it.each(presetFiles)("built-in preset %s renders as recorded", (file) => {
     // Arrange
     const el = presetElement(file);

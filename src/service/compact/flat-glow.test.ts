@@ -10,7 +10,7 @@ async function firstElement(compact: CompactScene) {
   return scene.elements[0];
 }
 
-describe("flat border glow (064/R1)", () => {
+describe("flat border glow", () => {
   it("turns off the border glow of a flat rect with a border", async () => {
     // Arrange
     const compact: CompactScene = {

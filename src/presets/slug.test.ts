@@ -7,7 +7,7 @@ describe("slugify", () => {
     expect(slugify("mi_preset-2")).toBe("mi_preset-2");
   });
 
-  it("folds accented letters instead of dropping them (074/R6)", () => {
+  it("folds accented letters instead of dropping them", () => {
     expect(slugify("Caja Ámbar")).toBe("caja-ambar");
   });
 

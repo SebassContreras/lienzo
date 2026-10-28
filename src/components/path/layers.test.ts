@@ -36,7 +36,7 @@ function styles(el: Element, prop: "fillStyle" | "strokeStyle"): string[] {
 const fillsOf = (el: Element) => styles(el, "fillStyle");
 const strokesOf = (el: Element) => styles(el, "strokeStyle");
 
-describe("path layers (057/R1)", () => {
+describe("path layers", () => {
   it("paints every shape in list order, each with its own fill", () => {
     const el = pathEl({
       mode: "layers",
@@ -95,7 +95,7 @@ describe("path layers (057/R1)", () => {
   });
 });
 
-describe("path without a mode (057/R4)", () => {
+describe("path without a mode", () => {
   it("still morphs between its shapes", () => {
     const shapes = [
       { d: SQUARE, fill: "#ff0000" },

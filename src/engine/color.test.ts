@@ -9,7 +9,7 @@ import {
   suggestAccessibleColor,
 } from "./color.ts";
 
-describe("pure color.ts (023/D3, R6, R11)", () => {
+describe("pure color.ts", () => {
   it("parses hex and rgba colors correctly", () => {
     expect(parseColor("#fff")).toEqual([255, 255, 255, 1]);
     expect(parseColor("#000000")).toEqual([0, 0, 0, 1]);

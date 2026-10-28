@@ -7,7 +7,7 @@ import { createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 
-it("gives an image its picture's aspect unless the input sets one (069/D14)", async () => {
+it("gives an image its picture's aspect unless the input sets one", async () => {
   const root = await mkdtemp(join(tmpdir(), "lienzo-aspect-"));
   await cp("presets/built-in", join(root, "presets", "built-in"), {
     recursive: true,

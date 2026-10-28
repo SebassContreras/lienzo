@@ -4,7 +4,7 @@ import { poseAt } from "./pose.ts";
 
 const el = { ...createElement("three"), spin: 2 } as never;
 
-describe("3D pose (016/D5, R5)", () => {
+describe("3D pose", () => {
   it("gives the same pose for the same t", () => {
     expect(poseAt(el, 1.3, 4)).toEqual(poseAt(el, 1.3, 4));
   });

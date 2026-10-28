@@ -59,7 +59,7 @@ async function cli(argv: string[]) {
 }
 
 describe("lienzo MCP server", () => {
-  it("lists every registry tool with the same name, description and object schema (R1)", async () => {
+  it("lists every registry tool with the same name, description and object schema", async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name)).toEqual(registry.tools.map((t) => t.name));
     for (const [i, t] of tools.entries()) {
@@ -68,14 +68,14 @@ describe("lienzo MCP server", () => {
     }
   });
 
-  it("calls every tool and answers with a JSON text result (R1)", async () => {
+  it("calls every tool and answers with a JSON text result", async () => {
     for (const tool of registry.tools) {
       const r = await mcp(tool.name, {});
       expect(r.json).not.toBeNull();
     }
   });
 
-  it("gives the same result as the CLI for the same input (R1)", async () => {
+  it("gives the same result as the CLI for the same input", async () => {
     await mcp("scene_create", { scene: "demo", project: "p" });
     const viaMcp = await mcp("scene_get", { scene: "demo", project: "p" });
     const viaCli = await cli([
@@ -90,7 +90,7 @@ describe("lienzo MCP server", () => {
     expect(viaMcp.json).toEqual(viaCli.json);
   });
 
-  it("reports a tool error as isError with the CLI's message (R2)", async () => {
+  it("reports a tool error as isError with the CLI's message", async () => {
     for (const [name, args, argv] of [
       [
         "scene_get",
@@ -112,7 +112,7 @@ describe("lienzo MCP server", () => {
     }
   });
 
-  it("returns scene_preview as image content (010/R2)", async () => {
+  it("returns scene_preview as image content", async () => {
     await mcp("scene_create", { scene: "demo", project: "p" });
     const r = await client.callTool({
       name: "scene_preview",
@@ -124,7 +124,7 @@ describe("lienzo MCP server", () => {
     ]);
   });
 
-  it("returns scene_preview with `out` as image then its file (058/R3)", async () => {
+  it("returns scene_preview with `out` as image then its file", async () => {
     await mcp("scene_create", { scene: "demo", project: "p" });
     const r = await client.callTool({
       name: "scene_preview",
@@ -137,7 +137,7 @@ describe("lienzo MCP server", () => {
   });
 });
 
-describe("build id (072/D1)", () => {
+describe("build id", () => {
   it("names the commit the server started from in its instructions", async () => {
     const root = await mkdtemp(join(tmpdir(), "lienzo-git-"));
     await mkdir(join(root, ".git", "refs", "heads"), { recursive: true });
@@ -159,7 +159,7 @@ describe("build id (072/D1)", () => {
     await other.close();
   });
 
-  it("tells the client how every tool takes arguments and answers failures (079/R2)", async () => {
+  it("tells the client how every tool takes arguments and answers failures", async () => {
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     await createMcpServer(
       registry,

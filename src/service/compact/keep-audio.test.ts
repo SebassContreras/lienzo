@@ -6,7 +6,7 @@ import { keepAudio } from "./keep-audio.ts";
 
 const voice = { id: "track-1", assetId: "voice", startOffset: 2 };
 
-describe("compact audioTracks (060/R3)", () => {
+describe("compact audioTracks", () => {
   it("expands an entry to a full track with id track-1", async () => {
     const { scene } = await expandScene({
       elements: [],
@@ -17,7 +17,7 @@ describe("compact audioTracks (060/R3)", () => {
   });
 });
 
-describe("keepAudio (060/R3)", () => {
+describe("keepAudio", () => {
   it("keeps the stored tracks when the compact scene has none, with a notice", () => {
     const previous = { ...defaultScene(), audioTracks: [voice] };
 

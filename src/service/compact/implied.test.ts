@@ -11,8 +11,8 @@ async function first(el: Record<string, unknown>) {
   return scene.elements[0];
 }
 
-describe("implied fields (068/D2)", () => {
-  it("draws a fill given only a color flat (R2)", async () => {
+describe("implied fields", () => {
+  it("draws a fill given only a color flat", async () => {
     const rect = (await first({
       kind: "rect",
       fill: { color: "#22C55E" },
@@ -30,7 +30,7 @@ describe("implied fields (068/D2)", () => {
     expect(rect.fill.gradient).toBe(true);
   });
 
-  it("sizes a group's content to its box (R3)", async () => {
+  it("sizes a group's content to its box", async () => {
     const group = (await first({ kind: "group", w: 600, h: 300 })) as GroupEl;
 
     expect([group.cw, group.ch]).toEqual([600, 300]);
@@ -49,7 +49,7 @@ describe("implied fields (068/D2)", () => {
   });
 });
 
-describe("icon and counter defaults (080/R18)", () => {
+describe("icon and counter defaults", () => {
   it("gives a new counter no suffix", async () => {
     const counter = (await first({ kind: "counter" })) as CounterEl;
 

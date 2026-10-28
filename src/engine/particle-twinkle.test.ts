@@ -5,7 +5,7 @@ import { twinkleAlphas } from "./particle-twinkle.ts";
 const T = 4;
 const field = { ...defaultParticles(), count: 50, twinkle: 0.8 };
 
-describe("twinkling particles (057/R2, R3)", () => {
+describe("twinkling particles", () => {
   it("leaves the field alone when twinkle is 0", () => {
     expect(twinkleAlphas({ ...field, twinkle: 0 }, 1, T)).toBeNull();
   });

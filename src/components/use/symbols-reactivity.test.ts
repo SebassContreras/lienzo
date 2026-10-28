@@ -6,7 +6,7 @@ import type { RectEl } from "../rect/descriptor.ts";
 import type { UseEl } from "./descriptor.ts";
 import { drawUse } from "./draw.ts";
 
-describe("Symbol updates reactivity (056/T009 - R4, D5)", () => {
+describe("Symbol updates reactivity", () => {
   it("updates appearance of all use instances when editing scene.symbols without duplicating elements", () => {
     // Single symbol definition referenced by two different use elements
     const scene: Scene = {

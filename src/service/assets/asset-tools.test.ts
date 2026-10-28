@@ -54,7 +54,7 @@ beforeEach(async () => {
   );
 });
 
-describe("asset_rename (063/R7)", () => {
+describe("asset_rename", () => {
   it("points every scene using the asset at its new path", async () => {
     // Arrange
     const filename = await sceneUsingLogo();
@@ -72,7 +72,7 @@ describe("asset_rename (063/R7)", () => {
     );
   });
 
-  it("follows an image given the bare filename asset_add returns (074/R5)", async () => {
+  it("follows an image given the bare filename asset_add returns", async () => {
     // Arrange
     const file = join(root, "logo.png");
     await writeFile(file, PNG_1X1);
@@ -107,7 +107,7 @@ describe("asset_rename (063/R7)", () => {
   });
 });
 
-describe("asset_delete (063/R7)", () => {
+describe("asset_delete", () => {
   it("refuses while a scene uses the asset and names that scene", async () => {
     // Arrange
     const filename = await sceneUsingLogo();
