@@ -64,9 +64,19 @@ export const elementAdd = defineTool({
       patch: z.record(z.string(), z.unknown()).optional(),
       trim: z.boolean().optional(),
     })
-    .refine((i) => (i.preset === undefined) !== (i.kind === undefined), {
-      message: "Indica un preset o un tipo, no ambos",
-      path: ["preset"],
+    .superRefine((i, ctx) => {
+      if (i.preset === undefined && i.kind === undefined)
+        ctx.addIssue({
+          code: "custom",
+          message: "Indica un preset (preset_list) o un tipo (component_list)",
+          path: ["preset"],
+        });
+      if (i.preset !== undefined && i.kind !== undefined)
+        ctx.addIssue({
+          code: "custom",
+          message: "Indica un preset o un tipo, no ambos",
+          path: ["preset"],
+        });
     }),
   output: SceneResult.extend({ id: z.string() }),
   async run({ scene, project, preset, kind, parent, at, patch, trim }, ctx) {

@@ -35,7 +35,9 @@ export const elementGroup = defineTool({
           path: `ids.${i}`,
           message: parent
             ? `«${member}» está dentro del grupo «${parent.id}»; desagrúpalo antes (element_ungroup)`
-            : `No hay un elemento «${member}»`,
+            : member.includes("/")
+              ? `«${member}» es la ruta de un hijo: element_group solo agrupa elementos de primer nivel (usa su id)`
+              : `No hay un elemento «${member}»`,
         },
       ];
     });

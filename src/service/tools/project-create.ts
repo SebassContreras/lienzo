@@ -42,7 +42,11 @@ export const projectCreate = defineTool({
         "project",
       );
     if (await ctx.projects.get(id))
-      fail("exists", `Ya existe el proyecto «${id}»`, "project");
+      fail(
+        "exists",
+        `Ya existe el proyecto «${id}»; pasa \`project\` con otro id si quieres un proyecto nuevo`,
+        "project",
+      );
     try {
       const config = ProjectConfigSchema.parse({
         name,

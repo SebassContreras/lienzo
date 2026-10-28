@@ -51,7 +51,7 @@ export const fontInstall = defineTool({
       fail(
         "install_failed",
         error instanceof Error ? error.message : String(error),
-        "family",
+        file ? "file" : "family",
       );
     }
   },

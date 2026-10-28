@@ -278,7 +278,7 @@ one rule), T012–T015, docs, review, verify.
 - [x] 081/T009 [agent] Writer notices: tests (missing font and weight in `element_add`/`element_update`/`scene_create`; off-canvas in `scene_build`; unknown track path and `use` override failing; ignored key in `scene_validate` data), `fontNotices`, `offCanvasNotices` moved from `element_add`, `checkReferences` — covers R7, D8
 - [x] 081/T010 [agent] Brand-font weights: tests (`project_update` weights `[700, 900]` with 900 missing; `font_install` without `weights`), the notice — covers R8, D8
 - [x] 081/T011 [agent] Complete lists: tests (compact bad `size` plus bad element; `preset_validate` bad trait plus bad `set`; `scene_validate` data bad opacity plus shots; `data` plus `compact`; `scene` plus `data`), compact size as a `Problem`, `preset_validate`/`_save` stages, `exactlyOne` — covers R9, D9
-- [ ] 081/T012 [agent] Messages: read `unrecognized_keys` in `node_modules/zod`, tests for each R10 case, the one-line fixes and `zod-issues.ts` mapping — covers R10, D10
+- [x] 081/T012 [agent] Messages: read `unrecognized_keys` in `node_modules/zod`, tests for each R10 case, the one-line fixes and `zod-issues.ts` mapping — covers R10, D10
 - [ ] 081/T013 [agent] Times and names: tests (`times: [99]` fails `invalid_time`; element on a missing shot has only `unknown_shot`; `project_inspect` names), `assertTimeWithin`, `inspectLayout`, `project_inspect` — covers R11, R14, D11
 - [ ] 081/T014 [agent] Options module and descriptions: tests in `descriptions.test.ts`, `src/model/options.ts`, schemas and descriptions from it — covers R13, D12
 - [ ] 081/T015 [agent] Speech: tests with a fake TTS (missing scene fails before synthesis; paths `apiKey`/`baseUrl`; local-down message), reorder in the tool — covers R15, D13

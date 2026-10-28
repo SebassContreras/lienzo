@@ -169,7 +169,7 @@ export function num<P = Parent>(
   },
 ): Typed<NumberField, number> {
   let schema = z.number();
-  if (o.int) schema = schema.int();
+  if (o.int) schema = schema.int("Debe ser un número entero");
   if (o.bounds && Number.isFinite(o.bounds[0]))
     schema = schema.min(o.bounds[0]);
   if (o.bounds && Number.isFinite(o.bounds[1]))

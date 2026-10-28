@@ -105,10 +105,18 @@ const TrackObjectSchema: z.ZodType<TrackObject> = z.object({
 });
 
 /** A track as stored: an object with no loop option active is its bare keys (`trackEntry`). */
-export const TrackSchema: z.ZodType<Track> = z.union([
-  z.array(KeyframeSchema),
-  TrackObjectSchema.transform((o) => trackEntry(o.keys, o.repeat, o.until)),
-]);
+export const TrackSchema: z.ZodType<Track> = z.union(
+  [
+    z.array(KeyframeSchema),
+    TrackObjectSchema.transform((o) => trackEntry(o.keys, o.repeat, o.until)),
+  ],
+  {
+    error: (issue) =>
+      issue.code === "invalid_union" && issue.errors.every((e) => e.some((i) => i.path.length === 0))
+        ? "Una pista es una lista de keyframes [[t, valor, easing?], …] o { keys: [...], repeat?, until? }"
+        : undefined,
+  },
+);
 
 /** Optional on every element: scenes written before 015 have none. */
 export const TracksSchema = z.record(z.string(), TrackSchema);

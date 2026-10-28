@@ -19,6 +19,13 @@ const genericUnion = () =>
 /** `issues` with every union failure that one branch explains replaced by that branch's. */
 export function flatIssues(issues: readonly Issue[]): Issue[] {
   return issues.flatMap((issue) => {
+    // an extra key is reported at the key, not at the object that holds it (081/D10)
+    if (issue.code === "unrecognized_keys")
+      return issue.keys.map((key) => ({
+        ...issue,
+        keys: [key],
+        path: [...issue.path, key],
+      }));
     if (issue.code !== "invalid_union" || issue.message !== genericUnion())
       return [issue];
     const fitting = issue.errors.filter((branch) => !wrongType(branch));

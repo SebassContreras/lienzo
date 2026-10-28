@@ -1607,3 +1607,63 @@ it("scene_inspect_layout fails when given scene and data", async () => {
   const r = await call("scene_inspect_layout", { scene: "s", data: { elements: [] } });
   expect(r).toMatchObject(fails(/no ambos/));
 });
+
+// 081/D10: messages that say what to do
+
+it("animation_save names the extra key as the path", async () => {
+  const r = await call("animation_save", {
+    recipe: { name: "M", anim: { in: { kind: "fade" } }, extra: 1 },
+  });
+  expect(r).toMatchObject({ ok: false, error: { path: "extra" } });
+});
+
+it("scene_build says a loop cycles value must be a whole number", async () => {
+  const compact = {
+    elements: [{ id: "e", kind: "text", text: "hi", anim: { loop: { kind: "float", cycles: 0.5 } } }],
+  };
+  expect(await call("scene_build", { compact })).toMatchObject(
+    fails(/cycles: Debe ser un número entero/),
+  );
+});
+
+it("scene_build explains a track that is not a list of keyframes", async () => {
+  const compact = { elements: [{ id: "c", kind: "rect", tracks: { x: 5 } }] };
+  const r = await call("scene_build", { compact });
+  expect(r).toMatchObject({
+    ok: false,
+    error: { message: expect.stringMatching(/Una pista es una lista de keyframes/) },
+  });
+});
+
+it("element_add without kind or preset says to give one", async () => {
+  expect(await call("element_add", { scene: "s" })).toMatchObject(
+    fails(/Indica un preset \(preset_list\) o un tipo/),
+  );
+});
+
+it("font_install with a bad file fails at file", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "lienzo-font-"));
+  const file = join(dir, "x.txt");
+  await writeFile(file, "no");
+  const r = await call("font_install", { family: "X", file });
+  expect(r).toMatchObject({ ok: false, error: { path: "file" } });
+});
+
+it("element_group says a child path is not top-level", async () => {
+  await call("element_add", {
+    scene: "s",
+    preset: "Tarjeta con icono",
+    patch: { id: "card" },
+  });
+  const r = await call("element_group", {
+    scene: "s",
+    ids: ["r", "card/anything"],
+  });
+  expect(r).toMatchObject(fails(/ruta de un hijo.*primer nivel/));
+});
+
+it("project_create with an existing id says to pass project", async () => {
+  expect(await call("project_create", { name: "P" })).toMatchObject(
+    fails(/pasa `project` con otro id/),
+  );
+});
