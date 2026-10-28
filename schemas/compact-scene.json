@@ -28,19 +28,23 @@
     },
     "width": {
       "type": "number",
-      "exclusiveMinimum": 0
+      "exclusiveMinimum": 0,
+      "maximum": 7680
     },
     "height": {
       "type": "number",
-      "exclusiveMinimum": 0
+      "exclusiveMinimum": 0,
+      "maximum": 7680
     },
     "duration": {
       "type": "number",
-      "exclusiveMinimum": 0
+      "exclusiveMinimum": 0,
+      "maximum": 600
     },
     "fps": {
       "type": "number",
-      "exclusiveMinimum": 0
+      "exclusiveMinimum": 0,
+      "maximum": 60
     },
     "background": {
       "anyOf": [

@@ -1460,3 +1460,66 @@ it("element_add takes an animPreset by its file name", async () => {
   });
   expect(r).toMatchObject({ ok: true });
 });
+
+// 081/D8: the same notices and failures from every writer of an element
+
+it("element_add notices a font that is not installed", async () => {
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "text",
+    patch: { id: "t", font: "Fuente Rara" },
+  });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«Fuente Rara».*font_install/)] },
+  });
+});
+
+it("element_update notices a font that is not installed", async () => {
+  await call("element_add", { scene: "s", kind: "text", patch: { id: "t" } });
+  const r = await call("element_update", {
+    scene: "s",
+    id: "t",
+    patch: { font: "Fuente Rara" },
+  });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«Fuente Rara»/)] },
+  });
+});
+
+it("scene_create notices a font that is not installed", async () => {
+  const data = { elements: [{ id: "t", kind: "text", font: "Fuente Rara" }] };
+  const r = await call("scene_create", { scene: "z", data });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«Fuente Rara»/)] },
+  });
+});
+
+it("scene_build with save notices an element off the canvas", async () => {
+  const compact = { elements: [{ id: "far", kind: "rect", x: 2000, y: 10 }] };
+  const r = await call("scene_build", { compact, save: "z" });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/«far» se sale del lienzo/)] },
+  });
+});
+
+it("element_update fails on a track path the kind cannot animate", async () => {
+  const r = await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { tracks: { nofield: [[0, 1]] } },
+  });
+  expect(r).toMatchObject(fails(/«nofield» no se puede animar en «rect»/));
+});
+
+it("scene_build fails on a use override naming a child the symbol lacks", async () => {
+  const compact = {
+    symbols: { card: { w: 100, h: 50, children: [{ id: "c1", kind: "rect" }] } },
+    elements: [{ id: "u", kind: "use", symbol: "card", overrides: { nope: {} } }],
+  };
+  const r = await call("scene_build", { compact });
+  expect(r).toMatchObject(fails(/«card» no tiene el elemento «nope».*«c1»/));
+});

@@ -3,6 +3,7 @@
  * fonts that are not installed and text widths that are estimated (064/D3). Pure and free of Node imports, so the tool and the editor's
  * "Revisión" section build the very same list.
  */
+import { boxOf } from "../engine/geometry.ts";
 import { idPath } from "../model/id-path.ts";
 import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
@@ -68,6 +69,28 @@ export function deadKeyframeEasingNotices(scene: Scene): SceneNotice[] {
     message: deadEasingNotice(d),
     elementId: d.topId,
   }));
+}
+
+/**
+ * A notice for each top-level element of `elements` that leaves the canvas (081/D8), except one
+ * with a position track, which may enter from outside on purpose.
+ */
+export function offCanvasNotices(
+  scene: Scene,
+  elements: readonly Element[] = scene.elements,
+): string[] {
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return elements.flatMap((el) => {
+    if (el.tracks?.x || el.tracks?.y) return [];
+    const b = boxOf(el);
+    if (b.x >= 0 && b.y >= 0 && b.x + b.w <= scene.width && b.y + b.h <= scene.height)
+      return [];
+    return [
+      `«${el.id}» se sale del lienzo (${scene.width}x${scene.height}): su caja es x ${round(b.x)}, y ${round(b.y)}, ` +
+        `${round(b.w)}x${round(b.h)}` +
+        (el.kind === "text" ? "; da `w` al texto para que haga salto de línea" : ""),
+    ];
+  });
 }
 
 const CAMERA_CHANNELS = ["x", "y", "zoom"];

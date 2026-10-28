@@ -18,8 +18,11 @@ import { sameName, slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
 import { withCanonicalAssets, withCanonicalAudio } from "./asset-refs.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
+import { fontNotices } from "./font-check.ts";
+import { availableFonts } from "./font-install.ts";
 import { fail, failAll, type Problem, problemsOf } from "./registry.ts";
 import { allElements, changedSince } from "./scene-changes.ts";
+import { offCanvasNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
@@ -309,7 +312,16 @@ export async function saveScene(
     },
     ctx.project,
   );
-  notices.push(...(await resourceNotices(ctx, scene, previous)));
+  // what this write changed: fonts the project lacks, elements off the canvas (081/D8)
+  const changedTop = scene.elements.filter(changedSince(previous));
+  const faces = await availableFonts(ctx.fonts, ctx.project);
+  notices.push(
+    ...fontNotices({ ...scene, elements: changedTop }, faces),
+    ...offCanvasNotices(scene, changedTop),
+    ...(await resourceNotices(ctx, scene, previous)),
+  );
+  const unique = [...new Set(notices)];
+  notices.splice(0, notices.length, ...unique);
   return { scene: await ctx.store.writeScene(name, scene), notices };
 }
 

@@ -3,6 +3,9 @@
  * icon lucide lacks, a line end attached to no element and a `use` of a missing symbol (078/D3). Only elements the write changed
  * are checked, so a stored scene with an old problem can still be edited elsewhere. Pure.
  */
+
+import { trackPaths } from "../components/descriptor.ts";
+import { descriptorOf } from "../components/index.ts";
 import { ICON_NAMES } from "../engine/icon-set.ts";
 import { mapElementsDeep } from "../model/element-walk.ts";
 import { closestKey } from "../model/ignored.ts";
@@ -44,6 +47,15 @@ const list = (items: readonly string[]) =>
 
 type Dangling = Problem & { code: string };
 
+/** The ids of `elements` and everything inside them. */
+const symbolIds = (elements: readonly Element[]): Set<string> =>
+  new Set(
+    elements.flatMap((el) => [
+      el.id,
+      ...(el.kind === "group" ? [...symbolIds(el.children)] : []),
+    ]),
+  );
+
 /** Every changed element's reference to a shot, icon, line target or symbol `scene` lacks. */
 export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
   const shots = (scene.shots ?? []).map((sh) => sh.id);
@@ -83,6 +95,26 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
           " (nombres de lucide, p. ej. «Star», «ArrowRight»; véase lucide.dev/icons)",
         path: `${path}.icon`,
       });
+    }
+    // a track on a path the kind cannot animate, and an override naming a child the symbol lacks (081/D8)
+    const d = descriptorOf(el.kind);
+    const animatable = d ? trackPaths(d) : [];
+    for (const track of Object.keys(el.tracks ?? {}))
+      if (d && !animatable.includes(track))
+        out.push({
+          code: "unknown_path",
+          message: `«${track}» no se puede animar en «${el.kind}» (se puede: ${animatable.join(", ")})`,
+          path: `${path}.tracks.${track}`,
+        });
+    if (el.kind === "use" && symbols.includes(el.symbol)) {
+      const inside = symbolIds(scene.symbols?.[el.symbol]?.children ?? []);
+      for (const key of Object.keys(el.overrides ?? {}))
+        if (!inside.has(key) && !/^\d+(\.\d+)*$/.test(key))
+          out.push({
+            code: "unknown_override",
+            message: `El símbolo «${el.symbol}» no tiene el elemento «${key}» (ids: ${list([...inside])})`,
+            path: `${path}.overrides.${key}`,
+          });
     }
     if (el.kind === "line")
       for (const end of ["a", "b"] as const) {

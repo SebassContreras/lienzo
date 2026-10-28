@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { withCountUp } from "../../components/counter/count-up.ts";
-import { boxOf } from "../../engine/geometry.ts";
 import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
 import {
   defaultElement,
@@ -23,7 +22,6 @@ import { withFileAspect } from "../image-aspect.ts";
 import { trimImage } from "../image-trim.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail, remapFailure, ToolFailure } from "../registry.ts";
-import { round2 } from "../round.ts";
 import { editScene, findPreset, SceneResult } from "../scenes.ts";
 
 /** `elements.<id>.…` (or `elements.<group>/<id>.…`) of the element `id` as `patch.…`. */
@@ -124,15 +122,6 @@ export const elementAdd = defineTool({
       }
       const p = at ?? (placed ? undefined : "center");
       const out = p ? placeAt(fresh, p, s) : fresh;
-      const b = boxOf(out);
-      if (b.x < 0 || b.y < 0 || b.x + b.w > s.width || b.y + b.h > s.height)
-        notices.push(
-          `«${out.id}» se sale del lienzo (${s.width}x${s.height}): su caja es x ${round2(b.x)}, y ${round2(b.y)}, ` +
-            `${round2(b.w)}x${round2(b.h)}` +
-            (out.kind === "text"
-              ? "; da `w` al texto para que haga salto de línea"
-              : ""),
-        );
       return { ...s, elements: [...s.elements, out] };
     });
     const result = await write.catch((err: unknown) => {
