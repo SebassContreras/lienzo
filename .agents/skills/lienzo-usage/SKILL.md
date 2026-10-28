@@ -50,7 +50,8 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
    `[w, h]`, a ratio (`"9:16"`, `"4:5"`, `"1:1"`, `"16:9"`) or a format (`"Story"`), and
    anything else fails. Read the notices (ignored keys, with the field they
    likely meant, missing fonts, which draw in Inter, text widths estimated for a font with no
-   metrics: check those with `scene_preview`).
+   metrics: check those with `scene_preview`; a weight the family lacks, with the one drawn; an easing on a
+   track's last keyframe, which shapes nothing).
 4. **Check:** `scene_inspect_layout` (text overlaps, `shape_overlap` for shapes stacked on
    each other, `text_overflow` for text a component draws outside its box, out of canvas, contrast, drawn boxes as the shot camera shows them; a group's
    box holds children animated out of it unless it clips) at the times that matter; `scene_preview` at a time `t` to look at a frame (`out` saves the

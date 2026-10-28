@@ -33,7 +33,9 @@ export function createSceneGenerateSpeechTool(
       "and attach the resulting audio and synchronized subtitle cues to a scene. By default it " +
       "replaces `scene.audio`; with `asTrack: true` it appends a new `audioTracks` entry at " +
       "`startOffset` (keeping `scene.audio` and other tracks) and appends its cues, so a " +
-      "voice-over with one clip per shot is one call per clip. `audioDuration` is measured " +
+      "voice-over with one clip per shot is one call per clip. Cues fill the clip, from " +
+      "`startOffset` to `startOffset` plus the audio's length, and keep unique ids when clips are " +
+      "appended. The audio is stored with its project prefix. `audioDuration` is measured " +
       "from the MP3/WAV frames.",
     input: z.object({
       scene: z.string().min(1),

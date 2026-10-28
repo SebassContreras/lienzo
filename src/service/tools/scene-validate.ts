@@ -20,7 +20,7 @@ export const sceneValidate = defineTool({
     "fields, such as every opacity in 0–1). Returns every problem in `errors` (the first " +
     "one also in `path`/`message`); paths name an element by the `id` you gave, else by its index. A valid scene can " +
     "still carry `notices`: e.g. a field the schema does not know (ignored, named by path), a text or subtitles font that is not installed in the " +
-    "project (it would draw with a fallback; run font_install), or a text whose width is " +
+    "project (it would draw with a fallback; run font_install) or a weight its family lacks (the notice names the weight drawn), an easing on a track's last keyframe (it shapes nothing), or a text whose width is " +
     "estimated because its font has no metrics here (check it with scene_preview). " +
     "Pass either `data` (a scene as scene_get returns it; missing scene fields take the project's " +
     "canvas and an element's missing fields its kind's defaults) or `compact` (the compact form scene_build takes, " +

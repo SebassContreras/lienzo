@@ -47,7 +47,7 @@ export const sceneBuild = defineTool({
     "If `save` is provided, the scene is saved under that name (returned in `saved`; every notice, build and save, is in `notices`) " +
     'and, unless `response_format: "detailed"`, only the `id` and `kind` of each top-level element come back instead of the scene (scene_get reads it); fails if the name exists unless `overwrite` is true. ' +
     "Overwriting keeps the stored scene's audio (with a notice) unless `audioTracks` is given (`[]` clears it). " +
-    "A notice also names any text or subtitles font that is not installed (run font_install). " +
+    "A notice also names any text or subtitles font that is not installed (run font_install), a weight its family lacks (and the one drawn instead) and an easing on a track's last keyframe, which shapes nothing. " +
     SHOT_RULES,
   input: z.object({
     compact: CompactSceneInputSchema,
