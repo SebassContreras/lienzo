@@ -20,7 +20,7 @@ import type {
   TextEl,
 } from "../model/model.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
-import { measureStyleOf } from "./font-check.ts";
+import { measureStyleOf } from "./fonts/font-check.ts";
 import { round2 } from "./round.ts";
 import { textExtentsOf } from "./text-extents.ts";
 

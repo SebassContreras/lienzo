@@ -21,8 +21,8 @@ import {
   withCanonicalAudio,
 } from "../assets/asset-refs.ts";
 import type { Ctx, ProjectCtx } from "../ctx.ts";
-import { fontNotices } from "../font-check.ts";
-import { availableFonts } from "../font-install.ts";
+import { fontNotices } from "../fonts/font-check.ts";
+import { availableFonts } from "../fonts/font-install.ts";
 import { fail, failAll, type Problem, problemsOf } from "../registry.ts";
 import type { PresetSource } from "../store.ts";
 import { allElements, changedSince } from "./scene-changes.ts";

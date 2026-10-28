@@ -8,8 +8,8 @@ import {
   type FontFile,
   isFontFamilyName,
   parseFontFile,
-} from "../model/font-files.ts";
-import { ProjectSlugSchema } from "../model/project.ts";
+} from "../../model/font-files.ts";
+import { ProjectSlugSchema } from "../../model/project.ts";
 
 /** `undefined` = the global folder; a slug = that project's folder. */
 export type FontScope = string | undefined;

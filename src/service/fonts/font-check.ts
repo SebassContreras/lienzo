@@ -1,6 +1,9 @@
-import { type MeasureStyle, widthIsEstimated } from "../engine/text-measure.ts";
-import { matchedWeight } from "../model/fonts.ts";
-import type { Element, Scene } from "../model/model.ts";
+import {
+  type MeasureStyle,
+  widthIsEstimated,
+} from "../../engine/text-measure.ts";
+import { matchedWeight } from "../../model/fonts.ts";
+import type { Element, Scene } from "../../model/model.ts";
 
 /** CSS generic families: keywords, never installable fonts. */
 const GENERIC = new Set([
@@ -134,7 +137,9 @@ export function missingBrandWeightNotices(
   installed: readonly Face[],
 ): string[] {
   return fonts.flatMap((f) => {
-    const have = installed.filter((i) => i.family === f.family).map((i) => i.weight);
+    const have = installed
+      .filter((i) => i.family === f.family)
+      .map((i) => i.weight);
     const lacking = f.weights.filter((w) => !have.includes(w));
     return have.length > 0 && lacking.length > 0
       ? [

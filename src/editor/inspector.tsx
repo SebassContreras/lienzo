@@ -26,7 +26,7 @@ import {
   SIZE_PRESETS,
 } from "../model/model.ts";
 import { rebindShot } from "../model/shot-timing.ts";
-import type { Face } from "../service/font-check.ts";
+import type { Face } from "../service/fonts/font-check.ts";
 import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";

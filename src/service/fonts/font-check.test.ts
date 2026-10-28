@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createElement } from "../components/index.ts";
-import { defaultScene, type Scene } from "../model/model.ts";
+import { createElement } from "../../components/index.ts";
+import { defaultScene, type Scene } from "../../model/model.ts";
 import { fontNotices, missingFonts } from "./font-check.ts";
 
 function text(font: string) {

@@ -147,7 +147,7 @@ the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T006 [agent] Move `elements` (element tools, element-tree, elements.ts, image-trim, sparse-scene) — covers R3, D3
 - [x] 082/T007 [agent] Move `shots` and `keyframes` — covers R3, D3
 - [x] 082/T008 [agent] Move `assets` (asset tools, asset-*, image-header, image-aspect, image-probe, project-assets) — covers R3, D3
-- [ ] 082/T009 [agent] Move `fonts` (font tools, font-check, font-install, font-store, google-fonts, font-middleware) — covers R3, D3
+- [x] 082/T009 [agent] Move `fonts` (font tools, font-check, font-install, font-store, google-fonts, font-middleware) — covers R3, D3
 - [ ] 082/T010 [agent] Move `presets` (preset tools, animation tools, built-in) — covers R3, D3
 - [ ] 082/T011 [agent] Move `projects` (project tools, project-*, root) — covers R3, D3
 - [ ] 082/T012 [agent] Move `speech` (scene_generate_speech, `tts/`, tts-proxy) — covers R3, D3

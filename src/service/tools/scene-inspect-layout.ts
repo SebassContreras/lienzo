@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { withElementDefaults } from "../../model/fill-defaults.ts";
 import type { ProjectCtx } from "../ctx.ts";
-import { measureInstalledFonts } from "../font-install.ts";
+import { measureInstalledFonts } from "../fonts/font-install.ts";
 import { inspectLayout, layoutBoxes } from "../layout.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";

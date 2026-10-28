@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { z } from "zod";
-import { ProjectSlugSchema } from "../../model/project.ts";
+import { ProjectSlugSchema } from "../../../model/project.ts";
+import { defineTool, fail } from "../../registry.ts";
 import { installGoogleFont, saveFont } from "../font-install.ts";
-import { defineTool, fail } from "../registry.ts";
 
 export const fontInstall = defineTool({
   name: "font_install",

@@ -3,7 +3,7 @@ import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { widthIsEstimated } from "../engine/text-measure.ts";
+import { widthIsEstimated } from "../../engine/text-measure.ts";
 import {
   availableFonts,
   measureInstalledFonts,
@@ -90,7 +90,7 @@ describe("measureInstalledFonts (067/R5)", () => {
     // Arrange: a real font file installed under a family no package bundles
     const file = readFileSync(
       new URL(
-        "../../public/fonts/inter-latin-700-normal.woff",
+        "../../../public/fonts/inter-latin-700-normal.woff",
         import.meta.url,
       ),
     );

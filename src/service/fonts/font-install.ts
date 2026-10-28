@@ -4,7 +4,7 @@
  * store writes it.
  */
 
-import { setInstalledFonts } from "../engine/text-measure.ts";
+import { setInstalledFonts } from "../../engine/text-measure.ts";
 import {
   type FontExtension,
   type FontFile,
@@ -13,8 +13,8 @@ import {
   isFontFamilyName,
   type ResolvedFont,
   resolveFonts,
-} from "../model/font-files.ts";
-import { FONTS } from "../model/fonts.ts";
+} from "../../model/font-files.ts";
+import { FONTS } from "../../model/fonts.ts";
 import type { FontScope, FontStore } from "./font-store.ts";
 import { downloadGoogleFont } from "./google-fonts.ts";
 

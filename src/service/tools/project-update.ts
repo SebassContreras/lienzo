@@ -5,8 +5,11 @@ import {
   ColorPaletteSchema,
   ProjectSlugSchema,
 } from "../../model/project.ts";
-import { missingBrandWeightNotices, missingFontNotice } from "../font-check.ts";
-import { availableFonts } from "../font-install.ts";
+import {
+  missingBrandWeightNotices,
+  missingFontNotice,
+} from "../fonts/font-check.ts";
+import { availableFonts } from "../fonts/font-install.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
 

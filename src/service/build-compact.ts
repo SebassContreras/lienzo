@@ -15,7 +15,11 @@ import { asRecipe } from "../presets/store.ts";
 import { withFileAspects } from "./assets/image-aspect.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
-import { estimatedWidthNotices, type Face, fontNotices } from "./font-check.ts";
+import {
+  estimatedWidthNotices,
+  type Face,
+  fontNotices,
+} from "./fonts/font-check.ts";
 import {
   failAll,
   type Problem,

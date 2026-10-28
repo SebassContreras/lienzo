@@ -8,7 +8,7 @@
  * POST /api/fonts/google { family, weights, project? }    -> installGoogleFont
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { ASSET_TYPES } from "./assets/asset-helpers.ts";
+import { ASSET_TYPES } from "../assets/asset-helpers.ts";
 import {
   availableFonts,
   installGoogleFont,

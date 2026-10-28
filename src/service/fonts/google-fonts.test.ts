@@ -4,7 +4,7 @@ import { downloadGoogleFont, parseGoogleCss } from "./google-fonts.ts";
 
 /** A css2 answer for Roboto 400 and 700, as served to a non-browser client, recorded 2026-10-27: one ttf per weight. */
 const CSS = readFileSync(
-  new URL("../test/fixtures/google-css2-roboto-ttf.css", import.meta.url),
+  new URL("../../test/fixtures/google-css2-roboto-ttf.css", import.meta.url),
   "utf8",
 );
 const TTF_400 =

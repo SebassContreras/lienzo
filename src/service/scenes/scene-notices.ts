@@ -16,7 +16,7 @@ import {
   missingFonts,
   missingWeightNotice,
   missingWeights,
-} from "../font-check.ts";
+} from "../fonts/font-check.ts";
 
 /** One warning; `elementId` names the top-level element it is about, when there is one. */
 export type SceneNotice = { message: string; elementId?: string };

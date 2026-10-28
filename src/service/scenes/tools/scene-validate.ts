@@ -2,7 +2,10 @@ import { z } from "zod";
 import { CompactSceneInputSchema } from "../../../model/compact.ts";
 import type { Scene } from "../../../model/model.ts";
 import { buildCompact } from "../../build-compact.ts";
-import { availableFonts, measureInstalledFonts } from "../../font-install.ts";
+import {
+  availableFonts,
+  measureInstalledFonts,
+} from "../../fonts/font-install.ts";
 import { inProject, PROJECT } from "../../project-scope.ts";
 import { defineTool, fail } from "../../registry.ts";
 import { Verdict, verdictOf } from "../../verdict.ts";

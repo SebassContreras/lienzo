@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { ProjectSlugSchema } from "../../model/project.ts";
+import { ProjectSlugSchema } from "../../../model/project.ts";
+import { defineTool } from "../../registry.ts";
 import { availableFonts } from "../font-install.ts";
-import { defineTool } from "../registry.ts";
 
 export const fontList = defineTool({
   name: "font_list",

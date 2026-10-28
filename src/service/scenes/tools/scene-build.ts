@@ -11,7 +11,10 @@ import { slugify } from "../../../presets/slug.ts";
 import { buildCompact } from "../../build-compact.ts";
 import { FLAT_KINDS } from "../../compact/defaults.ts";
 import { keepAudio } from "../../compact/keep-audio.ts";
-import { availableFonts, measureInstalledFonts } from "../../font-install.ts";
+import {
+  availableFonts,
+  measureInstalledFonts,
+} from "../../fonts/font-install.ts";
 import { storedAsNotice } from "../../project-files.ts";
 import { inProject, PROJECT } from "../../project-scope.ts";
 import { defineTool, fail } from "../../registry.ts";
