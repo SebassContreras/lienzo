@@ -44,6 +44,15 @@ describe("downloadGoogleFont", () => {
       downloadGoogleFont("No Existe", [400], fakeFetch),
     ).rejects.toThrow("No Existe");
   });
+
+  it("names the HTTP status as such (080/R16)", async () => {
+    const fakeFetch = (async () =>
+      new Response("", { status: 400 })) as typeof fetch;
+
+    await expect(
+      downloadGoogleFont("No Existe", [400], fakeFetch),
+    ).rejects.toThrow("(HTTP 400)");
+  });
 });
 
 describe("downloadGoogleFont format (067/R5)", () => {

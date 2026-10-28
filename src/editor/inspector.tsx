@@ -29,6 +29,7 @@ import { rebindShot } from "../model/shot-timing.ts";
 import type { AlignAction } from "./align.ts";
 import { Check, Color, Num, Section, Select } from "./controls.tsx";
 import { FieldEditor } from "./field-editor.tsx";
+import type { Face } from "../service/font-check.ts";
 import { ReviewSection } from "./scene/review-section.tsx";
 import { ShotsSection } from "./scene/shots-section.tsx";
 import { SymbolsSection } from "./scene/symbols-section.tsx";
@@ -287,8 +288,8 @@ export function SceneInspector({
   onSelect,
 }: {
   scene: Scene;
-  /** Usable font families, for the "Revisión" notices (063/D7). */
-  fonts?: readonly string[];
+  /** Usable font faces, for the "Revisión" notices (063/D7). */
+  fonts?: readonly Face[];
   /** Selects an element named by a notice. */
   onSelect?: (id: string) => void;
   onChange: (s: Scene) => void;

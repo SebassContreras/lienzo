@@ -86,7 +86,7 @@ exports[`render audit (063/R10) > built-in preset 42-corazon-trazado.json render
 
 exports[`render audit (063/R10) > built-in preset 43-forma-morphing.json renders as recorded 1`] = `"e4c66e1d61c5"`;
 
-exports[`render audit (063/R10) > built-in preset 44-subtitulos-virales.json renders as recorded 1`] = `"7fd0f0dd6924"`;
+exports[`render audit (063/R10) > built-in preset 44-subtitulos-virales.json renders as recorded 1`] = `"60356d876dd9"`;
 
 exports[`render audit (063/R10) > built-in preset fondo-01-azul-noche.json renders as recorded 1`] = `"background"`;
 

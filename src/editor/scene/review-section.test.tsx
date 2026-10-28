@@ -44,7 +44,12 @@ describe("editor notices (063/R8)", () => {
     const expected = await toolNotices(scene);
 
     // Act
-    render(<ReviewSection scene={scene} fonts={["Inter"]} />);
+    render(
+      <ReviewSection
+        scene={scene}
+        fonts={[{ family: "Inter", weight: 400 }]}
+      />,
+    );
 
     // Assert
     const shown = [...document.querySelectorAll(".notice")].map(
@@ -61,7 +66,7 @@ describe("editor notices (063/R8)", () => {
     render(
       <ReviewSection
         scene={sceneWithMissingFont()}
-        fonts={["Inter"]}
+        fonts={[{ family: "Inter", weight: 400 }]}
         onSelect={onSelect}
       />,
     );

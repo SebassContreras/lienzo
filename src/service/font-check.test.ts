@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "../components/index.ts";
 import { defaultScene, type Scene } from "../model/model.ts";
-import { missingFonts } from "./font-check.ts";
+import { fontNotices, missingFonts } from "./font-check.ts";
 
 function text(font: string) {
   return { ...createElement("text"), font };
@@ -49,5 +49,30 @@ describe("missingFonts (060/R4)", () => {
     const scene = sceneWith([text("Lato"), subtitles("Lato")]);
 
     expect(missingFonts(scene, [])).toEqual(["Lato"]);
+  });
+});
+
+describe("fontNotices weights (080/R16)", () => {
+  const poppins = [400, 600, 800].map((weight) => ({
+    family: "Poppins",
+    weight,
+  }));
+
+  it("names the weight drawn instead of one the family lacks", () => {
+    const heavy = { ...createElement("text"), font: "Poppins", weight: 900 };
+
+    expect(fontNotices(sceneWith([heavy]), poppins)).toEqual([
+      "Poppins no tiene peso 900; se dibuja 800",
+    ]);
+  });
+
+  it("is quiet for a weight the family has", () => {
+    const semi = {
+      ...createElement("subtitles"),
+      font: "Poppins",
+      weight: 600,
+    };
+
+    expect(fontNotices(sceneWith([semi]), poppins)).toEqual([]);
   });
 });

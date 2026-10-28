@@ -367,7 +367,7 @@ Changes (074 did the same), never weakened to pass.
 - [x] 080/T013 [agent] Speech cues over the clip; unique cue ids after merge — covers R13, D13
 - [x] 080/T014 [agent] Contrast over one-color particles — covers R14, D14
 - [x] 080/T015 [agent] Failing tests with the bubble, code and steps cases, then `text_overflow` from recorded text extents; `matrix.ts` shared with `recording-ctx.ts` — covers R15, D15
-- [ ] 080/T016 [agent] `matchedWeight`; missing-weight notice; preset weight; `font_install` weights and HTTP status — covers R16, D16
+- [x] 080/T016 [agent] `matchedWeight`; missing-weight notice; preset weight; `font_install` weights and HTTP status — covers R16, D16
 - [ ] 080/T017 [agent] `project_inspect` lists animations and fonts — covers R17, D17
 - [ ] 080/T018 [agent] Counter suffix `""` (ticks 065/T003), icon padding by size, `flat` icon tile — covers R18, D18, 065/R3, 065/D3
 - [ ] 080/T019 [agent] Replay the English-message cases over the stdio MCP server; test and fix only if one reproduces — covers R19, D19

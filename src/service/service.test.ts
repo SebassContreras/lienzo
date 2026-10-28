@@ -383,7 +383,7 @@ describe("scene_build audio and fonts (060/R3, R4)", () => {
     );
 
     const res = await ok("scene_build", {
-      compact: { elements: [{ kind: "text", font: "Montserrat" }] },
+      compact: { elements: [{ kind: "text", font: "Montserrat", weight: 400 }] },
     });
 
     expect(res.notices).toEqual([

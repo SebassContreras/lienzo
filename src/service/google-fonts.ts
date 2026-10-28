@@ -46,7 +46,7 @@ export async function downloadGoogleFont(
   const res = await get(googleCssUrl(family, weights));
   if (!res.ok) {
     throw new Error(
-      `Google Fonts no tiene «${family}» en los pesos ${weights.join(", ")} (${res.status})`,
+      `Google Fonts no tiene «${family}» en los pesos ${weights.join(", ")} (HTTP ${res.status})`,
     );
   }
   const faces = parseGoogleCss(await res.text());
@@ -57,7 +57,7 @@ export async function downloadGoogleFont(
     faces.map(async ({ weight, url }) => {
       const file = await get(url);
       if (!file.ok)
-        throw new Error(`No se pudo descargar ${url} (${file.status})`);
+        throw new Error(`No se pudo descargar ${url} (HTTP ${file.status})`);
       return { weight, data: Buffer.from(await file.arrayBuffer()) };
     }),
   );

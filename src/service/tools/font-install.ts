@@ -22,6 +22,12 @@ export const fontInstall = defineTool({
     z.object({ family: z.string(), weight: z.number(), file: z.string() }),
   ),
   async run({ family, weights, project, file }, ctx) {
+    if (file && weights.length > 1)
+      fail(
+        "invalid_input",
+        "Un archivo es un solo peso: pasa uno en `weights`, o instala la familia sin `file`",
+        "weights",
+      );
     try {
       if (file)
         return [

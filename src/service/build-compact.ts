@@ -13,7 +13,7 @@ import { flatIssues } from "../model/zod-issues.ts";
 import { asRecipe } from "../presets/store.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
-import { estimatedWidthNotices, fontNotices } from "./font-check.ts";
+import { estimatedWidthNotices, type Face, fontNotices } from "./font-check.ts";
 import { withFileAspects } from "./image-aspect.ts";
 import {
   failAll,
@@ -98,7 +98,7 @@ function failCompact(
 export async function buildCompact(
   ctx: ProjectCtx,
   input: CompactSceneInput,
-  fonts: readonly string[],
+  fonts: readonly Face[],
   { resources = true } = {},
 ): Promise<{ scene: Scene; compact: CompactScene; notices: string[] }> {
   let scene: Scene;

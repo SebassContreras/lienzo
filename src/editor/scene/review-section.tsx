@@ -8,6 +8,7 @@ import { ScanSearch } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Scene } from "../../model/model.ts";
 import { inspectLayout, type LayoutDiagnostic } from "../../service/layout.ts";
+import type { Face } from "../../service/font-check.ts";
 import { sceneNotices } from "../../service/scene-notices.ts";
 import { Section } from "../controls.tsx";
 
@@ -17,8 +18,8 @@ export function ReviewSection({
   onSelect,
 }: {
   scene: Scene;
-  /** The usable font families, as the editor loaded them. */
-  fonts: readonly string[];
+  /** The usable font faces, as the editor loaded them. */
+  fonts: readonly Face[];
   onSelect?: (id: string) => void;
 }) {
   const notices = useMemo(

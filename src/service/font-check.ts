@@ -1,4 +1,5 @@
 import { type MeasureStyle, widthIsEstimated } from "../engine/text-measure.ts";
+import { matchedWeight } from "../model/fonts.ts";
 import type { Element, Scene } from "../model/model.ts";
 
 /** CSS generic families: keywords, never installable fonts. */
@@ -77,12 +78,51 @@ export function estimatedWidthNotices(scene: Scene): string[] {
   );
 }
 
-/** One warning per missing family, naming the fix (060/D6). */
+/** A face of an installed font: one family at one weight. */
+export type Face = { family: string; weight: number };
+
+/** A text or subtitles weight its installed family lacks, and the weight drawn instead. */
+export type MissingWeight = { family: string; weight: number; drawn: number };
+
+/**
+ * Weights that `text` and `subtitles` elements ask of an installed family that does not
+ * have them, once per family and weight, with the weight the browser draws (080/D16). Pure.
+ */
+export function missingWeights(
+  scene: Scene,
+  installed: readonly Face[],
+): MissingWeight[] {
+  const found = new Map<string, MissingWeight>();
+  for (const el of textElements(scene)) {
+    const have = installed
+      .filter((f) => f.family.toLowerCase() === el.font.toLowerCase())
+      .map((f) => f.weight);
+    if (have.length === 0 || have.includes(el.weight)) continue;
+    found.set(`${el.font}:${el.weight}`, {
+      family: el.font,
+      weight: el.weight,
+      drawn: matchedWeight(have, el.weight),
+    });
+  }
+  return [...found.values()];
+}
+
+/** The notice for a weight an installed family lacks (080/D16). */
+export const missingWeightNotice = (w: MissingWeight) =>
+  `${w.family} no tiene peso ${w.weight}; se dibuja ${w.drawn}`;
+
+/** One warning per missing family or weight, naming the fix (060/D6, 080/D16). */
 export function fontNotices(
   scene: Scene,
-  installed: readonly string[],
+  installed: readonly Face[],
 ): string[] {
-  return missingFonts(scene, installed).map(missingFontNotice);
+  return [
+    ...missingFonts(
+      scene,
+      installed.map((f) => f.family),
+    ).map(missingFontNotice),
+    ...missingWeights(scene, installed).map(missingWeightNotice),
+  ];
 }
 
 /** The notice for a font family that is not installed (070/D2). */

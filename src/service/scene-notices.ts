@@ -9,8 +9,11 @@ import type { Element, Scene } from "../model/model.ts";
 import {
   estimatedFonts,
   estimatedWidthNotices,
-  fontNotices,
+  type Face,
   missingFonts,
+  missingFontNotice,
+  missingWeightNotice,
+  missingWeights,
 } from "./font-check.ts";
 
 /** One warning; `elementId` names the top-level element it is about, when there is one. */
@@ -26,11 +29,11 @@ function usesFont(el: Element, family: string): boolean {
   );
 }
 
-/** The notices for `scene`, parsed from `raw`; `installed` lists the usable font families. */
+/** The notices for `scene`, parsed from `raw`; `installed` lists the usable font faces. */
 export function sceneNotices(
   raw: unknown,
   scene: Scene,
-  installed: readonly string[],
+  installed: readonly Face[],
 ): SceneNotice[] {
   const ignored = ignoredFields(raw, scene).map((field) => {
     const index = /^elements\.(\d+)/.exec(field.path)?.[1];
@@ -41,14 +44,30 @@ export function sceneNotices(
         index === undefined ? undefined : scene.elements[Number(index)]?.id,
     };
   });
-  const byFamily = (families: string[], messages: string[]) =>
-    families.map((family, i) => ({
-      message: messages[i] as string,
+  const byFamily = (issues: { family: string; message: string }[]) =>
+    issues.map(({ family, message }) => ({
+      message,
       elementId: scene.elements.find((el) => usesFont(el, family))?.id,
     }));
   return [
     ...ignored,
-    ...byFamily(missingFonts(scene, installed), fontNotices(scene, installed)),
-    ...byFamily(estimatedFonts(scene), estimatedWidthNotices(scene)),
+    ...byFamily(
+      missingFonts(
+        scene,
+        installed.map((f) => f.family),
+      ).map((family) => ({ family, message: missingFontNotice(family) })),
+    ),
+    ...byFamily(
+      missingWeights(scene, installed).map((w) => ({
+        family: w.family,
+        message: missingWeightNotice(w),
+      })),
+    ),
+    ...byFamily(
+      estimatedFonts(scene).map((family, i) => ({
+        family,
+        message: estimatedWidthNotices(scene)[i] as string,
+      })),
+    ),
   ];
 }

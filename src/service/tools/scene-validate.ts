@@ -40,11 +40,7 @@ export const sceneValidate = defineTool({
       const verdict = await verdictOf(async () => {
         if (data !== undefined)
           fail("invalid_input", "Pasa `data` o `compact`, no ambos", "compact");
-        built = await buildCompact(
-          projectCtx,
-          compact,
-          fonts.map((f) => f.family),
-        );
+        built = await buildCompact(projectCtx, compact, fonts);
       });
       return built && built.notices.length > 0
         ? { ...verdict, notices: built.notices }
@@ -63,11 +59,7 @@ export const sceneValidate = defineTool({
     if (!prepared) return verdict;
     const notices = [
       ...prepared.notices,
-      ...sceneNotices(
-        data,
-        prepared.scene,
-        fonts.map((f) => f.family),
-      ).map((n) => n.message),
+      ...sceneNotices(data, prepared.scene, fonts).map((n) => n.message),
       ...(await resourceNotices(projectCtx, prepared.scene)),
     ];
     return notices.length > 0 ? { ...verdict, notices } : verdict;

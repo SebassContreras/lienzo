@@ -69,12 +69,9 @@ export const sceneBuild = defineTool({
 
     const fonts = await availableFonts(ctx.fonts, project);
     await measureInstalledFonts(ctx.fonts, project);
-    const built = await buildCompact(
-      effectiveCtx,
-      compact,
-      fonts.map((f) => f.family),
-      { resources: !save },
-    );
+    const built = await buildCompact(effectiveCtx, compact, fonts, {
+      resources: !save,
+    });
     let expanded = built.scene;
     const notices = built.notices;
 

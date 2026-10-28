@@ -275,6 +275,22 @@ describe("font_install with a local file", () => {
       value: [{ family: "Mía", weight: 700, file: "Mía-700.woff2" }],
     });
   });
+
+  it("fails when asked for several weights, since a file is one weight (080/R16)", async () => {
+    const file = join(root, "mine.woff2");
+    await writeFile(file, "font bytes");
+
+    const result = await call("font_install", {
+      family: "Mía",
+      weights: [400, 700],
+      file,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "invalid_input", path: "weights" },
+    });
+  });
 });
 
 describe("element_group and element_ungroup", () => {

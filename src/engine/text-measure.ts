@@ -3,6 +3,7 @@
  * Anti-corruption layer isolating browser Canvas measurement from Node glyph metrics (A18, A20).
  */
 import opentype from "opentype.js";
+import { BUNDLED_WEIGHTS, matchedWeight } from "../model/fonts.ts";
 
 export type MeasureStyle = {
   font: string;
@@ -33,23 +34,15 @@ const BUNDLED_FONT_PACKAGES: Record<string, string> = {
 };
 
 /**
- * Normalizes weight to the closest available standard weight in fontsource packages.
+ * The weights the editor loads for each bundled family, by lowercase family: measuring
+ * matches against these, as the browser draws against the faces it was given (080/D16).
  */
-function findClosestWeight(weights: number[], target: number): number {
-  if (weights.length === 0) return 400;
-  return weights.reduce((prev, curr) =>
-    Math.abs(curr - target) < Math.abs(prev - target) ? curr : prev,
-  );
-}
-
-const AVAILABLE_WEIGHTS: Record<string, number[]> = {
-  inter: [100, 200, 300, 400, 500, 600, 700, 800, 900],
-  "space-grotesk": [300, 400, 500, 600, 700],
-  poppins: [100, 200, 300, 400, 500, 600, 700, 800, 900],
-  "jetbrains-mono": [100, 200, 300, 400, 500, 600, 700, 800],
-  caveat: [400, 500, 600, 700],
-  "press-start-2p": [400],
-};
+const BUNDLED_FACE_WEIGHTS = new Map(
+  Object.entries(BUNDLED_WEIGHTS).map(([family, weights]) => [
+    family.toLowerCase(),
+    weights,
+  ]),
+);
 
 const fontCache = new Map<string, opentype.Font | null>();
 
@@ -86,7 +79,7 @@ export function setInstalledFonts(fonts: readonly InstalledFont[]): string[] {
 function installedFont(family: string, weight: number): opentype.Font | null {
   const weights = installedFonts.get(family);
   if (!weights) return null;
-  return weights.get(findClosestWeight([...weights.keys()], weight)) ?? null;
+  return weights.get(matchedWeight([...weights.keys()], weight)) ?? null;
 }
 
 /**
@@ -102,10 +95,12 @@ export function loadFontSync(
   const pkgName = BUNDLED_FONT_PACKAGES[normFamily];
   if (!pkgName) return installedFont(normFamily, weight);
 
-  const weights = AVAILABLE_WEIGHTS[pkgName] ?? [400];
-  const matchedWeight = findClosestWeight(weights, weight);
+  const drawnWeight = matchedWeight(
+    BUNDLED_FACE_WEIGHTS.get(normFamily) ?? [400],
+    weight,
+  );
   const styleSuffix = italic ? "italic" : "normal";
-  const cacheKey = `${pkgName}:${matchedWeight}:${styleSuffix}`;
+  const cacheKey = `${pkgName}:${drawnWeight}:${styleSuffix}`;
 
   if (fontCache.has(cacheKey)) {
     return fontCache.get(cacheKey) ?? null;
@@ -128,8 +123,8 @@ export function loadFontSync(
     const filesDir = path.join(path.dirname(pkgJsonPath), "files");
 
     // Look for matching woff or ttf
-    const baseName = `${pkgName}-latin-${matchedWeight}-${styleSuffix}.woff`;
-    const fallbackBaseName = `${pkgName}-latin-${matchedWeight}-normal.woff`;
+    const baseName = `${pkgName}-latin-${drawnWeight}-${styleSuffix}.woff`;
+    const fallbackBaseName = `${pkgName}-latin-${drawnWeight}-normal.woff`;
     let fontPath = path.join(filesDir, baseName);
     if (!fs.existsSync(fontPath)) {
       fontPath = path.join(filesDir, fallbackBaseName);

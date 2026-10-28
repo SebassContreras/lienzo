@@ -210,7 +210,6 @@ export function App() {
   >();
   /** Fonts the active project can use (045/D3); the inspector's picker lists them. */
   const [fonts, setFonts] = useState<ResolvedFont[]>([]);
-  const fontFamilies = useMemo(() => fonts.map((f) => f.family), [fonts]);
   const fontsRef = useRef(fonts);
   const [isTtsOpen, setIsTtsOpen] = useState(false);
   const [activeVoicePreset, setActiveVoicePreset] =
@@ -1256,7 +1255,7 @@ export function App() {
               onEditSymbol={symbolEdit || jointOn ? undefined : editSymbol}
               symbolMode={symbolEdit !== null}
               time={playhead}
-              fonts={fontFamilies}
+              fonts={fonts}
               onSelect={(id) => setSelection([id])}
               focusBackground={backgroundFocus}
               onSaveBackground={(name) =>
