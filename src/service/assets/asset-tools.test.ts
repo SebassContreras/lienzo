@@ -3,11 +3,11 @@ import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Scene } from "../model/model.ts";
-import { PNG_1X1 } from "../test/png.ts";
-import { type Ctx, createCtx } from "./ctx.ts";
-import { fakeRenderer } from "./fake-renderer.ts";
-import { registry } from "./tools/index.ts";
+import type { Scene } from "../../model/model.ts";
+import { PNG_1X1 } from "../../test/png.ts";
+import { type Ctx, createCtx } from "../ctx.ts";
+import { fakeRenderer } from "../fake-renderer.ts";
+import { registry } from "../tools/index.ts";
 
 const project = "assets";
 let root: string;

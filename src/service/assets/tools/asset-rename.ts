@@ -1,7 +1,7 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
 import { renameAsset } from "../project-assets.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
 
 export const assetRename = defineTool({
   name: "asset_rename",

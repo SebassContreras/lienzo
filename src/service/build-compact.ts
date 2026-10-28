@@ -12,10 +12,10 @@ import { cameraOutsideShot } from "../model/shots.ts";
 import { parseSize } from "../model/size.ts";
 import { flatIssues } from "../model/zod-issues.ts";
 import { asRecipe } from "../presets/store.ts";
+import { withFileAspects } from "./assets/image-aspect.ts";
 import { expandScene } from "./compact/expand.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { estimatedWidthNotices, type Face, fontNotices } from "./font-check.ts";
-import { withFileAspects } from "./image-aspect.ts";
 import {
   failAll,
   type Problem,

@@ -1,7 +1,7 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool } from "../../registry.ts";
 import { deleteAsset } from "../project-assets.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool } from "../registry.ts";
 
 export const assetDelete = defineTool({
   name: "asset_delete",

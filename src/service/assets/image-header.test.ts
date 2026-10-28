@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { PNG_1X1 } from "../test/png.ts";
+import { PNG_1X1 } from "../../test/png.ts";
 import { imageSize } from "./image-header.ts";
 
 it("reads a picture's size and rejects other bytes (069/D8)", () => {

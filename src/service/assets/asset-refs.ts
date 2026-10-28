@@ -4,8 +4,8 @@
  * whatever field holds it — image and 3D `src`, audio `assetId`, symbols and group children
  * alike — so a new kind needs no change here.
  */
-import { descriptorOf } from "../components/index.ts";
-import type { Element, Scene } from "../model/model.ts";
+import { descriptorOf } from "../../components/index.ts";
+import type { Element, Scene } from "../../model/model.ts";
 import { safeAssetPath, ASSETS_PREFIX as UNDER_ASSETS } from "./asset-path.ts";
 
 /** The path under `assets/` that `ref` names, or undefined when it names none. */

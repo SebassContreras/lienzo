@@ -3,6 +3,10 @@
  * A new tool is a file here plus one line in `TOOLS`.
  */
 
+import { assetAdd } from "../assets/tools/asset-add.ts";
+import { assetDelete } from "../assets/tools/asset-delete.ts";
+import { assetRename } from "../assets/tools/asset-rename.ts";
+import { imageTrim } from "../assets/tools/image-trim.ts";
 import { componentList } from "../elements/tools/component-list.ts";
 import { elementAdd } from "../elements/tools/element-add.ts";
 import { elementGroup } from "../elements/tools/element-group.ts";
@@ -26,12 +30,8 @@ import { shotSet } from "../shots/tools/shot-set.ts";
 import { animationDelete } from "./animation-delete.ts";
 import { animationList } from "./animation-list.ts";
 import { animationSave } from "./animation-save.ts";
-import { assetAdd } from "./asset-add.ts";
-import { assetDelete } from "./asset-delete.ts";
-import { assetRename } from "./asset-rename.ts";
 import { fontInstall } from "./font-install.ts";
 import { fontList } from "./font-list.ts";
-import { imageTrim } from "./image-trim.ts";
 import { presetDelete } from "./preset-delete.ts";
 import { presetGet } from "./preset-get.ts";
 import { presetList } from "./preset-list.ts";

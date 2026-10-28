@@ -2,12 +2,12 @@ import { cp, mkdir, mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { Crop } from "../../components/image/descriptor.ts";
-import type { ImageEl, Scene } from "../../model/model.ts";
-import { type Ctx, createCtx } from "../ctx.ts";
-import { fakeRenderer } from "../fake-renderer.ts";
+import type { Crop } from "../../../components/image/descriptor.ts";
+import type { ImageEl, Scene } from "../../../model/model.ts";
+import { type Ctx, createCtx } from "../../ctx.ts";
+import { fakeRenderer } from "../../fake-renderer.ts";
+import { registry } from "../../tools/index.ts";
 import type { ImageProbe } from "../image-probe.ts";
-import { registry } from "./index.ts";
 
 const PROJECT = "mi-proyecto";
 const SCENE = "post";

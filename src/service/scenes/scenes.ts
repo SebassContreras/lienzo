@@ -16,7 +16,10 @@ import { shotProblems } from "../../model/shots.ts";
 import { expandAnimPresets } from "../../presets/anim-presets.ts";
 import { sameName, slugify } from "../../presets/slug.ts";
 import { asRecipe } from "../../presets/store.ts";
-import { withCanonicalAssets, withCanonicalAudio } from "../asset-refs.ts";
+import {
+  withCanonicalAssets,
+  withCanonicalAudio,
+} from "../assets/asset-refs.ts";
 import type { Ctx, ProjectCtx } from "../ctx.ts";
 import { fontNotices } from "../font-check.ts";
 import { availableFonts } from "../font-install.ts";

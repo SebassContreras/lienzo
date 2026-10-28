@@ -3,13 +3,13 @@
  * finds its visible pixels with the editor's `alphaBounds`. Skipped where no Chrome, Edge or
  * Playwright Chromium is installed.
  */
-import { join } from "node:path";
 import { crc32, deflateSync } from "node:zlib";
 import { chromium } from "playwright-core";
 import { afterAll, describe, expect, it } from "vitest";
+import { findAppRoot } from "../root.ts";
 import { createBrowserImageProbe } from "./image-probe.ts";
 
-const APP_ROOT = join(import.meta.dirname, "..", "..");
+const APP_ROOT = findAppRoot(import.meta.dirname);
 
 async function hasBrowser(): Promise<boolean> {
   for (const channel of ["chrome", "msedge", undefined]) {

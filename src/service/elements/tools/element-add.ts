@@ -8,10 +8,10 @@ import {
 } from "../../../model/model.ts";
 import { fromShotStart } from "../../../model/shots.ts";
 import { resolveElement } from "../../../presets/resolve.ts";
+import { withFileAspect } from "../../assets/image-aspect.ts";
+import { trimImage } from "../../assets/image-trim.ts";
 import { applyImplied } from "../../compact/implied.ts";
 import { placeAt } from "../../compact/layout.ts";
-import { withFileAspect } from "../../image-aspect.ts";
-import { trimImage } from "../../image-trim.ts";
 import { inProject, PROJECT } from "../../project-scope.ts";
 import { defineTool, fail, remapFailure, ToolFailure } from "../../registry.ts";
 import { editScene, findPreset, SceneResult } from "../../scenes/scenes.ts";

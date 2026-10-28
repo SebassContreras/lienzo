@@ -18,7 +18,7 @@ import {
   ProjectSlugSchema,
   parseProjectManifest,
 } from "../model/project.ts";
-import { assetSegments, safeAssetPath } from "./asset-path.ts";
+import { assetSegments, safeAssetPath } from "./assets/asset-path.ts";
 
 export type ProjectSummary = {
   slug: string;

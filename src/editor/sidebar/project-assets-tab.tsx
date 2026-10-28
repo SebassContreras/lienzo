@@ -15,7 +15,10 @@ import {
   useState,
 } from "react";
 import { deleteProjectAsset, renameProjectAsset } from "../../presets/store.ts";
-import { projectAssetUrl, safeAssetPath } from "../../service/asset-path.ts";
+import {
+  projectAssetUrl,
+  safeAssetPath,
+} from "../../service/assets/asset-path.ts";
 import { ASSET_MIME } from "../stage.tsx";
 import { assetFileName, assetFolderView } from "./asset-folders.ts";
 

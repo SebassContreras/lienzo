@@ -1,5 +1,8 @@
+import {
+  createBrowserImageProbe,
+  type ImageProbe,
+} from "./assets/image-probe.ts";
 import { createFontStore, type FontStore } from "./font-store.ts";
-import { createBrowserImageProbe, type ImageProbe } from "./image-probe.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";
 import { createRenderer, type Renderer } from "./renderer.ts";
 import { findAppRoot } from "./root.ts";

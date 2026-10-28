@@ -6,9 +6,9 @@ import {
   MAX_ASSET_BYTES,
   normalizeExtension,
   writeAsset,
-} from "./asset-helpers.ts";
-import { safeAssetPath } from "./asset-path.ts";
-import { deleteAsset, renameAsset } from "./project-assets.ts";
+} from "./assets/asset-helpers.ts";
+import { safeAssetPath } from "./assets/asset-path.ts";
+import { deleteAsset, renameAsset } from "./assets/project-assets.ts";
 import type { ProjectStore } from "./project-store.ts";
 import { ToolFailure } from "./registry.ts";
 

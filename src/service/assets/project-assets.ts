@@ -4,11 +4,11 @@
  */
 import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
+import type { ProjectStore } from "../project-store.ts";
+import { fail } from "../registry.ts";
 import { normalizeExtension } from "./asset-helpers.ts";
 import { safeAssetPath } from "./asset-path.ts";
 import { renameAssetRefs, usesAsset } from "./asset-refs.ts";
-import type { ProjectStore } from "./project-store.ts";
-import { fail } from "./registry.ts";
 
 const exists = (path: string) =>
   stat(path).then(

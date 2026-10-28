@@ -5,7 +5,7 @@
  */
 import { descriptorOf } from "../../components/index.ts";
 import type { Scene } from "../../model/model.ts";
-import { audioRefs, EXTERNAL_REF } from "../asset-refs.ts";
+import { audioRefs, EXTERNAL_REF } from "../assets/asset-refs.ts";
 import type { ProjectCtx } from "../ctx.ts";
 import { allElements, changedSince, idsOf } from "./scene-changes.ts";
 

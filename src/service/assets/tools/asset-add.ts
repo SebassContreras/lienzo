@@ -1,6 +1,8 @@
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { z } from "zod";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
 import {
   ASSET_TYPES,
   looksLikeAudio,
@@ -10,8 +12,6 @@ import {
 } from "../asset-helpers.ts";
 import { safeAssetPath } from "../asset-path.ts";
 import { imageSize, isImageExtension } from "../image-header.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
 
 export const assetAdd = defineTool({
   name: "asset_add",
