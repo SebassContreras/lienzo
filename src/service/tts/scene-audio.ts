@@ -38,7 +38,9 @@ function mergeCues(
   to: number,
 ): SubtitleCue[] {
   const kept = existing.filter((c) => c.start < from || c.start >= to);
-  return [...kept, ...added].sort((a, b) => a.start - b.start);
+  return [...kept, ...added]
+    .sort((a, b) => a.start - b.start)
+    .map((cue, i) => ({ ...cue, id: `cue-${i + 1}` }));
 }
 
 /**

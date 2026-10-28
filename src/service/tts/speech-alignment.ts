@@ -44,7 +44,7 @@ export function splitIntoSentences(text: string): string[] {
  * Options for pure script-to-cue alignment.
  */
 export interface AlignScriptOptions {
-  /** Total audio duration in seconds. */
+  /** Length of the audio clip in seconds; cues span `startOffset` to `startOffset + totalDuration`. */
   totalDuration: number;
   /** Initial delay before speech starts in seconds (default: 0). */
   startOffset?: number;
@@ -76,7 +76,7 @@ export function alignScriptToCues(
   const totalGapsDuration = Math.max(0, (sentences.length - 1) * gap);
   const netDuration = Math.max(
     0.1 * sentences.length,
-    totalDuration - startOffset - totalGapsDuration,
+    totalDuration - totalGapsDuration,
   );
 
   let currentTime = startOffset;

@@ -107,3 +107,26 @@ describe("attachSpeechToScene with asTrack (060/R1)", () => {
     expect(subtitlesOf(again).cues.map((c) => c.text)).toEqual(["Después"]);
   });
 });
+
+describe("attachSpeechToScene cue ids (080/R13)", () => {
+  it("numbers the merged cues so every id is unique", () => {
+    const first = attachSpeechToScene(defaultScene(), {
+      assetId: "voice-1",
+      audioDuration: 2,
+      asTrack: true,
+      cues: [{ id: "cue-1", start: 0, end: 2, text: "uno" }],
+    });
+    const second = attachSpeechToScene(first, {
+      assetId: "voice-2",
+      audioDuration: 2,
+      startOffset: 4,
+      asTrack: true,
+      cues: [{ id: "cue-1", start: 4, end: 6, text: "dos" }],
+    });
+
+    expect(subtitlesOf(second).cues?.map((c) => c.id)).toEqual([
+      "cue-1",
+      "cue-2",
+    ]);
+  });
+});

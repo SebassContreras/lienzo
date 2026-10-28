@@ -138,13 +138,25 @@ describe("Pure Speech Alignment (R5, D4)", () => {
     expect(cues.length).toBe(2);
     expect(cues[0].start).toBe(0.5);
     expect(cues[0].end).toBeLessThan(cues[1].start);
-    expect(cues[1].end).toBeLessThanOrEqual(6.0);
+    expect(cues[1].end).toBeLessThanOrEqual(6.5);
 
     // Verify word timing
     expect(cues[0].words).toBeDefined();
     expect(cues[0].words?.length).toBe(3);
     expect(cues[0].words?.[0].word).toBe("Primera");
     expect(cues[0].words?.[0].start).toBe(cues[0].start);
+  });
+});
+
+describe("alignScriptToCues over the clip (080/R13)", () => {
+  it("fills the clip from startOffset to startOffset + duration", () => {
+    const cues = alignScriptToCues("Una sola frase.", {
+      totalDuration: 1.32,
+      startOffset: 2,
+    });
+
+    expect(cues[0].start).toBe(2);
+    expect(cues[0].end).toBe(3.32);
   });
 });
 
