@@ -244,10 +244,13 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   `src/traits/` only when no existing one fits.
 - Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports
   are deterministic.
-- Minimal testing (KISS / YAGNI): test pure domain logic, mathematical timing, transformations,
-  and contract boundaries. Do not write redundant micro-tests for every Zod field or heavy E2E tests
-  when pure unit tests suffice; keep the full suite fast and run single files while working. Do not run micro-tests
-  repeatedly on intermediate tasks when a dedicated test task exists at the end of the spec.
+- Tests (A14, spec 082): test the contract, not the implementation. A shared rule is tested in
+  every writer that applies it (one adapter per writer in `src/service/contract/`; a writer
+  without one fails the suite), and every tool is tried with bad inputs derived from its schema.
+  Pure logic, timing math and transformations get examples. No micro-test per Zod field and no
+  test of private helpers. Name a test by the behavior, never by a spec number or a QA round, and
+  keep it beside the functionality it tests. A QA finding becomes a rule in the matrix, not one
+  more case. Run single files while working; run the full suite in the dedicated test task.
 - Fast execution & verification: use `pnpm typecheck` (single-pass TypeScript check) to confirm
   correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
   only check/format the specific files or folders touched to preserve token budget and speed.

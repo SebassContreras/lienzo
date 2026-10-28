@@ -84,7 +84,7 @@ When this spec is done:
 ## Tasks
 Order: T001–T004, then the moves (T005–T016), the tool field and generated suite (T017–T023),
 the rewrites (T024–T040), the close (T041–T044).
-- [ ] 082/T001 [agent] Policy: A14 and the AGENTS.md test rule rewritten, entry in `planning/changes.md` — covers R1, D1
+- [x] 082/T001 [agent] Policy: A14 and the AGENTS.md test rule rewritten, entry in `planning/changes.md` — covers R1, D1
 - [ ] 082/T002 [agent] Tooling: `@vitest/coverage-v8` and Stryker with the Vitest runner, scripts `test:cov` and `test:mutate`, a config that excludes `renderer.test.ts` — covers R2, D2
 - [ ] 082/T003 [agent] Verify: baseline — coverage per folder and mutation score per functionality with the current suite, time per run, recorded in this spec's Changes — covers R2
 - [ ] 082/T004 [agent] Inventory: every test file and source file of `src/service` assigned to a functionality (table in this spec) — covers R3, D3

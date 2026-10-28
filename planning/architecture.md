@@ -26,7 +26,7 @@ exactly what I wanted").
 ## Conventions
 
 - A13: pnpm is the package manager — why: user's standing preference.
-- A14: Biome for lint and format; Vitest for minimal unit tests of the model, engine and pure business logic (SRP/KISS: test contracts, domain transformations and math timing; avoid redundant/heavy E2E micro-tests; keep daily development fast) — why: one tool each; fits Vite and prevents test bloat.
+- A14: Biome for lint and format; Vitest for tests of the model, engine and service. Contracts, shared rules and every tool's failing inputs are tested completely: the rules in the writer matrix (`src/service/contract/`), the inputs from each tool's schema; implementation details and a micro-test per Zod field are not (SRP/KISS: no redundant tests, but no gap in a rule or a tool). Tests are named by behavior, never by spec or round, and live with the functionality they test; single files run while working — why: one tool each; fits Vite; specs 067–081 showed that minimal, case-by-case tests leave every new QA run finding a new case of an old rule (082).
 - ~~A15: CI on GitHub Actions runs `pnpm lint`, `pnpm typecheck` and `pnpm test` on every push and pull request — why: free for public repositories.~~ retired 2026-10-24
 - A16: UI text is Spanish; code, comments, docs and commit messages are English — why: user preference.
 - A17: Conventional Commits, with a `Spec: NNN/TNNN` trailer when a commit belongs to a task — why: standard (https://www.conventionalcommits.org/en/v1.0.0/).

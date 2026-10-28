@@ -69,3 +69,8 @@ Why: A7@3 still put scenes and assets at the repo root, which spec 040 moved int
 - MODIFIED A7@3 → A7@4
 - ADDED A27@1
 - Tasks: 077/T003 writes both; 075 tasks already built A27 (`src/model/shot-timing.ts`, `setShotIn` / `removeShotIn`)
+
+## 2026-10-28 — testing policy: complete tests of rules, writers and tools (082)
+Why: "minimal tests" was applied as one test per reported case; nine QA rounds (067–081) kept finding the same rules broken in the next writer, 34 of 43 tools have at most one failing-input test, and `traits` and `export` have none. Minimal now means no tests of implementation details, not fewer rules covered.
+- MODIFIED A14@1 → A14@2
+- Tasks: 082/T001 rewrites A14 and the AGENTS.md test rule; 082/T017–T023 build the matrix; 082/T024–T040 rewrite the suite
