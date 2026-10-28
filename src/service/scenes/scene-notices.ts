@@ -35,8 +35,8 @@ function usesFont(el: Element, family: string): boolean {
 export type DeadEasing = {
   /** The element holding the track, which may sit inside a group. */
   id: string;
-  /** The top-level element it belongs to. */
-  topId: string;
+  /** The top-level element it belongs to; none for a track inside a symbol. */
+  topId?: string;
   path: string;
   t: number;
   easing: string;
@@ -45,7 +45,7 @@ export type DeadEasing = {
 /** The tracks of `scene` whose last keyframe carries an easing that does nothing (065/D4). Pure. */
 export function deadEasings(scene: Scene): DeadEasing[] {
   const found: DeadEasing[] = [];
-  const walk = (el: Element, topId: string) => {
+  const walk = (el: Element, topId?: string) => {
     for (const [path, track] of Object.entries(el.tracks ?? {})) {
       const last = [...trackKeys(track)].sort((a, b) => a.t - b.t).at(-1);
       if (last && last.easing !== "auto" && last.easing !== "linear")
@@ -56,6 +56,8 @@ export function deadEasings(scene: Scene): DeadEasing[] {
       for (const child of children as Element[]) walk(child, topId);
   };
   for (const el of scene.elements) walk(el, el.id);
+  for (const symbol of Object.values(scene.symbols ?? {}))
+    for (const el of symbol.children) walk(el, undefined);
   return found;
 }
 
@@ -75,10 +77,10 @@ export function deadKeyframeEasingNotices(scene: Scene): SceneNotice[] {
  * A notice for each top-level element of `elements` that leaves the canvas (081/D8), except one
  * with a position track, which may enter from outside on purpose.
  */
-export function offCanvasNotices(
+function offCanvas(
   scene: Scene,
   elements: readonly Element[] = scene.elements,
-): string[] {
+): SceneNotice[] {
   const round = (n: number) => Math.round(n * 100) / 100;
   return elements.flatMap((el) => {
     if (el.tracks?.x || el.tracks?.y) return [];
@@ -91,13 +93,24 @@ export function offCanvasNotices(
     )
       return [];
     return [
-      `«${el.id}» se sale del lienzo (${scene.width}x${scene.height}): su caja es x ${round(b.x)}, y ${round(b.y)}, ` +
-        `${round(b.w)}x${round(b.h)}` +
-        (el.kind === "text"
-          ? "; da `w` al texto para que haga salto de línea"
-          : ""),
+      {
+        elementId: el.id,
+        message:
+          `«${el.id}» se sale del lienzo (${scene.width}x${scene.height}): su caja es x ${round(b.x)}, y ${round(b.y)}, ` +
+          `${round(b.w)}x${round(b.h)}` +
+          (el.kind === "text"
+            ? "; da `w` al texto para que haga salto de línea"
+            : ""),
+      },
     ];
   });
+}
+
+export function offCanvasNotices(
+  scene: Scene,
+  elements: readonly Element[] = scene.elements,
+): string[] {
+  return offCanvas(scene, elements).map((n) => n.message);
 }
 
 const CAMERA_CHANNELS = ["x", "y", "zoom"];
@@ -144,6 +157,60 @@ export function shotNotices(scene: Scene): SceneNotice[] {
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
+/** The top-level elements and the symbols a write changed. */
+export type Changed = {
+  elements: readonly Element[];
+  symbols?: Scene["symbols"];
+};
+
+/**
+ * The notices every writer gives about scene content (082/D6): fonts and weights the project
+ * lacks, elements off the canvas, easings that shape nothing, shot problems and text widths
+ * that are estimated. `changed` limits the element and symbol ones to what a write changed; the
+ * shot ones read the whole scene. One assembly for `saveScene`, `buildCompact` and
+ * `sceneNotices`, so a writer cannot lack one the others give.
+ */
+export function contentNotices(
+  scene: Scene,
+  installed: readonly Face[],
+  changed: Changed = { elements: scene.elements, symbols: scene.symbols },
+): SceneNotice[] {
+  const { elements } = changed;
+  const part = {
+    ...scene,
+    elements: [...elements],
+    symbols: changed.symbols,
+  };
+  const byFamily = (issues: { family: string; message: string }[]) =>
+    issues.map(({ family, message }) => ({
+      message,
+      elementId: part.elements.find((el) => usesFont(el, family))?.id,
+    }));
+  return [
+    ...byFamily(
+      missingFonts(
+        part,
+        installed.map((f) => f.family),
+      ).map((family) => ({ family, message: missingFontNotice(family) })),
+    ),
+    ...byFamily(
+      missingWeights(part, installed).map((w) => ({
+        family: w.family,
+        message: missingWeightNotice(w),
+      })),
+    ),
+    ...deadKeyframeEasingNotices(part),
+    ...offCanvas(scene, elements),
+    ...shotNotices(scene),
+    ...byFamily(
+      estimatedFonts(part).map((family, i) => ({
+        family,
+        message: estimatedWidthNotices(part)[i] as string,
+      })),
+    ),
+  ];
+}
+
 /** The notices for `scene`, parsed from `raw`; `installed` lists the usable font faces. */
 export function sceneNotices(
   raw: unknown,
@@ -159,32 +226,5 @@ export function sceneNotices(
         index === undefined ? undefined : scene.elements[Number(index)]?.id,
     };
   });
-  const byFamily = (issues: { family: string; message: string }[]) =>
-    issues.map(({ family, message }) => ({
-      message,
-      elementId: scene.elements.find((el) => usesFont(el, family))?.id,
-    }));
-  return [
-    ...ignored,
-    ...byFamily(
-      missingFonts(
-        scene,
-        installed.map((f) => f.family),
-      ).map((family) => ({ family, message: missingFontNotice(family) })),
-    ),
-    ...byFamily(
-      missingWeights(scene, installed).map((w) => ({
-        family: w.family,
-        message: missingWeightNotice(w),
-      })),
-    ),
-    ...deadKeyframeEasingNotices(scene),
-    ...shotNotices(scene),
-    ...byFamily(
-      estimatedFonts(scene).map((family, i) => ({
-        family,
-        message: estimatedWidthNotices(scene)[i] as string,
-      })),
-    ),
-  ];
+  return [...ignored, ...contentNotices(scene, installed)];
 }

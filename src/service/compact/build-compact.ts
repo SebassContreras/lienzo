@@ -24,18 +24,14 @@ import {
   remapFailure,
   ToolFailure,
 } from "../core/registry.ts";
-import {
-  estimatedWidthNotices,
-  type Face,
-  fontNotices,
-} from "../fonts/font-check.ts";
+import type { Face } from "../fonts/font-check.ts";
 import { expandScene } from "./expand.ts";
 
 const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
 import { sceneDefaults } from "../scenes/scene-defaults.ts";
-import { deadKeyframeEasingNotices } from "../scenes/scene-notices.ts";
+import { contentNotices } from "../scenes/scene-notices.ts";
 import { resourceNotices } from "../scenes/scene-resources.ts";
 import {
   animLibrary,
@@ -214,9 +210,7 @@ export async function buildCompact(
   const scene = checked.scene;
   const notices = checked.notices;
   notices.push(
-    ...fontNotices(scene, fonts),
-    ...estimatedWidthNotices(scene),
-    ...deadKeyframeEasingNotices(scene).map((n) => n.message),
+    ...contentNotices(scene, fonts).map((n) => n.message),
     // a build that is then saved leaves these to the save (070/D3)
     ...(resources ? await resourceNotices(ctx, scene) : []),
   );

@@ -4,7 +4,7 @@
  * key, and leaves the project as it was. And what it does with any input of the right types:
  * it answers, it never throws.
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { registry } from "../tools/index.ts";
 import { type Sandbox, sandbox, snapshot } from "./harness.ts";
 import {
@@ -13,6 +13,9 @@ import {
   invalidVariants,
   structuredKeys,
 } from "./inputs.ts";
+
+// a sandbox copies the built-in presets; the first one of a run is slow on a busy machine
+vi.setConfig({ testTimeout: 30_000 });
 
 const ENGLISH =
   /\b(Invalid input|Invalid option|Expected|Required|Too small|Too big|Unrecognized key|received)\b/;

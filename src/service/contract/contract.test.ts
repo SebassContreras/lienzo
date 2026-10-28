@@ -1498,7 +1498,11 @@ it("element_add notices a font that is not installed", async () => {
   });
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: [expect.stringMatching(/«Fuente Rara».*font_install/)] },
+    value: {
+      notices: expect.arrayContaining([
+        expect.stringMatching(/«Fuente Rara».*font_install/),
+      ]),
+    },
   });
 });
 
@@ -1511,7 +1515,9 @@ it("element_update notices a font that is not installed", async () => {
   });
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: [expect.stringMatching(/«Fuente Rara»/)] },
+    value: {
+      notices: expect.arrayContaining([expect.stringMatching(/«Fuente Rara»/)]),
+    },
   });
 });
 
@@ -1520,7 +1526,9 @@ it("scene_create notices a font that is not installed", async () => {
   const r = await call("scene_create", { scene: "z", data });
   expect(r).toMatchObject({
     ok: true,
-    value: { notices: [expect.stringMatching(/«Fuente Rara»/)] },
+    value: {
+      notices: expect.arrayContaining([expect.stringMatching(/«Fuente Rara»/)]),
+    },
   });
 });
 

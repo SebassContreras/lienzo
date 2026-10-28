@@ -1,112 +1,129 @@
 /**
  * How each scene writer takes scene content (082/D6): an adapter turns a rule's `Violation` into
- * the calls that set the scene up and the call that must fail. An adapter that cannot carry a
- * violation says why, in `NOT_CARRIED`; a writer with neither fails the matrix.
+ * the calls that set the scene up and the call that must answer. A writer runs the violations
+ * made of the kinds of content it `handles`; when it handles one and cannot carry it, `NOT_CARRIED`
+ * says why, and a writer with neither fails `matrix.test.ts`.
  */
-import type { Violation } from "./rules.ts";
+import type { Rule, Violation } from "./rules.ts";
 
 type Fields = Record<string, unknown>;
 export type Call = { tool: string; input: Fields };
 
-/** The calls that set a scene up, and the one that is expected to fail. */
+/** The calls that set a scene up, and the one whose answer is checked. */
 export type Plan = { arrange: Call[]; call: Call };
+
+type Content = Exclude<keyof Violation, "label" | "onCanvas">;
 
 export type Writer = {
   id: string;
   /** The tool this adapter calls. */
   tool: string;
+  /** The kinds of content this writer takes. */
+  handles: readonly Content[];
   plan: (v: Violation) => Plan | undefined;
 };
 
-const shotCalls = (v: Violation): Call[] =>
-  (v.shots ?? []).map((shot) => ({
-    tool: "shot_set",
-    input: { scene: "s", ...shot },
-  }));
+const shotCalls = (shots: Fields[] = []): Call[] =>
+  shots.map((shot) => ({ tool: "shot_set", input: { scene: "s", ...shot } }));
 
 const withoutKind = ({ kind: _kind, ...rest }: Fields) => rest;
 
-/** The elements of `v` that come before the last one, added to scene `s`. */
-const earlier = (v: Violation): Call[] =>
-  (v.elements ?? []).slice(0, -1).map((e) => ({
-    tool: "element_add",
-    input: { scene: "s", kind: e.kind, patch: withoutKind(e) },
-  }));
-
-const content = (v: Violation) => ({
-  ...(v.scene ?? {}),
-  ...(v.shots ? { shots: v.shots } : {}),
-  ...(v.elements ? { elements: v.elements } : {}),
+const add = (e: Fields): Call => ({
+  tool: "element_add",
+  input: { scene: "s", kind: e.kind, patch: withoutKind(e) },
 });
 
-const compactContent = (v: Violation) => ({
+/** Every id in `elements`, at any depth, in order. */
+function idsOf(elements: Fields[] = []): string[] {
+  return elements.flatMap((e) => [
+    String(e.id),
+    ...idsOf((e.children as Fields[] | undefined) ?? []),
+  ]);
+}
+const repeatsIds = (elements: Fields[] = []) => {
+  const ids = idsOf(elements);
+  return new Set(ids).size !== ids.length;
+};
+
+const data = (v: Violation) => ({
   ...(v.scene ?? {}),
-  ...(v.shots ? { shots: v.shots } : {}),
-  ...(v.compactElements || v.elements
+  ...((v.shotContent ?? v.shots) ? { shots: v.shotContent ?? v.shots } : {}),
+  ...(v.elements ? { elements: v.elements } : {}),
+  ...(v.background ? { background: v.background } : {}),
+});
+
+const compact = (v: Violation) => ({
+  ...data(v),
+  ...((v.compactElements ?? v.elements)
     ? { elements: v.compactElements ?? v.elements }
     : {}),
 });
-
-const lastElement = (v: Violation) => (v.elements ?? []).at(-1);
 
 export const WRITERS: readonly Writer[] = [
   {
     id: "scene_create",
     tool: "scene_create",
+    handles: ["elements", "shotContent", "scene", "background"],
     plan: (v) => ({
       arrange: [],
-      call: { tool: "scene_create", input: { scene: "t", data: content(v) } },
+      call: { tool: "scene_create", input: { scene: "t", data: data(v) } },
     }),
   },
   {
     id: "scene_validate (data)",
     tool: "scene_validate",
+    handles: ["elements", "shotContent", "scene", "background"],
     plan: (v) => ({
       arrange: [],
-      call: { tool: "scene_validate", input: { data: content(v) } },
+      call: { tool: "scene_validate", input: { data: data(v) } },
     }),
   },
   {
     id: "scene_validate (compact)",
     tool: "scene_validate",
+    handles: ["elements", "shotContent", "scene", "background"],
     plan: (v) => ({
       arrange: [],
-      call: { tool: "scene_validate", input: { compact: compactContent(v) } },
+      call: { tool: "scene_validate", input: { compact: compact(v) } },
     }),
   },
   {
     id: "scene_build",
     tool: "scene_build",
+    handles: ["elements", "shotContent", "scene", "background"],
     plan: (v) => ({
       arrange: [],
-      call: { tool: "scene_build", input: { compact: compactContent(v) } },
+      call: { tool: "scene_build", input: { compact: compact(v) } },
     }),
   },
   {
     id: "element_add",
     tool: "element_add",
+    handles: ["elements"],
     plan: (v) => {
-      const last = lastElement(v);
+      const last = v.elements?.at(-1);
       if (!last) return undefined;
       return {
-        arrange: [...shotCalls(v), ...earlier(v)],
-        call: {
-          tool: "element_add",
-          input: { scene: "s", kind: last.kind, patch: withoutKind(last) },
-        },
+        arrange: [
+          ...shotCalls(v.shots),
+          ...(v.elements ?? []).slice(0, -1).map(add),
+        ],
+        call: add(last),
       };
     },
   },
   {
     id: "element_update",
     tool: "element_update",
+    handles: ["elements"],
     plan: (v) => {
-      const [only, ...more] = v.elements ?? [];
-      if (!only || more.length > 0) return undefined;
-      const { id, kind, ...patch } = only;
+      const last = v.elements?.at(-1);
+      if (!last || repeatsIds(v.elements)) return undefined;
+      const { id, kind, ...patch } = last;
       return {
         arrange: [
-          ...shotCalls(v),
+          ...shotCalls(v.shots),
+          ...(v.elements ?? []).slice(0, -1).map(add),
           { tool: "element_add", input: { scene: "s", kind, patch: { id } } },
         ],
         call: { tool: "element_update", input: { scene: "s", id, patch } },
@@ -114,17 +131,19 @@ export const WRITERS: readonly Writer[] = [
     },
   },
   {
-    id: "scene_update (symbol children)",
+    id: "scene_update",
     tool: "scene_update",
+    handles: ["scene", "elements"],
     plan: (v) => {
-      if (!v.elements) return undefined;
+      // a symbol's body is drawn where a `use` places it, so it has no place on the canvas
+      if (v.onCanvas) return undefined;
       return {
-        arrange: shotCalls(v),
+        arrange: shotCalls(v.shots),
         call: {
           tool: "scene_update",
           input: {
             scene: "s",
-            patch: {
+            patch: v.scene ?? {
               symbols: { chip: { w: 100, h: 100, children: v.elements } },
             },
           },
@@ -132,23 +151,94 @@ export const WRITERS: readonly Writer[] = [
       };
     },
   },
+  {
+    id: "shot_set",
+    tool: "shot_set",
+    handles: ["shotContent"],
+    plan: (v) => {
+      const last = v.shotContent?.at(-1);
+      const ids = (v.shotContent ?? []).map((s) => s.id);
+      if (!last || new Set(ids).size !== ids.length) return undefined;
+      return {
+        arrange: shotCalls(v.shotContent?.slice(0, -1)),
+        call: { tool: "shot_set", input: { scene: "s", ...last } },
+      };
+    },
+  },
+  {
+    id: "keyframe_set",
+    tool: "keyframe_set",
+    handles: ["keyframe"],
+    plan: (v) => ({
+      arrange: [
+        add({ kind: "rect", id: "k" }),
+        ...(v.before ?? []).map((kf) => ({
+          tool: "keyframe_set",
+          input: { scene: "s", id: "k", ...kf },
+        })),
+      ],
+      call: {
+        tool: "keyframe_set",
+        input: { scene: "s", id: "k", ...v.keyframe },
+      },
+    }),
+  },
+  {
+    id: "background_set",
+    tool: "background_set",
+    handles: ["background"],
+    plan: (v) => ({
+      arrange: [],
+      call: {
+        tool: "background_set",
+        input: { scene: "s", patch: v.background },
+      },
+    }),
+  },
+  {
+    id: "element_group",
+    tool: "element_group",
+    handles: ["group"],
+    plan: (v) => {
+      if (!v.group) return undefined;
+      return {
+        arrange: v.group.members.map((id) => add({ kind: "rect", id })),
+        call: {
+          tool: "element_group",
+          input: { scene: "s", ids: v.group.members, id: v.group.id },
+        },
+      };
+    },
+  },
 ];
 
+/** The key a cell has in `NOT_CARRIED`. */
+export const cellKey = (rule: Rule, v: Violation) => `${rule.id} — ${v.label}`;
+
 /**
- * Cells the matrix does not run, with the reason (`writer id` → `rule id` → why). A writer that
- * is not here and returns no plan fails `matrix.test.ts`.
+ * Cells a writer handles but cannot carry, with the reason (`writer id` → `cellKey` → why).
  */
 export const NOT_CARRIED: Record<string, Record<string, string>> = {
+  scene_update: {
+    "an element off the canvas gets a notice — rect":
+      "a symbol's body is drawn where a `use` places it, not on the canvas",
+  },
   element_update: {
-    "element ids are unique":
+    "element ids are unique — two at the root":
       "an update never changes an id, so it cannot repeat one",
+    "element ids are unique — a group child repeats a root id":
+      "an update never changes an id, so it cannot repeat one",
+  },
+  shot_set: {
+    "shot ids are unique — two shots":
+      "shot_set with an id the scene has updates that shot; it cannot repeat one",
   },
 };
 
 /**
  * Tools that save a scene (`effects` has `scene`) and are not in `WRITERS`, with the reason.
  * A tool with `effects: ["scene"]` that is in neither fails `matrix.test.ts`, so a new scene
- * writer has to be given adapters or a reason.
+ * writer has to be given an adapter or a reason.
  */
 export const NOT_WRITERS: Record<string, string> = {
   asset_rename:
@@ -162,9 +252,4 @@ export const NOT_WRITERS: Record<string, string> = {
   scene_rename: "renames a scene file; it takes no content",
   scene_generate_speech:
     "attaches the audio the speech service returns; the user's content is the script",
-  background_set:
-    "TODO T021: carries background values (spotlight is a fraction)",
-  element_group: "TODO T021: carries the id of the new group (ids are unique)",
-  keyframe_set: "TODO T021: carries keyframe values and easings",
-  shot_set: "TODO T021: carries shots (spans, ids, camera easings)",
 };

@@ -269,7 +269,7 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   compact problems in `buildCompact`, element names in errors and notices in `idPath`.
   Added by 081: unique element ids (`duplicateIds`, `checkUniqueIds` in `prepareScene`), shot
   spans and repeated shot ids (`shotProblems`), scene limits (`src/model/limits.ts`), the font
-  and off-canvas notices of a write (`saveScene`), preset name folding (`sameName`), the
+  and off-canvas notices of a write (`contentNotices` in `src/service/scenes/scene-notices.ts`, called by `saveScene`, `buildCompact` and `sceneNotices`, 082), preset name folding (`sameName`), the
   closed sets in descriptions (`src/model/options.ts`), the Spanish locale (`setSpanishLocale`).
   Specs 071–074 patched one path at a time and the same family came back each round.
 - Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code

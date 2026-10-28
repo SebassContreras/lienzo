@@ -23,10 +23,9 @@ import {
 import type { Ctx, ProjectCtx } from "../core/ctx.ts";
 import { fail, failAll, type Problem, problemsOf } from "../core/registry.ts";
 import type { PresetSource } from "../core/store.ts";
-import { fontNotices } from "../fonts/font-check.ts";
 import { availableFonts } from "../fonts/font-install.ts";
 import { allElements, changedSince } from "./scene-changes.ts";
-import { offCanvasNotices, shotNotices } from "./scene-notices.ts";
+import { contentNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 
@@ -319,14 +318,25 @@ export async function saveScene(
   const changedTop = scene.elements.filter(changedSince(previous));
   const faces = await availableFonts(ctx.fonts, ctx.project);
   notices.push(
-    ...fontNotices({ ...scene, elements: changedTop }, faces),
-    ...offCanvasNotices(scene, changedTop),
-    ...shotNotices(scene).map((n) => n.message),
+    ...contentNotices(scene, faces, {
+      elements: changedTop,
+      symbols: changedSymbols(scene, previous),
+    }).map((n) => n.message),
     ...(await resourceNotices(ctx, scene, previous)),
   );
   const unique = [...new Set(notices)];
   notices.splice(0, notices.length, ...unique);
   return { scene: await ctx.store.writeScene(name, scene), notices };
+}
+
+/** The symbols of `scene` that `previous` did not have or had different (082/D6). */
+function changedSymbols(scene: Scene, previous?: Scene): Scene["symbols"] {
+  return Object.fromEntries(
+    Object.entries(scene.symbols ?? {}).filter(
+      ([name, body]) =>
+        JSON.stringify(body) !== JSON.stringify(previous?.symbols?.[name]),
+    ),
+  );
 }
 
 /** Opens scene `name`, applies `edit` (pure) and saves the result under the same name. */
