@@ -1,18 +1,18 @@
 import { z } from "zod";
-import { SHOT_RULES } from "../../engine/shots.ts";
-import { CompactShotCameraSchema } from "../../model/compact.ts";
-import { OPTIONS_TEXT } from "../../model/options.ts";
-import { ShotTransitionSchema } from "../../model/schema.ts";
-import { movedNotice } from "../../model/shot-timing.ts";
+import { SHOT_RULES } from "../../../engine/shots.ts";
+import { CompactShotCameraSchema } from "../../../model/compact.ts";
+import { OPTIONS_TEXT } from "../../../model/options.ts";
+import { ShotTransitionSchema } from "../../../model/schema.ts";
+import { movedNotice } from "../../../model/shot-timing.ts";
 import {
   cameraOutsideShot,
   removeShotIn,
   type SceneShotsResult,
   setShotIn,
-} from "../../model/shots.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes/scenes.ts";
+} from "../../../model/shots.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
+import { editScene, SceneResult } from "../../scenes/scenes.ts";
 
 export const shotSet = defineTool({
   name: "shot_set",

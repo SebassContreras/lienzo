@@ -20,6 +20,9 @@ import { sceneList } from "../scenes/tools/scene-list.ts";
 import { sceneRename } from "../scenes/tools/scene-rename.ts";
 import { sceneUpdate } from "../scenes/tools/scene-update.ts";
 import { sceneValidate } from "../scenes/tools/scene-validate.ts";
+import { keyframeRemove } from "../shots/tools/keyframe-remove.ts";
+import { keyframeSet } from "../shots/tools/keyframe-set.ts";
+import { shotSet } from "../shots/tools/shot-set.ts";
 import { animationDelete } from "./animation-delete.ts";
 import { animationList } from "./animation-list.ts";
 import { animationSave } from "./animation-save.ts";
@@ -29,8 +32,6 @@ import { assetRename } from "./asset-rename.ts";
 import { fontInstall } from "./font-install.ts";
 import { fontList } from "./font-list.ts";
 import { imageTrim } from "./image-trim.ts";
-import { keyframeRemove } from "./keyframe-remove.ts";
-import { keyframeSet } from "./keyframe-set.ts";
 import { presetDelete } from "./preset-delete.ts";
 import { presetGet } from "./preset-get.ts";
 import { presetList } from "./preset-list.ts";
@@ -46,7 +47,6 @@ import { sceneExport } from "./scene-export.ts";
 import { sceneGenerateSpeech } from "./scene-generate-speech.ts";
 import { sceneInspectLayout } from "./scene-inspect-layout.ts";
 import { scenePreview } from "./scene-preview.ts";
-import { shotSet } from "./shot-set.ts";
 
 const TOOLS: readonly Tool[] = [
   componentList,

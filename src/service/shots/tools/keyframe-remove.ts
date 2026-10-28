@@ -1,15 +1,15 @@
 import { z } from "zod";
-import { keyframeAt, withoutKeyframe } from "../../engine/tracks.ts";
+import { keyframeAt, withoutKeyframe } from "../../../engine/tracks.ts";
 import {
   trackEntry,
   trackKeys,
   trackRepeat,
   trackUntil,
-} from "../../model/track.ts";
-import { updateElement } from "../elements/element-tree.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
-import { editScene, SceneResult } from "../scenes/scenes.ts";
+} from "../../../model/track.ts";
+import { updateElement } from "../../elements/element-tree.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
+import { editScene, SceneResult } from "../../scenes/scenes.ts";
 
 export const keyframeRemove = defineTool({
   name: "keyframe_remove",

@@ -115,7 +115,7 @@ the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T004 [agent] Inventory: every test file and source file of `src/service` assigned to a functionality (table in this spec) — covers R3, D3
 - [x] 082/T005 [agent] Move `scenes` (scene tools, `scenes.ts`, defaults, references, resources, notices, watch, changes) — covers R3, D3
 - [x] 082/T006 [agent] Move `elements` (element tools, element-tree, elements.ts, image-trim, sparse-scene) — covers R3, D3
-- [ ] 082/T007 [agent] Move `shots` and `keyframes` — covers R3, D3
+- [x] 082/T007 [agent] Move `shots` and `keyframes` — covers R3, D3
 - [ ] 082/T008 [agent] Move `assets` (asset tools, asset-*, image-header, image-aspect, image-probe, project-assets) — covers R3, D3
 - [ ] 082/T009 [agent] Move `fonts` (font tools, font-check, font-install, font-store, google-fonts, font-middleware) — covers R3, D3
 - [ ] 082/T010 [agent] Move `presets` (preset tools, animation tools, built-in) — covers R3, D3

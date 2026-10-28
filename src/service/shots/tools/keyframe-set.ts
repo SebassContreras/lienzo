@@ -1,20 +1,20 @@
 import { z } from "zod";
-import { EasingSchema } from "../../engine/easing.ts";
-import { withKeyframe } from "../../engine/tracks.ts";
-import type { Scene } from "../../model/model.ts";
+import { EasingSchema } from "../../../engine/easing.ts";
+import { withKeyframe } from "../../../engine/tracks.ts";
+import type { Scene } from "../../../model/model.ts";
 import {
   TrackRepeatSchema,
   trackEntry,
   trackKeys,
   trackRepeat,
   trackUntil,
-} from "../../model/track.ts";
-import { updateElement } from "../elements/element-tree.ts";
-import { checkKeyframe, checkTrackPath } from "../elements/elements.ts";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
-import { deadEasingNotice, deadEasings } from "../scenes/scene-notices.ts";
-import { editScene, SceneResult } from "../scenes/scenes.ts";
+} from "../../../model/track.ts";
+import { updateElement } from "../../elements/element-tree.ts";
+import { checkKeyframe, checkTrackPath } from "../../elements/elements.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
+import { deadEasingNotice, deadEasings } from "../../scenes/scene-notices.ts";
+import { editScene, SceneResult } from "../../scenes/scenes.ts";
 
 export const keyframeSet = defineTool({
   name: "keyframe_set",
