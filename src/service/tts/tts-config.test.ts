@@ -195,6 +195,7 @@ describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => 
     // Mock context
     const fakeCtx = {
       root: "/tmp",
+      fonts: { list: async () => [] },
       store: {
         animPresets: async () => [],
         readScene: async () => defaultScene(),
@@ -255,6 +256,7 @@ describe("Environment resolution in scene_generate_speech tool (R6, D5)", () => 
 
     const fakeCtx = {
       root: "/tmp",
+      fonts: { list: async () => [] },
       store: {
         animPresets: async () => [],
         readScene: async () => defaultScene(),

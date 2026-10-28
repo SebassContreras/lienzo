@@ -186,6 +186,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
 
       const fakeCtx = {
         root: "/tmp",
+        fonts: { list: async () => [] },
         store: {
           animPresets: async () => [],
           readScene: async () => defaultScene(),
@@ -247,6 +248,7 @@ describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
       const tool = createSceneGenerateSpeechTool();
       const fakeCtx = {
         root: "/tmp",
+        fonts: { list: async () => [] },
         tts: mockTtsService,
         store: {
           animPresets: async () => [],
