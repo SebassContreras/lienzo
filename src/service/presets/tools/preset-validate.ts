@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { parsePresetRecipe } from "../../model/schema.ts";
-import { TRAITS } from "../../traits/index.ts";
-import { defineTool, failAll } from "../registry.ts";
-import { Verdict, verdictOf } from "../verdict.ts";
+import { parsePresetRecipe } from "../../../model/schema.ts";
+import { TRAITS } from "../../../traits/index.ts";
+import { defineTool, failAll } from "../../registry.ts";
+import { Verdict, verdictOf } from "../../verdict.ts";
 
 /** What a recipe is, for preset_validate and preset_save (074/D15). */
 export const RECIPE_RULES =

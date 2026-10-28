@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { presetValidate } from "../presets/tools/preset-validate.ts";
 import { sceneBuild } from "../scenes/tools/scene-build.ts";
 import { shotSet } from "../shots/tools/shot-set.ts";
-import { presetValidate } from "./preset-validate.ts";
 
 describe("tool descriptions (064/R2, R3)", () => {
   it("tells shot_set when a transition runs and what the camera moves", () => {

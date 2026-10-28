@@ -4,7 +4,7 @@
  */
 import { join } from "node:path";
 import { type JsonItem, listJson } from "../presets/json-fs.ts";
-import { loadBuiltIns } from "./built-in.ts";
+import { loadBuiltIns } from "./presets/built-in.ts";
 
 export type PresetSource = "built-in" | "user";
 

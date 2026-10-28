@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { listJson } from "../presets/json-fs.ts";
+import { listJson } from "../../presets/json-fs.ts";
 
 /**
  * The built-in recipes in `<root>/presets/built-in/`, read from disk in file-name order (the
