@@ -12,6 +12,8 @@ export const elementGroup = defineTool({
     "does: the group takes their bounding box and the topmost one's layer, and lines keep " +
     "their attachments. Elements of one shot make a group of that shot; elements of different " +
     "shots make a group of none (with a notice). `id` names the group (else one is generated). " +
+    "The members keep their own draw order, whatever order `ids` has; a non-member that was " +
+    "between two members ends below the group. " +
     "Fails listing every id that is not a top-level element. Returns the group's `id`.",
   input: z.object({
     scene: z.string().min(1),
