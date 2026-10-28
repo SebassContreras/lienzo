@@ -1,9 +1,12 @@
 import { z } from "zod";
-import { writeExport } from "../exports.ts";
+import { extensionNotice, writeExport } from "../exports.ts";
 import { ImageResult } from "../image.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { resolveAndRenderScene } from "../render-target.ts";
+import {
+  missingAssetNotices,
+  resolveAndRenderScene,
+} from "../render-target.ts";
 
 export const scenePreview = defineTool({
   name: "scene_preview",
@@ -24,7 +27,7 @@ export const scenePreview = defineTool({
   async run({ scene: name, project, t = 0, scale = 0.5, out }, ctx) {
     const effectiveCtx = await inProject(ctx, project);
 
-    const { rendered } = await resolveAndRenderScene(effectiveCtx, name, {
+    const { scene, rendered } = await resolveAndRenderScene(effectiveCtx, name, {
       format: "png",
       scale,
       time: t,
@@ -32,8 +35,13 @@ export const scenePreview = defineTool({
     const file = out
       ? await writeExport(effectiveCtx, out, rendered.bytes, "png")
       : undefined;
+    const notices = [
+      ...(out && file ? [extensionNotice(out, file)] : []),
+      ...(await missingAssetNotices(effectiveCtx, scene)),
+    ].filter((n): n is string => n !== undefined);
     return {
       file,
+      ...(notices.length > 0 ? { notices } : {}),
       image: {
         mimeType: "image/png" as const,
         data: rendered.bytes.toString("base64"),

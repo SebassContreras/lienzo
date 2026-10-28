@@ -3,7 +3,8 @@
  * `asset_delete` tools and the editor's assets tab, so both keep scenes in step the same way.
  */
 import { mkdir, rename, rm, stat } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, extname, join } from "node:path";
+import { normalizeExtension } from "./asset-helpers.ts";
 import { safeAssetPath } from "./asset-path.ts";
 import { renameAssetRefs, usesAsset } from "./asset-refs.ts";
 import type { ProjectStore } from "./project-store.ts";
@@ -46,6 +47,12 @@ export async function renameAsset(
 ): Promise<{ path: string; scenes: string[] }> {
   const src = checked(from, "from");
   const dst = checked(to, "to");
+  if (normalizeExtension(extname(src)) !== normalizeExtension(extname(dst)))
+    fail(
+      "asset_type_changed",
+      `«${dst}» cambia el tipo de «${src}» (${extname(src) || "sin extensión"}); conserva la extensión`,
+      "to",
+    );
   const base = projects.resolvePath(slug, "assets");
   if (await exists(join(base, dst)))
     fail("exists", `Ya existe el recurso «${dst}»`, "to");

@@ -3,7 +3,10 @@ import { z } from "zod";
 import { writeExport } from "../exports.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool } from "../registry.ts";
-import { resolveAndRenderScene } from "../render-target.ts";
+import {
+  missingAssetNotices,
+  resolveAndRenderScene,
+} from "../render-target.ts";
 
 const EXTENSIONS: Record<string, string> = {
   "image/png": "png",
@@ -77,6 +80,7 @@ export const sceneExport = defineTool({
       notices.push(
         `Se guardó como «${target}»: la extensión sigue al formato real`,
       );
+    notices.push(...(await missingAssetNotices(effectiveCtx, scene)));
     return {
       file: target,
       type: rendered.type,

@@ -3,6 +3,7 @@ import type { Scene } from "../model/model.ts";
 import type { ProjectCtx } from "./ctx.ts";
 import { fail } from "./registry.ts";
 import type { Rendered } from "./renderer.ts";
+import { resourceNotices } from "./scene-resources.ts";
 import { openScene } from "./scenes.ts";
 
 const GIF_MAX_FPS = 25;
@@ -45,3 +46,7 @@ export async function resolveAndRenderScene(
   );
   return { scene, rendered };
 }
+
+/** What `scene` names that the project lacks, as every scene write reports it (081/D6). */
+export const missingAssetNotices = (ctx: ProjectCtx, scene: Scene) =>
+  resourceNotices(ctx, scene);

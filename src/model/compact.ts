@@ -4,7 +4,6 @@
  * shortcuts (`at`, `fit`), line connections (`from`, `to`) and short keyframe tracks.
  */
 import "./zod-locale.ts";
-import { durationValue, fpsValue, side } from "./limits.ts";
 import { z } from "zod";
 import { effects } from "../components/fields/effects.ts";
 import {
@@ -13,6 +12,7 @@ import {
   type Fields,
 } from "../components/fields/index.ts";
 import { OriginSchema } from "./element-schema.ts";
+import { durationValue, fpsValue, side } from "./limits.ts";
 import { TracksSchema } from "./track.ts";
 
 /** Tracks in compact take the same forms as everywhere: the scene's own schema (080/D1). */

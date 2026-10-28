@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { shotNotices } from "../scene-notices.ts";
 import { SHOT_RULES } from "../../engine/shots.ts";
 import { CompactShotCameraSchema } from "../../model/compact.ts";
 import { ShotTransitionSchema } from "../../model/schema.ts";
@@ -12,6 +11,7 @@ import {
 } from "../../model/shots.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
+import { shotNotices } from "../scene-notices.ts";
 import { editScene, SceneResult } from "../scenes.ts";
 
 export const shotSet = defineTool({

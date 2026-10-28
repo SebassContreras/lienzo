@@ -8,6 +8,7 @@ import { z } from "zod";
 export const ImageResult = z.object({
   image: z.object({ mimeType: z.literal("image/png"), data: z.base64() }),
   file: z.string().optional(),
+  notices: z.array(z.string()).optional(),
 });
 
 export type ImageResult = z.infer<typeof ImageResult>;

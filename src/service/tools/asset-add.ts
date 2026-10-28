@@ -3,6 +3,7 @@ import { extname, join, resolve } from "node:path";
 import { z } from "zod";
 import {
   ASSET_TYPES,
+  looksLikeAudio,
   MAX_ASSET_BYTES,
   normalizeExtension,
   writeAsset,
@@ -18,7 +19,7 @@ export const assetAdd = defineTool({
     "Copy a local file (`file`, a path on this machine) into the project's assets/, or into " +
     "`folder` inside it, named by its content hash as the editor's upload names it. Accepts " +
     "png, jpg, svg, webp, glb, mp3, wav, aac, ogg, ttf, otf, woff and woff2 up to 20 MB; an " +
-    "image must decode as its extension says. " +
+    "image must decode and an audio file must start as its extension says. " +
     "Returns the `src` to use in an image, audio or 3D element; `filename` (the path inside " +
     "assets/) works too and is stored as that `src`, so asset_rename follows either.",
   input: z.object({
@@ -49,6 +50,12 @@ export const assetAdd = defineTool({
       fail(
         "invalid_image",
         `«${file}» no es una imagen ${ext.toUpperCase()} válida (solo tiene la extensión)`,
+        "file",
+      );
+    if (ASSET_TYPES[ext]?.startsWith("audio/") && !looksLikeAudio(bytes, ext))
+      fail(
+        "invalid_audio",
+        `«${file}» no es un audio ${ext.toUpperCase()} válido (solo tiene la extensión)`,
         "file",
       );
     const filename = await writeAsset(dir, bytes, ext);

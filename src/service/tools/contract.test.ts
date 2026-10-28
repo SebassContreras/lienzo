@@ -1331,3 +1331,58 @@ it("project_update fails on a canvas side above 7680", async () => {
   const r = await call("project_update", { canvas: { width: 20000 } });
   expect(r).toMatchObject(fails(TOO_BIG));
 });
+
+// 081/D6: assets keep their type
+
+it("asset_add refuses an .mp3 that is not audio", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "lienzo-audio-"));
+  const file = join(dir, "voz.mp3");
+  await writeFile(file, "not audio at all");
+  expect(await call("asset_add", { file })).toMatchObject({
+    ok: false,
+    error: { code: "invalid_audio", path: "file" },
+  });
+});
+
+it("asset_rename refuses a new extension", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "lienzo-audio-"));
+  const file = join(dir, "voz.mp3");
+  await writeFile(file, "ID3\u0004audio");
+  const added = await call("asset_add", { file });
+  const from = (added as { value: { filename: string } }).value.filename;
+  expect(await call("asset_rename", { from, to: "voz.wav" })).toMatchObject({
+    ok: false,
+    error: { code: "asset_type_changed", path: "to" },
+  });
+});
+
+it("scene_export lists an asset the project lacks", async () => {
+  await call("element_add", {
+    scene: "s",
+    kind: "image",
+    patch: { id: "pic", src: "missing.png" },
+  });
+  const r = await call("scene_export", { scene: "s", format: "png" });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(/missing\.png.*marcador/)] },
+  });
+});
+
+it("scene_preview lists an asset the project lacks and a changed extension", async () => {
+  await call("element_add", {
+    scene: "s",
+    kind: "image",
+    patch: { id: "pic", src: "missing.png" },
+  });
+  const r = await call("scene_preview", { scene: "s", out: "p.jpg" });
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      notices: [
+        expect.stringMatching(/extensión sigue al formato real/),
+        expect.stringMatching(/missing\.png/),
+      ],
+    },
+  });
+});

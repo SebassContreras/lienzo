@@ -46,8 +46,8 @@ const AudioTrackItemSchema = z.object({
   muted: z.boolean().optional(),
 });
 
-import { durationValue, fpsValue, side } from "./limits.ts";
 import { newId } from "./id.ts";
+import { durationValue, fpsValue, side } from "./limits.ts";
 import { TracksSchema, trackKeys } from "./track.ts";
 
 export const ShotTransitionSchema = z.object({
