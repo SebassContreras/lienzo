@@ -276,7 +276,7 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   it started with, and a stale server reports fixed bugs as open (071).
   The server's MCP `instructions` name the commit it started from; compare it with
   `git rev-parse --short HEAD` (072). A QA report of "still open" counts only with that
-  commit matching `HEAD`, or replayed with `pnpm lienzo`; otherwise replay it first (073).
+  commit matching `HEAD`, or replayed with `pnpm lienzo`; otherwise replay it first (073). `pnpm replay [id…]` runs the replay corpus (`src/service/contract/corpus/`, 082) in a fresh process at `HEAD`; a case that passes there but fails on the MCP server means the server is stale.
 
 <!-- spectrace -->
 ## Planning

@@ -19,7 +19,8 @@
     "test": "vitest run",
     "lienzo": "tsx src/cli/main.ts",
     "test:cov": "vitest run --coverage",
-    "test:mutate": "node scripts/mutate.mjs"
+    "test:mutate": "node scripts/mutate.mjs",
+    "replay": "tsx scripts/replay.ts"
   },
   "bin": {
     "lienzo": "dist/cli.js"

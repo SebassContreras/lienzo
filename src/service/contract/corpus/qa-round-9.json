@@ -1,0 +1,129 @@
+[
+  {
+    "id": "A1", "source": "081 report A1",
+    "call": { "tool": "scene_create", "input": { "scene": "z", "data": { "elements": [{ "id": "x", "kind": "rect" }, { "id": "x", "kind": "text" }] } } },
+    "expect": { "code": "duplicate_id", "message": "ID duplicado «x»" }
+  },
+  {
+    "id": "A2", "source": "081 report A2",
+    "call": { "tool": "scene_validate", "input": { "compact": { "shots": [{ "id": "a", "start": 3, "end": 1 }] } } },
+    "expect": { "ok": true, "valid": false, "message": "no dura" }
+  },
+  {
+    "id": "A3-shot-set", "source": "081 report A3",
+    "call": { "tool": "shot_set", "input": { "scene": "s", "id": "a", "start": 4, "end": 4 } },
+    "expect": { "message": "no dura" }
+  },
+  {
+    "id": "A3-repeated-id", "source": "081 report A3",
+    "call": { "tool": "scene_validate", "input": { "compact": { "shots": [{ "id": "s", "start": 0, "end": 1 }, { "id": "s", "start": 2, "end": 3 }] } } },
+    "expect": { "ok": true, "valid": false, "message": "dos tomas con el id «s»" }
+  },
+  {
+    "id": "A4-fps", "source": "081 report A4",
+    "call": { "tool": "scene_validate", "input": { "compact": { "fps": 500 } } },
+    "expect": { "message": "Demasiado grande" }
+  },
+  {
+    "id": "A4-duration", "source": "081 report A4",
+    "call": { "tool": "scene_build", "input": { "compact": { "duration": 100000 } } },
+    "expect": { "message": "Demasiado grande" }
+  },
+  {
+    "id": "A4-size", "source": "081 report A4",
+    "call": { "tool": "scene_build", "input": { "compact": { "size": "20000x20000" } } },
+    "expect": { "message": "Demasiado grande" }
+  },
+  {
+    "id": "A4-spotlight", "source": "081 report A4",
+    "call": { "tool": "scene_validate", "input": { "data": { "background": { "spotlight": 7 } } } },
+    "expect": { "ok": true, "valid": false, "message": "Demasiado grande" }
+  },
+  {
+    "id": "A13-unknown-track", "source": "081 report A13",
+    "call": { "tool": "scene_build", "input": { "compact": { "elements": [{ "kind": "rect", "tracks": { "nofield": [[0, 0], [1, 1]] } }] } } },
+    "expect": { "message": "nofield" }
+  },
+  {
+    "id": "A14-use-override", "source": "081 report A14",
+    "setup": [{ "tool": "scene_update", "input": { "scene": "s", "patch": { "symbols": { "chip": { "w": 10, "h": 10, "children": [{ "id": "d", "kind": "ellipse", "w": 5, "h": 5 }] } } } } }],
+    "call": { "tool": "element_add", "input": { "scene": "s", "kind": "use", "patch": { "id": "u", "symbol": "chip", "overrides": { "nochild": { "fill": "red" } } } } },
+    "expect": { "message": "nochild" }
+  },
+  {
+    "id": "A16-preview-extension", "source": "081 report A16",
+    "call": { "tool": "scene_preview", "input": { "scene": "s", "out": "x.jpg" } },
+    "expect": { "ok": true, "notices": ["x\\.png"] }
+  },
+  {
+    "id": "A18-validate-lists-all", "source": "081 report A18",
+    "call": { "tool": "scene_validate", "input": { "data": { "elements": [{ "id": "a", "kind": "rect", "opacity": 5 }], "shots": [{ "id": "s1", "start": 0, "end": 2 }, { "id": "s1", "start": 3, "end": 9999 }] } } },
+    "expect": { "ok": true, "valid": false, "problems": 2 }
+  },
+  {
+    "id": "A18-compact-size-and-element", "source": "081 report A18",
+    "call": { "tool": "scene_build", "input": { "compact": { "size": "potato", "elements": [{ "kind": "rect", "opacity": 5 }] } } },
+    "expect": { "problems": 2 }
+  },
+  {
+    "id": "A19-move-direction", "source": "081 report A19",
+    "setup": [{ "tool": "element_add", "input": { "scene": "s", "kind": "rect", "patch": { "id": "r" } } }],
+    "call": { "tool": "element_move", "input": { "scene": "s", "id": "r", "to": "sideways" } },
+    "expect": { "path": "to" }
+  },
+  {
+    "id": "A19-element-add-needs-kind", "source": "081 report A19",
+    "call": { "tool": "element_add", "input": { "scene": "s" } },
+    "expect": { "message": "kind|preset" }
+  },
+  {
+    "id": "A20-layout-scene-and-data", "source": "081 report A20",
+    "call": { "tool": "scene_inspect_layout", "input": { "scene": "s", "data": { "elements": [] } } },
+    "expect": { "message": "scene.*data|data.*scene" }
+  },
+  {
+    "id": "A21-layout-time-past-duration", "source": "081 report A21",
+    "call": { "tool": "scene_inspect_layout", "input": { "scene": "s", "times": [99] } },
+    "expect": { "code": "invalid_time" }
+  },
+  {
+    "id": "A22-preset-accent-blind", "source": "081 report A22",
+    "call": { "tool": "preset_get", "input": { "name": "Tarjeta neon" } },
+    "expect": { "ok": true }
+  },
+  {
+    "id": "A22-group-nested-id", "source": "081 report A22",
+    "setup": [
+      { "tool": "element_add", "input": { "scene": "s", "kind": "rect", "patch": { "id": "a" } } },
+      { "tool": "element_add", "input": { "scene": "s", "kind": "rect", "patch": { "id": "b" } } },
+      { "tool": "element_group", "input": { "scene": "s", "ids": ["a", "b"], "id": "g" } }
+    ],
+    "call": { "tool": "element_group", "input": { "scene": "s", "ids": ["a", "b"] } },
+    "expect": { "path": "ids.0" }
+  },
+  {
+    "id": "B2-create-lists-all", "source": "081 report B2",
+    "call": { "tool": "scene_create", "input": { "scene": "z", "data": { "elements": [{ "id": "x", "kind": "rect", "opacity": 5 }, { "id": "x", "kind": "nokind" }] } } },
+    "expect": { "problems": 2 }
+  },
+  {
+    "id": "B4-validate-ignored-key", "source": "081 report B4",
+    "call": { "tool": "scene_validate", "input": { "data": { "elements": [{ "id": "t", "kind": "text", "bogus": 1 }] } } },
+    "expect": { "ok": true, "valid": true, "notices": ["bogus"] }
+  },
+  {
+    "id": "B5-long-transition", "source": "081 report B5",
+    "call": { "tool": "shot_set", "input": { "scene": "s", "id": "a", "start": 0, "end": 3, "transition": { "kind": "fade", "duration": 5 } } },
+    "expect": { "ok": true, "notices": ["se solapa con las tomas vecinas"] }
+  },
+  {
+    "id": "B11-extra-key-in-spanish", "source": "081 report B11",
+    "call": { "tool": "animation_save", "input": { "recipe": { "name": "nueva", "anim": { "in": { "kind": "fade" } }, "extra": 1 } } },
+    "expect": { "path": "extra", "message": "extra: Llave desconocida" }
+  },
+  {
+    "id": "B13-project-exists", "source": "081 report B13",
+    "call": { "tool": "project_create", "input": { "name": "P" } },
+    "expect": { "code": "exists", "message": "project" }
+  }
+]
