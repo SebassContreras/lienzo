@@ -11,8 +11,8 @@ import {
   relative,
   resolve,
 } from "node:path";
-import type { ProjectCtx } from "../ctx.ts";
-import { fail } from "../registry.ts";
+import type { ProjectCtx } from "../core/ctx.ts";
+import { fail } from "../core/registry.ts";
 
 /** The notice for a file saved under another extension than `out` asked for (069/R18, 081/D10). */
 export const extensionNotice = (

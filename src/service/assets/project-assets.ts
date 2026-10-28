@@ -4,8 +4,8 @@
  */
 import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
+import { fail } from "../core/registry.ts";
 import type { ProjectStore } from "../projects/project-store.ts";
-import { fail } from "../registry.ts";
 import { normalizeExtension } from "./asset-helpers.ts";
 import { safeAssetPath } from "./asset-path.ts";
 import { renameAssetRefs, usesAsset } from "./asset-refs.ts";

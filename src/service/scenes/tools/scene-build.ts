@@ -11,13 +11,13 @@ import { slugify } from "../../../presets/slug.ts";
 import { buildCompact } from "../../compact/build-compact.ts";
 import { FLAT_KINDS } from "../../compact/defaults.ts";
 import { keepAudio } from "../../compact/keep-audio.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import {
   availableFonts,
   measureInstalledFonts,
 } from "../../fonts/font-install.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
 import { storedAsNotice } from "../../projects/project-files.ts";
-import { defineTool, fail } from "../../registry.ts";
 import { saveScene } from "../scenes.ts";
 
 export const sceneBuild = defineTool({

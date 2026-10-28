@@ -1,14 +1,14 @@
 import {
   createBrowserImageProbe,
   type ImageProbe,
-} from "./assets/image-probe.ts";
-import { createFontStore, type FontStore } from "./fonts/font-store.ts";
+} from "../assets/image-probe.ts";
+import { createFontStore, type FontStore } from "../fonts/font-store.ts";
 import {
   createProjectStore,
   type ProjectStore,
-} from "./projects/project-store.ts";
-import { findAppRoot } from "./projects/root.ts";
-import { createRenderer, type Renderer } from "./render/renderer.ts";
+} from "../projects/project-store.ts";
+import { findAppRoot } from "../projects/root.ts";
+import { createRenderer, type Renderer } from "../render/renderer.ts";
 import { createStore, type PresetStore, type Store } from "./store.ts";
 
 /**
@@ -17,7 +17,7 @@ import { createStore, type PresetStore, type Store } from "./store.ts";
  */
 export const APP_ROOT = findAppRoot(import.meta.dirname);
 
-import type { TtsService } from "./speech/types.ts";
+import type { TtsService } from "../speech/types.ts";
 
 /**
  * What every tool runs against (007/D1): the repo root and the store over its files, the

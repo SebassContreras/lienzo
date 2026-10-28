@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool, fail } from "../../registry.ts";
-import { round2 } from "../../round.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
+import { round2 } from "../../core/round.ts";
 import { editScene, openScene, SceneResult } from "../../scenes/scenes.ts";
 import { saveAudioAsset } from "../asset-store.ts";
 import { audioDuration } from "../audio-duration.ts";

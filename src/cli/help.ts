@@ -1,5 +1,5 @@
 /** Help text generated from the registry (008/D2): the tool list, and each tool's fields. */
-import type { Registry, Tool } from "../service/registry.ts";
+import type { Registry, Tool } from "../service/core/registry.ts";
 import { type Field, fieldsOf } from "./args.ts";
 
 const JSON_ARG = "[--json '<object>' | --json @file | --json -]";

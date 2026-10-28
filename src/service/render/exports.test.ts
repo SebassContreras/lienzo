@@ -2,7 +2,7 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createCtx, type ProjectCtx } from "../ctx.ts";
+import { createCtx, type ProjectCtx } from "../core/ctx.ts";
 import { writeExport } from "./exports.ts";
 import { fakeRenderer } from "./fake-renderer.ts";
 

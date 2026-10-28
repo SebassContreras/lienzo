@@ -2,7 +2,7 @@ import { z } from "zod";
 import { trackPaths } from "../../../components/descriptor.ts";
 import { COMPONENTS } from "../../../components/index.ts";
 import { OPTIONS_TEXT } from "../../../model/options.ts";
-import { defineTool } from "../../registry.ts";
+import { defineTool } from "../../core/registry.ts";
 import { COORDINATES } from "../elements.ts";
 
 /** Defaults a newcomer trips on, told with the kind (069/D14). */

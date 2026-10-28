@@ -5,8 +5,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Element } from "../../model/model.ts";
-import type { ProjectCtx } from "../ctx.ts";
-import { round2, round3 } from "../round.ts";
+import type { ProjectCtx } from "../core/ctx.ts";
+import { round2, round3 } from "../core/round.ts";
 import { assetSegments, safeAssetPath } from "./asset-path.ts";
 import { imageSize } from "./image-header.ts";
 

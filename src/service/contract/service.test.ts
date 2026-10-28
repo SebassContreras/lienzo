@@ -2,21 +2,21 @@ import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { defineComponent } from "../components/descriptor.ts";
-import { ellipse } from "../components/ellipse/descriptor.ts";
-import { registerComponent } from "../components/index.ts";
-import { boxOf, center } from "../engine/geometry.ts";
-import { applyTracks } from "../engine/tracks.ts";
-import type { Element, Scene } from "../model/model.ts";
-import { parseScene } from "../model/schema.ts";
+import { defineComponent } from "../../components/descriptor.ts";
+import { ellipse } from "../../components/ellipse/descriptor.ts";
+import { registerComponent } from "../../components/index.ts";
+import { boxOf, center } from "../../engine/geometry.ts";
+import { applyTracks } from "../../engine/tracks.ts";
+import type { Element, Scene } from "../../model/model.ts";
+import { parseScene } from "../../model/schema.ts";
 import {
   PROJECT,
   type ToolHarness,
   toolHarness,
-} from "../test/tool-harness.ts";
-import { createCtx } from "./ctx.ts";
-import { fakeRenderer } from "./render/fake-renderer.ts";
-import { registry } from "./tools/index.ts";
+} from "../../test/tool-harness.ts";
+import { createCtx } from "../core/ctx.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
+import { registry } from "../tools/index.ts";
 
 let h: ToolHarness;
 

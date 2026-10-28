@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { withElementDefaults } from "../../../model/fill-defaults.ts";
-import type { ProjectCtx } from "../../ctx.ts";
+import type { ProjectCtx } from "../../core/ctx.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import { measureInstalledFonts } from "../../fonts/font-install.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool, fail } from "../../registry.ts";
 import { assertTimeWithin } from "../../render/render-target.ts";
 import { sceneFromData } from "../../scenes/scene-defaults.ts";
 import { checkScene, openScene } from "../../scenes/scenes.ts";

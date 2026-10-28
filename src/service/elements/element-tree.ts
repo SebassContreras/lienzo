@@ -4,7 +4,7 @@
  * (`shot-1/s1-car`) across nested groups of any depth.
  */
 import type { Element, GroupEl } from "../../model/model.ts";
-import { fail } from "../registry.ts";
+import { fail } from "../core/registry.ts";
 
 /** Locates an element in `elements` by unique `id` or slash-separated path (`group/child`). */
 function resolvePath(

@@ -1,8 +1,8 @@
 import { applyCrop } from "../../engine/image-trim.ts";
 import type { Element, ImageEl } from "../../model/model.ts";
-import type { ProjectCtx } from "../ctx.ts";
-import { fail } from "../registry.ts";
-import { round3 } from "../round.ts";
+import type { ProjectCtx } from "../core/ctx.ts";
+import { fail } from "../core/registry.ts";
+import { round3 } from "../core/round.ts";
 import { assetSegments, projectAssetUrl, safeAssetPath } from "./asset-path.ts";
 
 /** Where the page loads `src` from: a project asset through its route, anything else as is. */

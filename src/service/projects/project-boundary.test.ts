@@ -1,8 +1,8 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createCtx } from "../ctx.ts";
-import { inProject } from "../project-scope.ts";
+import { createCtx } from "../core/ctx.ts";
+import { inProject } from "../core/project-scope.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 
 describe("040 project-boundary and scope resolution", () => {

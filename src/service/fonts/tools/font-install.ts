@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { z } from "zod";
 import { ProjectSlugSchema } from "../../../model/project.ts";
-import { defineTool, fail } from "../../registry.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import { installGoogleFont, saveFont } from "../font-install.ts";
 
 export const fontInstall = defineTool({

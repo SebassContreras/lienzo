@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { parseAnimPreset } from "../../../model/anim-preset.ts";
 import { listJson } from "../../../presets/json-fs.ts";
-import { PROJECT } from "../../project-scope.ts";
+import { PROJECT } from "../../core/project-scope.ts";
+import { defineTool } from "../../core/registry.ts";
 import { animationsDir } from "../../projects/project-files.ts";
-import { defineTool } from "../../registry.ts";
 
 export const animationList = defineTool({
   name: "animation_list",

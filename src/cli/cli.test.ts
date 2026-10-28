@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { beforeEach, describe, expect, it } from "vitest";
-import { type Ctx, createCtx } from "../service/ctx.ts";
+import { type Ctx, createCtx } from "../service/core/ctx.ts";
 import { fakeRenderer } from "../service/render/fake-renderer.ts";
 import { registry } from "../service/tools/index.ts";
 import { PNG_1X1 } from "../test/png.ts";

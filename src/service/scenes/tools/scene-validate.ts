@@ -2,13 +2,13 @@ import { z } from "zod";
 import { CompactSceneInputSchema } from "../../../model/compact.ts";
 import type { Scene } from "../../../model/model.ts";
 import { buildCompact } from "../../compact/build-compact.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
+import { Verdict, verdictOf } from "../../core/verdict.ts";
 import {
   availableFonts,
   measureInstalledFonts,
 } from "../../fonts/font-install.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool, fail } from "../../registry.ts";
-import { Verdict, verdictOf } from "../../verdict.ts";
 import { sceneFromData } from "../scene-defaults.ts";
 import { sceneNotices } from "../scene-notices.ts";
 import { resourceNotices } from "../scene-resources.ts";

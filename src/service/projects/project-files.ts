@@ -4,9 +4,9 @@
  */
 import { join } from "node:path";
 import { removeJson, renameJson } from "../../presets/json-fs.ts";
-import type { Ctx, ProjectCtx } from "../ctx.ts";
-import { inProject } from "../project-scope.ts";
-import { fail } from "../registry.ts";
+import type { Ctx, ProjectCtx } from "../core/ctx.ts";
+import { inProject } from "../core/project-scope.ts";
+import { fail } from "../core/registry.ts";
 
 export type ProjectFolder = "scenes" | "presets";
 

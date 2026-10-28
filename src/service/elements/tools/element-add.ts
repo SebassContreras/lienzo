@@ -12,8 +12,13 @@ import { withFileAspect } from "../../assets/image-aspect.ts";
 import { trimImage } from "../../assets/image-trim.ts";
 import { applyImplied } from "../../compact/implied.ts";
 import { placeAt } from "../../compact/layout.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool, fail, remapFailure, ToolFailure } from "../../registry.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import {
+  defineTool,
+  fail,
+  remapFailure,
+  ToolFailure,
+} from "../../core/registry.ts";
 import { editScene, findPreset, SceneResult } from "../../scenes/scenes.ts";
 import { findElement, insertChild } from "../element-tree.ts";
 import {

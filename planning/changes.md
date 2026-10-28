@@ -74,3 +74,9 @@ Why: A7@3 still put scenes and assets at the repo root, which spec 040 moved int
 Why: "minimal tests" was applied as one test per reported case; nine QA rounds (067–081) kept finding the same rules broken in the next writer, 34 of 43 tools have at most one failing-input test, and `traits` and `export` have none. Minimal now means no tests of implementation details, not fewer rules covered.
 - MODIFIED A14@1 → A14@2
 - Tasks: 082/T001 rewrites A14 and the AGENTS.md test rule; 082/T017–T023 build the matrix; 082/T024–T040 rewrite the suite
+
+## 2026-10-28 — tools live with their functionality (082)
+Why: `src/service` held 165 files, 32 of them loose, and a tool, its logic and its tests were in three places; the test rewrite of 082 groups each functionality in one folder. Meaning of A20 unchanged: one file per tool, one registry, thin adapters.
+- MODIFIED A20@2 → A20@3
+- Tasks: 082/T005–T015 move the files; 082/T015 rewrites the A20 path
+

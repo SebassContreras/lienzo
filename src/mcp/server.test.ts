@@ -5,7 +5,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { run } from "../cli/main.ts";
-import { type Ctx, createCtx } from "../service/ctx.ts";
+import { type Ctx, createCtx } from "../service/core/ctx.ts";
 import { fakeRenderer } from "../service/render/fake-renderer.ts";
 import { registry } from "../service/tools/index.ts";
 import { createMcpServer } from "./server.ts";

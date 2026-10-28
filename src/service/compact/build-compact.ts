@@ -17,18 +17,18 @@ import { parseSize } from "../../model/size.ts";
 import { flatIssues } from "../../model/zod-issues.ts";
 import { asRecipe } from "../../presets/store.ts";
 import { withFileAspects } from "../assets/image-aspect.ts";
-import type { ProjectCtx } from "../ctx.ts";
-import {
-  estimatedWidthNotices,
-  type Face,
-  fontNotices,
-} from "../fonts/font-check.ts";
+import type { ProjectCtx } from "../core/ctx.ts";
 import {
   failAll,
   type Problem,
   remapFailure,
   ToolFailure,
-} from "../registry.ts";
+} from "../core/registry.ts";
+import {
+  estimatedWidthNotices,
+  type Face,
+  fontNotices,
+} from "../fonts/font-check.ts";
 import { expandScene } from "./expand.ts";
 
 const join = (prefix: string, path: string) =>

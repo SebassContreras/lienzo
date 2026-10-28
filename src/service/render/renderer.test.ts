@@ -11,7 +11,7 @@ import { promisify } from "node:util";
 import { chromium } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Scene } from "../../model/model.ts";
-import { type Ctx, createCtx } from "../ctx.ts";
+import { type Ctx, createCtx } from "../core/ctx.ts";
 import { findAppRoot } from "../projects/root.ts";
 import { registry } from "../tools/index.ts";
 import { type AppSession, closeApp, openApp } from "./renderer.ts";

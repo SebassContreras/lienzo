@@ -40,7 +40,7 @@ What exists today:
   (`src/engine/lazy-module.ts`); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
   (global) and `projects/<project>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
   loaded with `FontFace` by `src/engine/fonts.ts` in the editor and the `?render` route;
-  Google Fonts only through `src/service/google-fonts.ts` (`font_install`) (A12, spec 045)
+  Google Fonts only through `src/service/fonts/google-fonts.ts` (`font_install`) (A12, spec 045)
 - pnpm only (A13); Biome + Vitest (A14); lint, typecheck and test run locally
 - UI text in Spanish; code, comments and docs in English (A16)
 - Conventional Commits (A17); MIT-compatible deps only (A18)
@@ -68,7 +68,7 @@ What exists today:
   (`src/engine/shots.ts`): its own shot's transition (`shotTransitionAt`) and camera, once;
   elements with no `shot` never move. Unknown input keys become notices (`ignoredPaths`, in
   the tool registry and `sceneNotices`); `asset_rename`/`asset_delete` share
-  `src/service/project-assets.ts` with the assets tab
+  `src/service/assets/project-assets.ts` with the assets tab
 - Compact extras: partial `effects`, `defaults: "flat"` (build time only), `audioTracks`;
   `notices` lists what was ignored and missing fonts (058, 060). Speech `asTrack: true`
   appends an `audioTracks` entry at `startOffset` (060)
@@ -87,9 +87,9 @@ What exists today:
   partial `background`
 - QA suite fixes (069): colors are CSS colors (`ColorSchema`, `src/model/color.ts`) and the
   scene schema checks keyframe values against their field (`keyframeError`); every scene write
-  appends `resourceNotices` (`src/service/scene-resources.ts`: missing assets,
+  appends `resourceNotices` (`src/service/scenes/scene-resources.ts`: missing assets,
   line ends a write left loose; unknown icons and targets fail since 074); `asset_add` and image `aspect` read picture headers
-  (`src/service/image-header.ts`, `image-aspect.ts`); edge anchors keep a 5% margin
+  (`src/service/assets/image-header.ts`, `image-aspect.ts`); edge anchors keep a 5% margin
   (`anchorMargin`) and unplaced compact elements are centred; shots are checked by
   `shotProblem` and unbound by `unbindShot` (`src/model/shots.ts`); animation tools take an
   optional `project` (`animationsDir`) and `animation_delete` exists
@@ -101,32 +101,32 @@ What exists today:
 - QA round 4 (072): the MCP server names its starting commit in its `instructions`
   (`src/mcp/build-id.ts`); `shape_overlap` excuses containment only for a clearly smaller box
   (`HELD_AREA`); the counter count-up starts at its shot (`withCountUp(el, given, scene)`);
-  `checkShots` (`src/service/scenes.ts`) runs on every scene write, `scene_build` and
+  `checkShots` (`src/service/scenes/scenes.ts`) runs on every scene write, `scene_build` and
   `scene_validate`; an unclipped group's layout box holds its placed children (`withChildBoxes`)
 - QA round 5 (073): a shot owns `[start, end)` (the scene's last instant stays with the last
   shot), shared by render and layout through `isElementActiveInShot(el, t, shots, duration)`;
-  scene check errors name elements by id path (`idPath` in `src/service/scenes.ts`; since
+  scene check errors name elements by id path (`idPath` in `src/service/scenes/scenes.ts`; since
   074, by the id the caller gave, else by index)
 - QA round 6 (074): wrong input fails, listing the options; notices only for valid input that
-  may surprise. `checkWholeScene` (`src/service/scenes.ts`, 075) runs anim presets, shots and
-  `checkReferences` (`src/service/scene-references.ts`: unknown shot, icon, line target on a
+  may surprise. `checkWholeScene` (`src/service/scenes/scenes.ts`, 075) runs anim presets, shots and
+  `checkReferences` (`src/service/scenes/scene-references.ts`: unknown shot, icon, line target on a
   changed element) on every write and lists every problem (`failAll`, `ToolError.errors`);
   `parseSize` (`src/model/size.ts`); one source of scene defaults (`sceneDefaults` /
-  `sceneFromData`, `src/service/scene-defaults.ts`); `withElementDefaults`
+  `sceneFromData`, `src/service/scenes/scene-defaults.ts`); `withElementDefaults`
   (`src/model/fill-defaults.ts`) and `sparseScene` (`scene_get`); preset tracks shift to the
   shot (`fromShotStart`, `src/model/shots.ts`); bare asset refs stored with their project
   prefix (`withCanonicalAssets`); one `slugify` with accents folded (`src/presets/slug.ts`,
-  `legacySlug` read fallback); `src/service/tools/contract.test.ts` holds the wrong-input
+  `legacySlug` read fallback); `src/service/contract/contract.test.ts` holds the wrong-input
   rule across tools — a new scene-writing tool adds its cases there
 - Shot timing (075): an element's tracks are timed from its shot's `start` (0 unbound), so
   rebinding (`rebindShot`, `src/model/shot-timing.ts`: `element_update`, the inspector), moving
   a shot's `start` or removing it (`setShotIn` / `removeShotIn`, `src/model/shots.ts`:
   `shot_set`, the shots section) carry tracks and camera keys along, with a notice;
-  `checkWholeScene` (`src/service/scenes.ts`) lists schema and rule problems together, the
+  `checkWholeScene` (`src/service/scenes/scenes.ts`) lists schema and rule problems together, the
   rules reading what parses
 - Bundle and inputs (076): `ctx.ts` finds the app with `findAppRoot`, so `dist/cli.js` renders;
   a failing call names top-level keys the tool does not take and where they belong
-  (`misplacedHint`, `src/service/registry.ts`); `project_create` makes `project` from `name`
+  (`misplacedHint`, `src/service/core/registry.ts`); `project_create` makes `project` from `name`
 - QA round 7 (078): every opacity field is `fraction()` (`src/components/fields/field.ts`,
   0–1 for slider and check alike; `field.test.ts` walks every descriptor); `setShotIn` moves
   tracks only for a shot moved whole, a trim leaves them; `use` of a missing symbol fails;
@@ -135,7 +135,7 @@ What exists today:
 - QA round 8 (080): short keyframes are read by `TracksSchema` itself; defaults are filled in
   `prepareScene`; speech cues span the clip (`alignScriptToCues`) with unique ids
   (`mergeCues`); `text_overflow` in `scene_inspect_layout` comes from the text a kind draws,
-  recorded by `src/service/text-extents.ts` (matrix math in `src/engine/matrix.ts`);
+  recorded by `src/service/layout/text-extents.ts` (matrix math in `src/engine/matrix.ts`);
   `matchedWeight` (`src/model/fonts.ts`) is the one CSS weight rule for measuring and
   notices; one-color particles are checked against their dot color (`contrast.ts`);
   `project_inspect` lists animations and fonts; counters have no default suffix and icons
@@ -155,10 +155,10 @@ What exists today:
 - Tool parameter names (064/R13, R14): one name per meaning in every input and result —
   `project` (never `slug`), `scene` (a saved scene's name), `data` (a whole scene object),
   `recipe` (a preset object), `patch` (values merged in), `id` (an element), `at` (placement)
-- Tools: one registry in `src/service/` (007); logic lives only in tools, CLI and MCP are thin
+- Tools: one registry in `src/service/core/` (007); logic lives only in tools, CLI and MCP are thin
   adapters (A20); names are `snake_case` noun_verb (`scene_export`). Every tool that reads or
   writes a scene, an asset or an export takes a required `project` and runs on
-  `projects/<project>/` (`inProject` in `src/service/project-scope.ts`, 046); only a
+  `projects/<project>/` (`inProject` in `src/service/core/project-scope.ts`, 046); only a
   `ProjectCtx` reaches scenes, so the compiler rejects scene access without a project.
   `pnpm lienzo <tool>` (`src/cli/`, 008) runs
   any of them under `tsx` — top-level scalar fields as flags, the rest in `--json` (inline,
@@ -168,21 +168,21 @@ What exists today:
   `import.meta.glob`); static files go in `public/`
 - MCP: `pnpm lienzo mcp` (`src/mcp/server.ts`, 009) serves every registry tool over stdio
   with `@modelcontextprotocol/sdk`; generic, no per-tool code; stdout is the protocol only;
-  a result shaped like `ImageResult` (`src/service/image.ts`) goes out as image content
+  a result shaped like `ImageResult` (`src/service/render/image.ts`) goes out as image content
 - Headless export (010): `scene_export` / `scene_preview` render through `ctx.renderer`
-  (`src/service/renderer.ts`): an in-process Vite server + Playwright (`playwright-core`;
+  (`src/service/render/renderer.ts`): an in-process Vite server + Playwright (`playwright-core`;
   Chrome, else Edge, else Playwright's Chromium) on the `?render` route
   (`src/export/render-page.ts`), which calls the editor's own `exportScene`. Started on the
   first render, reused within a process, closed by `ctx.dispose()` — the CLI disposes after
   every command, the MCP server when stdin ends. Tests pass `fakeRenderer()` unless they
   need a real browser (`renderer.test.ts`, skipped when none is installed). `scene_export`
   writes only inside `projects/<project>/exports/`
-- Speech (TTS): adapters in `src/service/tts/` (OpenRouter, local Kokoro-compatible server);
+- Speech (TTS): adapters in `src/service/speech/` (OpenRouter, local Kokoro-compatible server);
   env variables (`.env.example`) are read in Node only. The editor reaches OpenRouter through
-  the dev server's `/api/tts/speech` (`src/service/tts-proxy.ts`), which adds the key, so no
+  the dev server's `/api/tts/speech` (`src/service/speech/tts-proxy.ts`), which adds the key, so no
   `OPENROUTER_*` value reaches the browser or `dist/` (046). A key the user types in the TTS
   dialog is the one exception: it is kept in the browser's TTS preferences (`localStorage`,
-  `src/service/tts/preferences.ts`) and sent straight to OpenRouter, bypassing the proxy (061)
+  `src/service/speech/preferences.ts`) and sent straight to OpenRouter, bypassing the proxy (061)
 
 ## Layout
 
@@ -210,9 +210,13 @@ src/traits/      reusable style pieces, one file per trait
 src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
                  store.ts), categories and filter, JSON import/export helpers,
                  animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
-src/service/     tool registry, ctx, Node store, project scope, headless renderer (010), dev
-                 server middlewares (projects, fonts, TTS proxy); tools/ = one file per tool
-                 (007); tts/ = speech adapters; compact/ = compact scene expansion (011)
+src/service/     one folder per functionality, each with its logic and tests and a tools/
+                 folder with one file per tool and its tests (007, 082): scenes, elements,
+                 shots (shots and keyframes), assets, fonts, presets (and animations),
+                 projects, speech (TTS adapters and proxy), render (headless renderer, 010,
+                 exports), compact (compact scene expansion, 011), layout; core = registry,
+                 ctx, Node store, verdict, project scope; contract = the tests that cross
+                 functionalities; tools/index.ts = the one TOOLS list
 src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008); build.ts
                  bundles dist/cli.js
 src/mcp/         `pnpm lienzo mcp`: the stdio MCP server over the registry (009)
@@ -258,9 +262,9 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
 - One rule, one place (075): a rule both the editor and the tools apply lives in `src/model/`
   as a pure function both call; never re-implement it in a tool or a component. A QA fix
   names the rule it restores and adds one case per writer (each tool and the editor helper)
-  to `src/service/tools/contract.test.ts`, so the next path that writes it is covered too.
+  to `src/service/contract/contract.test.ts`, so the next path that writes it is covered too.
   Where each shared rule is applied (080): keyframes in the track schema
-  (`src/model/track.ts`), element defaults in `prepareScene` (`src/service/scenes.ts`),
+  (`src/model/track.ts`), element defaults in `prepareScene` (`src/service/scenes/scenes.ts`),
   audio refs in `saveScene` (`withCanonicalAudio`), a group's shot in `src/engine/groups.ts`,
   compact problems in `buildCompact`, element names in errors and notices in `idPath`.
   Added by 081: unique element ids (`duplicateIds`, `checkUniqueIds` in `prepareScene`), shot

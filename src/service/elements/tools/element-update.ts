@@ -7,8 +7,8 @@ import {
 import { OPTIONS_TEXT } from "../../../model/options.ts";
 import { movedNotice, rebindShot } from "../../../model/shot-timing.ts";
 import { placeAt } from "../../compact/layout.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool } from "../../registry.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool } from "../../core/registry.ts";
 import { editScene, SceneResult } from "../../scenes/scenes.ts";
 import { updateElement } from "../element-tree.ts";
 import {

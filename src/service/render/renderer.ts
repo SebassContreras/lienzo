@@ -14,7 +14,7 @@ import type { ViteDevServer } from "vite";
 import type { ExportOptions } from "../../export/export.ts";
 import type { RenderedFile } from "../../export/render-page.ts";
 import type { Scene } from "../../model/model.ts";
-import { fail } from "../registry.ts";
+import { fail } from "../core/registry.ts";
 
 /** An encoded frame or animation and its MIME type (`video/webm` when MP4 fell back). */
 export type Rendered = { bytes: Buffer; type: string };

@@ -9,10 +9,10 @@ import {
   type Scene,
   type Shot,
 } from "../../model/model.ts";
-import { type Ctx, createCtx } from "../ctx.ts";
+import { type Ctx, createCtx } from "../core/ctx.ts";
 import { inspectLayout } from "../layout/layout.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
-import { registry } from "./index.ts";
+import { registry } from "../tools/index.ts";
 
 /** Cases the fifth QA run reported, held at the tool boundary (073). */
 let ctx: Ctx;

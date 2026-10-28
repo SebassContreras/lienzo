@@ -6,9 +6,9 @@ import { BackgroundSchema, parsePresetRecipe } from "../../../model/schema.ts";
 import { readJson, writeJson } from "../../../presets/json-fs.ts";
 import { resolvePreset } from "../../../presets/resolve.ts";
 import { slugify } from "../../../presets/slug.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail, failAll } from "../../core/registry.ts";
 import { folderOf, storedAsNotice } from "../../projects/project-files.ts";
-import { defineTool, fail, failAll } from "../../registry.ts";
 import { refuseBuiltInName } from "../../scenes/scenes.ts";
 import { RECIPE_RULES } from "./preset-validate.ts";
 

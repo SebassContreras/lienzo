@@ -38,7 +38,7 @@ exactly what I wanted").
 
 ## Automation
 
-- A20: Every operation on scenes and presets outside the editor is a tool defined once in `src/service/tools/` (one file per tool): a `snake_case` noun_verb name (`scene_export`), description, Zod input and output, `run(input, ctx)`; the CLI and the MCP server are thin adapters that expose every tool of the one registry and hold no logic — why: both stay identical, a new capability is one file, and MCP tool names allow only `[a-zA-Z0-9_-]`.
+- A20: Every operation on scenes and presets outside the editor is a tool defined once, one file per tool in the `tools/` folder of its functionality (`src/service/<feature>/tools/`, listed in `src/service/tools/index.ts`): a `snake_case` noun_verb name (`scene_export`), description, Zod input and output, `run(input, ctx)`; the CLI and the MCP server are thin adapters that expose every tool of the one registry and hold no logic — why: both stay identical, a new capability is one file, and MCP tool names allow only `[a-zA-Z0-9_-]`.
 - A21: Rendering outside the editor loads the app in headless Chromium through Playwright, using the installed Chrome when present so MP4 can use H.264 — why: keeps A3 (preview = export) with no second drawing path.
 - A22: The MCP server uses `@modelcontextprotocol/sdk` (MIT) over stdio; the CLI runs with `tsx` — why: the official SDK; no build step for a local tool.
 

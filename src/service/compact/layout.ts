@@ -9,7 +9,7 @@ import type {
   CompactOrigin,
 } from "../../model/compact.ts";
 import type { Element, Scene } from "../../model/model.ts";
-import { round2 } from "../round.ts";
+import { round2 } from "../core/round.ts";
 
 export function resolveFitCanvas(
   el: Element,

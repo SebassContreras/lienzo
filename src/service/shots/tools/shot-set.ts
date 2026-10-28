@@ -10,8 +10,8 @@ import {
   type SceneShotsResult,
   setShotIn,
 } from "../../../model/shots.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool, fail } from "../../registry.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import { editScene, SceneResult } from "../../scenes/scenes.ts";
 
 export const shotSet = defineTool({

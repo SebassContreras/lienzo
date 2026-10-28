@@ -2,7 +2,7 @@
 import { cp, mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type Ctx, createCtx } from "../service/ctx.ts";
+import { type Ctx, createCtx } from "../service/core/ctx.ts";
 import { fakeRenderer } from "../service/render/fake-renderer.ts";
 import { registry } from "../service/tools/index.ts";
 

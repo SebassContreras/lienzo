@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { PresetRecipe } from "../../../model/preset.ts";
 import { asRecipe } from "../../../presets/store.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool } from "../../registry.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool } from "../../core/registry.ts";
 
 export const presetList = defineTool({
   name: "preset_list",

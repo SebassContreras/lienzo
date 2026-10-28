@@ -9,7 +9,7 @@ import { ignoredFields, ignoredNotice } from "../../model/ignored.ts";
 import type { Element } from "../../model/model.ts";
 import { ElementSchema } from "../../model/schema.ts";
 import { deepMerge } from "../../presets/resolve.ts";
-import { fail } from "../registry.ts";
+import { fail } from "../core/registry.ts";
 
 /** `el` with `patch` deep-merged in (objects key by key, the rest replaced); id and kind stay. */
 export function patched(el: Element, patch: Record<string, unknown>): Element {

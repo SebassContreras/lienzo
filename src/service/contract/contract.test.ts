@@ -8,9 +8,9 @@ import { join } from "node:path";
 import { beforeEach, expect, it } from "vitest";
 import { groupElements, ungroupElement } from "../../engine/groups.ts";
 import { defaultRect, defaultScene } from "../../model/model.ts";
-import { type Ctx, createCtx } from "../ctx.ts";
+import { type Ctx, createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
-import { registry } from "./index.ts";
+import { registry } from "../tools/index.ts";
 
 let ctx: Ctx;
 const call = (name: string, input: Record<string, unknown>) =>

@@ -5,12 +5,12 @@ import {
   ColorPaletteSchema,
   ProjectSlugSchema,
 } from "../../../model/project.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import {
   missingBrandWeightNotices,
   missingFontNotice,
 } from "../../fonts/font-check.ts";
 import { availableFonts } from "../../fonts/font-install.ts";
-import { defineTool, fail } from "../../registry.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 
 /** The canvas fields given; the others keep their stored values (069/D3). */

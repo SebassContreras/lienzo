@@ -7,8 +7,8 @@ import { defaultScene, type Scene } from "../../model/model.ts";
 import { deepMerge } from "../../presets/resolve.ts";
 import { solidBackground } from "../../traits/solid.ts";
 import { resolveSceneBackground } from "../compact/expand.ts";
-import type { ProjectCtx } from "../ctx.ts";
-import { fail } from "../registry.ts";
+import type { ProjectCtx } from "../core/ctx.ts";
+import { fail } from "../core/registry.ts";
 import { findPreset } from "./scenes.ts";
 
 export async function sceneDefaults(ctx: ProjectCtx): Promise<Scene> {

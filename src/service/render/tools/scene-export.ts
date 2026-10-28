@@ -1,7 +1,7 @@
 import { extname } from "node:path";
 import { z } from "zod";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool } from "../../registry.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool } from "../../core/registry.ts";
 import { writeExport } from "../exports.ts";
 import {
   missingAssetNotices,

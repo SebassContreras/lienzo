@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ungroupElement } from "../../../engine/groups.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool, fail } from "../../registry.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import { openScene, SceneResult, saveScene } from "../../scenes/scenes.ts";
 
 export const elementUngroup = defineTool({

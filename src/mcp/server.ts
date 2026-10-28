@@ -17,8 +17,8 @@ import {
   type Tool as McpTool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import type { Ctx } from "../service/ctx.ts";
-import type { Registry, Tool } from "../service/registry.ts";
+import type { Ctx } from "../service/core/ctx.ts";
+import type { Registry, Tool } from "../service/core/registry.ts";
 import { ImageResult } from "../service/render/image.ts";
 import { gitCommit } from "./build-id.ts";
 

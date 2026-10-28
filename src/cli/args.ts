@@ -5,7 +5,7 @@
  */
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import type { Tool } from "../service/registry.ts";
+import type { Tool } from "../service/core/registry.ts";
 
 /** One input field as the CLI sees it: a flag when every type it accepts is a scalar. */
 export type Field = {

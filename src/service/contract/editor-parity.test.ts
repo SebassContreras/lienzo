@@ -6,20 +6,20 @@ import { cp, mkdir, mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { groupElements, ungroupElement } from "../engine/groups.ts";
-import type { Element, Scene } from "../model/model.ts";
+import { groupElements, ungroupElement } from "../../engine/groups.ts";
+import type { Element, Scene } from "../../model/model.ts";
 import {
   removeShotIn,
   setShot,
   setShotIn,
   toggleCameraKey,
-} from "../model/shots.ts";
-import { trackEntry, trackKeys } from "../model/track.ts";
-import { recipeFromElement } from "../presets/diff.ts";
-import { resolveOrigin } from "./compact/layout.ts";
-import { type Ctx, createCtx } from "./ctx.ts";
-import { fakeRenderer } from "./render/fake-renderer.ts";
-import { registry } from "./tools/index.ts";
+} from "../../model/shots.ts";
+import { trackEntry, trackKeys } from "../../model/track.ts";
+import { recipeFromElement } from "../../presets/diff.ts";
+import { resolveOrigin } from "../compact/layout.ts";
+import { type Ctx, createCtx } from "../core/ctx.ts";
+import { fakeRenderer } from "../render/fake-renderer.ts";
+import { registry } from "../tools/index.ts";
 
 const project = "parity";
 let ctx: Ctx;

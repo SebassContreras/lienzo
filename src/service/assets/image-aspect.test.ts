@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 import { PNG_1X1 } from "../../test/png.ts";
-import { createCtx } from "../ctx.ts";
+import { createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 

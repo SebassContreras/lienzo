@@ -1,7 +1,7 @@
 import { z } from "zod";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool } from "../../core/registry.ts";
 import { findElement, updateElement } from "../../elements/element-tree.ts";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool } from "../../registry.ts";
 import { openScene, SceneResult, saveScene } from "../../scenes/scenes.ts";
 import { trimImage } from "../image-trim.ts";
 

@@ -5,10 +5,10 @@
  */
 
 import type { z } from "zod";
-import { idPath } from "../model/id-path.ts";
-import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
-import { flatIssues } from "../model/zod-issues.ts";
-import { setSpanishLocale } from "../model/zod-locale.ts";
+import { idPath } from "../../model/id-path.ts";
+import { ignoredFields, ignoredNotice } from "../../model/ignored.ts";
+import { flatIssues } from "../../model/zod-issues.ts";
+import { setSpanishLocale } from "../../model/zod-locale.ts";
 import type { Ctx } from "./ctx.ts";
 
 /** One problem with an input: the path it is at and what is wrong. */

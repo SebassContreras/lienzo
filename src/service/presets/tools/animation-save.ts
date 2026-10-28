@@ -2,9 +2,9 @@ import { z } from "zod";
 import { parseAnimPreset } from "../../../model/anim-preset.ts";
 import { readJson, writeJson } from "../../../presets/json-fs.ts";
 import { slugify } from "../../../presets/slug.ts";
-import { PROJECT } from "../../project-scope.ts";
+import { PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import { animationsDir, storedAsNotice } from "../../projects/project-files.ts";
-import { defineTool, fail } from "../../registry.ts";
 
 export const animationSave = defineTool({
   name: "animation_save",

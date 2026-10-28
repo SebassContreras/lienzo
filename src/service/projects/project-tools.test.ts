@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { parseProjectManifest } from "../../model/project.ts";
-import { type Ctx, createCtx } from "../ctx.ts";
+import { type Ctx, createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 import { createProjectStore, type ProjectStore } from "./project-store.ts";

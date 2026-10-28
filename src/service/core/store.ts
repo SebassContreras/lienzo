@@ -3,8 +3,8 @@
  * middleware (`json-fs.ts`), so what the tools write opens in the editor and vice versa.
  */
 import { join } from "node:path";
-import { type JsonItem, listJson } from "../presets/json-fs.ts";
-import { loadBuiltIns } from "./presets/built-in.ts";
+import { type JsonItem, listJson } from "../../presets/json-fs.ts";
+import { loadBuiltIns } from "../presets/built-in.ts";
 
 export type PresetSource = "built-in" | "user";
 

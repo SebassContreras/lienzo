@@ -6,7 +6,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TextEl } from "../../components/text/descriptor.ts";
 import { defaultElement, defaultScene, type Scene } from "../../model/model.ts";
-import { createCtx } from "../../service/ctx.ts";
+import { createCtx } from "../../service/core/ctx.ts";
 import { fakeRenderer } from "../../service/render/fake-renderer.ts";
 import { registry } from "../../service/tools/index.ts";
 import { ReviewSection } from "./review-section.tsx";

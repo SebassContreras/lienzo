@@ -20,11 +20,11 @@ import {
   withCanonicalAssets,
   withCanonicalAudio,
 } from "../assets/asset-refs.ts";
-import type { Ctx, ProjectCtx } from "../ctx.ts";
+import type { Ctx, ProjectCtx } from "../core/ctx.ts";
+import { fail, failAll, type Problem, problemsOf } from "../core/registry.ts";
+import type { PresetSource } from "../core/store.ts";
 import { fontNotices } from "../fonts/font-check.ts";
 import { availableFonts } from "../fonts/font-install.ts";
-import { fail, failAll, type Problem, problemsOf } from "../registry.ts";
-import type { PresetSource } from "../store.ts";
 import { allElements, changedSince } from "./scene-changes.ts";
 import { offCanvasNotices, shotNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";

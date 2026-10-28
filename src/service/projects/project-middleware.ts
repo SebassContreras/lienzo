@@ -9,7 +9,7 @@ import {
 } from "../assets/asset-helpers.ts";
 import { safeAssetPath } from "../assets/asset-path.ts";
 import { deleteAsset, renameAsset } from "../assets/project-assets.ts";
-import { ToolFailure } from "../registry.ts";
+import { ToolFailure } from "../core/registry.ts";
 import type { ProjectStore } from "./project-store.ts";
 
 export async function handleProjectApi(

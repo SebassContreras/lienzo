@@ -61,7 +61,7 @@ export type ProjectStore = {
   ): string;
 
   /** Create a Store scoped to a project workspace (projects/<slug>/) with fallback to global built-ins. */
-  projectStore(slug: string): Promise<import("../store.ts").Store>;
+  projectStore(slug: string): Promise<import("../core/store.ts").Store>;
 
   /**
    * Validates whether an asset file reference belongs to the project's local assets.
@@ -245,13 +245,15 @@ export function createProjectStore(root: string): ProjectStore {
       return true;
     },
 
-    async projectStore(slug: string): Promise<import("../store.ts").Store> {
+    async projectStore(
+      slug: string,
+    ): Promise<import("../core/store.ts").Store> {
       ProjectSlugSchema.parse(slug);
       const base = projectPath(slug);
       if (!(await exists(base))) {
         throw new Error(`No existe el proyecto «${slug}»`);
       }
-      const { createStore } = await import("../store.ts");
+      const { createStore } = await import("../core/store.ts");
       const { listJson } = await import("../../presets/json-fs.ts");
       const globalStore = createStore(root);
       const projectPresetsDir = join(base, "presets");

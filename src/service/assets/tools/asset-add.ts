@@ -1,8 +1,8 @@
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { z } from "zod";
-import { inProject, PROJECT } from "../../project-scope.ts";
-import { defineTool, fail } from "../../registry.ts";
+import { inProject, PROJECT } from "../../core/project-scope.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import {
   ASSET_TYPES,
   looksLikeAudio,

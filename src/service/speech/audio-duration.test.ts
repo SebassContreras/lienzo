@@ -2,7 +2,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createCtx } from "../ctx.ts";
+import { createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 import { audioDuration } from "./audio-duration.ts";

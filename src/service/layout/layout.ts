@@ -24,8 +24,8 @@ import type {
   Scene,
   TextEl,
 } from "../../model/model.ts";
+import { round2 } from "../core/round.ts";
 import { measureStyleOf } from "../fonts/font-check.ts";
-import { round2 } from "../round.ts";
 import { resolveBackdropUnder } from "./contrast.ts";
 import { textExtentsOf } from "./text-extents.ts";
 

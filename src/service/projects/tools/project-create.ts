@@ -6,7 +6,7 @@ import {
   ProjectSlugSchema,
 } from "../../../model/project.ts";
 import { projectSlug } from "../../../presets/slug.ts";
-import { defineTool, fail } from "../../registry.ts";
+import { defineTool, fail } from "../../core/registry.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 
 export const projectCreate = defineTool({

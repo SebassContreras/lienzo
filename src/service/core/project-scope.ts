@@ -1,4 +1,4 @@
-import { ProjectSlugSchema } from "../model/project.ts";
+import { ProjectSlugSchema } from "../../model/project.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
 import { fail } from "./registry.ts";
 

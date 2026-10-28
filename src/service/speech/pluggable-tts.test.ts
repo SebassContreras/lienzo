@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultScene } from "../../model/model.ts";
-import type { Ctx } from "../ctx.ts";
+import type { Ctx } from "../core/ctx.ts";
 import {
   DEFAULT_LOCAL_TTS_URL,
   resolveLocalTtsBaseUrl,

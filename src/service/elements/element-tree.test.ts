@@ -4,7 +4,7 @@ import {
   type Element,
   type GroupEl,
 } from "../../model/model.ts";
-import { ToolFailure } from "../registry.ts";
+import { ToolFailure } from "../core/registry.ts";
 import {
   findElement,
   insertChild,

@@ -10,7 +10,7 @@ import { ICON_NAMES } from "../../engine/icon-set.ts";
 import { mapElementsDeep } from "../../model/element-walk.ts";
 import { closestKey } from "../../model/ignored.ts";
 import type { Element, Scene } from "../../model/model.ts";
-import { failAll, type Problem } from "../registry.ts";
+import { failAll, type Problem } from "../core/registry.ts";
 import { changedSince, placedElements } from "./scene-changes.ts";
 
 const fold = (name: string) => name.toLowerCase().replace(/[-_\s]/g, "");

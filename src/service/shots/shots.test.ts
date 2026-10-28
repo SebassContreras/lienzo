@@ -8,7 +8,7 @@ import {
   resolveShotCamera,
 } from "../../engine/shots.ts";
 import { defaultElement, type Scene, type Shot } from "../../model/model.ts";
-import { type Ctx, createCtx } from "../ctx.ts";
+import { type Ctx, createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 
