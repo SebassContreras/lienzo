@@ -2,7 +2,7 @@ import { z } from "zod";
 import { parseAnimPreset } from "../../model/anim-preset.ts";
 import { readJson, writeJson } from "../../presets/json-fs.ts";
 import { slugify } from "../../presets/slug.ts";
-import { animationsDir } from "../project-files.ts";
+import { animationsDir, storedAsNotice } from "../project-files.ts";
 import { PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
 
@@ -21,7 +21,7 @@ export const animationSave = defineTool({
     file: z.string().min(1).optional(),
     overwrite: z.boolean().optional(),
   }),
-  output: z.object({ animation: z.string() }),
+  output: z.object({ animation: z.string(), notices: z.array(z.string()) }),
   async run({ recipe, project, file, overwrite }, ctx) {
     const parsed = parseAnimPreset(recipe);
     if (!parsed.ok) fail("invalid_animation", parsed.error, parsed.path);
@@ -29,6 +29,7 @@ export const animationSave = defineTool({
     const name = file ?? parsed.value.name;
     if (!overwrite && (await readJson(dir, name)) !== undefined)
       fail("exists", `Ya existe la animación «${slugify(name)}»`, "file");
-    return { animation: await writeJson(dir, name, parsed.value) };
+    const animation = await writeJson(dir, name, parsed.value);
+    return { animation, notices: storedAsNotice(name, animation) };
   },
 });

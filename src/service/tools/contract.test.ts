@@ -1386,3 +1386,77 @@ it("scene_preview lists an asset the project lacks and a changed extension", asy
     },
   });
 });
+
+// 081/D7: presets and animation presets
+
+it("preset_save refuses the name of a built-in preset", async () => {
+  const r = await call("preset_save", {
+    recipe: { name: "Tarjeta neón", kind: "rect" },
+  });
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "built_in_name", path: "recipe.name" },
+  });
+});
+
+it("preset_rename refuses the name of a built-in preset", async () => {
+  await call("preset_save", { recipe: { name: "Mía", kind: "rect" } });
+  const r = await call("preset_rename", { from: "Mía", to: "Pill" });
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "built_in_name", path: "to" },
+  });
+});
+
+it("preset_get finds a preset by its name without accents", async () => {
+  const r = await call("preset_get", { name: "tarjeta neon" });
+  expect(r).toMatchObject({ ok: true, value: { source: "built-in" } });
+});
+
+it("preset_save notices a set key the kind has no field for", async () => {
+  const r = await call("preset_save", {
+    recipe: { name: "Con zzz", kind: "text", set: { zzz: 1, text: "hola" } },
+  });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: expect.arrayContaining([expect.stringMatching(/set.zzz/)]) },
+  });
+});
+
+it("preset_save notices when the file is named differently", async () => {
+  const r = await call("preset_save", {
+    recipe: { name: "Caja Ámbar", kind: "rect" },
+  });
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: expect.arrayContaining([expect.stringMatching(/caja-ambar/)]) },
+  });
+});
+
+it("animation_save refuses two keyframes at one time", async () => {
+  const recipe = { name: "Dos", tracks: { x: [[0, 1], [0, 2]] } };
+  expect(await call("animation_save", { recipe })).toMatchObject({
+    ok: false,
+    error: { message: expect.stringMatching(/dos keyframes en t=0/) },
+  });
+});
+
+it("animation_save refuses a recipe with neither anim nor tracks", async () => {
+  const r = await call("animation_save", { recipe: { name: "Vacía" } });
+  expect(r).toMatchObject({
+    ok: false,
+    error: { message: expect.stringMatching(/necesita `anim` o `tracks`/) },
+  });
+});
+
+it("element_add takes an animPreset by its file name", async () => {
+  await call("animation_save", {
+    recipe: { name: "Entrada Rebote", anim: { in: { kind: "bounce" } } },
+  });
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "text",
+    patch: { animPreset: "entrada-rebote" },
+  });
+  expect(r).toMatchObject({ ok: true });
+});

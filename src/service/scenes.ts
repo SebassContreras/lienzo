@@ -14,7 +14,7 @@ import type { PresetRecipe } from "../model/preset.ts";
 import { parseScene, ShotSchema } from "../model/schema.ts";
 import { shotProblems } from "../model/shots.ts";
 import { expandAnimPresets } from "../presets/anim-presets.ts";
-import { slugify } from "../presets/slug.ts";
+import { sameName, slugify } from "../presets/slug.ts";
 import { asRecipe } from "../presets/store.ts";
 import { withCanonicalAssets, withCanonicalAudio } from "./asset-refs.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
@@ -153,7 +153,8 @@ function unknownPresets(
   return elements.flatMap((el, i) => {
     const at = `${prefix}${i}`;
     const own =
-      typeof el.animPreset?.name === "string" && !names.has(el.animPreset.name)
+      typeof el.animPreset?.name === "string" &&
+      !names.has(slugify(el.animPreset.name))
         ? [{ path: `${at}.animPreset`, el }]
         : [];
     const inner =
@@ -173,7 +174,11 @@ export function checkAnimPresets(
   library: readonly AnimPreset[],
 ): void {
   const names = library.map((p) => p.name);
-  const missing = unknownPresets(scene.elements, new Set(names), "elements.");
+  const missing = unknownPresets(
+    scene.elements,
+    new Set(names.map(slugify)),
+    "elements.",
+  );
   if (missing.length > 0)
     failAll(
       "unknown_anim_preset",
@@ -343,6 +348,26 @@ export async function refuseBuiltIn(
 }
 
 /**
+ * Fails at `field` when `name` is a built-in preset's name (081/D7): a user preset with it
+ * would hide the built-in from every lookup by name.
+ */
+export async function refuseBuiltInName(
+  ctx: Ctx,
+  name: string,
+  field: string,
+): Promise<void> {
+  const builtIn = (await ctx.store.presets()).some(
+    (p) => p.source === "built-in" && sameName(asRecipe(p.data as PresetRecipe).name, name),
+  );
+  if (builtIn)
+    fail(
+      "built_in_name",
+      `«${name}» es el nombre de un preset integrado; elige otro nombre`,
+      field,
+    );
+}
+
+/**
  * The preset whose name or file name is `name` (user presets before built-ins of the same
  * name); a miss fails at `field`, the caller's parameter, listing the presets (of `kind`
  * when given) (080/D7).
@@ -358,7 +383,7 @@ export async function findPreset(
   }));
   const match = all
     .reverse()
-    .find((p) => p.recipe.name === name || p.file === slugify(name));
+    .find((p) => sameName(p.recipe.name, name) || p.file === slugify(name));
   if (!match)
     fail(
       "not_found",

@@ -15,6 +15,10 @@ export function slugify(name: string): string {
   return fold(name, /[^a-z0-9-_]+/g) || "untitled";
 }
 
+/** Whether two names are the same name for a lookup: case, accents and punctuation folded (081/D7). */
+export const sameName = (a: string, b: string): boolean =>
+  slugify(a) === slugify(b);
+
 /** A project id from its name (letters, digits and `-` only); empty when nothing is left. */
 export function projectSlug(name: string): string {
   return fold(name, /[^a-z0-9]+/g);

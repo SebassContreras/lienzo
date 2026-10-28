@@ -7,7 +7,7 @@ import { z } from "zod";
 import { ALL_ANIMS, anim } from "../components/fields/index.ts";
 import type { Anim } from "./model.ts";
 import { type Parsed, parseWith } from "./schema.ts";
-import { type Tracks, TracksSchema } from "./track.ts";
+import { type Tracks, TracksSchema, trackKeys } from "./track.ts";
 
 /** Only the slots a preset sets; applying replaces those and keeps the element's others. */
 export type AnimSlots = Partial<Pick<Anim, "in" | "loop" | "out">>;
@@ -49,7 +49,25 @@ const AnimPresetSchema: z.ZodType<AnimPreset> = z
     anim: AnimSlotsSchema.optional(),
     tracks: TracksSchema.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((preset, ctx) => {
+    if (!preset.anim && !preset.tracks)
+      ctx.addIssue({
+        code: "custom",
+        message: "Una animación necesita `anim` o `tracks`",
+        path: [],
+      });
+    for (const [path, track] of Object.entries(preset.tracks ?? {})) {
+      const times = trackKeys(track).map((k) => k.t);
+      const repeated = times.find((t, i) => times.indexOf(t) < i);
+      if (repeated !== undefined)
+        ctx.addIssue({
+          code: "custom",
+          message: `La pista «${path}» tiene dos keyframes en t=${repeated}`,
+          path: ["tracks", path],
+        });
+    }
+  });
 
 export const parseAnimPreset = (data: unknown): Parsed<AnimPreset> =>
   parseWith(AnimPresetSchema, data);

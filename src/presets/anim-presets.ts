@@ -16,6 +16,7 @@ import {
   trackRepeat,
   trackUntil,
 } from "../model/track.ts";
+import { slugify } from "./slug.ts";
 
 /** What a preset holds besides its name and category. */
 export type PresetBody = Pick<AnimPreset, "anim" | "tracks">;
@@ -241,12 +242,12 @@ export function expandAnimPresets(
   scene: Scene,
   library: readonly AnimPreset[],
 ): { scene: Scene; notices: string[] } {
-  const byName = new Map(library.map((p) => [p.name, p]));
+  const byName = new Map(library.map((p) => [slugify(p.name), p]));
   const notices: string[] = [];
   const expand = (el: Element): Element => {
     if (el.kind === "group") el = { ...el, children: el.children.map(expand) };
     if (!el.animPreset || animates(el)) return el;
-    const preset = byName.get(el.animPreset.name);
+    const preset = byName.get(slugify(el.animPreset.name));
     if (!preset) {
       notices.push(
         `${el.name}: no existe la animación «${el.animPreset.name}»`,
