@@ -194,6 +194,23 @@ describe("animation_save and animation_list", () => {
   });
 });
 
+describe("project_inspect lists animations and fonts (080/R17)", () => {
+  it("names the project's own animation presets and font files", async () => {
+    await ok("animation_save", {
+      project,
+      recipe: { name: "Salto", anim: {} },
+    });
+    const file = join(root, "mine.ttf");
+    await writeFile(file, "font bytes");
+    await ok("font_install", { project, family: "Mía", weights: [700], file });
+
+    const details = await ok("project_inspect", { project });
+
+    expect(details.animations).toEqual(["salto"]);
+    expect(details.fonts).toEqual(["Mía-700.ttf"]);
+  });
+});
+
 describe("project_update", () => {
   it("changes the name and keeps the project id", async () => {
     const manifest = await ok("project_update", {

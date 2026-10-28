@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { ProjectSlugSchema } from "../../model/project.ts";
+import { listJson } from "../../presets/json-fs.ts";
+import { animationsDir } from "../project-files.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 import { defineTool, fail } from "../registry.ts";
 
@@ -7,6 +9,8 @@ const ProjectDetailsSchema = z.object({
   manifest: ToolProjectSchema,
   assets: z.array(z.string()),
   presets: z.array(z.string()),
+  animations: z.array(z.string()),
+  fonts: z.array(z.string()),
   scenes: z.array(z.string()),
 });
 
@@ -14,7 +18,7 @@ export const projectInspect = defineTool({
   name: "project_inspect",
   description:
     "Inspect a project workspace: returns full manifest, brand guide, and inventory of " +
-    "local assets, presets, and scenes.",
+    "local assets, presets, animation presets, fonts and scenes.",
   input: z.object({
     project: ProjectSlugSchema,
   }),
@@ -25,7 +29,14 @@ export const projectInspect = defineTool({
       if (!details) {
         fail("not_found", `No existe el proyecto «${project}»`, "project");
       }
-      return { ...details, manifest: asToolProject(details.manifest) };
+      return {
+        ...details,
+        manifest: asToolProject(details.manifest),
+        animations: (await listJson(await animationsDir(ctx, project))).map(
+          (item) => item.name,
+        ),
+        fonts: (await ctx.fonts.list(project)).map((f) => f.file),
+      };
     } catch (error) {
       if (
         error instanceof Error &&
