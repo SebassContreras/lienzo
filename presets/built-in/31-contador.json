@@ -4,6 +4,7 @@
   "kind": "counter",
   "traits": [],
   "set": {
+    "suffix": "+",
     "tracks": {
       "progress": [
         {

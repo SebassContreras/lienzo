@@ -31,7 +31,7 @@ User feedback showed friction in tool ergonomics and defaults: `scene_create` re
 ## Tasks
 - [ ] 065/T001 [agent] Tests: partial background and palette background in `scene_create` — covers R1, R2
 - [ ] 065/T002 [agent] Support partial backgrounds and solid palette background in `scene_create` and editor — covers D1, D2
-- [ ] 065/T003 [agent] Test and descriptor update for clean `counter` suffix default (`""`) — covers R3, D3
+- [x] 065/T003 [agent] Test and descriptor update for clean `counter` suffix default (`""`) — covers R3, D3
 - [ ] 065/T004 [agent] Tests: dead keyframe easing notices in validation and `keyframe_set` — covers R4
 - [ ] 065/T005 [agent] Implement `deadKeyframeEasingNotices`, connect to `sceneNotices`, `keyframe_set`, and docs — covers D4
 - [ ] 065/T006 [agent] Verification, typecheck and test suite run — covers R1, R2, R3, R4

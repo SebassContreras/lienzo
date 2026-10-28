@@ -15,12 +15,18 @@ export const FLAT_SHAPE_PATCH = {
 };
 
 /** Shapes and paths: `flat` paths drop their stroke too, which lives in `border` (063/D4). */
-export const FLAT_KINDS: readonly string[] = [...SHAPE_KINDS, "path"];
+export const FLAT_KINDS: readonly string[] = [...SHAPE_KINDS, "path", "icon"];
+
+/** An icon's look lives in its tile (080/D18). */
+const FLAT_ICON_PATCH = { tile: { gradient: false } };
 
 export function applySceneDefaults(
   el: Element,
   defaults: SceneDefaults | undefined,
 ): void {
   if (defaults !== "flat" || !FLAT_KINDS.includes(el.kind)) return;
-  deepMerge(el as unknown as Record<string, unknown>, FLAT_SHAPE_PATCH);
+  deepMerge(
+    el as unknown as Record<string, unknown>,
+    el.kind === "icon" ? FLAT_ICON_PATCH : FLAT_SHAPE_PATCH,
+  );
 }

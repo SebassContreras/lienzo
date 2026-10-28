@@ -55,7 +55,7 @@ const fields = {
   }),
   separator: select(SEPARATORS, ",", { label: "Separador de miles", ...N }),
   prefix: text("", { label: "Prefijo", ...N }),
-  suffix: text("+", { label: "Sufijo", ...N }),
+  suffix: text("", { label: "Sufijo", ...N }),
   font: { ...font("Inter"), ...T },
   size: length(96, { label: "Tamaño", min: 8, max: 400, ...T }),
   weight: { ...weight(800), ...T },

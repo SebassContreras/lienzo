@@ -108,7 +108,7 @@ exports[`render audit (063/R10) > default chart element renders as recorded 1`] 
 
 exports[`render audit (063/R10) > default code element renders as recorded 1`] = `"a8d6afd74bd4"`;
 
-exports[`render audit (063/R10) > default counter element renders as recorded 1`] = `"9475502105a2"`;
+exports[`render audit (063/R10) > default counter element renders as recorded 1`] = `"016a0a113f33"`;
 
 exports[`render audit (063/R10) > default ellipse element renders as recorded 1`] = `"ace00a028011"`;
 
