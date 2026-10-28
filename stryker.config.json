@@ -10,7 +10,13 @@
     "fileName": "reports/mutation/mutation.json"
   },
   "tempDirName": ".stryker-tmp",
-  "ignorePatterns": ["dist", "reports", "projects", "fonts", "node_modules"],
+  "ignorePatterns": [
+    "dist/**",
+    "reports/**",
+    "projects/**",
+    "fonts/**",
+    "node_modules/**"
+  ],
   "mutate": ["!src/**/*.test.ts", "!src/**/*.test.tsx"],
   "tsconfigFile": "stryker-no-tsconfig.json",
   "plugins": ["@stryker-mutator/vitest-runner"]
