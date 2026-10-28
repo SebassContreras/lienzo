@@ -46,3 +46,16 @@ export async function snapshot(root: string): Promise<string> {
   );
   return lines.join("\n");
 }
+
+/** A call that must succeed: its value, or an error naming the tool and what it answered. */
+export async function must(
+  ctx: Ctx,
+  tool: string,
+  input: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const result = await registry.call(tool, { project: "p", ...input }, ctx);
+  if (!result.ok) {
+    throw new Error(`${tool} failed: ${JSON.stringify(result.error)}`);
+  }
+  return result.value as Record<string, unknown>;
+}
