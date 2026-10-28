@@ -6,6 +6,7 @@
 import { idPath } from "../model/id-path.ts";
 import { ignoredFields, ignoredNotice } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
+import { trackKeys } from "../model/track.ts";
 import {
   estimatedFonts,
   estimatedWidthNotices,
@@ -27,6 +28,46 @@ function usesFont(el: Element, family: string): boolean {
     Array.isArray(children) &&
     (children as Element[]).some((c) => usesFont(c, family))
   );
+}
+
+/** An easing that shapes nothing: the last keyframe of a track has no segment after it. */
+export type DeadEasing = {
+  /** The element holding the track, which may sit inside a group. */
+  id: string;
+  /** The top-level element it belongs to. */
+  topId: string;
+  path: string;
+  t: number;
+  easing: string;
+};
+
+/** The tracks of `scene` whose last keyframe carries an easing that does nothing (065/D4). Pure. */
+export function deadEasings(scene: Scene): DeadEasing[] {
+  const found: DeadEasing[] = [];
+  const walk = (el: Element, topId: string) => {
+    for (const [path, track] of Object.entries(el.tracks ?? {})) {
+      const last = [...trackKeys(track)].sort((a, b) => a.t - b.t).at(-1);
+      if (last && last.easing !== "auto" && last.easing !== "linear")
+        found.push({ id: el.id, topId, path, t: last.t, easing: last.easing });
+    }
+    const children = (el as { children?: unknown }).children;
+    if (Array.isArray(children))
+      for (const child of children as Element[]) walk(child, topId);
+  };
+  for (const el of scene.elements) walk(el, el.id);
+  return found;
+}
+
+/** The notice for a dead easing: what it would have shaped is the segment to the next keyframe. */
+export const deadEasingNotice = (d: DeadEasing) =>
+  `La pista «${d.path}» de «${d.id}» tiene easing «${d.easing}» en su último keyframe (t=${d.t}), que no hace nada: el easing da forma al tramo hasta el siguiente keyframe, y este no tiene siguiente`;
+
+/** One notice per dead easing in `scene` (065/D4). */
+export function deadKeyframeEasingNotices(scene: Scene): SceneNotice[] {
+  return deadEasings(scene).map((d) => ({
+    message: deadEasingNotice(d),
+    elementId: d.topId,
+  }));
 }
 
 /** The notices for `scene`, parsed from `raw`; `installed` lists the usable font faces. */
@@ -63,6 +104,7 @@ export function sceneNotices(
         message: missingWeightNotice(w),
       })),
     ),
+    ...deadKeyframeEasingNotices(scene),
     ...byFamily(
       estimatedFonts(scene).map((family, i) => ({
         family,

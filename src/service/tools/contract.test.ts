@@ -1045,3 +1045,81 @@ it("the editor's groupElements and ungroupElement carry the shot as the tools do
   expect(grouped.group?.shot).toBe("s1");
   expect(ungrouped.scene.elements.map((el) => el.shot)).toEqual(["s1", "s1"]);
 });
+
+// 065/R4: an easing on a track's last keyframe shapes nothing, and every writer says so
+const DEAD_EASING = /«x».*«r».*ease-out.*t=2/;
+
+it("keyframe_set notes an easing on the track's last keyframe (065/R4)", async () => {
+  await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 0,
+    value: 0,
+  });
+
+  const r = await call("keyframe_set", {
+    scene: "s",
+    id: "r",
+    path: "x",
+    t: 2,
+    value: 100,
+    easing: "ease-out",
+  });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(DEAD_EASING)] },
+  });
+});
+
+it("scene_validate notes an easing on the last keyframe of a data track (065/R4)", async () => {
+  await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: {
+      tracks: {
+        x: [
+          [0, 0],
+          [2, 100, "ease-out"],
+        ],
+      },
+    },
+  });
+  const data = (await call("scene_get", { scene: "s", full: true })) as {
+    value: Record<string, unknown>;
+  };
+
+  const r = await call("scene_validate", { data: data.value });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: { notices: [expect.stringMatching(DEAD_EASING)] },
+  });
+});
+
+it("scene_build notes an easing on the last keyframe of a compact track (065/R4)", async () => {
+  const compact = {
+    elements: [
+      {
+        kind: "rect",
+        id: "r",
+        tracks: {
+          x: [
+            [0, 0],
+            [2, 100, "ease-out"],
+          ],
+        },
+      },
+    ],
+  };
+
+  const r = await call("scene_build", { compact });
+
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      notices: expect.arrayContaining([expect.stringMatching(DEAD_EASING)]),
+    },
+  });
+});

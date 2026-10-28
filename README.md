@@ -206,7 +206,9 @@ The same options work in compact scenes (`scene_build`) and through the element 
 - **Nested elements:** element and keyframe tools find an element at any depth by its `id`
   or by a `group/child` path; `element_add` takes a `parent` group.
 - **Keyframe loops:** a track takes `repeat: "loop" | "pingpong"` and an optional `until`
-  (seconds); compact keyframes accept `[t, value, easing?]` or an object form.
+  (seconds); compact keyframes accept `[t, value, easing?]` or an object form. An easing shapes the
+  segment to the next keyframe, so one on a track's last keyframe does nothing: `scene_build`,
+  `scene_validate`, `keyframe_set` and the editor's "Revisión" give a notice.
 - **Pivot:** `origin` (`{ x, y }` box fractions, `[x, y]` or an anchor like `"bottom"`)
   is where rotation and scale pivot; `opacity` works on every kind.
 - **Text box:** `w` on a `text` wraps it at word boundaries and aligns it inside the box.

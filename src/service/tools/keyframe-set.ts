@@ -8,10 +8,12 @@ import {
   trackRepeat,
   trackUntil,
 } from "../../model/track.ts";
+import type { Scene } from "../../model/model.ts";
 import { updateElement } from "../element-tree.ts";
 import { checkKeyframe, checkTrackPath } from "../elements.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
+import { deadEasingNotice, deadEasings } from "../scene-notices.ts";
 import { editScene, SceneResult } from "../scenes.ts";
 
 export const keyframeSet = defineTool({
@@ -23,7 +25,7 @@ export const keyframeSet = defineTool({
     "within the scene (scene time, also for an element bound to a shot; its tracks move with " +
     "the shot when it changes, see shot_set), `value` a number or a color within the field's range (an opacity 0–1), else it fails. A keyframe already at `t` is replaced. " +
     "`easing` (default `auto`) shapes the segment to the next keyframe (`step` / `hold` holds " +
-    "the value until the next keyframe); an unknown easing fails, listing the names. `repeat` (`none` | `loop` | `pingpong`) and `until` " +
+    "the value until the next keyframe; an easing on a track's last keyframe shapes nothing and gets a notice); an unknown easing fails, listing the names. `repeat` (`none` | `loop` | `pingpong`) and `until` " +
     "(seconds, or `null` to clear) set or clear track looping.",
   input: z.object({
     scene: z.string().min(1),
@@ -40,53 +42,79 @@ export const keyframeSet = defineTool({
   run: async (
     { scene, project, id, path, t, value, easing, repeat, until },
     ctx,
-  ) =>
-    editScene(await inProject(ctx, project), scene, (s) => ({
-      ...s,
-      elements: updateElement(s.elements, id, (el) => {
-        const hasT = t !== undefined;
-        const hasValue = value !== undefined;
-        if (hasT !== hasValue) {
-          fail(
-            "invalid_input",
-            "Debes indicar tanto 't' como 'value' para fijar un keyframe",
-            hasT ? "value" : "t",
-          );
-        }
-        const prev = el.tracks?.[path];
-        let keys = [...trackKeys(prev)];
-        if (hasT && hasValue) {
-          checkKeyframe(el.kind, path, value);
-          if (t > s.duration)
-            fail("invalid_time", `t pasa la duración (${s.duration}s)`, "t");
-          keys = withKeyframe(keys, {
-            t,
-            value,
-            easing: easing ?? "auto",
-          });
-        } else {
-          checkTrackPath(el.kind, path);
-          if (repeat === undefined && until === undefined) {
-            fail(
-              "invalid_input",
-              "Debes indicar un keyframe ('t' y 'value') o 'repeat'/'until'",
-              "t",
-            );
-          }
-          if (!prev || keys.length === 0) {
-            fail("not_found", `No hay pista de keyframes en «${path}»`, "path");
-          }
-        }
-        const nextRepeat = repeat ?? trackRepeat(prev);
-        const nextUntil =
-          until === null ? undefined : (until ?? trackUntil(prev));
-        return {
-          ...el,
-          tracks: {
-            ...el.tracks,
-            [path]: trackEntry(keys, nextRepeat, nextUntil),
-          },
+  ) => {
+    let edited: Scene | undefined;
+    const result = await editScene(
+      await inProject(ctx, project),
+      scene,
+      (s) => {
+        edited = {
+          ...s,
+          elements: updateElement(s.elements, id, (el) => {
+            const hasT = t !== undefined;
+            const hasValue = value !== undefined;
+            if (hasT !== hasValue) {
+              fail(
+                "invalid_input",
+                "Debes indicar tanto 't' como 'value' para fijar un keyframe",
+                hasT ? "value" : "t",
+              );
+            }
+            const prev = el.tracks?.[path];
+            let keys = [...trackKeys(prev)];
+            if (hasT && hasValue) {
+              checkKeyframe(el.kind, path, value);
+              if (t > s.duration)
+                fail(
+                  "invalid_time",
+                  `t pasa la duración (${s.duration}s)`,
+                  "t",
+                );
+              keys = withKeyframe(keys, {
+                t,
+                value,
+                easing: easing ?? "auto",
+              });
+            } else {
+              checkTrackPath(el.kind, path);
+              if (repeat === undefined && until === undefined) {
+                fail(
+                  "invalid_input",
+                  "Debes indicar un keyframe ('t' y 'value') o 'repeat'/'until'",
+                  "t",
+                );
+              }
+              if (!prev || keys.length === 0) {
+                fail(
+                  "not_found",
+                  `No hay pista de keyframes en «${path}»`,
+                  "path",
+                );
+              }
+            }
+            const nextRepeat = repeat ?? trackRepeat(prev);
+            const nextUntil =
+              until === null ? undefined : (until ?? trackUntil(prev));
+            return {
+              ...el,
+              tracks: {
+                ...el.tracks,
+                [path]: trackEntry(keys, nextRepeat, nextUntil),
+              },
+            };
+          }),
         };
-      }),
-    })),
+        return edited;
+      },
+    );
+    // an easing on the track's last keyframe shapes nothing (065/D4)
+    const leaf = id.split("/").at(-1);
+    const dead = edited
+      ? deadEasings(edited).filter((d) => d.path === path && d.id === leaf)
+      : [];
+    return {
+      ...result,
+      notices: [...result.notices, ...dead.map(deadEasingNotice)],
+    };
+  },
 });

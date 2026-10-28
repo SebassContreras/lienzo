@@ -26,6 +26,7 @@ const join = (prefix: string, path: string) =>
   path ? `${prefix}.${path}` : prefix;
 
 import { sceneDefaults } from "./scene-defaults.ts";
+import { deadKeyframeEasingNotices } from "./scene-notices.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import {
   animLibrary,
@@ -172,6 +173,7 @@ export async function buildCompact(
   notices.push(
     ...fontNotices(scene, fonts),
     ...estimatedWidthNotices(scene),
+    ...deadKeyframeEasingNotices(scene).map((n) => n.message),
     // a build that is then saved leaves these to the save (070/D3)
     ...(resources ? await resourceNotices(ctx, scene) : []),
   );
