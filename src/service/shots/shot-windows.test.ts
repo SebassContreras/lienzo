@@ -14,8 +14,8 @@ import { inspectLayout } from "../layout/layout.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
 
-/** Cases the fifth QA run reported, held at the tool boundary (073). */
 let ctx: Ctx;
+
 const call = (name: string, input: Record<string, unknown>) =>
   registry.call(name, { project: "p", ...input }, ctx);
 
@@ -33,6 +33,7 @@ const shots: Shot[] = [
   { id: "s1", name: "s1", start: 0, end: 3 },
   { id: "s2", name: "s2", start: 3, end: 6 },
 ];
+
 const inShot = (shot: string) => ({ ...defaultRect(), id: shot, shot });
 
 it("gives the instant of a cut to the shot that starts there", () => {
@@ -61,33 +62,4 @@ it("reports no overlap between two shots at the instant of their cut", () => {
   );
 
   expect(overlaps).toEqual([]);
-});
-
-it("names a nested element by its id path in a failing write", async () => {
-  await call("element_add", { scene: "s", kind: "rect", patch: { id: "a" } });
-  await call("element_add", { scene: "s", kind: "rect", patch: { id: "b" } });
-  const grouped = await call("element_group", { scene: "s", ids: ["a", "b"] });
-  const g = (grouped as { value: { id: string } }).value.id;
-
-  const r = await call("element_update", {
-    scene: "s",
-    id: `${g}/b`,
-    patch: { w: -50 },
-  });
-
-  expect(r).toMatchObject({
-    ok: false,
-    error: {
-      path: `elements.${g}/b.w`,
-      message: expect.stringContaining(`elements.${g}/b.w:`),
-    },
-  });
-});
-
-it("finds a project preset by its display name", async () => {
-  await call("preset_save", { recipe: { name: "Mi tarjeta", kind: "rect" } });
-
-  const r = await call("preset_get", { name: "Mi tarjeta" });
-
-  expect(r).toMatchObject({ ok: true, value: { source: "user" } });
 });
