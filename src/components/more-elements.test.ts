@@ -1,18 +1,18 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { installCanvasFakes, RecordingCtx } from "./recording-ctx.ts";
+import { installCanvasFakes, RecordingCtx } from "../test/recording-ctx.ts";
 
 installCanvasFakes();
-const { createElement } = await import("../components/index.ts");
+const { createElement } = await import("./index.ts");
 const { defaultScene } = await import("../model/model.ts");
 const { parseScene } = await import("../model/schema.ts");
 const { drawScene } = await import("../engine/render.ts");
 const { BUILT_IN_RECIPES } = await import("../presets/recipes.ts");
-const { tokenize } = await import("../components/code/tokenize.ts");
-const { typedLines } = await import("../components/code/draw.ts");
-const { parseData } = await import("../components/chart/draw.ts");
-const { rowsOf } = await import("../components/table/draw.ts");
-const { litness } = await import("../components/steps/draw.ts");
+const { tokenize } = await import("./code/tokenize.ts");
+const { typedLines } = await import("./code/draw.ts");
+const { parseData } = await import("./chart/draw.ts");
+const { rowsOf } = await import("./table/draw.ts");
+const { litness } = await import("./steps/draw.ts");
 const { rowAlpha } = await import("../engine/reveal.ts");
 const { placeChild } = await import("../engine/geometry.ts");
 

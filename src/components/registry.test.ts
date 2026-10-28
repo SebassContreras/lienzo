@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { Descriptor } from "../components/descriptor.ts";
+import { WIDGET_NAMES } from "../editor/field-editor.tsx";
+import { inspectorLayout } from "../editor/layout.ts";
+import { defaultScene, type Element } from "../model/model.ts";
+import type { PresetRecipe } from "../model/preset.ts";
+import { parsePresetRecipe, parseScene } from "../model/schema.ts";
+import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
+import { installCanvasFakes } from "../test/recording-ctx.ts";
+import type { Descriptor } from "./descriptor.ts";
 import {
   anim,
   BOX_ANIMS,
@@ -9,18 +16,11 @@ import {
   noGlow,
   shadow,
   softShadow,
-} from "../components/fields/index.ts";
-import { COMPONENTS, createElement, KINDS } from "../components/index.ts";
-import { WIDGET_NAMES } from "../editor/field-editor.tsx";
-import { inspectorLayout } from "../editor/layout.ts";
-import { defaultScene, type Element } from "../model/model.ts";
-import type { PresetRecipe } from "../model/preset.ts";
-import { parsePresetRecipe, parseScene } from "../model/schema.ts";
-import { BUILT_IN_BACKGROUNDS, BUILT_IN_RECIPES } from "../presets/recipes.ts";
-import { installCanvasFakes } from "./recording-ctx.ts";
+} from "./fields/index.ts";
+import { COMPONENTS, createElement, KINDS } from "./index.ts";
 
 installCanvasFakes();
-const { goldenScenes } = await import("./golden-scenes.ts");
+const { goldenScenes } = await import("../test/golden-scenes.ts");
 
 const descriptors = COMPONENTS as unknown as Descriptor<Element>[];
 

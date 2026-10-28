@@ -110,7 +110,7 @@ Inventory of `src/service` (165 files, tests included) read on 2026-10-28. A fil
 | `core` (7) | ctx.ts, project-scope.ts, registry.ts, round.ts, store.ts, tools/index.ts, verdict.ts |
 | `contract` (8) | editor-parity.test.ts, parity-tools.test.ts, service.test.ts, tools/contract.test.ts, tools/descriptions.test.ts, tools/qa-round-3.test.ts, tools/qa-round-5.test.ts, tools/qa-round-6.test.ts |
 
-Outside `src/service` (T016): `src/test/registry.test.ts` goes to `core`, `src/test/more-elements.test.ts` to `src/components`; `render.test.ts`, `golden-scenes.ts`, `render.golden.json` and the harness stay in `src/test/`; `src/presets/render-audit.test.ts` and `round-trip.test.ts` stay with `src/presets/`; the other tests already sit beside their module.
+Outside `src/service` (T016): `src/test/registry.test.ts` (it tests the component descriptors, not the service registry) and `src/test/more-elements.test.ts` go to `src/components`; `render.test.ts`, `golden-scenes.ts`, `render.golden.json` and the harness stay in `src/test/`; `src/presets/render-audit.test.ts` and `round-trip.test.ts` stay with `src/presets/`; the other tests already sit beside their module.
 
 ## Baseline (T003)
 Taken on 2026-10-28 at `0aa3bbd`, before any file moved. Whole suite without `renderer.test.ts` (it times out on this machine): 161 files, 1434 tests, 65 s with coverage.
@@ -154,7 +154,7 @@ the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T013 [agent] Move `render` (renderer, exports, image, render-target, fake-renderer, scene_preview, scene_export) — covers R3, D3
 - [x] 082/T014 [agent] Move `compact` and `layout` (layout, contrast, text-extents, scene_inspect_layout) — covers R3, D3
 - [x] 082/T015 [agent] Move `core` (registry, ctx, store, verdict, round) and the cli/mcp tests; update A20, AGENTS.md Layout and README paths — covers R3, D3
-- [ ] 082/T016 [agent] Reach: loose tests of `engine`, `model`, `components`, `editor`, `presets` and `src/test/` beside their module; no file without a related one — covers R3, D3
+- [x] 082/T016 [agent] Reach: loose tests of `engine`, `model`, `components`, `editor`, `presets` and `src/test/` beside their module; no file without a related one — covers R3, D3
 - [ ] 082/T017 [agent] `effects` on `Tool`, declared by the 43 tools; a test that lists them — covers R4, D4
 - [ ] 082/T018 [agent] Input generator from the input schema, with its own unit tests — covers R5, D5
 - [ ] 082/T019 [agent] Invariants over every tool: never throws, error shape, Spanish message, no side effects, every problem listed, JSON string argument — covers R5, D5
@@ -186,3 +186,4 @@ the rewrites (T024–T040), the close (T041–T044).
 
 ## Changes
 - 2026-10-28: D2 tooling findings (T002). Stryker 10.1.1 breaks on TypeScript 7 (`ts.parseConfigFileTextToJson` is gone), so `stryker.config.json` points `tsconfigFile` at a file that does not exist, which skips that step and keeps the run in the `.stryker-tmp` copy (not `inPlace`); with pnpm's strict layout the runner must be named in `plugins`. `@vitest/coverage-v8` must match Vitest exactly (5.0.3). A smoke run on `src/model/size.ts` (48 mutants, 85.42%) took 5 minutes because each mutant reruns the heavy contract tests (about 9 per mutant): the baseline of T003 measures time per folder first and runs the service folders with the contract tests only where the rule lives. Why: T003 cannot assume a whole-folder run is cheap. Work: T003.
+- 2026-10-28: the file moves (T005–T016) are done in 12 commits. The scripted move rewrote relative imports and `new URL(…, import.meta.url)` but not `join(import.meta.dirname, "..", "..")`: `image-probe.test.ts` and `renderer.test.ts` now find the app root with `findAppRoot`. `renderer.test.ts` is checked by typecheck only (its suite times out on this machine). The old `src/test/registry.test.ts` was a component-descriptor test, so T016 moved it to `src/components`, not to `core`. Why: the inventory guessed from the file name. Work: T016.
