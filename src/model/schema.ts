@@ -25,7 +25,7 @@ export const BackgroundSchema = z.object({
   dots: z.boolean(),
   dotColor: color,
   dotGap: z.number().min(1),
-  spotlight: z.number(),
+  spotlight: z.number().min(0).max(1),
   spotlightColor: color,
 });
 
@@ -46,6 +46,7 @@ const AudioTrackItemSchema = z.object({
   muted: z.boolean().optional(),
 });
 
+import { durationValue, fpsValue, side } from "./limits.ts";
 import { newId } from "./id.ts";
 import { TracksSchema, trackKeys } from "./track.ts";
 
@@ -81,10 +82,10 @@ export const SymbolDefinitionSchema = z.object({
 
 export const SceneSchema: z.ZodType<Scene> = z
   .object({
-    width: z.number().positive(),
-    height: z.number().positive(),
-    duration: z.number().positive(),
-    fps: z.number().positive(),
+    width: side(),
+    height: side(),
+    duration: durationValue(),
+    fps: fpsValue(),
     background: BackgroundSchema,
     elements: z.array(ElementSchema),
     symbols: z.record(z.string(), SymbolDefinitionSchema).optional(),

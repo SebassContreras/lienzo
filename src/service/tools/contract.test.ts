@@ -1296,3 +1296,38 @@ it("element_group fails on a group id the scene has", async () => {
   expect(r).toMatchObject({ ok: false, error: { code: "duplicate_id" } });
 });
 
+
+// 081/D5: one set of limits for every writer
+
+const TOO_BIG = /Demasiado grande/;
+
+it("scene_validate compact fails on an fps above 60", async () => {
+  const r = await call("scene_validate", { compact: { fps: 500 } });
+  expect(r).toMatchObject({ ok: false, error: { message: expect.stringMatching(TOO_BIG) } });
+});
+
+it("scene_build fails on a duration above ten minutes", async () => {
+  const r = await call("scene_build", { compact: { duration: 100000 } });
+  expect(r).toMatchObject(fails(TOO_BIG));
+});
+
+it("scene_update fails on a side above 7680", async () => {
+  const r = await call("scene_update", { scene: "s", patch: { width: 20000 } });
+  expect(r).toMatchObject(fails(TOO_BIG));
+});
+
+it("scene_validate data fails on a spotlight above 1", async () => {
+  const data = { background: { spotlight: 7 } };
+  const r = await call("scene_validate", { data });
+  expect(r).toMatchObject(invalid(TOO_BIG));
+});
+
+it("background_set fails on a spotlight above 1", async () => {
+  const r = await call("background_set", { scene: "s", patch: { spotlight: 7 } });
+  expect(r).toMatchObject(fails(TOO_BIG));
+});
+
+it("project_update fails on a canvas side above 7680", async () => {
+  const r = await call("project_update", { canvas: { width: 20000 } });
+  expect(r).toMatchObject(fails(TOO_BIG));
+});

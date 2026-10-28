@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { ColorSchema } from "./color.ts";
+import { durationValue, fpsValue, side } from "./limits.ts";
 
 /** Slugs must be lowercase, alphanumeric, hyphen-separated identifiers. */
 export const PROJECT_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -39,10 +40,10 @@ export const BrandFontSchema = z.object({
 });
 
 export const ProjectCanvasDefaultsSchema = z.object({
-  width: z.number().int().positive().default(1080),
-  height: z.number().int().positive().default(1080),
-  fps: z.number().int().positive().default(30),
-  duration: z.number().positive().default(5),
+  width: side().int().default(1080),
+  height: side().int().default(1080),
+  fps: fpsValue().int().default(30),
+  duration: durationValue().default(5),
 });
 
 export type ProjectCanvasDefaults = z.infer<typeof ProjectCanvasDefaultsSchema>;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { durationValue, fpsValue, side } from "../../model/limits.ts";
 import {
   BrandFontSchema,
   ColorPaletteSchema,
@@ -11,10 +12,10 @@ import { defineTool, fail } from "../registry.ts";
 
 /** The canvas fields given; the others keep their stored values (069/D3). */
 const CanvasPatchSchema = z.object({
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
-  fps: z.number().int().positive().optional(),
-  duration: z.number().positive().optional(),
+  width: side().int().optional(),
+  height: side().int().optional(),
+  fps: fpsValue().int().optional(),
+  duration: durationValue().optional(),
 });
 
 export const projectUpdate = defineTool({

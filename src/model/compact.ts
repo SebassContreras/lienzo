@@ -4,6 +4,7 @@
  * shortcuts (`at`, `fit`), line connections (`from`, `to`) and short keyframe tracks.
  */
 import "./zod-locale.ts";
+import { durationValue, fpsValue, side } from "./limits.ts";
 import { z } from "zod";
 import { effects } from "../components/fields/effects.ts";
 import {
@@ -344,10 +345,10 @@ export function generateCompactJsonSchema(): Record<string, unknown> {
         z.tuple([z.number().positive(), z.number().positive()]),
       ])
       .optional(),
-    width: z.number().positive().optional(),
-    height: z.number().positive().optional(),
-    duration: z.number().positive().optional(),
-    fps: z.number().positive().optional(),
+    width: side().optional(),
+    height: side().optional(),
+    duration: durationValue().optional(),
+    fps: fpsValue().optional(),
     background: CompactBackgroundSchema.optional(),
     defaults: SceneDefaultsSchema.optional(),
     symbols: z
@@ -378,10 +379,10 @@ export const CompactSceneSchema = z.object({
       z.tuple([z.number().positive(), z.number().positive()]),
     ])
     .optional(),
-  width: z.number().positive().optional(),
-  height: z.number().positive().optional(),
-  duration: z.number().positive().optional(),
-  fps: z.number().positive().optional(),
+  width: side().optional(),
+  height: side().optional(),
+  duration: durationValue().optional(),
+  fps: fpsValue().optional(),
   background: CompactBackgroundSchema.optional(),
   defaults: SceneDefaultsSchema.optional(),
   symbols: z.record(z.string(), CompactSymbolSchema).optional(),
