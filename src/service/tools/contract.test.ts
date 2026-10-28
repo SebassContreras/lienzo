@@ -466,7 +466,7 @@ it("preset_validate lists each recipe problem at its own path (078/R6)", async (
   const r = await call("preset_validate", { recipe });
 
   expect(r).toMatchObject({
-    value: { errors: [{ path: "" }, { path: "set.w" }] },
+    value: { errors: [{ path: "values" }, { path: "set.w" }] },
   });
 });
 
@@ -1666,4 +1666,36 @@ it("project_create with an existing id says to pass project", async () => {
   expect(await call("project_create", { name: "P" })).toMatchObject(
     fails(/pasa `project` con otro id/),
   );
+});
+
+// 081/D11: times and names
+
+it("scene_inspect_layout fails for a time past the duration, at times.N", async () => {
+  const r = await call("scene_inspect_layout", { scene: "s", times: [0, 99] });
+  expect(r).toMatchObject({
+    ok: false,
+    error: { code: "invalid_time", path: "times.1" },
+  });
+});
+
+it("scene_inspect_layout reports unknown_shot at the first requested time", async () => {
+  const data = { elements: [{ id: "q", kind: "rect", shot: "nope" }] };
+  const r = await call("scene_inspect_layout", { data, times: [2] });
+  expect(r).toMatchObject({
+    ok: true,
+    value: {
+      diagnostics: expect.arrayContaining([
+        expect.objectContaining({ code: "unknown_shot", t: 2 }),
+      ]),
+    },
+  });
+});
+
+it("project_inspect names scenes and presets without .json", async () => {
+  await call("preset_save", { recipe: { name: "Mía", kind: "rect" } });
+  const r = await call("project_inspect", {});
+  expect(r).toMatchObject({
+    ok: true,
+    value: { scenes: ["s"], presets: ["mia"] },
+  });
 });

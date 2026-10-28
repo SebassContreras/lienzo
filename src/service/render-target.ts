@@ -17,6 +17,12 @@ export interface ResolvedRenderResult {
   rendered: Rendered;
 }
 
+/** Fails `invalid_time` at `path` when `t` is past the scene's duration (069/D9, 081/D11). */
+export function assertTimeWithin(scene: Scene, t: number, path: string): void {
+  if (t > scene.duration)
+    fail("invalid_time", `t pasa la duración (${scene.duration}s)`, path);
+}
+
 /**
  * Resolves a scene from name or direct Scene object and renders it via ctx.renderer, with
  * the fonts of `ctx.project` (045/D3).
@@ -32,8 +38,7 @@ export async function resolveAndRenderScene(
       ? await openScene(ctx, sceneInput)
       : sceneInput;
   // a still past the end shows the last frame; say so rather than draw it (069/D9)
-  if (options.format === "png" && (options.time ?? 0) > scene.duration)
-    fail("invalid_time", `t pasa la duración (${scene.duration}s)`, "t");
+  if (options.format === "png") assertTimeWithin(scene, options.time ?? 0, "t");
 
   const effectiveFps =
     options.fps ??

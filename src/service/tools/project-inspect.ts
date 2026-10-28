@@ -29,8 +29,12 @@ export const projectInspect = defineTool({
       if (!details) {
         fail("not_found", `No existe el proyecto «${project}»`, "project");
       }
+      const bare = (names: readonly string[]) =>
+        names.map((n) => n.replace(/\.json$/i, ""));
       return {
         ...details,
+        scenes: bare(details.scenes),
+        presets: bare(details.presets),
         manifest: asToolProject(details.manifest),
         animations: (await listJson(await animationsDir(ctx, project))).map(
           (item) => item.name,

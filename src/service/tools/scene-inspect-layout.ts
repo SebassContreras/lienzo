@@ -5,6 +5,7 @@ import { measureInstalledFonts } from "../font-install.ts";
 import { inspectLayout, layoutBoxes } from "../layout.ts";
 import { inProject, PROJECT } from "../project-scope.ts";
 import { defineTool, fail } from "../registry.ts";
+import { assertTimeWithin } from "../render-target.ts";
 import { sceneFromData } from "../scene-defaults.ts";
 import { checkScene, openScene } from "../scenes.ts";
 
@@ -89,6 +90,8 @@ export const sceneInspectLayout = defineTool({
               "Debe proporcionar el nombre de una escena guardada ('scene') o una escena completa ('data')",
               "scene",
             );
+    for (const [i, t] of (times ?? []).entries())
+      assertTimeWithin(scene, t, `times.${i}`);
     return {
       diagnostics: inspectLayout(scene, times),
       boxes: layoutBoxes(scene, times),

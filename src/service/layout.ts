@@ -585,8 +585,11 @@ export function inspectLayout(
       diagnostics.push({
         code: "unknown_shot",
         elementId: el.id,
-        t: 0,
-        message: `Está ligado a la toma «${el.shot}», que no existe, así que no se dibuja nunca`,
+        t: times[0] ?? 0,
+        message:
+          (scene.shots ?? []).length > 0
+            ? `Está ligado a la toma «${el.shot}», que no existe, así que no se dibuja nunca`
+            : `Está ligado a la toma «${el.shot}», que no existe; la escena no tiene tomas, así que se dibuja siempre`,
       });
   }
 
