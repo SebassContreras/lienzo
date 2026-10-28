@@ -158,7 +158,7 @@ the rewrites (T024–T040), the close (T041–T044).
 - [x] 082/T017 [agent] `effects` on `Tool`, declared by the 43 tools; a test that lists them — covers R4, D4
 - [x] 082/T018 [agent] Input generator from the input schema, with its own unit tests — covers R5, D5
 - [x] 082/T019 [agent] Invariants over every tool: never throws, error shape, Spanish message, no side effects, every problem listed, JSON string argument — covers R5, D5
-- [ ] 082/T020 [agent] `RULES` and writer adapters; the matrix test; first rules — covers R6, D6
+- [x] 082/T020 [agent] `RULES` and writer adapters; the matrix test; first rules — covers R6, D6
 - [ ] 082/T021 [agent] Rules added to the matrix: shot spans and references, limits, fractions, easing, icon and line targets, assets, fonts — covers R6, D6
 - [ ] 082/T022 [agent] Metamorphic relations (writers agree, group/ungroup, rename and back) — covers R7, D6
 - [ ] 082/T023 [agent] Replay corpus from the QA reports of rounds 6–9, Vitest runner and `pnpm lienzo` runner — covers R8, D7
