@@ -98,6 +98,17 @@ describe("the invalid variants", () => {
   });
 });
 
+describe("a key the schema leaves untyped", () => {
+  it("can be missing but not null, because null is a value the schema takes", () => {
+    const schema = schemaOf({ recipe: z.unknown() });
+    const labels = invalidVariants(schema, baseInput(schema)).map(
+      (v) => v.label,
+    );
+
+    expect(labels).toEqual(["recipe missing"]);
+  });
+});
+
 describe("the required object and array keys", () => {
   it("are the ones a JSON string may stand for", () => {
     const schema = schemaOf({
@@ -124,7 +135,7 @@ describe("every registered tool's input schema", () => {
 
       expect(sameAsBase).toEqual([]);
       expect(variants.length).toBeGreaterThanOrEqual(
-        (schema.required ?? []).length * 2,
+        (schema.required ?? []).length,
       );
     },
   );

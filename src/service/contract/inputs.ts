@@ -128,8 +128,11 @@ function rangeBreaks(key: string, schema: JsonSchema): Break[] {
 function breaksOf(schema: JsonSchema): Break[] {
   const breaks: Break[] = [];
   for (const key of schema.required ?? []) {
+    const prop = schema.properties?.[key] ?? {};
     breaks.push({ key, label: `${key} missing`, apply: drop(key) });
-    breaks.push({ key, label: `${key} null`, apply: set(key, null) });
+    // null breaks a typed key; an untyped one (`z.unknown()`) takes it and fails later, by rule
+    if (simpleType(prop) || prop.enum)
+      breaks.push({ key, label: `${key} null`, apply: set(key, null) });
   }
   for (const [key, prop] of Object.entries(schema.properties ?? {})) {
     if (simpleType(prop) || prop.enum) {
