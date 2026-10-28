@@ -309,6 +309,18 @@ export const RULES: readonly Rule[] = [
         label: "five seconds in two",
         shotContent: [{ ...SHOT, transition: { kind: "fade", duration: 5 } }],
       },
+      {
+        // a shot that does not start at 0: its length is end − start, not end
+        label: "three seconds in two, from 1 s",
+        shotContent: [
+          {
+            id: "s1",
+            start: 1,
+            end: 3,
+            transition: { kind: "fade", duration: 3 },
+          },
+        ],
+      },
     ],
   },
   {
@@ -334,9 +346,10 @@ export const RULES: readonly Rule[] = [
   {
     id: "a `use` override names a child its symbol has",
     outcome: "refused",
-    message: /no tiene el elemento «nochild»/,
+    message: /no tiene el elemento «nochild» \(ids: «g», «d»\)/,
     violations: [
       {
+        // «d» sits in a group of the body: overriding it is valid, and both are listed
         label: "override",
         onCanvas: true,
         valid: { symbol: "chip" },
@@ -344,7 +357,13 @@ export const RULES: readonly Rule[] = [
           chip: {
             w: 10,
             h: 10,
-            children: [{ id: "d", kind: "ellipse", w: 5, h: 5 }],
+            children: [
+              {
+                id: "g",
+                kind: "group",
+                children: [{ id: "d", kind: "ellipse", w: 5, h: 5 }],
+              },
+            ],
           },
         },
         elements: [
@@ -352,7 +371,7 @@ export const RULES: readonly Rule[] = [
             id: "u",
             kind: "use",
             symbol: "chip",
-            overrides: { nochild: { fill: "red" } },
+            overrides: { d: { fill: "blue" }, nochild: { fill: "red" } },
           },
         ],
       },
@@ -389,6 +408,18 @@ export const RULES: readonly Rule[] = [
         label: "element",
         elements: [
           { id: "x", kind: "rect", animPreset: { name: "nope", start: 0 } },
+        ],
+      },
+      {
+        label: "element in a group",
+        elements: [
+          {
+            id: "g",
+            kind: "group",
+            children: [
+              { id: "x", kind: "rect", animPreset: { name: "nope", start: 0 } },
+            ],
+          },
         ],
       },
     ],

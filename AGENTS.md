@@ -255,6 +255,9 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   test of private helpers. Name a test by the behavior, never by a spec number or a QA round, and
   keep it beside the functionality it tests. A QA finding becomes a rule in the matrix, not one
   more case. Run single files while working; run the full suite in the dedicated test task.
+  The gate: `pnpm test:cov` fails when a folder falls below its coverage floor
+  (`vitest.config.ts`), and `pnpm test:mutate:rules` when the rule modules' mutation score
+  falls below 76.54% (082/T041); a floor is raised as tests grow, never lowered.
 - Fast execution & verification: use `pnpm typecheck` (single-pass TypeScript check) to confirm
   correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
   only check/format the specific files or folders touched to preserve token budget and speed.

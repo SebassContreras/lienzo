@@ -5,6 +5,9 @@
     "configFile": "vitest.mutate.config.ts"
   },
   "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
+  "incremental": true,
+  "incrementalFile": "reports/mutation/incremental.json",
   "reporters": ["clear-text", "json"],
   "jsonReporter": {
     "fileName": "reports/mutation/mutation.json"
