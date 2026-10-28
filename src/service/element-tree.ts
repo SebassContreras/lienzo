@@ -54,7 +54,7 @@ function resolvePath(
   if (matches.length > 1) {
     fail(
       "ambiguous_id",
-      `El id «${target}» aparece más de una vez; usa la ruta con «/»`,
+      `El id «${target}» aparece más de una vez (en ${matches.map((m) => `elements.${m.join(".children.")}`).join(", ")}); usa la ruta con «/» si está en un grupo, o reconstruye la escena con scene_get, ids distintos y scene_create con overwrite`,
       errorPath,
     );
   }

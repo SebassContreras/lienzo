@@ -1249,3 +1249,50 @@ it("scene_validate notices an easing on a camera track's last keyframe", async (
     value: { valid: true, notices: [expect.stringMatching(/«ease-out»/)] },
   });
 });
+
+// 081/D2: element ids are unique in every writer
+
+const REPEATED_ID = /ID duplicado «x»/;
+const twoX = [
+  { id: "x", kind: "rect" },
+  { id: "x", kind: "text" },
+];
+
+it("scene_create fails on two elements with one id", async () => {
+  const r = await call("scene_create", { scene: "z", data: { elements: twoX } });
+  expect(r).toMatchObject(fails(REPEATED_ID));
+});
+
+it("scene_validate data fails on two elements with one id", async () => {
+  const r = await call("scene_validate", { data: { elements: twoX } });
+  expect(r).toMatchObject(invalid(REPEATED_ID));
+});
+
+it("scene_validate data fails on a group child that repeats a root id", async () => {
+  const elements = [
+    { id: "x", kind: "rect" },
+    { id: "g", kind: "group", children: [{ id: "x", kind: "text" }] },
+  ];
+  const r = await call("scene_validate", { data: { elements } });
+  expect(r).toMatchObject(invalid(REPEATED_ID));
+});
+
+it("element_add fails on an id the scene has, at patch.id", async () => {
+  const r = await call("element_add", {
+    scene: "s",
+    kind: "text",
+    patch: { id: "r" },
+  });
+  expect(r).toMatchObject({ ok: false, error: { code: "duplicate_id" } });
+});
+
+it("element_group fails on a group id the scene has", async () => {
+  await call("element_add", { scene: "s", kind: "rect", patch: { id: "r2" } });
+  const r = await call("element_group", {
+    scene: "s",
+    ids: ["r", "r2"],
+    id: "r",
+  });
+  expect(r).toMatchObject({ ok: false, error: { code: "duplicate_id" } });
+});
+

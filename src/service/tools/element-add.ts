@@ -2,7 +2,6 @@ import { z } from "zod";
 import { withCountUp } from "../../components/counter/count-up.ts";
 import { boxOf } from "../../engine/geometry.ts";
 import { AT_RULES, AtPlacementSchema } from "../../model/compact.ts";
-import { mapElementsDeep } from "../../model/element-walk.ts";
 import {
   defaultElement,
   type Element,
@@ -105,11 +104,6 @@ export const elementAdd = defineTool({
         preset === undefined
           ? withCountUp(added, patch ?? {}, s)
           : fromShotStart(added, presetTracks, s.shots);
-      mapElementsDeep(s.elements, (e) => {
-        if (e.id === added.id)
-          fail("duplicate_id", `Ya hay un elemento «${added.id}»`, "patch.id");
-        return e;
-      });
       if (parent !== undefined) {
         const group = findElement(s.elements, parent, "parent");
         if (group.kind !== "group") {

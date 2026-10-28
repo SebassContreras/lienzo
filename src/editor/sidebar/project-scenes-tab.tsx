@@ -10,6 +10,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { duplicateIds } from "../../model/ids.ts";
 import type { Scene } from "../../model/model.ts";
 import { parseScene } from "../../model/schema.ts";
 import {
@@ -88,6 +89,13 @@ export function ProjectScenesTab({
         if (!parsed.ok) {
           setStatus(
             `«${file.name}» no es una escena válida: ${oneLine(parsed.error)}`,
+          );
+          return;
+        }
+        const repeated = duplicateIds(parsed.value.elements)[0];
+        if (repeated) {
+          setStatus(
+            `«${file.name}» repite el id «${repeated.id}» (${repeated.first} y ${repeated.path})`,
           );
           return;
         }

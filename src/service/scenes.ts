@@ -7,6 +7,7 @@ import { type AnimPreset, parseAnimPreset } from "../model/anim-preset.ts";
 import { mapElementsDeep } from "../model/element-walk.ts";
 import { withElementDefaults } from "../model/fill-defaults.ts";
 import { idPath } from "../model/id-path.ts";
+import { duplicateIds } from "../model/ids.ts";
 import { namesHint } from "../model/ignored.ts";
 import type { Element, Scene } from "../model/model.ts";
 import type { PresetRecipe } from "../model/preset.ts";
@@ -18,6 +19,7 @@ import { asRecipe } from "../presets/store.ts";
 import { withCanonicalAssets, withCanonicalAudio } from "./asset-refs.ts";
 import type { Ctx, ProjectCtx } from "./ctx.ts";
 import { fail, failAll, type Problem, problemsOf } from "./registry.ts";
+import { allElements, changedSince } from "./scene-changes.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 import type { PresetSource } from "./store.ts";
@@ -86,6 +88,7 @@ function ruleFailures(
   return [
     () => checkAnimPresets(scene, library),
     () => checkShots(scene),
+    () => checkUniqueIds(scene, previous),
     () => checkReferences(scene, previous),
   ].flatMap((check) => problemsOf(check) ?? []);
 }
@@ -196,6 +199,58 @@ export function checkShots(scene: Scene): void {
       problems[0]?.code ?? "invalid_input",
       problems.map(({ message }) => ({ path: "shots", message })),
     );
+}
+
+/**
+ * Fails on an element whose id an earlier one of the same scene (or of the same symbol) has
+ * (081/D2). With `previous`, only elements the write changed fail, so a stored scene that
+ * repeats an id can still be edited elsewhere.
+ */
+export function checkUniqueIds(scene: Scene, previous?: Scene): void {
+  const changed = changedSince(previous);
+  const count = (sc: Scene | undefined, id: string) =>
+    allElements(sc ?? ({ elements: [] } as unknown as Scene)).filter(
+      (el) => el.id === id,
+    ).length;
+  const repeats = [
+    ...duplicateIds(scene.elements ?? []).map((r) => ({
+      ...r,
+      el: findAt(scene.elements ?? [], r.path.split(".").slice(1)),
+    })),
+    ...Object.entries(scene.symbols ?? {}).flatMap(([name, symbol]) =>
+      duplicateIds(symbol?.children ?? [], `symbols.${name}.children`).map(
+        (r) => ({ ...r, el: undefined }),
+      ),
+    ),
+  ].filter(
+    (r) =>
+      !previous ||
+      count(scene, r.id) > count(previous, r.id) ||
+      (r.el !== undefined && changed(r.el)),
+  );
+  if (repeats.length > 0)
+    failAll(
+      "duplicate_id",
+      repeats.map((r) => ({
+        path: `${r.path}.id`,
+        message: `ID duplicado «${r.id}» (ya está en ${r.first})`,
+      })),
+    );
+}
+
+/** The element at `indices` (`["0", "children", "1"]`) of `elements`. */
+function findAt(
+  elements: readonly Element[],
+  indices: readonly string[],
+): Element | undefined {
+  let list: readonly Element[] | undefined = elements;
+  let found: Element | undefined;
+  for (const part of indices) {
+    if (part === "children") continue;
+    found = list?.[Number(part)];
+    list = found?.kind === "group" ? found.children : undefined;
+  }
+  return found;
 }
 
 /**
