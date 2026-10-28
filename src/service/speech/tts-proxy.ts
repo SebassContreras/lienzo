@@ -5,9 +5,9 @@
  * come back in OpenRouter's shape, `{ error: { message } }`, which the adapter already reads.
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { resolveOpenRouterApiKey } from "./tts/config.ts";
-import { OpenRouterTtsAdapter } from "./tts/openrouter-adapter.ts";
-import type { SynthesizeSpeechRequest } from "./tts/types.ts";
+import { resolveOpenRouterApiKey } from "./config.ts";
+import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
+import type { SynthesizeSpeechRequest } from "./types.ts";
 
 type SpeechBody = {
   model?: string;

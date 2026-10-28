@@ -11,20 +11,20 @@ import {
   resolveOpenRouterApiKey,
   TTS_PROXY_PATH,
   type TtsProviderType,
-} from "../../service/tts/config.ts";
-import { createTtsService } from "../../service/tts/factory.ts";
-import { POPULAR_LOCAL_TTS_MODELS } from "../../service/tts/local-adapter.ts";
+} from "../../service/speech/config.ts";
+import { createTtsService } from "../../service/speech/factory.ts";
+import { POPULAR_LOCAL_TTS_MODELS } from "../../service/speech/local-adapter.ts";
 import {
   loadTtsPreferences,
   saveTtsPreferences,
-} from "../../service/tts/preferences.ts";
-import { attachSpeechToScene } from "../../service/tts/scene-audio.ts";
-import { alignScriptToCues } from "../../service/tts/speech-alignment.ts";
+} from "../../service/speech/preferences.ts";
+import { attachSpeechToScene } from "../../service/speech/scene-audio.ts";
+import { alignScriptToCues } from "../../service/speech/speech-alignment.ts";
 import {
   POPULAR_TTS_MODELS,
   type TtsModel,
   type TtsService,
-} from "../../service/tts/types.ts";
+} from "../../service/speech/types.ts";
 
 export interface TtsDialogProps {
   scene: Scene;

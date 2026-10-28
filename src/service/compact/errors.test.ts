@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { CompactSceneSchema } from "../../model/compact.ts";
-import { unknownVoiceHint } from "../tts/local-adapter.ts";
+import { unknownVoiceHint } from "../speech/local-adapter.ts";
 import { expandScene } from "./expand.ts";
 
 it("takes list items as an array of lines (069/D12)", async () => {

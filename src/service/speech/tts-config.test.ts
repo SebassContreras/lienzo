@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultScene } from "../../model/model.ts";
 import type { Ctx } from "../ctx.ts";
-import { createSceneGenerateSpeechTool } from "../tools/scene-generate-speech.ts";
 import {
   DEFAULT_TTS_MODEL,
   DEFAULT_TTS_VOICE,
@@ -19,6 +18,7 @@ import {
   loadTtsPreferences,
   saveTtsPreferences,
 } from "./preferences.ts";
+import { createSceneGenerateSpeechTool } from "./tools/scene-generate-speech.ts";
 import type { SynthesizeSpeechRequest, TtsService } from "./types.ts";
 
 describe("Runtime environment loading and resolution (R1, R2, D1)", () => {

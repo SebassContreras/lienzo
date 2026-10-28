@@ -17,7 +17,7 @@ import { createStore, type PresetStore, type Store } from "./store.ts";
  */
 export const APP_ROOT = findAppRoot(import.meta.dirname);
 
-import type { TtsService } from "./tts/types.ts";
+import type { TtsService } from "./speech/types.ts";
 
 /**
  * What every tool runs against (007/D1): the repo root and the store over its files, the

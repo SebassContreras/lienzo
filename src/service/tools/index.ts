@@ -43,8 +43,8 @@ import { sceneValidate } from "../scenes/tools/scene-validate.ts";
 import { keyframeRemove } from "../shots/tools/keyframe-remove.ts";
 import { keyframeSet } from "../shots/tools/keyframe-set.ts";
 import { shotSet } from "../shots/tools/shot-set.ts";
+import { sceneGenerateSpeech } from "../speech/tools/scene-generate-speech.ts";
 import { sceneExport } from "./scene-export.ts";
-import { sceneGenerateSpeech } from "./scene-generate-speech.ts";
 import { sceneInspectLayout } from "./scene-inspect-layout.ts";
 import { scenePreview } from "./scene-preview.ts";
 

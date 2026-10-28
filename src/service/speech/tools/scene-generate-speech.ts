@@ -1,19 +1,19 @@
 import { z } from "zod";
-import { inProject, PROJECT } from "../project-scope.ts";
-import { defineTool, fail } from "../registry.ts";
-import { round2 } from "../round.ts";
-import { editScene, openScene, SceneResult } from "../scenes/scenes.ts";
-import { saveAudioAsset } from "../tts/asset-store.ts";
-import { audioDuration } from "../tts/audio-duration.ts";
+import { inProject, PROJECT } from "../../project-scope.ts";
+import { defineTool, fail } from "../../registry.ts";
+import { round2 } from "../../round.ts";
+import { editScene, openScene, SceneResult } from "../../scenes/scenes.ts";
+import { saveAudioAsset } from "../asset-store.ts";
+import { audioDuration } from "../audio-duration.ts";
 import {
   resolveDefaultTtsModel,
   resolveDefaultTtsVoice,
   resolveOpenRouterApiKey,
-} from "../tts/config.ts";
-import { createTtsService } from "../tts/factory.ts";
-import { attachSpeechToScene } from "../tts/scene-audio.ts";
-import { alignScriptToCues } from "../tts/speech-alignment.ts";
-import type { TtsService } from "../tts/types.ts";
+} from "../config.ts";
+import { createTtsService } from "../factory.ts";
+import { attachSpeechToScene } from "../scene-audio.ts";
+import { alignScriptToCues } from "../speech-alignment.ts";
+import type { TtsService } from "../types.ts";
 
 export interface SceneGenerateSpeechOptions {
   ttsService?: TtsService;
@@ -100,7 +100,7 @@ export function createSceneGenerateSpeechTool(
       const baseUrl = input.baseUrl;
 
       // 3. Synthesize speech using the resolved TTS service
-      let speechResult: import("../tts/types.ts").SynthesizeSpeechResult;
+      let speechResult: import("../types.ts").SynthesizeSpeechResult;
       try {
         speechResult = await service.synthesizeSpeech({
           text: input.script,

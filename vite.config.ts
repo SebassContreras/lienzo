@@ -10,8 +10,8 @@ import { createFontStore } from "./src/service/fonts/font-store.ts";
 import { handleProjectApi } from "./src/service/projects/project-middleware.ts";
 import { createProjectStore } from "./src/service/projects/project-store.ts";
 import { sceneWatch } from "./src/service/scenes/scene-watch.ts";
-import { TTS_PROXY_PATH } from "./src/service/tts/config.ts";
-import { handleTtsProxy } from "./src/service/tts-proxy.ts";
+import { TTS_PROXY_PATH } from "./src/service/speech/config.ts";
+import { handleTtsProxy } from "./src/service/speech/tts-proxy.ts";
 
 /** Serves `presets/` and `presets/animations/` through `handleStore`. */
 function jsonStore(): Plugin {

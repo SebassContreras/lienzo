@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultScene } from "../../model/model.ts";
 import type { Ctx } from "../ctx.ts";
-import { createSceneGenerateSpeechTool } from "../tools/scene-generate-speech.ts";
 import {
   DEFAULT_LOCAL_TTS_URL,
   resolveLocalTtsBaseUrl,
@@ -11,6 +10,7 @@ import { createTtsService } from "./factory.ts";
 import { LocalTtsAdapter, POPULAR_LOCAL_TTS_MODELS } from "./local-adapter.ts";
 import { OpenRouterTtsAdapter } from "./openrouter-adapter.ts";
 import { loadTtsPreferences, saveTtsPreferences } from "./preferences.ts";
+import { createSceneGenerateSpeechTool } from "./tools/scene-generate-speech.ts";
 import type { SynthesizeSpeechRequest, TtsService } from "./types.ts";
 
 describe("Pluggable TTS Providers & Local Adapter (Spec 032)", () => {
