@@ -27,4 +27,5 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 ## Ideas
 
 Anything worth doing later.
+- `scene_validate` answers a failure in two shapes: with `compact`, an expansion problem is an error (`ok: false`) and a rule problem a verdict (`ok: true, valid: false`); with `data` every problem is a verdict. Worth one shape (082, QA log).
 - Shot and element id charset: ids are free text today (`"Bad Id!"` is stored); revisit if a tool needs ids as paths with spaces (081, Not doing).

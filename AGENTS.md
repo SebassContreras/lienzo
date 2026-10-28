@@ -261,8 +261,8 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
 - Use pnpm, never npm or yarn.
 - One rule, one place (075): a rule both the editor and the tools apply lives in `src/model/`
   as a pure function both call; never re-implement it in a tool or a component. A QA fix
-  names the rule it restores and adds one case per writer (each tool and the editor helper)
-  to `src/service/contract/contract.test.ts`, so the next path that writes it is covered too.
+  names the rule it restores and adds it to `RULES` (`src/service/contract/rules.ts`), which
+  the matrix checks in every writer, so the next path that writes it is covered too.
   Where each shared rule is applied (080): keyframes in the track schema
   (`src/model/track.ts`), element defaults in `prepareScene` (`src/service/scenes/scenes.ts`),
   audio refs in `saveScene` (`withCanonicalAudio`), a group's shot in `src/engine/groups.ts`,
@@ -277,6 +277,9 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   The server's MCP `instructions` name the commit it started from; compare it with
   `git rev-parse --short HEAD` (072). A QA report of "still open" counts only with that
   commit matching `HEAD`, or replayed with `pnpm lienzo`; otherwise replay it first (073). `pnpm replay [id…]` runs the replay corpus (`src/service/contract/corpus/`, 082) in a fresh process at `HEAD`; a case that passes there but fails on the MCP server means the server is stale.
+- A QA run follows `planning/qa-log.md` (082): the closed list of what to check, the class of
+  each finding (missing matrix cell, missing rule, text, design decision), one log line per
+  finding, a corpus case for each one, and when a round ends. A round gets no spec of its own.
 
 <!-- spectrace -->
 ## Planning

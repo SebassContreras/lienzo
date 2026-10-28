@@ -43,4 +43,4 @@ text-to-speech with synced subtitles and audio tracks.
 - docs/components.md — every component kind and what it is for
 - .agents/skills/lienzo-usage/SKILL.md — how an agent builds a post or video with the tools
 - schemas/compact-scene.json — the compact scene schema, generated from the descriptors
-- planning/ — product, architecture (with its change log), roadmap and one file per spec
+- planning/ — product, architecture (with its change log), roadmap, one file per spec, and the QA log (`qa-log.md`: the QA process and its findings)
