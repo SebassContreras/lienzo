@@ -28,4 +28,12 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 
 ## Ideas
 
-Anything worth doing later. (Nothing open: the two earlier ideas are specs 083 and 084.)
+Anything worth doing later. (The two earlier ideas are specs 083 and 084.)
+
+- `shape_overlap` fires only when two boxes cover half of the smaller one (`shapesStack`), so
+  two composites (chart, table, steps, list) that overlap by a third pass clean though their
+  text collides. Decide whether a composite kind gets a lower threshold, or the check also
+  compares what each draws (`text-extents.ts`). (QA 2026-10-29)
+- `scene_inspect_layout` boxes at t=0 are `w: 0` / `h: 0` for an `in` animation that starts at
+  scale 0, which reads as a layout fault. Mark the box as animating, or also return its resting
+  box. (QA 2026-10-29)

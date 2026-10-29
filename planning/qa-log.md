@@ -6,7 +6,7 @@ design work gets one.
 
 ## Before a run
 
-1. Restart the MCP server and check that the commit in its `instructions` is `git rev-parse --short HEAD`.
+1. Rebuild (`pnpm build:cli`), restart the MCP server and check that the commit in its `instructions` is `git rev-parse --short HEAD` and that the build time is after your last change (`+dirty` = uncommitted changes).
 2. `pnpm test` and `pnpm replay` pass at that commit.
 
 ## The closed list
@@ -55,3 +55,10 @@ as `{ id, source, call, expect }`, so `pnpm replay` reruns it.
 | 2026-10-28 | `2a60135` | `scene_validate` reports a failure as an error or as a verdict, depending on the kind of problem | 4 | Roadmap `## Ideas` |
 | 2026-10-29 | `4c90989` | `element_add` with `patch.id: ""` generated an id while ` a` and `a/b` were refused | 1 | Refused like the rest; empty-id cell added to the id rule of the matrix (compact forms take it as an id left out) |
 | 2026-10-29 | `efb6e3c` | Live run on the rebuilt MCP: ids, build/create/add agree, group/ungroup, rename and back, preview | — | No new class of bug found |
+| 2026-10-29 | `ef608b8` | `scene_validate` takes an empty id in the compact form (reported as a hole) | 3 | Not a hole: the compact form reads it as an id left out and `scene_build` generates one; `RULES` now says so |
+| 2026-10-29 | `ef608b8` | `scene_update { symbols: { card: null } }` left `use` elements of a symbol that no writer accepts; later writes mixed those errors in | 1 | `danglingReferences` also checks a `use` whose symbol a write removed or changed; corpus C3; `scene_get` drops an empty `symbols` |
+| 2026-10-29 | `ef608b8` | A camera's last-keyframe easing was noticed again by every write of the scene | 1 | `contentNotices` reads only the shots a write changed (`changed.shots`); corpus C4 |
+| 2026-10-29 | `ef608b8` | A line with no shot between elements of different shots gave no notice | 2 | New rule in `RULES` (`lineShotNotices`); corpus C5 |
+| 2026-10-29 | `ef608b8` | `scene_rename` keeps no trace of the name typed (`Escena Principal` → `escena-principal`) | 3 | Said in the tool's description |
+| 2026-10-29 | `ef608b8` | `scene_inspect_layout` misses composites (chart, table, steps, list) that overlap by less than half of the smaller; reported as "composites are not checked" | 4 | Roadmap `## Ideas`: they are checked, at the 50 % rule |
+| 2026-10-29 | `ef608b8` | `scene_inspect_layout` gives `w: 0` / `h: 0` at t=0 for an element whose `in` animation starts at scale 0 | 4 | Roadmap `## Ideas` |
