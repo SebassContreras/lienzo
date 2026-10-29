@@ -179,7 +179,9 @@ the matrix and the old tests (T024–T032), the close (T041–T044).
 - [x] 082/T032 [agent] `editor` tests renamed, and tests for brand, dialogs, footer, timeline and widgets (0–2% in the baseline) — covers R10, R12
 - [x] 082/T041 [agent] Quality gate: minimum coverage per folder and, for the rule modules, the mutation score of T025 as the minimum — covers R2, R12
 - [x] 082/T042 [agent] QA process: `planning/qa-log.md`, README and AGENTS.md section, the closed list — covers R11, D9
-- [ ] 082/T043 [agent] Review: a fresh agent reads the new suite against R1–R11 and tries to break the matrix (remove a rule from `prepareScene`, add a writer with no adapter) — covers R1, R2, R3, R4, R5, R6, R7, R8, R10, R11, R12
+- [x] 082/T045 [agent] The effects test finds scene writers that save through `renameAsset` too, not only by `saveScene`/`editScene`/`writeScene` — covers R4, R6
+- [x] 082/T043 [agent] Review: a fresh agent reads the new suite against R1–R11 and tries to break the matrix (remove a rule from `prepareScene`, add a writer with no adapter) — covers R1, R2, R3, R4, R5, R6, R7, R8, R10, R11, R12
+      reviewed: (by a fresh agent) planning/specs/082 R1–R12, src/service/contract/{matrix.test,rules,writers,effects.test}.ts, core/registry.ts, scenes/scenes.ts, scene-rename.ts — found the matrix fails when checkUniqueIds or checkShots is removed, when a scene writer has no adapter and when `effects` is missing; gap: effects.test.ts only recognised writers by saveScene/editScene/writeScene (T045); rules with one violation shape each (not changed)
 - [ ] 082/T044 [agent] Verify: typecheck, tests, replay with `pnpm lienzo` on a restarted MCP (commit = `HEAD`), mutation scores against the baseline — covers R1, R2, R3, R4, R5, R6, R7, R8, R10, R11, R12
 
 ## Changes

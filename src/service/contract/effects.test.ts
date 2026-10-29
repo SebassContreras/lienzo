@@ -24,7 +24,9 @@ const effectsOf = (name: string) =>
   registry.tools.find((tool) => tool.name === name)?.effects;
 
 const sceneWriters = toolFiles
-  .filter((source) => /\b(saveScene|editScene|writeScene)\(/.test(source))
+  .filter((source) =>
+    /\b(saveScene|editScene|writeScene)\(|\brenameAsset\(/.test(source),
+  )
   .map(nameOf);
 const readers = registry.tools
   .map((tool) => tool.name)
