@@ -53,3 +53,5 @@ as `{ id, source, call, expect }`, so `pnpm replay` reruns it.
 | 2026-10-28 | `91064ee` | Writers gave different content notices: three places built the list | 1 | `contentNotices`, called by `saveScene`, `buildCompact` and `sceneNotices` (082) |
 | 2026-10-28 | `93e66d2` | `scene_update` stored an unknown `animPreset` inside a symbol body | 1 | `checkAnimPresets` and `expandAnimPresets` walk symbol bodies (082) |
 | 2026-10-28 | `2a60135` | `scene_validate` reports a failure as an error or as a verdict, depending on the kind of problem | 4 | Roadmap `## Ideas` |
+| 2026-10-29 | `4c90989` | `element_add` with `patch.id: ""` generated an id while ` a` and `a/b` were refused | 1 | Refused like the rest; empty-id cell added to the id rule of the matrix (compact forms take it as an id left out) |
+| 2026-10-29 | `efb6e3c` | Live run on the rebuilt MCP: ids, build/create/add agree, group/ungroup, rename and back, preview | — | No new class of bug found |
