@@ -74,6 +74,9 @@ const compact = (v: Violation) => ({
     : {}),
 });
 
+/** The compact form takes an empty id as an id left out. */
+const noId = (v: Violation) => v.elements?.some((e) => e.id === "");
+
 export const WRITERS: readonly Writer[] = [
   {
     id: "scene_create",
@@ -97,19 +100,25 @@ export const WRITERS: readonly Writer[] = [
     id: "scene_validate (compact)",
     tool: "scene_validate",
     handles: ["elements", "shotContent", "scene", "background"],
-    plan: (v) => ({
-      arrange: [],
-      call: { tool: "scene_validate", input: { compact: compact(v) } },
-    }),
+    plan: (v) =>
+      noId(v)
+        ? undefined
+        : {
+            arrange: [],
+            call: { tool: "scene_validate", input: { compact: compact(v) } },
+          },
   },
   {
     id: "scene_build",
     tool: "scene_build",
     handles: ["elements", "shotContent", "scene", "background"],
-    plan: (v) => ({
-      arrange: [],
-      call: { tool: "scene_build", input: { compact: compact(v) } },
-    }),
+    plan: (v) =>
+      noId(v)
+        ? undefined
+        : {
+            arrange: [],
+            call: { tool: "scene_build", input: { compact: compact(v) } },
+          },
   },
   {
     id: "element_add",
@@ -246,7 +255,17 @@ export const NOT_CARRIED: Record<string, Record<string, string>> = {
     "a `use` override names a child its symbol has — override":
       "scene_update fills symbol bodies; a `use` placed on the scene is not in its input",
   },
+  "scene_validate (compact)": {
+    "an id can be addressed by a tool — empty element id":
+      "in the compact form an empty id is an id left out, so one is generated",
+  },
+  scene_build: {
+    "an id can be addressed by a tool — empty element id":
+      "in the compact form an empty id is an id left out, so one is generated",
+  },
   element_update: {
+    "an id can be addressed by a tool — empty element id":
+      "an update never changes an id, so it cannot give a bad one",
     "an id can be addressed by a tool — element id with a slash":
       "an update never changes an id, so it cannot give a bad one",
     "element ids are unique — two at the root":

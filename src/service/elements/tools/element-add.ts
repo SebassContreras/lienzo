@@ -109,7 +109,7 @@ export const elementAdd = defineTool({
     if (patch) el = await withFileAspect(effectiveCtx, el, patch);
     // trimmed before the scene is opened, so a failure adds nothing (049/D4)
     if (trim) el = await trimImage(effectiveCtx, el, "trim");
-    if (typeof patch?.id === "string" && patch.id) el = { ...el, id: patch.id };
+    if (typeof patch?.id === "string") el = { ...el, id: patch.id };
     const added = el;
     if (at && hasPositionTrack(added)) notices.push(trackOverridesAt(added.id));
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);

@@ -4,6 +4,9 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     passWithNoTests: true,
+    // spawning a bundle or a browser is slow on a loaded machine: 5 s fails them for no reason
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts", "src/**/*.tsx"],

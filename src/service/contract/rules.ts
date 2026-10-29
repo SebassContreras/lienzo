@@ -93,6 +93,10 @@ export const RULES: readonly Rule[] = [
         elements: [{ id: "a/b", kind: "rect" }],
       },
       {
+        label: "empty element id",
+        elements: [{ id: "", kind: "rect" }],
+      },
+      {
         label: "shot id with a slash",
         shotContent: [{ id: "a/b", start: 0, end: 2 }],
       },
