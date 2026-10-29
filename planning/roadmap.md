@@ -23,9 +23,9 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 080 | qa-round-8-every-writer | done        | 079 |
 | 081 | qa-round-9-input-gaps | done        | 080 |
 | 082 | test-suite-rewrite | done        | 081 |
+| 083 | one-validate-verdict | todo | 082 |
+| 084 | id-charset | todo | 082 |
 
 ## Ideas
 
-Anything worth doing later.
-- `scene_validate` answers a failure in two shapes: with `compact`, an expansion problem is an error (`ok: false`) and a rule problem a verdict (`ok: true, valid: false`); with `data` every problem is a verdict. Worth one shape (082, QA log).
-- Shot and element id charset: ids are free text today (`"Bad Id!"` is stored); revisit if a tool needs ids as paths with spaces (081, Not doing).
+Anything worth doing later. (Nothing open: the two earlier ideas are specs 083 and 084.)
