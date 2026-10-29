@@ -84,6 +84,21 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: "an id can be addressed by a tool",
+    outcome: "refused",
+    message: /un id no puede/,
+    violations: [
+      {
+        label: "element id with a slash",
+        elements: [{ id: "a/b", kind: "rect" }],
+      },
+      {
+        label: "shot id with a slash",
+        shotContent: [{ id: "a/b", start: 0, end: 2 }],
+      },
+    ],
+  },
+  {
     id: "a group's id is not taken",
     outcome: "refused",
     message: /«r1»/,

@@ -7,7 +7,7 @@ import { type AnimPreset, parseAnimPreset } from "../../model/anim-preset.ts";
 import { mapElementsDeep } from "../../model/element-walk.ts";
 import { withElementDefaults } from "../../model/fill-defaults.ts";
 import { idPath } from "../../model/id-path.ts";
-import { duplicateIds } from "../../model/ids.ts";
+import { duplicateIds, idProblem } from "../../model/ids.ts";
 import { namesHint } from "../../model/ignored.ts";
 import type { Element, Scene } from "../../model/model.ts";
 import type { PresetRecipe } from "../../model/preset.ts";
@@ -24,7 +24,7 @@ import type { Ctx, ProjectCtx } from "../core/ctx.ts";
 import { fail, failAll, type Problem, problemsOf } from "../core/registry.ts";
 import type { PresetSource } from "../core/store.ts";
 import { availableFonts } from "../fonts/font-install.ts";
-import { allElements, changedSince } from "./scene-changes.ts";
+import { allElements, changedSince, placedElements } from "./scene-changes.ts";
 import { contentNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
@@ -94,6 +94,7 @@ function ruleFailures(
     () => checkAnimPresets(scene, library),
     () => checkShots(scene),
     () => checkUniqueIds(scene, previous),
+    () => checkIdNames(scene, previous),
     () => checkReferences(scene, previous),
   ].flatMap((check) => problemsOf(check) ?? []);
 }
@@ -249,6 +250,26 @@ export function checkUniqueIds(scene: Scene, previous?: Scene): void {
         message: `ID duplicado «${r.id}» (ya está en ${r.first})`,
       })),
     );
+}
+
+/**
+ * Fails on an element or a shot whose id the tools cannot address (084/D2). With `previous`,
+ * only ids the write added or changed fail, so a stored scene with an old id still opens.
+ */
+export function checkIdNames(scene: Scene, previous?: Scene): void {
+  const changed = changedSince(previous);
+  const knownShots = new Set((previous?.shots ?? []).map((sh) => sh.id));
+  const problems = [
+    ...placedElements(scene).flatMap(({ el, path }) => {
+      const reason = changed(el) ? idProblem(el.id) : undefined;
+      return reason ? [{ path: `${path}.id`, message: reason }] : [];
+    }),
+    ...(scene.shots ?? []).flatMap((shot, i) => {
+      const reason = knownShots.has(shot.id) ? undefined : idProblem(shot.id);
+      return reason ? [{ path: `shots.${i}.id`, message: reason }] : [];
+    }),
+  ];
+  if (problems.length > 0) failAll("invalid_id", problems);
 }
 
 /** The element at `indices` (`["0", "children", "1"]`) of `elements`. */

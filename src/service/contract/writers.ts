@@ -4,6 +4,7 @@
  * made of the kinds of content it `handles`; when it handles one and cannot carry it, `NOT_CARRIED`
  * says why, and a writer with neither fails `matrix.test.ts`.
  */
+import { idProblem } from "../../model/ids.ts";
 import type { Rule, Violation } from "./rules.ts";
 
 type Fields = Record<string, unknown>;
@@ -132,7 +133,8 @@ export const WRITERS: readonly Writer[] = [
     handles: ["elements"],
     plan: (v) => {
       const last = v.elements?.at(-1);
-      if (!last || repeatsIds(v.elements)) return undefined;
+      if (!last || repeatsIds(v.elements) || idProblem(last.id))
+        return undefined;
       const { id, kind, ...patch } = last;
       return {
         arrange: [
@@ -245,6 +247,8 @@ export const NOT_CARRIED: Record<string, Record<string, string>> = {
       "scene_update fills symbol bodies; a `use` placed on the scene is not in its input",
   },
   element_update: {
+    "an id can be addressed by a tool — element id with a slash":
+      "an update never changes an id, so it cannot give a bad one",
     "element ids are unique — two at the root":
       "an update never changes an id, so it cannot repeat one",
     "element ids are unique — a group child repeats a root id":

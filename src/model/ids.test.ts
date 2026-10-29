@@ -1,5 +1,5 @@
-import { expect, it } from "vitest";
-import { duplicateIds } from "./ids.ts";
+import { describe, expect, it } from "vitest";
+import { duplicateIds, idProblem } from "./ids.ts";
 import { defaultGroup, defaultRect, type Element } from "./model.ts";
 
 const rect = (id: string) => ({ ...defaultRect(), id });
@@ -31,4 +31,22 @@ it("reads a scene that did not parse: skips what is not an element, an id that i
     rect("a"),
   ] as unknown as Element[];
   expect(duplicateIds(broken)).toEqual([]);
+});
+
+describe("idProblem", () => {
+  it.each(["a", "Caja Ámbar", "a-b_c.1", "a b"])("accepts %j", (id) => {
+    expect(idProblem(id)).toBeUndefined();
+  });
+
+  it.each(["", " a", "a ", "a/b", "/", "a\nb", "a\u0000"])(
+    "refuses %j with a reason",
+    (id) => {
+      expect(idProblem(id)).toMatch(/^un id no puede/);
+    },
+  );
+
+  it("leaves an id that is not text to the schema", () => {
+    expect(idProblem(5)).toBeUndefined();
+    expect(idProblem(undefined)).toBeUndefined();
+  });
 });

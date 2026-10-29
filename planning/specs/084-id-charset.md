@@ -29,9 +29,9 @@ opening.
 - Not doing: a strict `[a-z0-9-]` charset; it would break stored scenes and ids that read well.
 
 ## Tasks
-- [ ] 084/T001 [agent] `validId` in `src/model/ids.ts` with examples (empty, `a/b`, padded, control character, `Caja Ámbar`) — covers R1, D1
-- [ ] 084/T002 [agent] `prepareScene` fails on a changed element or shot with a bad id, listing every one; a stored scene with one still loads — covers R2, R4, D2
-- [ ] 084/T003 [agent] Matrix adapter for the id rule in every `effects: scene` writer, and a replay case — covers R2, D4
+- [x] 084/T001 [agent] `validId` in `src/model/ids.ts` with examples (empty, `a/b`, padded, control character, `Caja Ámbar`) — covers R1, D1
+- [x] 084/T002 [agent] `prepareScene` fails on a changed element or shot with a bad id, listing every one; a stored scene with one still loads — covers R2, R4, D2
+- [x] 084/T003 [agent] Matrix adapter for the id rule in every `effects: scene` writer, and a replay case — covers R2, D4
 - [ ] 084/T004 [agent] Editor: id and shot name fields show the reason — covers R3, D3
 - [ ] 084/T005 [agent] `RULES`, README and `docs/components.md` state the rule; the line under Ideas of the roadmap is gone — covers R5
 - [ ] 084/T006 [agent] Review: a fresh agent reads the diff against R1–R5 and tries `element_add`, `scene_update`, `shot_set`, `scene_build` with `"a/b"` and `""` — covers R1, R2, R3, R4, R5

@@ -25,3 +25,20 @@ export function duplicateIds(
   walk(elements, prefix);
   return repeats;
 }
+
+/**
+ * Why `id` cannot name an element or a shot, or `undefined` when it can (084/D1). Tools
+ * address an element by `id` or a `group/child` path, so an id has no `/`; it is not empty or
+ * padded and holds no control character. Spaces inside and accents are fine. Pure.
+ */
+export function idProblem(id: unknown): string | undefined {
+  if (typeof id !== "string") return undefined; // the schema reports it
+  if (id === "") return "un id no puede estar vacío";
+  if (id !== id.trim()) return "un id no puede empezar ni acabar con espacios";
+  if (id.includes("/"))
+    return "un id no puede llevar «/», que separa grupo e hijo en una ruta";
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: that is the rule
+  if (/[\u0000-\u001f\u007f]/.test(id))
+    return "un id no puede llevar caracteres de control";
+  return undefined;
+}
