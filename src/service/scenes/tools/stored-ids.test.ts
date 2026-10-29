@@ -42,3 +42,14 @@ it("a stored scene with an id the tools cannot address still opens and takes edi
   expect(add).toMatchObject({ ok: true });
   expect(bad).toMatchObject({ ok: false, error: { code: "invalid_id" } });
 });
+
+it("a stored id is kept when its element moves into a group", async () => {
+  await call("element_add", { scene: "s", kind: "rect", patch: { id: "k" } });
+  const grouped = await call("element_group", {
+    scene: "s",
+    ids: ["k", "a/b"],
+    id: "g",
+  });
+
+  expect(grouped).toMatchObject({ ok: true });
+});

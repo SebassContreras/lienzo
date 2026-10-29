@@ -24,7 +24,12 @@ import type { Ctx, ProjectCtx } from "../core/ctx.ts";
 import { fail, failAll, type Problem, problemsOf } from "../core/registry.ts";
 import type { PresetSource } from "../core/store.ts";
 import { availableFonts } from "../fonts/font-install.ts";
-import { allElements, changedSince, placedElements } from "./scene-changes.ts";
+import {
+  allElements,
+  changedSince,
+  idsOf,
+  placedElements,
+} from "./scene-changes.ts";
 import { contentNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
@@ -254,14 +259,15 @@ export function checkUniqueIds(scene: Scene, previous?: Scene): void {
 
 /**
  * Fails on an element or a shot whose id the tools cannot address (084/D2). With `previous`,
- * only ids the write added or changed fail, so a stored scene with an old id still opens.
+ * only ids the write added or renamed fail (a stored id stays valid however its element
+ * changes), so a stored scene with an old id still opens and edits.
  */
 export function checkIdNames(scene: Scene, previous?: Scene): void {
-  const changed = changedSince(previous);
+  const knownIds = idsOf(previous);
   const knownShots = new Set((previous?.shots ?? []).map((sh) => sh.id));
   const problems = [
     ...placedElements(scene).flatMap(({ el, path }) => {
-      const reason = changed(el) ? idProblem(el.id) : undefined;
+      const reason = knownIds.has(el.id) ? undefined : idProblem(el.id);
       return reason ? [{ path: `${path}.id`, message: reason }] : [];
     }),
     ...(scene.shots ?? []).flatMap((shot, i) => {

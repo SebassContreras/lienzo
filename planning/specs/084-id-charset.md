@@ -36,8 +36,11 @@ opening.
 - [x] 084/T003 [agent] Matrix adapter for the id rule in every `effects: scene` writer, and a replay case — covers R2, D4
 - [x] 084/T004 [agent] Editor: checked, no id field takes user text, nothing to add — covers R6; replaces D3
 - [x] 084/T005 [agent] `RULES`, README and `docs/components.md` state the rule; the line under Ideas of the roadmap is gone — covers R5
-- [ ] 084/T006 [agent] Review: a fresh agent reads the diff against R1–R5 and tries `element_add`, `scene_update`, `shot_set`, `scene_build` with `"a/b"` and `""` — covers R1, R2, R3, R4, R5
-- [ ] 084/T007 [agent] Verify: `pnpm typecheck`, tests of `src/model`, `src/service/scenes`, `src/service/contract`, `pnpm replay` — covers R1, R2, R3, R4, R5
+- [x] 084/T006 [agent] Review: a fresh agent reads the diff against R1–R5 and tries `element_add`, `scene_update`, `shot_set`, `scene_build` with `"a/b"` and `""` — covers R1, R2, R3, R4, R5
+      reviewed: (by a fresh agent) ids.ts, scenes.ts, scene-changes.ts, contract/rules.ts and writers.ts, stored-ids.test.ts; element_add, scene_create, scene_build, shot_set, scene_update symbols, element_group with bad ids — found a stored bad id was refused when its element changed (element_group): fixed by comparing ids with `idsOf(previous)` and tested; `patch.id: ""` on element_add gets a generated id (left); no notice on read (R4 amended)
+- [x] 084/T007 [agent] Verify: `pnpm typecheck`, tests of `src/model`, `src/service/scenes`, `src/service/contract`, `pnpm replay` — covers R1, R2, R3, R4, R5
+      verified: pnpm typecheck; vitest src/model/ids, contract, scenes, elements, shots 1032 passed; pnpm replay 24/24 — found nothing; MCP not rebuilt, so not tried live
 
 ## Changes
 - 2026-10-29: R3 → R6, D3 dropped. Why: the editor generates every element and shot id; the user edits only `name`. Work: T004 closed as a check.
+- 2026-10-29: R4 no longer asks for a notice on read, and a stored id is judged by its id, not by its element changing. Why: T006 review. Work: `checkIdNames` uses `idsOf(previous)`.

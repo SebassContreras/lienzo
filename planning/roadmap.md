@@ -24,7 +24,7 @@ Specs in order. `Status` is written by the pre-commit hook from each spec's chec
 | 081 | qa-round-9-input-gaps | done        | 080 |
 | 082 | test-suite-rewrite | done        | 081 |
 | 083 | one-validate-verdict | done        | 082 |
-| 084 | id-charset | in progress | 082 |
+| 084 | id-charset | done        | 082 |
 
 ## Ideas
 
