@@ -6,7 +6,7 @@
 import { boxOf } from "../../engine/geometry.ts";
 import { idPath } from "../../model/id-path.ts";
 import { ignoredFields, ignoredNotice } from "../../model/ignored.ts";
-import type { Element, Scene } from "../../model/model.ts";
+import type { Element, Scene, Shot } from "../../model/model.ts";
 import { trackKeys } from "../../model/track.ts";
 import {
   estimatedFonts,
@@ -113,14 +113,45 @@ export function offCanvasNotices(
   return offCanvas(scene, elements).map((n) => n.message);
 }
 
+/**
+ * A line with no shot of its own whose ends sit in different shots (or one in a shot and the
+ * other in none): it is drawn all through the scene, with an end loose whenever its element is
+ * away. Only lines the write changed, or whose ends it changed, are reported.
+ */
+function lineShotNotices(
+  scene: Scene,
+  changed: readonly Element[],
+): SceneNotice[] {
+  const touched = new Set(changed.map((el) => el.id));
+  const byId = new Map(scene.elements.map((el) => [el.id, el]));
+  return scene.elements.flatMap((el) => {
+    if (el.kind !== "line" || el.shot !== undefined) return [];
+    const ends = [el.a, el.b].map((end) => byId.get(end?.attach ?? ""));
+    const [a, b] = ends;
+    if (!a || !b || a.shot === b.shot) return [];
+    if (![el, a, b].some((x) => touched.has(x.id))) return [];
+    const where = (x: Element) =>
+      x.shot ? `la toma «${x.shot}»` : "ninguna toma";
+    return [
+      {
+        elementId: el.id,
+        message: `La línea «${el.id}» une «${a.id}» (${where(a)}) con «${b.id}» (${where(b)}) y no tiene toma propia: se dibuja siempre, con un extremo suelto mientras uno de los dos no está; dale \`shot\``,
+      },
+    ];
+  });
+}
+
 const CAMERA_CHANNELS = ["x", "y", "zoom"];
 
 /**
  * What a shot says that cannot work (081/D4): a transition longer than the shot, a camera
  * track on a channel the camera does not have, an easing on a camera track's last keyframe.
  */
-export function shotNotices(scene: Scene): SceneNotice[] {
-  return (scene.shots ?? []).flatMap((shot) => {
+export function shotNotices(
+  scene: Scene,
+  shots: readonly Shot[] = scene.shots ?? [],
+): SceneNotice[] {
+  return shots.flatMap((shot) => {
     const long =
       shot.transition && shot.transition.duration > shot.end - shot.start
         ? [
@@ -157,17 +188,18 @@ export function shotNotices(scene: Scene): SceneNotice[] {
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-/** The top-level elements and the symbols a write changed. */
+/** The top-level elements, the symbols and the shots a write changed; no `shots` means all. */
 export type Changed = {
   elements: readonly Element[];
   symbols?: Scene["symbols"];
+  shots?: readonly Shot[];
 };
 
 /**
  * The notices every writer gives about scene content (082/D6): fonts and weights the project
  * lacks, elements off the canvas, easings that shape nothing, shot problems and text widths
- * that are estimated. `changed` limits the element and symbol ones to what a write changed; the
- * shot ones read the whole scene. One assembly for `saveScene`, `buildCompact` and
+ * that are estimated. `changed` limits each to what a write changed, so a call does not repeat
+ * what an earlier one already said. One assembly for `saveScene`, `buildCompact` and
  * `sceneNotices`, so a writer cannot lack one the others give.
  */
 export function contentNotices(
@@ -201,7 +233,8 @@ export function contentNotices(
     ),
     ...deadKeyframeEasingNotices(part),
     ...offCanvas(scene, elements),
-    ...shotNotices(scene),
+    ...lineShotNotices(scene, elements),
+    ...shotNotices(scene, changed.shots),
     ...byFamily(
       estimatedFonts(part).map((family, i) => ({
         family,

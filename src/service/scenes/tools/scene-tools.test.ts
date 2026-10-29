@@ -97,7 +97,7 @@ it("suggests text for content on a text element", async () => {
   });
 });
 
-it("scene_update removing a symbol a use names leaves a notice", async () => {
+it("scene_update refuses to remove a symbol a use still names, and changes nothing", async () => {
   await call("scene_update", {
     scene: "s",
     patch: { symbols: { sol: { w: 10, h: 10, children: [] } } },
@@ -114,9 +114,30 @@ it("scene_update removing a symbol a use names leaves a notice", async () => {
   });
 
   expect(r).toMatchObject({
-    ok: true,
-    value: { notices: [expect.stringMatching(/«u».*«sol»/)] },
+    ok: false,
+    error: {
+      path: "elements.u.symbol",
+      message: expect.stringMatching(/«sol»/),
+    },
   });
+  const kept = await call("scene_get", {
+    scene: "s",
+    response_format: "detailed",
+  });
+  expect(kept).toMatchObject({ ok: true, value: { symbols: { sol: {} } } });
+});
+
+it("scene_update removing the last symbol leaves no `symbols` in what scene_get shows", async () => {
+  await call("scene_update", {
+    scene: "s",
+    patch: { symbols: { sol: { w: 10, h: 10, children: [] } } },
+  });
+  await call("scene_update", { scene: "s", patch: { symbols: { sol: null } } });
+
+  const got = await call("scene_get", { scene: "s" });
+
+  expect(got).toMatchObject({ ok: true });
+  expect((got as { value: object }).value).not.toHaveProperty("symbols");
 });
 
 it("scene_delete of a missing scene fails at scene", async () => {

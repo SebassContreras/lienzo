@@ -22,13 +22,15 @@ function sparse(el: Element): Record<string, unknown> {
 }
 
 export function sparseScene(scene: Scene): Record<string, unknown> {
+  const { symbols, ...rest } = scene;
   return {
-    ...scene,
+    ...rest,
     elements: scene.elements.map(sparse),
-    ...(scene.symbols
+    // a scene whose last symbol was removed has none to show
+    ...(symbols && Object.keys(symbols).length > 0
       ? {
           symbols: Object.fromEntries(
-            Object.entries(scene.symbols).map(([name, s]) => [
+            Object.entries(symbols).map(([name, s]) => [
               name,
               { ...s, children: s.children.map(sparse) },
             ]),

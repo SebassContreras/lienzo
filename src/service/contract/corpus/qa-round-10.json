@@ -1,0 +1,129 @@
+[
+  {
+    "id": "C3-symbol-removed-while-used",
+    "source": "live run after 084, finding 3",
+    "setup": [
+      {
+        "tool": "scene_update",
+        "input": {
+          "scene": "s",
+          "patch": {
+            "symbols": {
+              "chip": {
+                "w": 10,
+                "h": 10,
+                "children": [{ "id": "d", "kind": "ellipse", "w": 5, "h": 5 }]
+              }
+            }
+          }
+        }
+      },
+      {
+        "tool": "element_add",
+        "input": {
+          "scene": "s",
+          "kind": "use",
+          "patch": { "id": "u", "symbol": "chip" }
+        }
+      }
+    ],
+    "call": {
+      "tool": "scene_update",
+      "input": { "scene": "s", "patch": { "symbols": { "chip": null } } }
+    },
+    "expect": {
+      "message": "símbolo «chip», que no existe",
+      "path": "elements.u.symbol"
+    }
+  },
+  {
+    "id": "C3-symbol-removed-unused",
+    "source": "live run after 084, finding 3",
+    "setup": [
+      {
+        "tool": "scene_update",
+        "input": {
+          "scene": "s",
+          "patch": {
+            "symbols": {
+              "chip": {
+                "w": 10,
+                "h": 10,
+                "children": [{ "id": "d", "kind": "ellipse", "w": 5, "h": 5 }]
+              }
+            }
+          }
+        }
+      }
+    ],
+    "call": {
+      "tool": "scene_update",
+      "input": { "scene": "s", "patch": { "symbols": { "chip": null } } }
+    },
+    "expect": { "ok": true }
+  },
+  {
+    "id": "C4-camera-easing-said-once",
+    "source": "live run after 084, finding 4",
+    "setup": [
+      {
+        "tool": "shot_set",
+        "input": {
+          "scene": "s",
+          "id": "a",
+          "start": 0,
+          "end": 2,
+          "camera": { "tracks": { "zoom": [[0, 1], [1, 1.2, "ease-out"]] } }
+        }
+      }
+    ],
+    "call": {
+      "tool": "element_add",
+      "input": { "scene": "s", "kind": "rect", "patch": { "id": "r" } }
+    },
+    "expect": { "ok": true, "noNotices": ["último keyframe"] }
+  },
+  {
+    "id": "C5-line-between-shots",
+    "source": "live run after 084, finding 5",
+    "setup": [
+      {
+        "tool": "shot_set",
+        "input": { "scene": "s", "id": "a", "start": 0, "end": 2 }
+      },
+      {
+        "tool": "shot_set",
+        "input": { "scene": "s", "id": "b", "start": 2, "end": 4 }
+      },
+      {
+        "tool": "element_add",
+        "input": {
+          "scene": "s",
+          "kind": "rect",
+          "patch": { "id": "r1", "shot": "a" }
+        }
+      },
+      {
+        "tool": "element_add",
+        "input": {
+          "scene": "s",
+          "kind": "rect",
+          "patch": { "id": "r2", "shot": "b" }
+        }
+      }
+    ],
+    "call": {
+      "tool": "element_add",
+      "input": {
+        "scene": "s",
+        "kind": "line",
+        "patch": {
+          "id": "l",
+          "a": { "x": 0, "y": 0, "attach": "r1" },
+          "b": { "x": 0, "y": 0, "attach": "r2" }
+        }
+      }
+    },
+    "expect": { "ok": true, "notices": ["línea «l» une «r1»"] }
+  }
+]

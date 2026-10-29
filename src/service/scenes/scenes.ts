@@ -9,7 +9,7 @@ import { withElementDefaults } from "../../model/fill-defaults.ts";
 import { idPath } from "../../model/id-path.ts";
 import { duplicateIds, idProblem } from "../../model/ids.ts";
 import { namesHint } from "../../model/ignored.ts";
-import type { Element, Scene } from "../../model/model.ts";
+import type { Element, Scene, Shot } from "../../model/model.ts";
 import type { PresetRecipe } from "../../model/preset.ts";
 import { parseScene, ShotSchema } from "../../model/schema.ts";
 import { shotProblems } from "../../model/shots.ts";
@@ -351,12 +351,23 @@ export async function saveScene(
     ...contentNotices(scene, faces, {
       elements: changedTop,
       symbols: changedSymbols(scene, previous),
+      shots: changedShots(scene, previous),
     }).map((n) => n.message),
     ...(await resourceNotices(ctx, scene, previous)),
   );
   const unique = [...new Set(notices)];
   notices.splice(0, notices.length, ...unique);
   return { scene: await ctx.store.writeScene(name, scene), notices };
+}
+
+/** The shots of `scene` that `previous` did not have or had different. */
+function changedShots(scene: Scene, previous?: Scene): Shot[] {
+  const before = new Map(
+    (previous?.shots ?? []).map((sh) => [sh.id, JSON.stringify(sh)]),
+  );
+  return (scene.shots ?? []).filter(
+    (sh) => before.get(sh.id) !== JSON.stringify(sh),
+  );
 }
 
 /** The symbols of `scene` that `previous` did not have or had different (082/D6). */

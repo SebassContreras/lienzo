@@ -101,8 +101,11 @@ under `pnpm lienzo mcp`:
 Tools read and write the files of this repo (`projects/<project>/`, `presets/`, `fonts/`), so always set `cwd` to the Lienzo root directory. Every tool that touches scenes, assets or exports requires `project` (the `project` of an entry in `project_list`, e.g. `mi-proyecto`); there is no default project. A failed call comes back as an MCP error result with the same JSON `{ code, message, path }` the CLI prints (plus `errors` when there are several problems); a key the tool does not take is named, with where it belongs (`elements` at the top of `scene_build` → inside `compact`); an object argument a client sends as a JSON string (`patch: "{…}"`) is read as that object. `project_create` needs only `name`: the `project` id is made from it (`Café Norte` → `cafe-norte`).
 
 The server runs the code it started with: after a pull, restart it (and rerun `pnpm build:cli`
-for `dist/cli.js`). Its MCP `instructions` name the commit it started from; if that differs
-from `git rev-parse --short HEAD`, the server is stale and may report fixed bugs as open.
+for `dist/cli.js`). Its MCP `instructions` name the build: `commit ef608b8+dirty, built
+2026-10-29 13:50` for `dist/cli.js` (stamped by `pnpm build:cli`) or `commit …, source started
+…` when run from source; `+dirty` means uncommitted changes. If the commit differs from
+`git rev-parse --short HEAD`, or the build is older than your last change, the server is stale
+and may report fixed bugs as open.
 They also state, once for every tool, how arguments and failures work (JSON values,
 `project`, `errors`, Spanish messages, notices, coordinates), so each tool's description
 only says what is its own.
@@ -123,7 +126,10 @@ How the tools behave, in short:
   value and as a keyframe; `scene_validate` returns every problem in `errors`. Messages are
   Spanish, and a failure about what `element_add` adds points at `patch.…`.
 - **Notices:** a write answers `notices` about what it ignored or could not draw yet (an
-  asset not in the project), only for what the call changed; `scene_validate` lists them all.
+  asset not in the project), only for what the call changed (a shot's camera easing is
+  reported by the call that sets it, not by every later one); `scene_validate` lists them all.
+  A line with no `shot` between elements of different shots gets one: it is drawn all
+  through the scene, with an end loose while its element is away.
 - **Defaults:** `scene_create` and `scene_build` start from the project's canvas;
   `scene_get` returns each element's non-default fields (`full: true` for all).
 - **Times:** keyframe `t` is scene time, also for elements bound to a shot and for the
@@ -218,7 +224,8 @@ The same options work in compact scenes (`scene_build`) and through the element 
   into cuts (`cut`, `fade`, `slide`, `zoom`) with a camera (`x`, `y`, `zoom`, keyframe
   tracks); top-level elements bind with `shot: "<id>"`. `shot_set` edits one shot.
 - **Symbols:** `symbols: { car: { w, h, children } }` defines a piece once; a `use`
-  element (`symbol: "car"`, `overrides` by child id) draws an instance.
+  element (`symbol: "car"`, `overrides` by child id) draws an instance. `scene_update` refuses
+  to remove a symbol a `use` still names, or to drop a child an `override` names.
 - **Shapes:** `polygon` `fit: "box"`; `path` `mode: "layers"` draws every shape at once;
   group `clip`; radial and multi-stop fills (`fill.type`, `fill.stops`); a radial fill reaches
   the edge of an ellipse, polygon or star. A fill given only a `color` is flat (add `gradient: true`,

@@ -35,15 +35,6 @@ export async function resourceNotices(
             `«${el.id}»: el extremo ${label} se conectaba a «${attach}», que se quitó; queda suelto`,
           );
       }
-    // a symbol this write removed while a `use` still names it (078/D3)
-    if (
-      el.kind === "use" &&
-      !scene.symbols?.[el.symbol] &&
-      previous?.symbols?.[el.symbol]
-    )
-      notices.add(
-        `«${el.id}» usa el símbolo «${el.symbol}», que se quitó; no dibuja nada`,
-      );
     if (!changed(el)) continue;
     const refs = descriptorOf(el.kind)?.assets?.(el as never) ?? [];
     for (const ref of refs) {

@@ -297,6 +297,33 @@ export const RULES: readonly Rule[] = [
     ],
   },
   {
+    id: "a line with no shot between elements of different shots gets a notice",
+    outcome: "notice",
+    message: /línea «l» une «r1».*«r2».*no tiene toma propia/,
+    violations: [
+      {
+        label: "two shots",
+        onCanvas: true,
+        shots: [SHOT, { id: "s2", start: 2, end: 4 }],
+        elements: [
+          { id: "r1", kind: "rect", shot: "s1" },
+          { id: "r2", kind: "rect", shot: "s2" },
+          {
+            id: "l",
+            kind: "line",
+            a: { x: 0, y: 0, attach: "r1" },
+            b: { x: 0, y: 0, attach: "r2" },
+          },
+        ],
+        compactElements: [
+          { id: "r1", kind: "rect", shot: "s1" },
+          { id: "r2", kind: "rect", shot: "s2" },
+          { id: "l", kind: "line", from: "r1", to: "r2" },
+        ],
+      },
+    ],
+  },
+  {
     id: "a camera track on a channel the camera lacks gets a notice",
     outcome: "notice",
     message: /no tiene la pista «rotation»/,

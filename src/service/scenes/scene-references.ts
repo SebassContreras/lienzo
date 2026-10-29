@@ -1,7 +1,8 @@
 /**
  * References a scene write must not leave dangling (074/D1): a `shot` the scene lacks, an
  * icon lucide lacks, a line end attached to no element and a `use` of a missing symbol (078/D3). Only elements the write changed
- * are checked, so a stored scene with an old problem can still be edited elsewhere. Pure.
+ * are checked, so a stored scene with an old problem can still be edited elsewhere; a `use` also
+ * counts as changed when the symbol it names was removed or changed. Pure.
  */
 
 import { trackPaths } from "../../components/descriptor.ts";
@@ -56,6 +57,18 @@ const symbolIds = (elements: readonly Element[]): Set<string> =>
     ]),
   );
 
+/** The names of the symbols `scene` removed from `previous` or changed in it. */
+function changedSymbolNames(scene: Scene, previous?: Scene): Set<string> {
+  return new Set(
+    Object.entries(previous?.symbols ?? {})
+      .filter(
+        ([name, body]) =>
+          JSON.stringify(body) !== JSON.stringify(scene.symbols?.[name]),
+      )
+      .map(([name]) => name),
+  );
+}
+
 /** Every changed element's reference to a shot, icon, line target or symbol `scene` lacks. */
 export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
   const shots = (scene.shots ?? []).map((sh) => sh.id);
@@ -63,8 +76,11 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
   const placed = placedElements(scene);
   const ids = new Set(placed.map(({ el }) => el.id));
   const changed = changedSince(previous);
+  const changedSymbols = changedSymbolNames(scene, previous);
   const out: Dangling[] = [];
-  for (const { el, path } of placed.filter(({ el }) => changed(el))) {
+  const checked = ({ el }: { el: Element }) =>
+    changed(el) || (el.kind === "use" && changedSymbols.has(el.symbol));
+  for (const { el, path } of placed.filter(checked)) {
     if (typeof el.shot === "string" && !shots.includes(el.shot))
       out.push({
         code: "unknown_shot",
