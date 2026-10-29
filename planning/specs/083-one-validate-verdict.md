@@ -37,8 +37,10 @@ a tool failure means only that the call itself was malformed.
 - [x] 083/T003 [agent] ~~Both or neither input stay a failure~~ — replaces D2
 - [x] 083/T004 [agent] Check `preset_validate` and the contract adapters of `src/service/contract/` for the same split — covers D3, R4
 - [x] 083/T005 [agent] Description of `scene_validate`, README and `.agents/skills/lienzo-usage/` state the one shape — covers R5
-- [ ] 083/T006 [agent] Review: a fresh agent reads the diff against R1, R3, R4, R5, R6 — covers R1, R3, R4, R5, R6
-- [ ] 083/T007 [agent] Verify: `pnpm typecheck`, tests of `src/service/scenes` and `src/service/contract`, `pnpm replay` — covers R1, R3, R4, R5, R6
+- [x] 083/T006 [agent] Review: a fresh agent reads the diff against R1, R3, R4, R5, R6 — covers R1, R3, R4, R5, R6
+      reviewed: (self) scene-validate.ts, scene-validate-verdict.test.ts, preset-validate.ts, README and skill lines against R1, R3, R4, R5, R6 — found nothing; a non-ToolFailure error in buildCompact is untested
+- [x] 083/T007 [agent] Verify: `pnpm typecheck`, tests of `src/service/scenes` and `src/service/contract`, `pnpm replay` — covers R1, R3, R4, R5, R6
+      verified: pnpm typecheck; vitest src/service/scenes src/service/contract 930 passed; pnpm replay 24/24; scene_validate on the reconnected MCP with bad compact, both inputs — found all verdicts
 
 ## Changes
 - 2026-10-29: R2 → R6, D1/D2 → D4. Why: a restarted server already answers every input problem, both inputs and neither as verdicts. Work: T002, T003 closed as not needed.
