@@ -137,7 +137,7 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
   `from`/`to` naming no element, a `use` of a symbol the scene lacks, an unknown easing, an
   opacity outside 0–1, an `element_move` index past the last sibling. Pass `patch` and
   `data` as objects (a JSON string is read too). A failure about what `element_add` adds
-  points at `patch.…`. `scene_validate` returns every problem in `errors`; paths name an element by the
+  points at `patch.…`. `scene_validate` returns every problem in `errors`, always as a verdict; paths name an element by the
   `id` you gave, else by its index. Notices name what is valid but draws a placeholder: an
   image `src` that is not a project asset yet, a line end whose element a write removed.
   A bare asset path (`logos/x.png`, `asset_add`'s `filename`) is stored as

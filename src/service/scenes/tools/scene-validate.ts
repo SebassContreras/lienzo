@@ -28,7 +28,8 @@ export const sceneValidate = defineTool({
     "estimated because its font has no metrics here (check it with scene_preview). " +
     "Pass either `data` (a scene as scene_get returns it; missing scene fields take the project's " +
     "canvas and an element's missing fields its kind's defaults) or `compact` (the compact form scene_build takes, " +
-    "checked as scene_build would build it, with the same notices).",
+    "checked as scene_build would build it, with the same notices). Every problem with the input, " +
+    "also passing both or neither, is a verdict (`valid: false`); only a wrong `project` fails the call.",
   input: z.object({
     data: z.unknown().optional(),
     compact: CompactSceneInputSchema.optional(),

@@ -241,7 +241,7 @@ The same options work in compact scenes (`scene_build`) and through the element 
   prefix, so `asset_delete` refuses a file a scene plays.
 - **Size:** `size` is `"WxH"`, `[w, h]`, a ratio (`"9:16"`, `"4:5"`, `"1:1"`, `"16:9"`) or a
   format (`"Story"`); what a compact scene leaves out comes from the project's canvas.
-- **Checking a scene:** `scene_validate` (every problem in `errors`; unknown keys name the
+- **Checking a scene:** `scene_validate` (every problem in `errors`, as a verdict even for `data` and `compact` together or neither; unknown keys name the
   field they likely meant),
   `scene_inspect_layout` (overlaps, out of canvas, contrast, drawn boxes as the shot camera
   shows them) and `scene_preview` (`out` also saves the PNG in `exports/`).
