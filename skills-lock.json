@@ -5,13 +5,19 @@
       "source": "SebassContreras/spectrace",
       "sourceType": "github",
       "skillPath": "skills/spectrace-change/SKILL.md",
-      "computedHash": "e919b99b32f39c015b21bf5a638ca0ba0ba41d9af16d37eef191e4edf745aca8"
+      "computedHash": "92a60ae82138028c6f6feaaa8e0043656185e196caf0be2dd8d5014fb4b11047"
     },
     "spectrace-plan": {
       "source": "SebassContreras/spectrace",
       "sourceType": "github",
       "skillPath": "skills/spectrace-plan/SKILL.md",
-      "computedHash": "7a86c621605e2ca5a7bf8bf942330c4de8fdd5783f5aeec1ccd7496c84966880"
+      "computedHash": "b19cf646ae9e4815245dcc48ef7190f398df8dd4e2d7d3e620dc0e14e0682e60"
+    },
+    "spectrace-review": {
+      "source": "SebassContreras/spectrace",
+      "sourceType": "github",
+      "skillPath": "skills/spectrace-review/SKILL.md",
+      "computedHash": "674c9995b86b2688698b17646cca1574e18aec21b9962e04c1849ac8672ddc53"
     }
   }
 }

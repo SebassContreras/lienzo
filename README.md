@@ -111,7 +111,7 @@ They also state, once for every tool, how arguments and failures work (JSON valu
 only says what is its own.
 Before reporting a bug as still open, check that commit or replay the call with `pnpm lienzo`.
 `pnpm replay` reruns every finding of past QA rounds; how a QA run works, what it checks and
-what it found are in `planning/qa-log.md`.
+what it found are in `docs/qa-log.md`.
 
 How the tools behave, in short:
 
