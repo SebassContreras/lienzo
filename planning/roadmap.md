@@ -43,3 +43,16 @@ Anything worth doing later. (The two earlier ideas are specs 083 and 084.)
 - The notice about a shot's tracks that `shot_set remove` moves names the group, not the
   child whose keys were cut at the scene's start (a key placed before its shot's start).
   (QA 2026-10-29)
+- An `animPreset` whose animation the library no longer has must not block edits: a write that did
+  not set it ignores the name, and `animPreset: null` clears it (`checkAnimPresets` fails any
+  changed element today, so after `animation_delete` the element cannot be edited). (QA 2026-10-29)
+- An `animPreset` on an element that already animates copies nothing and says nothing: give it
+  a notice (`expandAnimPresets` skips it by design, 019/D10). (QA 2026-10-29)
+- `lineShotNotices` reports a line with no shot only when its ends sit in different shots; a line
+  between two elements of the same shot is also drawn, with loose ends, in every other one.
+  (QA 2026-10-29)
+- `keyframe_set`, `element_group` and `font_install` stop at the first semantic problem of an
+  input; the closed list asks for every one, as the schema-level checks give. (QA 2026-10-29)
+- Smaller: `scene_update` with an invalid `duration` also lists each shot as ending after it; and
+  `scene_generate_speech` with `provider: "custom"` and no `baseUrl` should ask for it instead of
+  trying `localhost:8880`. (QA 2026-10-29)
