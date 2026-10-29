@@ -54,8 +54,9 @@ export const sceneInspectLayout = defineTool({
   effects: [],
   description:
     "Analyse layout and spatial diagnostics of a scene at given times (default: start, middle " +
-    "and end of loop): `text_overlap`, `shape_overlap` (shapes stacked on each other; a " +
-    "clearly smaller box inside a bigger one is not reported), `out_of_bounds`, `text_overflow` (text a component draws outside its own box: a bubble's " +
+    "and end of loop): `text_overlap` (text elements against each other only), `shape_overlap` (two shapes, " +
+    "never a text, line or group, whose boxes cover half of the smaller one; a box inside another and " +
+    "under 90 % of its area is held by it, not stacked), `out_of_bounds`, `text_overflow` (text a component draws outside its own box: a bubble's " +
     "text past its height, code past its right edge, a steps label outside it), " +
     "`dangling_attachment` (a line end on a missing id), `low_contrast` / " +
     "`unverifiable_contrast`, `missing_symbol` and `unknown_shot`, counting only the elements " +
@@ -64,7 +65,9 @@ export const sceneInspectLayout = defineTool({
     "element's missing fields its kind's defaults). " +
     "Also returns `boxes`: the drawn box (top-left `x, y`, `w`, `h`) of every top-level " +
     "element at each time, as its shot's camera and transition show it on screen, to verify " +
-    "placement (e.g. centred when x + w/2 = width/2). A box marked " +
+    "placement (e.g. centred when x + w/2 = width/2). A box is `0 x 0` at an instant where an `in` " +
+    "animation has the element at scale 0 (pass a later time in `times`), and boxes and `out_of_bounds` include the " +
+    "camera's zoom. A box marked " +
     "`estimated: true` (a text or subtitles, or a group holding one) uses a font with no metrics here, so its width is approximate: check it with scene_preview.",
   input: z.object({
     scene: z.string().min(1).optional(),

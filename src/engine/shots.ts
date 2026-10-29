@@ -9,7 +9,8 @@ import { valueAt } from "./tracks.ts";
 /** How shots behave, for tool descriptions (064/D2): the window `isElementActiveInShot` opens and the per-element camera. */
 export const SHOT_RULES =
   "A shot shows its elements over [start, end): at a cut the next shot owns the instant, and " +
-  "the scene's last instant stays with the shot ending there. A shot's transition runs before its `start` (entering) and after its `end` (leaving), " +
+  "the scene's last instant stays with the shot ending there; shots need not touch, and a gap between " +
+  "them gets no notice (an element bound to a shot shows only inside it). A shot's transition runs before its `start` (entering) and after its `end` (leaving), " +
   "over its `duration`; its camera moves only the elements bound to that shot (`shot` on the " +
   "element), never elements with no shot such as subtitles or logos. Camera keyframe times " +
   "are scene time, like every other `t`.";

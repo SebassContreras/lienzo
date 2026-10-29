@@ -28,7 +28,8 @@ export const shotSet = defineTool({
     "camera keys and the tracks of the elements bound to it with it (an element's tracks are " +
     "timed from its shot's start; a notice lists them); trimming one edge or changing the " +
     "length leaves them where they are. Removing a shot unbinds the elements bound to it (listed in " +
-    "`notices`) and moves their tracks back to the scene's start, " +
+    "`notices`) and moves their tracks back to the scene's start (a key that would fall before 0 stays " +
+    "at 0, and a group's notice names the group, not each child), " +
     "so they show for the whole scene. " +
     SHOT_RULES +
     OPTIONS_TEXT,

@@ -143,6 +143,7 @@ How the tools behave, in short:
 - **Shot windows:** a shot shows its elements over `[start, end)`. At a cut the instant
   belongs to the shot that starts there, in `scene_preview`, export and
   `scene_inspect_layout` alike; the scene's last instant stays with the shot ending there.
+  Shots need not touch: a gap gets no notice.
 - **Error paths:** a failed scene or recipe check lists every problem in `errors` (schema
   and rules together) and names an element by the id you gave (`elements.a.w`,
   `elements.g/child.w`), else by its index (`compact.elements.0.shot`); a failure about
@@ -152,7 +153,9 @@ How the tools behave, in short:
   (a group's box includes children animated out of it, unless the group clips), contrast
   and loose references. It also reports `text_overflow` for text a component draws outside
   its own box (chat bubble text past its height, code past its right edge, a steps label
-  outside the box), measured from the text the component draws.
+  outside the box), measured from the text the component draws. A text is compared only with
+  other texts, and an element's box is `0 x 0` at an instant where its `in` animation has it
+  at scale 0 (ask for a later time).
 
 To remove the transparent margin of a PNG, call `image_trim` on an image element, or pass `trim: true` to `element_add`; the asset file is not changed, only the element's `crop`. In the editor, the same trim is the **Recortar transparencia** button of an image, and double-clicking an image opens its manual crop handles.
 

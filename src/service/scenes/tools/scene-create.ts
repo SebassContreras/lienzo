@@ -17,7 +17,9 @@ export const sceneCreate = defineTool({
     "name is taken unless `overwrite` is true. `data` is a scene as scene_get returns it: each " +
     "element needs `id` and `kind`, and the fields it leaves out take its kind's defaults; a " +
     "`background` may be a color (`#111827`, a solid background), a background preset name or a partial object " +
-    "(the rest is the default's, solid when the project's palette sets a background; anything else fails). For the " +
+    "(the rest is the default's, solid when the project's palette sets a background; anything else fails). A key " +
+    "`data` or its elements do not have is dropped with a notice (`at` is no field: it places an element in " +
+    "scene_build, element_add and element_update). For the " +
     "compact form (a color as background, partial elements, `at`) use scene_build with `save`.",
   input: z.object({
     scene: z.string().min(1),

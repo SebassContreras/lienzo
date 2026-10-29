@@ -29,8 +29,11 @@ const RULES =
   "Every tool: object and array arguments are JSON values (a JSON string holding one is read " +
   "too); scene, asset and export tools need `project` (project_list); a failure is " +
   "`{ code, message, path }`, and a scene or recipe check adds `errors`, one per problem at its " +
-  "path, an element named by the id you gave or else by its index; messages are Spanish; `notices` name what was " +
-  "ignored or may surprise, never a failure, and a write gives each only once. Coordinates: `x, y` is an element's top-left " +
+  "path (an entry is `{ path, message }`: the `code` is the call's), an element named by the id you gave or else " +
+  "by its index; messages are Spanish; `notices` name what was " +
+  "ignored or may surprise, never a failure; a write gives each notice only once (what the scene already said is not " +
+  "repeated by a call that leaves it as it was) and a notice about an element names it as «id». A key a tool does not know is " +
+  "ignored with a notice, never silently. Coordinates: `x, y` is an element's top-left " +
   "corner; use `at` to place by anchor. Element ids are unique in a scene and an id has no `/`, is not empty or padded (in `compact` an empty id is an id left out, so one is generated); a shot has `end` > `start`; " +
   "a scene is at most 7680 px a side, 60 fps and 600 s. A name that is stored differently (`Caja Ámbar` → " +
   "`caja-ambar`) is returned, with a notice. Workflow: .agents/skills/lienzo-usage/SKILL.md.";
