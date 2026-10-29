@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { run } from "../cli/main.ts";
 import { type Ctx, createCtx } from "../service/core/ctx.ts";
 import { fakeRenderer } from "../service/render/fake-renderer.ts";
@@ -156,6 +156,46 @@ describe("build id", () => {
     const instructions = other.getInstructions();
 
     expect(instructions).toContain("commit 90aee32");
+    await other.close();
+  });
+
+  it("names the build stamped into dist/cli.js, with its uncommitted changes and time", async () => {
+    vi.stubGlobal("__LIENZO_BUILD__", {
+      commit: "abc1234",
+      dirty: true,
+      at: "2026-10-29 13:50",
+    });
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await createMcpServer(
+      registry,
+      createCtx(await mkdtemp(join(tmpdir(), "lienzo-build-")), fakeRenderer()),
+    ).connect(serverSide);
+    const other = new Client({ name: "test", version: "0" });
+    await other.connect(clientSide);
+
+    const instructions = other.getInstructions();
+
+    expect(instructions).toContain(
+      "commit abc1234+dirty, built 2026-10-29 13:50",
+    );
+    vi.unstubAllGlobals();
+    await other.close();
+  });
+
+  it("says when it runs from source and when it started", async () => {
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    await createMcpServer(
+      registry,
+      createCtx(await mkdtemp(join(tmpdir(), "lienzo-src-")), fakeRenderer()),
+    ).connect(serverSide);
+    const other = new Client({ name: "test", version: "0" });
+    await other.connect(clientSide);
+
+    const instructions = other.getInstructions();
+
+    expect(instructions).toMatch(
+      /commit desconocido, source started \d{4}-\d\d-\d\d \d\d:\d\d/,
+    );
     await other.close();
   });
 

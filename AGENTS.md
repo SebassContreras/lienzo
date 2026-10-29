@@ -277,7 +277,7 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   Specs 071–074 patched one path at a time and the same family came back each round.
 - Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
   it started with, and a stale server reports fixed bugs as open (071).
-  The server's MCP `instructions` name the commit it started from; compare it with
+  The server's MCP `instructions` name the build (commit, `+dirty`, the time `pnpm build:cli` ran or the source started); compare the commit with
   `git rev-parse --short HEAD` (072). A QA report of "still open" counts only with that
   commit matching `HEAD`, or replayed with `pnpm lienzo`; otherwise replay it first (073). `pnpm replay [id…]` runs the replay corpus (`src/service/contract/corpus/`, 082) in a fresh process at `HEAD`; a case that passes there but fails on the MCP server means the server is stale.
 - A QA run follows `planning/qa-log.md` (082): the closed list of what to check, the class of

@@ -12,8 +12,8 @@ description: >-
 
 The MCP tools and the CLI are the same registry: `mcp__lienzo__scene_build` is
 `pnpm lienzo scene_build --json '…'`. Each tool's description and input schema is the
-reference; this skill is the workflow. The server runs the code it started with. Its MCP `instructions` name that commit: if it is
-not `git rev-parse --short HEAD`, or a tool or input named here is missing, the server is
+reference; this skill is the workflow. The server runs the code it started with. Its MCP `instructions` name that build (commit, `+dirty`, build time): if the commit is
+not `git rev-parse --short HEAD`, the build is older than your last change, or a tool or input named here is missing, the server is
 stale: run `pnpm build:cli` (for `dist/cli.js`) and restart it before trusting a result.
 A failed scene or recipe check lists every problem in `errors`; paths name an element by
 the id you gave (`elements.a.w`, `elements.g/child.w`), else by its index

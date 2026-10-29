@@ -20,7 +20,7 @@ import { z } from "zod";
 import type { Ctx } from "../service/core/ctx.ts";
 import type { Registry, Tool } from "../service/core/registry.ts";
 import { ImageResult } from "../service/render/image.ts";
-import { gitCommit } from "./build-id.ts";
+import { buildLabel } from "./build-id.ts";
 
 const VERSION = "0.1.0";
 
@@ -31,7 +31,7 @@ const RULES =
   "`{ code, message, path }`, and a scene or recipe check adds `errors`, one per problem at its " +
   "path, an element named by the id you gave or else by its index; messages are Spanish; `notices` name what was " +
   "ignored or may surprise, never a failure. Coordinates: `x, y` is an element's top-left " +
-  "corner; use `at` to place by anchor. Element ids are unique in a scene and an id has no `/`, is not empty or padded; a shot has `end` > `start`; " +
+  "corner; use `at` to place by anchor. Element ids are unique in a scene and an id has no `/`, is not empty or padded (in `compact` an empty id is an id left out, so one is generated); a shot has `end` > `start`; " +
   "a scene is at most 7680 px a side, 60 fps and 600 s. A name that is stored differently (`Caja Ámbar` → " +
   "`caja-ambar`) is returned, with a notice. Workflow: .agents/skills/lienzo-usage/SKILL.md.";
 
@@ -67,7 +67,7 @@ export function createMcpServer(registry: Registry, ctx: Ctx): Server {
     { name: "lienzo", version: VERSION },
     {
       capabilities: { tools: {} },
-      instructions: `lienzo ${VERSION}, commit ${gitCommit(ctx.root) ?? "desconocido"}. If it differs from \`git rev-parse --short HEAD\`, restart this server: it runs the code it started with. ${RULES}`,
+      instructions: `lienzo ${VERSION}, ${buildLabel(ctx.root)}. If the commit differs from \`git rev-parse --short HEAD\`, or a \`+dirty\` build is older than your last change, rebuild (\`pnpm build:cli\`) and restart this server: it runs the code it started with. ${RULES}`,
     },
   );
   const listed = registry.tools.map(mcpToolOf);
