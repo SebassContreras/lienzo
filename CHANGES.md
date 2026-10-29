@@ -1,4 +1,32 @@
-# Architecture — Changes
+# Architecture & Decision Changes
+
+This document maintains a permanent ledger of architectural pivots, deprecated decisions, and significant scope modifications. It prevents agents from reintroducing rejected patterns and provides context on why the system evolved.
+
+---
+
+## 🔄 Change Protocol
+
+When an existing architectural design or requirement needs to change:
+
+1. **Document the Rationale:** Add a new entry to the [Change Log](#-change-log) below with date, what changed, why, and what was replaced.
+2. **Update the Spec:** In the affected spec (`planning/specs/NNN-name.md`):
+   - Strike through the obsolete item and point to the replacement (e.g., `- ~~D1: Sessions in localStorage~~ → D2`).
+   - Add explicit cleanup tasks to remove obsolete code, tests, and documentation.
+3. **Update Root Context:** If the change modifies system boundaries or visual guidelines, update `PRODUCT.md`, `ARCHITECTURE.md`, or `DESIGN.md` accordingly.
+
+---
+
+## 📜 Change Log
+
+Entries are chronological. Entries up to 2026-10-28 come from the previous `planning/changes.md` and keep their original format: `A<n>@<version>` names a version of a decision in [ARCHITECTURE.md](./ARCHITECTURE.md), and `NNN/TNNN` names a task of a retired spec. Newer entries use the format below.
+
+```text
+## YYYY-MM-DD — Title
+- Scope: affected area
+- What Changed: the shift
+- Why: the reason
+- Replaced Items: struck decisions or superseded specs
+```
 
 ## 2026-10-07 — images live in `assets/`, versioned with the repo
 Why: spec 002 added the `assets/` folder and `/api/assets` for image elements, and A7 did not say so; scenes that use images should open on any clone.
@@ -80,3 +108,9 @@ Why: `src/service` held 165 files, 32 of them loose, and a tool, its logic and i
 - MODIFIED A20@2 → A20@3
 - Tasks: 082/T005–T015 move the files; 082/T015 rewrites the A20 path
 
+
+## 2026-10-29 — move to the current spectrace governance
+- Scope: repository governance, `planning/`, git tooling.
+- What Changed: decision records moved from `planning/product.md`, `planning/architecture.md` and `planning/changes.md` to seven root contracts (`AGENTS.md`, `PRODUCT.md`, `ARCHITECTURE.md`, `ENGINEERING.md`, `DESIGN.md`, `TESTING.md`, `CHANGES.md`) plus `.agentignore`; `planning/` keeps only the roadmap and the specs; `planning/qa-log.md` moved to `docs/qa-log.md`; the three spectrace skills are installed. The git hooks (`.githooks/`), the `Spec:` commit trailer, the `spectrace` workflow, the `core.hooksPath` setting and the automatic roadmap `Status` are removed: commits are plain Conventional Commits and `Status` is edited by hand. The `## Docs` list of the product file and the mandatory `reviewed:` line of `Review:` tasks are gone; a docs task is added when an API, command or architectural boundary changes (`Verify:` and `verified:` stay by convention).
+- Why: the new spectrace governance replaces enforcement by hooks with root contracts that agents read; the old machinery added friction and one more thing to keep in sync.
+- Replaced Items: A17 (the `Spec:` trailer clause dropped; Conventional Commits stays); the roadmap note about the pre-commit hook; specs 050 and 065–084 are retired (all were `done` under the old governance) and kept in `planning/specs/` as history. Paths named inside those specs map as `planning/changes.md` → `CHANGES.md`, `planning/architecture.md` → `ARCHITECTURE.md`, `planning/qa-log.md` → `docs/qa-log.md`.

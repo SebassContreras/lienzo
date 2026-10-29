@@ -1,30 +1,32 @@
 # Roadmap
 
-Specs in order. `Status` is written by the pre-commit hook from each spec's checkboxes. Specs 001–064 not listed were finished under the old spectrace format (one folder per spec); they live in git history.
+Specs in order. `Status` is edited by hand (`todo`, `in progress`, `done`). Specs 001–064 not listed were finished under an older spectrace format (one folder per spec); they live in git history.
+
+Specs 050 and 065–084 are **retired**: they were all `done` under the previous governance and stay in `planning/specs/` as history, not to be edited or executed. Paths named inside them predate the migration: `planning/product.md` → `PRODUCT.md`, `planning/architecture.md` → `ARCHITECTURE.md`, `planning/changes.md` → `CHANGES.md`, `planning/qa-log.md` → `docs/qa-log.md` (see [CHANGES.md](../CHANGES.md)).
 
 | ID  | Spec | Status | Depends on |
 |-----|------|--------|------------|
-| 050 | joint-mode | done | — |
-| 065 | defaults-and-easing-notices | done | — |
-| 066 | lazy-vendor-chunks | done        | — |
-| 067 | tool-feedback-fixes | done | — |
-| 068 | qa-feedback-fixes | done        | — |
-| 069 | qa-suite-fixes | done        | — |
-| 070 | qa-suite-audit | done        | 069 |
-| 071 | qa-round-3-fixes | done        | 069 |
-| 072 | qa-round-4-fixes | done        | 071 |
-| 073 | qa-round-5-fixes | done | 072 |
-| 074 | qa-round-6-root-causes | done        | 073 |
-| 075 | shot-timing-and-full-validation | done        | 074 |
-| 076 | bundle-root-and-input-hints | done        | 075 |
-| 077 | docs-and-descriptions-audit | done        | 076 |
-| 078 | qa-round-7-fixes | done        | 077 |
-| 079 | descriptions-after-078 | done        | 078 |
-| 080 | qa-round-8-every-writer | done        | 079 |
-| 081 | qa-round-9-input-gaps | done        | 080 |
-| 082 | test-suite-rewrite | done        | 081 |
-| 083 | one-validate-verdict | done        | 082 |
-| 084 | id-charset | done        | 082 |
+| 050 | joint-mode | done (retired) | — |
+| 065 | defaults-and-easing-notices | done (retired) | — |
+| 066 | lazy-vendor-chunks | done (retired) | — |
+| 067 | tool-feedback-fixes | done (retired) | — |
+| 068 | qa-feedback-fixes | done (retired) | — |
+| 069 | qa-suite-fixes | done (retired) | — |
+| 070 | qa-suite-audit | done (retired) | 069 |
+| 071 | qa-round-3-fixes | done (retired) | 069 |
+| 072 | qa-round-4-fixes | done (retired) | 071 |
+| 073 | qa-round-5-fixes | done (retired) | 072 |
+| 074 | qa-round-6-root-causes | done (retired) | 073 |
+| 075 | shot-timing-and-full-validation | done (retired) | 074 |
+| 076 | bundle-root-and-input-hints | done (retired) | 075 |
+| 077 | docs-and-descriptions-audit | done (retired) | 076 |
+| 078 | qa-round-7-fixes | done (retired) | 077 |
+| 079 | descriptions-after-078 | done (retired) | 078 |
+| 080 | qa-round-8-every-writer | done (retired) | 079 |
+| 081 | qa-round-9-input-gaps | done (retired) | 080 |
+| 082 | test-suite-rewrite | done (retired) | 081 |
+| 083 | one-validate-verdict | done (retired) | 082 |
+| 084 | id-charset | done (retired) | 082 |
 
 ## Ideas
 

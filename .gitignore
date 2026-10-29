@@ -9,12 +9,6 @@ coverage/
 .env*
 !.env.example
 
-# Python caches (the spectrace trace)
-__pycache__/
-
-# spectrace open task
-.spectrace/state.json
-
 # OS / editor
 .DS_Store
 Thumbs.db

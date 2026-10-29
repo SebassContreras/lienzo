@@ -6,305 +6,62 @@ GIF or MP4. Presets and scenes are JSON files. Type: local web app (React + Vite
 
 ## Doc map
 
-- `planning/product.md` — what this is, who it's for, out of scope.
-- `planning/architecture.md` — project-wide decisions (A items).
-- `planning/roadmap.md` — specs, order, status.
-- `planning/specs/NNN-name.md` — one file per spec: goal, requirements (R), design (D), tasks, changes.
+- `PRODUCT.md` — what this is, who it's for, non-goals.
+- `ARCHITECTURE.md` — topology, directory map, decisions (A items) and where each lives in the code.
+- `ENGINEERING.md` — code standards, shared-rule policy, how to add a component or a preset.
+- `DESIGN.md` — the editor's UI tokens, component states and accessibility.
+- `TESTING.md` — test policy, coverage and mutation gates, QA runs of the MCP tools.
+- `CHANGES.md` — ledger of changed decisions.
+- `planning/roadmap.md` and `planning/specs/NNN-name.md` — specs, order and status.
 - `README.md` — the editor, the MCP/CLI tools and how they behave; `docs/components.md` —
-  every component kind; `.agents/skills/lienzo-usage/` — how an agent builds a post with the
-  tools. A change of behavior updates these and the tool's description in the same task; a
-  rule every tool shares (arguments, failures, messages) goes once in `RULES`
-  (`src/mcp/server.ts`, the server's `instructions`), not in every description.
+  every component kind; `docs/qa-log.md` — the QA process and its findings;
+  `.agents/skills/lienzo-usage/` — how an agent builds a post with the tools.
 
-## Stack & conventions
+## Commands
 
-What exists today:
-
-- Single React 19 + Vite app at the repo root, TypeScript on Node 24 (A1, A8, A9)
-- Everything is drawn with Canvas 2D by `drawScene(ctx, scene, t)`; preview = export (A3)
-- Scene = plain JSON (A4); every component kind is one descriptor in `src/components/<kind>/`
-  that declares its fields, defaults, inspector sections, draw function and animations; the
-  element types, the Zod element schema, default elements, the inspector and the library's
-  basic components are derived from the descriptors (A23)
-- Time is applied only by `animate(el, t, scene)` (`src/engine/animate.ts`) before a component
-  draws; components get the result as a transform (A24)
-- Looping animations use whole cycles per loop (A6)
-- Presets in `presets/`, and project workspaces in `projects/<project>/` containing `project.json`,
-  `scenes/`, `assets/`, `presets/`, and `exports/`; no database (A7, spec 040)
-- The default workspace template is `projects/mi-proyecto/`, which is the only project tracked in Git
-- Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)
-- Export: gifenc (GIF), Mediabunny (MP4/WebM), canvas (PNG) (A10); Mediabunny and its AAC encoder are
-  dynamic imports, loaded only by a video export (066)
-- Icons: lucide-react / lucide (A11); the lucide set drawn on the canvas (`src/engine/icon-set.ts`) loads
-  on demand through `iconSet` in `icon-shapes.ts` (066); on-demand imports use `lazyModule`
-  (`src/engine/lazy-module.ts`); fonts: `@fontsource/*` (A12); user fonts are files in git-ignored `fonts/`
-  (global) and `projects/<project>/fonts/`, named `Family-Weight.ext`, served at `/api/fonts`,
-  loaded with `FontFace` by `src/engine/fonts.ts` in the editor and the `?render` route;
-  Google Fonts only through `src/service/fonts/google-fonts.ts` (`font_install`) (A12, spec 045)
-- pnpm only (A13); Biome + Vitest (A14); lint, typecheck and test run locally
-- UI text in Spanish; code, comments and docs in English (A16)
-- Conventional Commits (A17); MIT-compatible deps only (A18)
-- Scenes and preset recipes are validated with Zod in `src/model/schema.ts` before any
-  import is written
-- Keyframes: `el.tracks` (optional) by field path or channel (`@rotate`, `@scale`); all
-  evaluating and editing goes through `src/engine/tracks.ts`, applied by `animate` before
-  the preset animation (spec 015)
-- Image crop: non-destructive `crop` on image elements (fractions of the picture); trimming and
-  cropping go through `alphaBounds`/`applyCrop` in `src/engine/image-trim.ts`, shared by the
-  inspector, the stage crop mode and the `image_trim` tool (specs 048, 049)
-
-- Element targets: tools resolve an `id` or `group/child` path at any depth; `element_add`
-  takes a `parent` (spec 051)
-- Tracks take `repeat: "loop" | "pingpong"` and `until`, evaluated in `src/engine/tracks.ts`
-  (052); every element has `origin` (pivot, box fractions) and `opacity` (053); `text` takes
-  a wrap width `w`, and Node-side text measurement uses real glyph metrics (054)
-- Shots: `scene.shots` (cut windows, transitions, camera) and `el.shot` bindings; edited by
-  `shot_set` (055). Symbols: `scene.symbols` drawn by the `use` kind with `overrides` (056)
-- Tool/editor parity (062): every editor save has a tool (`scene_update` with JSON Merge
-  Patch, `scene_rename`/`scene_delete`, `preset_save`/`_rename`/`_delete`, `animation_list`/
-  `_save`, `project_update`, `asset_add`, `element_group`/`_ungroup`), built on the editor's
-  own helpers; the editor's "Revisión" section calls `inspectLayout` in the browser
-- Shot rendering (063): each shot-bound top-level element is drawn through `withShotView`
-  (`src/engine/shots.ts`): its own shot's transition (`shotTransitionAt`) and camera, once;
-  elements with no `shot` never move. Unknown input keys become notices (`ignoredPaths`, in
-  the tool registry and `sceneNotices`); `asset_rename`/`asset_delete` share
-  `src/service/assets/project-assets.ts` with the assets tab
-- Compact extras: partial `effects`, `defaults: "flat"` (build time only), `audioTracks`;
-  `notices` lists what was ignored and missing fonts (058, 060). Speech `asTrack: true`
-  appends an `audioTracks` entry at `startOffset` (060)
-- Editor controls for these (062): shots in `src/editor/scene/shots-section.tsx` and
-  symbols in `scene/symbols-section.tsx`, both over pure helpers shared with the tools
-  (`src/model/shots.ts`, `src/model/symbols.ts`); symbol editing swaps the stage to a
-  temporary scene and is never autosaved; `origin` in `widgets/origin-picker.tsx`
-- Tool feedback fixes (067): radial fills on ellipses, polygons and stars reach the shape's
-  edge (`reach` in `fillGradient`); layout boxes are the on-screen ones (`shotBox`); ignored
-  keys suggest a field (`closestKey`); canvas fonts fall back to Inter; installed fonts are
-  measured (`measureInstalledFonts`) and `font_install` stores ttf (opentype.js reads no woff2)
-- QA fixes (068): gradient `stops` must be ordered; a kind-built element whose input gives a
-  fill only `color` is flat and a group given `w`/`h` gets `cw`/`ch` from them (`applyImplied`,
-  `src/service/compact/implied.ts`); `element_add` honors `patch.id` and notices an element off
-  the canvas; `at` positions and layout boxes are rounded (`round2`); `scene_create` fills a
-  partial `background`
-- QA suite fixes (069): colors are CSS colors (`ColorSchema`, `src/model/color.ts`) and the
-  scene schema checks keyframe values against their field (`keyframeError`); every scene write
-  appends `resourceNotices` (`src/service/scenes/scene-resources.ts`: missing assets,
-  line ends a write left loose; unknown icons and targets fail since 074); `asset_add` and image `aspect` read picture headers
-  (`src/service/assets/image-header.ts`, `image-aspect.ts`); edge anchors keep a 5% margin
-  (`anchorMargin`) and unplaced compact elements are centred; shots are checked by
-  `shotProblem` and unbound by `unbindShot` (`src/model/shots.ts`); animation tools take an
-  optional `project` (`animationsDir`) and `animation_delete` exists
-- QA round 3 (071): `translate`/`placeChild` carry `x`/`y` (and size) tracks, so grouping
-  keeps motion; `saveScene(…, previous)` reports resource notices only for changed elements;
-  `scene_inspect_layout` has `shape_overlap`; a new counter gets a count-up `progress` track
-  (`src/components/counter/count-up.ts`); the local TTS adapter checks the voice against
-  `GET /v1/audio/voices` first
-- QA round 4 (072): the MCP server names its starting commit in its `instructions`
-  (`src/mcp/build-id.ts`); `shape_overlap` excuses containment only for a clearly smaller box
-  (`HELD_AREA`); the counter count-up starts at its shot (`withCountUp(el, given, scene)`);
-  `checkShots` (`src/service/scenes/scenes.ts`) runs on every scene write, `scene_build` and
-  `scene_validate`; an unclipped group's layout box holds its placed children (`withChildBoxes`)
-- QA round 5 (073): a shot owns `[start, end)` (the scene's last instant stays with the last
-  shot), shared by render and layout through `isElementActiveInShot(el, t, shots, duration)`;
-  scene check errors name elements by id path (`idPath` in `src/service/scenes/scenes.ts`; since
-  074, by the id the caller gave, else by index)
-- QA round 6 (074): wrong input fails, listing the options; notices only for valid input that
-  may surprise. `checkWholeScene` (`src/service/scenes/scenes.ts`, 075) runs anim presets, shots and
-  `checkReferences` (`src/service/scenes/scene-references.ts`: unknown shot, icon, line target on a
-  changed element) on every write and lists every problem (`failAll`, `ToolError.errors`);
-  `parseSize` (`src/model/size.ts`); one source of scene defaults (`sceneDefaults` /
-  `sceneFromData`, `src/service/scenes/scene-defaults.ts`); `withElementDefaults`
-  (`src/model/fill-defaults.ts`) and `sparseScene` (`scene_get`); preset tracks shift to the
-  shot (`fromShotStart`, `src/model/shots.ts`); bare asset refs stored with their project
-  prefix (`withCanonicalAssets`); one `slugify` with accents folded (`src/presets/slug.ts`,
-  `legacySlug` read fallback); `src/service/contract/contract.test.ts` holds the wrong-input
-  rule across tools — a new scene-writing tool adds its cases there
-- Shot timing (075): an element's tracks are timed from its shot's `start` (0 unbound), so
-  rebinding (`rebindShot`, `src/model/shot-timing.ts`: `element_update`, the inspector), moving
-  a shot's `start` or removing it (`setShotIn` / `removeShotIn`, `src/model/shots.ts`:
-  `shot_set`, the shots section) carry tracks and camera keys along, with a notice;
-  `checkWholeScene` (`src/service/scenes/scenes.ts`) lists schema and rule problems together, the
-  rules reading what parses
-- Bundle and inputs (076): `ctx.ts` finds the app with `findAppRoot`, so `dist/cli.js` renders;
-  a failing call names top-level keys the tool does not take and where they belong
-  (`misplacedHint`, `src/service/core/registry.ts`); `project_create` makes `project` from `name`
-- QA round 7 (078): every opacity field is `fraction()` (`src/components/fields/field.ts`,
-  0–1 for slider and check alike; `field.test.ts` walks every descriptor); `setShotIn` moves
-  tracks only for a shot moved whole, a trim leaves them; `use` of a missing symbol fails;
-  `remapFailure` re-roots failure paths (`compact.…`, `patch.…`); zod speaks Spanish
-  (`src/model/zod-locale.ts`); `jsonArgs` reads object arguments sent as JSON strings
-- QA round 8 (080): short keyframes are read by `TracksSchema` itself; defaults are filled in
-  `prepareScene`; speech cues span the clip (`alignScriptToCues`) with unique ids
-  (`mergeCues`); `text_overflow` in `scene_inspect_layout` comes from the text a kind draws,
-  recorded by `src/service/layout/text-extents.ts` (matrix math in `src/engine/matrix.ts`);
-  `matchedWeight` (`src/model/fonts.ts`) is the one CSS weight rule for measuring and
-  notices; one-color particles are checked against their dot color (`contrast.ts`);
-  `project_inspect` lists animations and fonts; counters have no default suffix and icons
-  pad their tile by size (`impliedFields`)
-- MCP instructions (079): `RULES` in `src/mcp/server.ts` states the rules every tool shares,
-  after the starting commit
-- How an agent builds a post or video with the tools: `.agents/skills/lienzo-usage/`
-
-- Animation presets: JSON in `presets/animations/` (`/api/animations`) with times from 0 and
-  offsets on `relative` fields; applying always copies; `animPreset` on an element is
-  provenance only, and a scene naming one is expanded on load; pure logic in
-  `src/presets/anim-presets.ts` (A26, spec 019)
-- Descriptors also drive compact JSON (`src/model/compact.ts`, A23, spec 011); 3D = three.js
-  in an offscreen WebGL canvas composited with `drawImage` (A25, spec 016); three.js loads on
-  demand through `src/components/three/lazy.ts` and a descriptor's `load`, which
-  `loadSceneAssets` awaits before an export (066)
-- Tool parameter names (064/R13, R14): one name per meaning in every input and result —
-  `project` (never `slug`), `scene` (a saved scene's name), `data` (a whole scene object),
-  `recipe` (a preset object), `patch` (values merged in), `id` (an element), `at` (placement)
-- Tools: one registry in `src/service/core/` (007); logic lives only in tools, CLI and MCP are thin
-  adapters (A20); names are `snake_case` noun_verb (`scene_export`). Every tool that reads or
-  writes a scene, an asset or an export takes a required `project` and runs on
-  `projects/<project>/` (`inProject` in `src/service/core/project-scope.ts`, 046); only a
-  `ProjectCtx` reaches scenes, so the compiler rejects scene access without a project.
-  `pnpm lienzo <tool>` (`src/cli/`, 008) runs
-  any of them under `tsx` — top-level scalar fields as flags, the rest in `--json` (inline,
-  `--json @file` relative to where the command was typed, or `--json -` from stdin), result
-  JSON on stdout, errors JSON on stderr with exit 1. Code
-  the descriptors import must load in plain Node: no Vite-only imports (`?url`, `?raw`,
-  `import.meta.glob`); static files go in `public/`
-- MCP: `pnpm lienzo mcp` (`src/mcp/server.ts`, 009) serves every registry tool over stdio
-  with `@modelcontextprotocol/sdk`; generic, no per-tool code; stdout is the protocol only;
-  a result shaped like `ImageResult` (`src/service/render/image.ts`) goes out as image content
-- Headless export (010): `scene_export` / `scene_preview` render through `ctx.renderer`
-  (`src/service/render/renderer.ts`): an in-process Vite server + Playwright (`playwright-core`;
-  Chrome, else Edge, else Playwright's Chromium) on the `?render` route
-  (`src/export/render-page.ts`), which calls the editor's own `exportScene`. Started on the
-  first render, reused within a process, closed by `ctx.dispose()` — the CLI disposes after
-  every command, the MCP server when stdin ends. Tests pass `fakeRenderer()` unless they
-  need a real browser (`renderer.test.ts`, skipped when none is installed). `scene_export`
-  writes only inside `projects/<project>/exports/`
-- Speech (TTS): adapters in `src/service/speech/` (OpenRouter, local Kokoro-compatible server);
-  env variables (`.env.example`) are read in Node only. The editor reaches OpenRouter through
-  the dev server's `/api/tts/speech` (`src/service/speech/tts-proxy.ts`), which adds the key, so no
-  `OPENROUTER_*` value reaches the browser or `dist/` (046). A key the user types in the TTS
-  dialog is the one exception: it is kept in the browser's TTS preferences (`localStorage`,
-  `src/service/speech/preferences.ts`) and sent straight to OpenRouter, bypassing the proxy (061)
-
-## Layout
-
-```
-src/model/       scene and background types, size presets, fonts; Zod schemas (schema.ts,
-                 element-schema.ts generated from the descriptors)
-src/animations/  the animation registry, one file per family (entrances, attention, emphasis,
-                 text): pure functions of progress; exits replay entrances backwards
-src/engine/      drawScene, animate, keyframe tracks, painting helpers, animation state,
-                 geometry, particle field; audio/ = audio tracks and timing; subtitles/ =
-                 cue layout and word windows; path/ = free-path geometry
-src/components/  index.ts = the registry; descriptor.ts = the descriptor type; fields/ = field
-                 builders and shared field groups (box, fill, stroke, glow, shadow, label, anim);
-                 <kind>/descriptor.ts + <kind>/draw.ts per element kind (the kinds are the
-                 ones registered in index.ts)
-src/editor/      React UI: app shell, stage, library, background library, animation library
-                 (anim-library.tsx), inspector (the
-                 element inspector is generated: layout.ts + field-editor.tsx; keyframe
-                 buttons in keyframe-controls.tsx; timeline/ = the keyframe tracks panel;
-                 sidebar/ = the project tabs: Escenas, assets, presets; brand/ = brand guide
-                 managers; dialogs/ = modal dialogs (TTS, brand); footer/ = editor footer;
-                 widgets/ = custom field widgets; joint/ = joint mode)
-src/export/      PNG / GIF / MP4
-src/traits/      reusable style pieces, one file per trait
-src/presets/     recipe resolver, recipe diff, JSON store (server side: json-store.ts; client:
-                 store.ts), categories and filter, JSON import/export helpers,
-                 animation presets (anim-presets.ts: capture, apply, stagger, expand on load)
-src/service/     one folder per functionality, each with its logic and tests and a tools/
-                 folder with one file per tool and its tests (007, 082): scenes, elements,
-                 shots (shots and keyframes), assets, fonts, presets (and animations),
-                 projects, speech (TTS adapters and proxy), render (headless renderer, 010,
-                 exports), compact (compact scene expansion, 011), layout; core = registry,
-                 ctx, Node store, verdict, project scope; contract = the tests that cross
-                 functionalities; tools/index.ts = the one TOOLS list
-src/cli/         `pnpm lienzo`: args (flags/--json → input), help, main (008); build.ts
-                 bundles dist/cli.js
-src/mcp/         `pnpm lienzo mcp`: the stdio MCP server over the registry (009)
-src/test/        golden render tests, fixtures and test helpers
-src/types/       type declarations for packages that ship none
-docs/            reference docs (components.md: every component kind)
-presets/built-in/  built-in preset recipes (JSON); user presets sit next to it in presets/
-presets/animations/  animation presets (JSON)
-projects/        project workspaces (e.g. projects/mi-proyecto/ containing scenes/, assets/, presets/, exports/)
-```
+- `pnpm dev` — editor with the dev server; `pnpm build` — production build.
+- `pnpm typecheck` — confirm correctness; check or format only the files you touched.
+- `pnpm test` — full suite (run single files while working); `pnpm test:cov` — coverage floors.
+- `pnpm test:mutate:rules` — mutation score of the rule modules.
+- `pnpm build:cli` — rebuild `dist/cli.js`; `pnpm lienzo <tool>` — run any tool; `pnpm lienzo mcp` — MCP server.
+- `pnpm replay [id…]` — replay corpus of QA findings at `HEAD`.
+- Use pnpm, never npm or yarn.
 
 ## Rules for agents
 
-- **Project Boundary & Isolation (Strict Boundary)**: All scenes, generated speech audio, images,
-  and exports MUST be saved within the target project (`projects/<project>/`). Never write scenes,
-  assets or exports to the repository root. Every scene, asset and export tool requires
-  `project`; there is no default project (`project_list` lists them by `project`).
-  NEVER borrow or mix assets between different projects; foreign asset references are strictly prohibited.
-- To add a component: add a descriptor folder `src/components/<kind>/` with `descriptor.ts`
-  (fields built from `src/components/fields/`, composing the shared groups; sections; the
-  animations it offers; label and library icon; `defineComponent`) and `draw.ts` (draws the
-  element with the transform `animate` gives it), then register it in
-  `src/components/index.ts` (import, `COMPONENTS`, `RegisteredElement`). Nothing else: type,
-  defaults, schema, inspector and library entry follow. A control the field types don't
-  cover is a `custom` field or a `widget` with a renderer in `WIDGETS`
-  (`src/editor/field-editor.tsx`). Optionally, an `apply.<kind>` in traits that should style
-  it and a built-in preset recipe with a `category`.
-- To add a preset: a JSON recipe in `presets/built-in/` combining traits; add a trait in
-  `src/traits/` only when no existing one fits.
-- Never draw with wall-clock time: everything takes `t` (seconds within the loop) so exports
-  are deterministic.
-- Tests (A14, spec 082): test the contract, not the implementation. A shared rule is tested in
-  every writer that applies it (one adapter per writer in `src/service/contract/`; a writer
-  without one fails the suite), and every tool is tried with bad inputs derived from its schema.
-  Pure logic, timing math and transformations get examples. No micro-test per Zod field and no
-  test of private helpers. Name a test by the behavior, never by a spec number or a QA round, and
-  keep it beside the functionality it tests. A QA finding becomes a rule in the matrix, not one
-  more case. Run single files while working; run the full suite in the dedicated test task.
-  The gate: `pnpm test:cov` fails when a folder falls below its coverage floor
-  (`vitest.config.ts`), and `pnpm test:mutate:rules` when the rule modules' mutation score
-  falls below 76.54% (082/T041); a floor is raised as tests grow, never lowered.
-- Fast execution & verification: use `pnpm typecheck` (single-pass TypeScript check) to confirm
-  correctness. Never run full-project `pnpm lint` or `biome check` on the whole repo during a task;
-  only check/format the specific files or folders touched to preserve token budget and speed.
-- Use pnpm, never npm or yarn.
-- One rule, one place (075): a rule both the editor and the tools apply lives in `src/model/`
-  as a pure function both call; never re-implement it in a tool or a component. A QA fix
-  names the rule it restores and adds it to `RULES` (`src/service/contract/rules.ts`), which
-  the matrix checks in every writer, so the next path that writes it is covered too.
-  Where each shared rule is applied (080): keyframes in the track schema
-  (`src/model/track.ts`), element defaults in `prepareScene` (`src/service/scenes/scenes.ts`),
-  audio refs in `saveScene` (`withCanonicalAudio`), a group's shot in `src/engine/groups.ts`,
-  compact problems in `buildCompact`, element names in errors and notices in `idPath`.
-  Added by 081: unique element ids (`duplicateIds`, `checkUniqueIds` in `prepareScene`), shot
-  spans and repeated shot ids (`shotProblems`), scene limits (`src/model/limits.ts`), the font
-  and off-canvas notices of a write (`contentNotices` in `src/service/scenes/scene-notices.ts`, called by `saveScene`, `buildCompact` and `sceneNotices`, 082), preset name folding (`sameName`), the
-  closed sets in descriptions (`src/model/options.ts`), the Spanish locale (`setSpanishLocale`).
-  Notices (live run 2026-10-29): a write says only what the scene it replaces did not (`contentNotices(scene, faces, previous)`,
-  `resourceNotices`), and a notice names what it is about; both hold for every notice rule in the matrix
-  (`names` in `rules.ts`, `silence.test.ts`), so a new notice is a `RULES` entry, never a filter in one tool.
-  Specs 071–074 patched one path at a time and the same family came back each round.
-- Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
-  it started with, and a stale server reports fixed bugs as open (071).
-  The server's MCP `instructions` name the build (commit, `+dirty`, the time `pnpm build:cli` ran or the source started); compare the commit with
-  `git rev-parse --short HEAD` (072). A QA report of "still open" counts only with that
-  commit matching `HEAD`, or replayed with `pnpm lienzo`; otherwise replay it first (073). `pnpm replay [id…]` runs the replay corpus (`src/service/contract/corpus/`, 082) in a fresh process at `HEAD`; a case that passes there but fails on the MCP server means the server is stale.
-- A QA run follows `planning/qa-log.md` (082): the closed list of what to check, the class of
-  each finding (missing matrix cell, missing rule, text, design decision), one log line per
-  finding, a corpus case for each one, and when a round ends. A round gets no spec of its own.
+- **Project boundary:** every scene, generated speech audio, image and export is saved inside
+  its target project (`projects/<project>/`), never at the repository root. Every scene, asset
+  and export tool requires `project`; there is no default project (`project_list` lists them).
+  Never borrow or mix assets between projects.
+- Never draw with wall-clock time: everything takes `t`, so exports are deterministic.
+- A change of behavior updates `README.md`, `docs/components.md`, the `lienzo-usage` skill and
+  the tool's description in the same task.
+- Before a QA run, read `TESTING.md` (restart the MCP server first) and `docs/qa-log.md`.
 
 <!-- spectrace -->
-## Planning
+## Planning & Governance
 
-Work is planned in `planning/`:
+The repository separates durable architecture/design decisions at the root from execution plans in `planning/`:
 
+```text
+AGENTS.md                   operational manual and commands for agents
+PRODUCT.md                  product vision, target audience, and scope boundaries
+ARCHITECTURE.md             system topology, layer boundaries, and directory map
+ENGINEERING.md              craftsmanship rules, KISS/YAGNI, SRP, DIP, and code standards
+DESIGN.md                   UI/UX design tokens, component standards, or content design guidelines
+TESTING.md                  testing invariants, contracts, input partitioning, and test hygiene
+CHANGES.md                  historical ledger of pivots, replacements, and deprecations
+planning/roadmap.md         specs in execution order, status, and backlog ideas
+planning/specs/NNN-name.md  atomic specification slices
 ```
-planning/product.md      what this is, who it's for, stack, how to run and test, docs
-planning/roadmap.md      specs in order, their status, and a free "Ideas" list
-planning/specs/NNN-name.md  one file per spec
-```
 
-A spec file:
+### Spec Format
 
 ```markdown
 # 003 — login
 
 ## Goal
-What should work when this spec is done, and how we'll know.
+A user signs in and stays signed in across reloads.
 
 ## Requirements
 - R1: A user signs in with email and password.
@@ -316,87 +73,26 @@ What should work when this spec is done, and how we'll know.
 ## Tasks
 - [x] 003/T001 [agent] Login form — covers R1
 - [ ] 003/T002 [agent] Session cookie middleware — covers D2
-- [ ] 003/T003 [agent] Remove the localStorage session code — replaces D1
-- [ ] 003/T004 [human] Create the mail provider account — covers R1
+- [ ] 003/T003 [agent] Remove localStorage session code — replaces D1
+- [ ] 003/T004 [human] Create mail provider account — covers R1
       blocked: waiting for billing approval
 
 ## Changes
 - 2026-10-12: D1 → D2. Why: localStorage is readable by any script. Work: T003.
 ```
 
-- `R`/`D` labels are never reused; a replaced item stays, struck through, with `→`.
-- A task ends with `— covers` and the R or D items it implements, comma-separated
-  (`covers R2, D3`); a cleanup task ends with `— replaces D1` (or
-  `— covers D3; replaces D1`). Items of another spec are written `006/D1`, both
-  after `→` and in `covers`/`replaces`.
-- `[agent]`: any agent does it. `[human]`: the user does it; agents report and skip it.
-- `## Changes` appears with the first change.
-- **Docs are deliverables.** `product.md` → `## Docs` lists the docs the project keeps
-  and what each describes. A doc changes inside the task whose work it describes, so
-  `git blame` on any doc line leads to a commit, its `Spec:` and the decision behind it.
-- A task whose text starts with `Review:` is closed only with an indented
-  `reviewed: <files read> — found <what>` line under it. Anything it finds becomes a
-  new task placed before it.
-- A task whose text starts with `Verify:` checks something (tests, a build, the app
-  in a browser) without changing files; it is closed only with an indented
-  `verified: <commands run, what was checked> — found <what>` line under it.
-- Roadmap table: `| ID | Spec | Status | Depends on |`. `Spec` is the name after
-  `NNN-`; `Depends on` is `—` or spec IDs separated by commas. `Status` (`todo`,
-  `in progress`, `done`) is written by the git hook from the `[agent]` checkboxes —
-  never by hand.
+- `R`/`D` labels are immutable; a replaced item stays struck through with `→`.
+- A task ends with `— covers` and the R or D items it implements (`covers R1, D2`). Cleanup tasks specify `— replaces D1`.
+- `[agent]`: executed by AI agents. `[human]`: performed by humans; agents report and skip them.
+- Roadmap status (`todo`, `in progress`, `done`) is maintained directly in `planning/roadmap.md`.
 
-## Working on tasks
+### Working on Tasks
 
-Git hooks in `.githooks/` keep this honest: they write the roadmap `Status`, refuse a
-commit whose `Spec:` task isn't ticked or that ticks an `[agent]` task without any work,
-and refuse a ticked `Review:` or `Verify:` task without its `reviewed:`/`verified:` note.
-Work is any change outside `planning/`, `.githooks/` and `.gitattributes`, including
-`AGENTS.md` lines outside the spectrace block (the project's own conventions are docs);
-a `Review:` or `Verify:` task needs none.
-Never bypass them (`--no-verify`); when one refuses, fix what it says.
-
-1. `git pull` and `git status`. If `git config core.hooksPath` isn't `.githooks`, run
-   `git config core.hooksPath .githooks`; if `.githooks/` itself is missing, tell the
-   user to run the `spectrace-plan` skill, which reinstalls it. Uncommitted changes in
-   `planning/`,
-   `AGENTS.md`, `.githooks/` or `.gitattributes` (fresh specs, a spectrace install) →
-   commit them first as `docs(planning): <what>`. Leave other untracked files
-   alone. Open `planning/roadmap.md` and take the first `[ ]` `[agent]` task of the
-   first spec not `done` whose dependencies are done (or the task you were asked for).
-2. Read the spec. Do only that task, then verify it: run the project's tests, or run
-   the thing itself when there are no tests yet.
-3. **Close it with one commit**: the change, the task's `[x]`, and a trailer. Stage
-   the files you touched by name, never `git add -A`.
-
-   ```
-   feat(login): session cookie middleware
-
-   Spec: 003/T002
-   ```
-
-   The `Spec:` line goes in the message's last paragraph, together with any other
-   trailer (`Co-Authored-By:`…) and no blank line between them — git only reads that
-   paragraph as trailers. A change that belongs to no spec on purpose (a typo, a
-   chore) carries `Spec: none` instead; a code commit with neither is refused, and
-   CI refuses one that skipped the hook with `--no-verify`.
-
-   Two small tasks that only make sense together (a function and its test) may share a
-   commit with one `Spec:` line each. To fold a task into the previous commit,
-   `git commit --amend` works: the hook judges the whole amended commit against its
-   parent. A task is closed only when that commit exists — never leave a ticked box
-   uncommitted or a commit without its trailer.
-4. **A `Review:` task** needs eyes that didn't write the code: hand it to a fresh
-   agent (a subagent given only the task text and the spec) when your harness can;
-   otherwise do it yourself and write `reviewed (self):`. Read the files, don't skim.
-5. Stuck: add `blocked: <reason>` under the task, commit it, tell the user, move on.
-6. **A convention or decision in the way** — or two items of a spec that contradict
-   each other: these files describe the current state, not laws. Don't work around one
-   and don't pick a side silently. Propose the simplest change to the user (the
-   `spectrace-change` skill applies it). If the user isn't there to answer, mark the
-   task `blocked: conflicts D2: <why>; propose: <change>`, commit, and move on.
-7. **A new idea or a bug found mid-task**: add a line to the roadmap's `## Ideas` (or
-   a task to the right spec) and keep going. Nothing is out of scope; it's just later.
-
-What a spec built: `git log --grep "Spec: 003/" --stat`.
+1. **Find Next Task:** Open `planning/roadmap.md`. Take the active spec (`todo` or `in progress`) whose dependencies are done. Open its spec file in `planning/specs/` and find the first open `[agent]` task. Skip `[human]` tasks and inform the user if blocked.
+2. **Execute & Consult Context:** Read [ARCHITECTURE.md](./ARCHITECTURE.md) for structural boundaries, [ENGINEERING.md](./ENGINEERING.md) for code principles (KISS, SRP, DIP), [DESIGN.md](./DESIGN.md) for UI/content design rules, and [TESTING.md](./TESTING.md) for verification standards. Implement only the task scope. No speculative abstractions: abstract only for 2+ concrete uses.
+3. **Verify:** Run the project's tests or verification command adhering to [TESTING.md](./TESTING.md) and [ENGINEERING.md](./ENGINEERING.md) (auditable via `spectrace-review`). Never mark a task done without verifying.
+4. **Mark Done & Commit:** Mark the task `[x]`. If all tasks in the spec are complete, update the roadmap status to `done`. Stage changed files and commit using Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`).
+5. **Stuck:** Add an indented `blocked: <reason>` line under the task, commit the note, inform the user, and move on.
+6. **Contradictions or Changes:** Propose changes directly to the user (the `spectrace-change` skill applies them to `CHANGES.md` and specs).
+7. **New Ideas:** Add them to `planning/roadmap.md` under `## Ideas`.
 <!-- /spectrace -->
-
