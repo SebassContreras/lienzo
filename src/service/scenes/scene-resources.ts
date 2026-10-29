@@ -7,11 +7,21 @@ import { descriptorOf } from "../../components/index.ts";
 import type { Scene } from "../../model/model.ts";
 import { audioRefs, EXTERNAL_REF } from "../assets/asset-refs.ts";
 import type { ProjectCtx } from "../core/ctx.ts";
-import { allElements, changedSince, idsOf } from "./scene-changes.ts";
+import { allElements, idsOf } from "./scene-changes.ts";
+
+/** The asset references of every element of `scene`, by element id. */
+function refsById(scene: Scene | undefined): Map<string, Set<string>> {
+  return new Map(
+    (scene ? allElements(scene) : []).map((el) => [
+      el.id,
+      new Set(descriptorOf(el.kind)?.assets?.(el as never) ?? []),
+    ]),
+  );
+}
 
 /**
- * One notice per asset reference of a changed element that would draw as a placeholder, and
- * per line end left loose because the element it attached to was removed by this write.
+ * One notice per asset reference a write added to an element that would draw as a placeholder,
+ * and per line end left loose because the element it attached to was removed by this write.
  */
 export async function resourceNotices(
   ctx: ProjectCtx,
@@ -22,7 +32,7 @@ export async function resourceNotices(
   const elements = allElements(scene);
   const ids = new Set(elements.map((el) => el.id));
   const before = idsOf(previous);
-  const changed = changedSince(previous);
+  const had = refsById(previous);
   for (const el of elements) {
     if (el.kind === "line")
       for (const [end, label] of [
@@ -35,10 +45,9 @@ export async function resourceNotices(
             `«${el.id}»: el extremo ${label} se conectaba a «${attach}», que se quitó; queda suelto`,
           );
       }
-    if (!changed(el)) continue;
     const refs = descriptorOf(el.kind)?.assets?.(el as never) ?? [];
     for (const ref of refs) {
-      if (!ref || EXTERNAL_REF.test(ref)) continue;
+      if (!ref || EXTERNAL_REF.test(ref) || had.get(el.id)?.has(ref)) continue;
       const check = await ctx.projects.checkAsset(ctx.project, ref);
       if (!check.ok && check.warning)
         notices.add(`«${el.id}»: ${check.warning}; se dibuja un marcador`);

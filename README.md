@@ -126,8 +126,11 @@ How the tools behave, in short:
   value and as a keyframe; `scene_validate` returns every problem in `errors`. Messages are
   Spanish, and a failure about what `element_add` adds points at `patch.…`.
 - **Notices:** a write answers `notices` about what it ignored or could not draw yet (an
-  asset not in the project), only for what the call changed (a shot's camera easing is
-  reported by the call that sets it, not by every later one); `scene_validate` lists them all.
+  asset not in the project), each said once: a write gives only the notices the scene did not
+  already have, so one that leaves an element, a track or a shot as it was repeats nothing
+  (`silence.test.ts` checks it for every notice). A notice names the element it is about
+  (`«x»`, by the id you gave); `scene_validate` lists them all. A key `scene_create` or
+  `scene_update` does not know (`at` in `data`) is noticed, as `scene_build` does.
   A line with no `shot` between elements of different shots gets one: it is drawn all
   through the scene, with an end loose while its element is away.
 - **Defaults:** `scene_create` and `scene_build` start from the project's canvas;

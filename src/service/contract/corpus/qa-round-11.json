@@ -1,0 +1,118 @@
+[
+  {
+    "id": "D1-scene-create-ignored-at",
+    "source": "live run 2026-10-29 (third), finding 3",
+    "call": {
+      "tool": "scene_create",
+      "input": {
+        "scene": "t",
+        "data": {
+          "elements": [{ "id": "c", "kind": "ellipse", "at": "center" }]
+        }
+      }
+    },
+    "expect": {
+      "ok": true,
+      "notices": ["Campo desconocido ignorado: elements\\.c\\.at"]
+    }
+  },
+  {
+    "id": "D2-at-track-notice-names-the-id",
+    "source": "live run 2026-10-29 (third), warnings 1",
+    "call": {
+      "tool": "scene_build",
+      "input": {
+        "compact": {
+          "elements": [
+            { "kind": "rect", "id": "a" },
+            {
+              "kind": "ellipse",
+              "id": "circle",
+              "at": "center",
+              "tracks": { "x": [[0, 10], [1, 50]] }
+            }
+          ]
+        }
+      }
+    },
+    "expect": {
+      "ok": true,
+      "notices": ["compact\\.elements\\.circle: tiene `at` y una pista"],
+      "noNotices": ["elements\\.1:"]
+    }
+  },
+  {
+    "id": "D3-weight-notice-names-the-element",
+    "source": "live run 2026-10-29 (third), warnings 3",
+    "call": {
+      "tool": "element_add",
+      "input": {
+        "scene": "s",
+        "kind": "text",
+        "patch": { "id": "t1", "weight": 500, "text": "hola" }
+      }
+    },
+    "expect": { "ok": true, "notices": ["peso 500.*«t1»"] }
+  },
+  {
+    "id": "D4-keyframe-set-repeats-no-easing-notice",
+    "source": "live run 2026-10-29 (third), warnings 4",
+    "setup": [
+      {
+        "tool": "element_add",
+        "input": { "scene": "s", "kind": "rect", "patch": { "id": "r" } }
+      },
+      {
+        "tool": "keyframe_set",
+        "input": {
+          "scene": "s",
+          "id": "r",
+          "path": "@rotate",
+          "t": 0,
+          "value": 0
+        }
+      },
+      {
+        "tool": "keyframe_set",
+        "input": {
+          "scene": "s",
+          "id": "r",
+          "path": "@rotate",
+          "t": 1,
+          "value": 90,
+          "easing": "ease-out"
+        }
+      }
+    ],
+    "call": {
+      "tool": "keyframe_set",
+      "input": {
+        "scene": "s",
+        "id": "r",
+        "path": "opacity",
+        "t": 0,
+        "value": 0.5
+      }
+    },
+    "expect": { "ok": true, "noNotices": ["último keyframe"] }
+  },
+  {
+    "id": "D5-element-update-repeats-no-weight-notice",
+    "source": "live run 2026-10-29 (third), warnings 3",
+    "setup": [
+      {
+        "tool": "element_add",
+        "input": {
+          "scene": "s",
+          "kind": "text",
+          "patch": { "id": "t1", "weight": 500, "text": "hola" }
+        }
+      }
+    ],
+    "call": {
+      "tool": "element_update",
+      "input": { "scene": "s", "id": "t1", "patch": { "opacity": 0.5 } }
+    },
+    "expect": { "ok": true, "noNotices": ["peso 500"] }
+  }
+]

@@ -26,6 +26,7 @@ import {
   checkKind,
   hasPositionTrack,
   patched,
+  patchNotices,
   trackOverridesAt,
 } from "../elements.ts";
 
@@ -103,6 +104,8 @@ export const elementAdd = defineTool({
       el = defaultElement(kind as ElementKind);
     }
     if (patch) {
+      const { id: _id, ...given } = patch;
+      notices.push(...patchNotices(el, given));
       el = patched(el, patch);
       if (preset === undefined) applyImplied(el, patch);
     }

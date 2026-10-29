@@ -58,7 +58,7 @@ function outcome(result: Awaited<ReturnType<typeof registry.call>>) {
 }
 
 describe("a rule broken through a writer", () => {
-  it.each(carried)("%s", async (_title, { rule, plan }) => {
+  it.each(carried)("%s", async (_title, { rule, violation, plan }) => {
     box = await sandbox();
     for (const step of plan.arrange) {
       const set = await registry.call(
@@ -82,6 +82,11 @@ describe("a rule broken through a writer", () => {
     expect(
       rule.outcome === "refused" ? answer.message : answer.notices,
     ).toMatch(rule.message);
+    if (violation.names !== undefined) {
+      const said = rule.outcome === "refused" ? answer.message : answer.notices;
+      const line = said.split("\n").find((l) => rule.message.test(l));
+      expect(line, "the line that says it").toContain(violation.names);
+    }
   });
 });
 

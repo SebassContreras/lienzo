@@ -42,9 +42,17 @@ const contextCalls = (v: Violation): Call[] => [
 
 const withoutKind = ({ kind: _kind, ...rest }: Fields) => rest;
 
+/** An element's `at` is an input of the tool, not a field of the element. */
+const withoutAt = ({ at: _at, ...rest }: Fields) => rest;
+
 const add = (e: Fields): Call => ({
   tool: "element_add",
-  input: { scene: "s", kind: e.kind, patch: withoutKind(e) },
+  input: {
+    scene: "s",
+    kind: e.kind,
+    ...(e.at === undefined ? {} : { at: e.at }),
+    patch: withoutAt(withoutKind(e)),
+  },
 });
 
 /** Every id in `elements`, at any depth, in order. */
@@ -74,6 +82,9 @@ const compact = (v: Violation) => ({
     : {}),
 });
 
+/** An element placed by `at`: a stored scene has no such field, so a scene given as data cannot carry it. */
+const placed = (v: Violation) => v.elements?.some((e) => e.at !== undefined);
+
 /** The compact form takes an empty id as an id left out. */
 const noId = (v: Violation) => v.elements?.some((e) => e.id === "");
 
@@ -82,19 +93,28 @@ export const WRITERS: readonly Writer[] = [
     id: "scene_create",
     tool: "scene_create",
     handles: ["elements", "shotContent", "scene", "background"],
-    plan: (v) => ({
-      arrange: [],
-      call: { tool: "scene_create", input: { scene: "t", data: data(v) } },
-    }),
+    plan: (v) =>
+      placed(v)
+        ? undefined
+        : {
+            arrange: [],
+            call: {
+              tool: "scene_create",
+              input: { scene: "t", data: data(v) },
+            },
+          },
   },
   {
     id: "scene_validate (data)",
     tool: "scene_validate",
     handles: ["elements", "shotContent", "scene", "background"],
-    plan: (v) => ({
-      arrange: [],
-      call: { tool: "scene_validate", input: { data: data(v) } },
-    }),
+    plan: (v) =>
+      placed(v)
+        ? undefined
+        : {
+            arrange: [],
+            call: { tool: "scene_validate", input: { data: data(v) } },
+          },
   },
   {
     id: "scene_validate (compact)",
@@ -144,7 +164,7 @@ export const WRITERS: readonly Writer[] = [
       const last = v.elements?.at(-1);
       if (!last || repeatsIds(v.elements) || idProblem(last.id))
         return undefined;
-      const { id, kind, ...patch } = last;
+      const { id, kind, at, ...patch } = last;
       return {
         arrange: [
           ...contextCalls(v),
@@ -154,7 +174,10 @@ export const WRITERS: readonly Writer[] = [
             input: { scene: "s", kind, patch: { id, ...v.valid } },
           },
         ],
-        call: { tool: "element_update", input: { scene: "s", id, patch } },
+        call: {
+          tool: "element_update",
+          input: { scene: "s", id, ...(at === undefined ? {} : { at }), patch },
+        },
       };
     },
   },
@@ -243,11 +266,22 @@ export const WRITERS: readonly Writer[] = [
 /** The key a cell has in `NOT_CARRIED`. */
 export const cellKey = (rule: Rule, v: Violation) => `${rule.id} — ${v.label}`;
 
+const AT_TRACK = "a position track wins over `at`, and says so — x track";
+const NO_AT =
+  "a stored scene has no `at`: placement is an input of the compact form and of element_add and element_update";
+
 /**
  * Cells a writer handles but cannot carry, with the reason (`writer id` → `cellKey` → why).
  */
 export const NOT_CARRIED: Record<string, Record<string, string>> = {
+  scene_create: {
+    [AT_TRACK]: NO_AT,
+  },
+  "scene_validate (data)": {
+    [AT_TRACK]: NO_AT,
+  },
   scene_update: {
+    [AT_TRACK]: NO_AT,
     "an element off the canvas gets a notice — rect":
       "a symbol's body is drawn where a `use` places it, not on the canvas",
     "a `use` names a symbol that exists — missing symbol":

@@ -10,6 +10,11 @@ type Fields = Record<string, unknown>;
 export type Violation = {
   /** What is broken, for the test's name. */
   label: string;
+  /**
+   * What the notice must name (an element or a shot, by the id the content gave): a notice that
+   * does not say what it is about leaves the caller searching (084/R4).
+   */
+  names?: string;
   /** Shots the scene has before the broken content arrives. */
   shots?: Fields[];
   /** The scene's shots, which are the broken content. */
@@ -249,6 +254,7 @@ export const RULES: readonly Rule[] = [
     violations: [
       {
         label: "text",
+        names: "x",
         elements: [{ id: "x", kind: "text", font: "Nope Sans" }],
       },
     ],
@@ -260,6 +266,7 @@ export const RULES: readonly Rule[] = [
     violations: [
       {
         label: "element track",
+        names: "x",
         elements: [
           {
             id: "x",
@@ -275,11 +282,13 @@ export const RULES: readonly Rule[] = [
       },
       {
         label: "keyframe",
+        names: "k",
         before: [{ path: "x", t: 0, value: 0 }],
         keyframe: { path: "x", t: 1, value: 5, easing: "ease-out" },
       },
       {
         label: "camera track",
+        names: "s1",
         shotContent: [
           {
             ...SHOT,
@@ -303,6 +312,7 @@ export const RULES: readonly Rule[] = [
     violations: [
       {
         label: "two shots",
+        names: "l",
         onCanvas: true,
         shots: [SHOT, { id: "s2", start: 2, end: 4 }],
         elements: [
@@ -330,6 +340,7 @@ export const RULES: readonly Rule[] = [
     violations: [
       {
         label: "rotation",
+        names: "s1",
         shotContent: [
           {
             ...SHOT,
@@ -353,6 +364,7 @@ export const RULES: readonly Rule[] = [
     violations: [
       {
         label: "five seconds in two",
+        names: "s1",
         shotContent: [{ ...SHOT, transition: { kind: "fade", duration: 5 } }],
       },
       {
@@ -488,6 +500,7 @@ export const RULES: readonly Rule[] = [
     violations: [
       {
         label: "image",
+        names: "x",
         elements: [
           { id: "x", kind: "image", src: "/projects/p/assets/falta.png" },
         ],
@@ -501,8 +514,45 @@ export const RULES: readonly Rule[] = [
     violations: [
       {
         label: "rect",
+        names: "x",
         onCanvas: true,
         elements: [{ id: "x", kind: "rect", x: 5000, y: 5000, w: 10, h: 10 }],
+      },
+    ],
+  },
+  {
+    id: "a key the scene does not know is ignored with a notice",
+    outcome: "notice",
+    message: /Campo desconocido ignorado: .*nope/,
+    violations: [
+      {
+        label: "element",
+        elements: [{ id: "x", kind: "rect", nope: 1 }],
+      },
+    ],
+  },
+  {
+    id: "a position track wins over `at`, and says so",
+    outcome: "notice",
+    message: /tiene `at` y una pista en x\/y/,
+    violations: [
+      {
+        label: "x track",
+        names: "x",
+        onCanvas: true,
+        elements: [
+          {
+            id: "x",
+            kind: "rect",
+            at: "center",
+            tracks: {
+              x: [
+                [0, 0],
+                [1, 5],
+              ],
+            },
+          },
+        ],
       },
     ],
   },

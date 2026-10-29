@@ -9,7 +9,7 @@ import { withElementDefaults } from "../../model/fill-defaults.ts";
 import { idPath } from "../../model/id-path.ts";
 import { duplicateIds, idProblem } from "../../model/ids.ts";
 import { namesHint } from "../../model/ignored.ts";
-import type { Element, Scene, Shot } from "../../model/model.ts";
+import type { Element, Scene } from "../../model/model.ts";
 import type { PresetRecipe } from "../../model/preset.ts";
 import { parseScene, ShotSchema } from "../../model/schema.ts";
 import { shotProblems } from "../../model/shots.ts";
@@ -30,7 +30,7 @@ import {
   idsOf,
   placedElements,
 } from "./scene-changes.ts";
-import { contentNotices } from "./scene-notices.ts";
+import { contentNotices, ignoredSceneNotices } from "./scene-notices.ts";
 import { checkReferences, withCanonicalIcons } from "./scene-references.ts";
 import { resourceNotices } from "./scene-resources.ts";
 
@@ -332,9 +332,15 @@ export async function saveScene(
   name: string,
   data: unknown,
   previous?: Scene,
+  { reportIgnored = false } = {},
 ): Promise<SceneResult> {
   const prepared = await prepareScene(ctx, data, previous);
   const { notices } = prepared;
+  // a key of the input the scene dropped: for writers that take whole scene content (not a patch of an element)
+  if (reportIgnored)
+    notices.push(
+      ...ignoredSceneNotices(data, prepared.scene).map((n) => n.message),
+    );
   const scene = withCanonicalAudio(
     {
       ...prepared.scene,
@@ -344,15 +350,10 @@ export async function saveScene(
     },
     ctx.project,
   );
-  // what this write changed: fonts the project lacks, elements off the canvas (081/D8)
-  const changedTop = scene.elements.filter(changedSince(previous));
+  // what the scene says that the one it replaces did not (fonts the project lacks, elements off the canvas…)
   const faces = await availableFonts(ctx.fonts, ctx.project);
   notices.push(
-    ...contentNotices(scene, faces, {
-      elements: changedTop,
-      symbols: changedSymbols(scene, previous),
-      shots: changedShots(scene, previous),
-    }).map((n) => n.message),
+    ...contentNotices(scene, faces, previous).map((n) => n.message),
     ...(await resourceNotices(ctx, scene, previous)),
   );
   const unique = [...new Set(notices)];
@@ -360,34 +361,15 @@ export async function saveScene(
   return { scene: await ctx.store.writeScene(name, scene), notices };
 }
 
-/** The shots of `scene` that `previous` did not have or had different. */
-function changedShots(scene: Scene, previous?: Scene): Shot[] {
-  const before = new Map(
-    (previous?.shots ?? []).map((sh) => [sh.id, JSON.stringify(sh)]),
-  );
-  return (scene.shots ?? []).filter(
-    (sh) => before.get(sh.id) !== JSON.stringify(sh),
-  );
-}
-
-/** The symbols of `scene` that `previous` did not have or had different (082/D6). */
-function changedSymbols(scene: Scene, previous?: Scene): Scene["symbols"] {
-  return Object.fromEntries(
-    Object.entries(scene.symbols ?? {}).filter(
-      ([name, body]) =>
-        JSON.stringify(body) !== JSON.stringify(previous?.symbols?.[name]),
-    ),
-  );
-}
-
 /** Opens scene `name`, applies `edit` (pure) and saves the result under the same name. */
 export async function editScene(
   ctx: ProjectCtx,
   name: string,
   edit: (scene: Scene) => Scene,
+  options: { reportIgnored?: boolean } = {},
 ): Promise<SceneResult> {
   const previous = await openScene(ctx, name);
-  return saveScene(ctx, name, edit(previous), previous);
+  return saveScene(ctx, name, edit(previous), previous, options);
 }
 
 export type FoundPreset = {

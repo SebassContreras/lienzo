@@ -38,8 +38,13 @@ export const sceneUpdate = defineTool({
   }),
   output: SceneResult,
   run: async ({ scene, project, patch }, ctx) =>
-    editScene(await inProject(ctx, project), scene, (s) =>
-      mergePatch(s, patch),
+    editScene(
+      await inProject(ctx, project),
+      scene,
+      (s) => mergePatch(s, patch),
+      {
+        reportIgnored: true,
+      },
     ),
 });
 

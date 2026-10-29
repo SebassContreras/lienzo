@@ -37,7 +37,9 @@ export const sceneCreate = defineTool({
       ...(mode ? { mode } : {}),
       ...data,
     });
-    const result = await saveScene(effectiveCtx, scene, sceneData);
+    const result = await saveScene(effectiveCtx, scene, sceneData, undefined, {
+      reportIgnored: true,
+    });
     result.notices.push(...storedAsNotice(scene, result.scene));
     return result;
   },

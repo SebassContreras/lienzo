@@ -274,6 +274,9 @@ projects/        project workspaces (e.g. projects/mi-proyecto/ containing scene
   spans and repeated shot ids (`shotProblems`), scene limits (`src/model/limits.ts`), the font
   and off-canvas notices of a write (`contentNotices` in `src/service/scenes/scene-notices.ts`, called by `saveScene`, `buildCompact` and `sceneNotices`, 082), preset name folding (`sameName`), the
   closed sets in descriptions (`src/model/options.ts`), the Spanish locale (`setSpanishLocale`).
+  Notices (live run 2026-10-29): a write says only what the scene it replaces did not (`contentNotices(scene, faces, previous)`,
+  `resourceNotices`), and a notice names what it is about; both hold for every notice rule in the matrix
+  (`names` in `rules.ts`, `silence.test.ts`), so a new notice is a `RULES` entry, never a filter in one tool.
   Specs 071–074 patched one path at a time and the same family came back each round.
 - Before a QA run of the MCP tools, restart the MCP server after pulling: it runs the code
   it started with, and a stale server reports fixed bugs as open (071).

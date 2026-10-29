@@ -110,10 +110,21 @@ it("leaves out notices about elements a write did not change", async () => {
   expect(r).toMatchObject({ ok: true, value: { notices: [] } });
 });
 
-it("notes a missing resource on the element a write changed", async () => {
+it("leaves out a missing resource an element already had when another field changes", async () => {
   await savedWithMissingImage();
 
   const r = await call("element_update", { id: "img", patch: { w: 80 } });
+
+  expect(r).toMatchObject({ ok: true, value: { notices: [] } });
+});
+
+it("notes a missing resource an element is pointed at by a write", async () => {
+  await savedWithMissingImage();
+
+  const r = await call("element_update", {
+    id: "img",
+    patch: { src: "other-missing.png" },
+  });
 
   expect(r).toMatchObject({
     ok: true,

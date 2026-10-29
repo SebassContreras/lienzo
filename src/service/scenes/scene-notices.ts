@@ -31,6 +31,20 @@ function usesFont(el: Element, family: string): boolean {
   );
 }
 
+/** The elements of `scene` (and of its symbols' bodies) drawn with `family`, named for a notice: «a», «b» y 2 más. */
+function usedBy(scene: Scene, family: string): string {
+  const ids = [
+    ...scene.elements,
+    ...Object.values(scene.symbols ?? {}).flatMap((s) => s.children),
+  ]
+    .filter((el) => usesFont(el, family))
+    .map((el) => el.id);
+  if (ids.length === 0) return "";
+  const shown = ids.slice(0, 3).map((id) => `«${id}»`);
+  const more = ids.length > 3 ? ` y ${ids.length - 3} más` : "";
+  return ` (en ${shown.join(", ")}${more})`;
+}
+
 /** An easing that shapes nothing: the last keyframe of a track has no segment after it. */
 export type DeadEasing = {
   /** The element holding the track, which may sit inside a group. */
@@ -116,20 +130,15 @@ export function offCanvasNotices(
 /**
  * A line with no shot of its own whose ends sit in different shots (or one in a shot and the
  * other in none): it is drawn all through the scene, with an end loose whenever its element is
- * away. Only lines the write changed, or whose ends it changed, are reported.
+ * away.
  */
-function lineShotNotices(
-  scene: Scene,
-  changed: readonly Element[],
-): SceneNotice[] {
-  const touched = new Set(changed.map((el) => el.id));
+function lineShotNotices(scene: Scene): SceneNotice[] {
   const byId = new Map(scene.elements.map((el) => [el.id, el]));
   return scene.elements.flatMap((el) => {
     if (el.kind !== "line" || el.shot !== undefined) return [];
     const ends = [el.a, el.b].map((end) => byId.get(end?.attach ?? ""));
     const [a, b] = ends;
     if (!a || !b || a.shot === b.shot) return [];
-    if (![el, a, b].some((x) => touched.has(x.id))) return [];
     const where = (x: Element) =>
       x.shot ? `la toma «${x.shot}»` : "ninguna toma";
     return [
@@ -188,69 +197,63 @@ export function shotNotices(
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-/** The top-level elements, the symbols and the shots a write changed; no `shots` means all. */
-export type Changed = {
-  elements: readonly Element[];
-  symbols?: Scene["symbols"];
-  shots?: readonly Shot[];
-};
-
-/**
- * The notices every writer gives about scene content (082/D6): fonts and weights the project
- * lacks, elements off the canvas, easings that shape nothing, shot problems and text widths
- * that are estimated. `changed` limits each to what a write changed, so a call does not repeat
- * what an earlier one already said. One assembly for `saveScene`, `buildCompact` and
- * `sceneNotices`, so a writer cannot lack one the others give.
- */
-export function contentNotices(
-  scene: Scene,
-  installed: readonly Face[],
-  changed: Changed = { elements: scene.elements, symbols: scene.symbols },
-): SceneNotice[] {
-  const { elements } = changed;
-  const part = {
-    ...scene,
-    elements: [...elements],
-    symbols: changed.symbols,
-  };
-  const byFamily = (issues: { family: string; message: string }[]) =>
+/** The notices `scene` has, whatever write made them. */
+function stateNotices(scene: Scene, installed: readonly Face[]): SceneNotice[] {
+  const named = (
+    issues: { family: string; message: string }[],
+  ): SceneNotice[] =>
     issues.map(({ family, message }) => ({
-      message,
-      elementId: part.elements.find((el) => usesFont(el, family))?.id,
+      message: message + usedBy(scene, family),
+      elementId: scene.elements.find((el) => usesFont(el, family))?.id,
     }));
   return [
-    ...byFamily(
+    ...named(
       missingFonts(
-        part,
+        scene,
         installed.map((f) => f.family),
       ).map((family) => ({ family, message: missingFontNotice(family) })),
     ),
-    ...byFamily(
-      missingWeights(part, installed).map((w) => ({
+    ...named(
+      missingWeights(scene, installed).map((w) => ({
         family: w.family,
         message: missingWeightNotice(w),
       })),
     ),
-    ...deadKeyframeEasingNotices(part),
-    ...offCanvas(scene, elements),
-    ...lineShotNotices(scene, elements),
-    ...shotNotices(scene, changed.shots),
-    ...byFamily(
-      estimatedFonts(part).map((family, i) => ({
+    ...deadKeyframeEasingNotices(scene),
+    ...offCanvas(scene),
+    ...lineShotNotices(scene),
+    ...shotNotices(scene),
+    ...named(
+      estimatedFonts(scene).map((family, i) => ({
         family,
-        message: estimatedWidthNotices(part)[i] as string,
+        message: estimatedWidthNotices(scene)[i] as string,
       })),
     ),
   ];
 }
 
-/** The notices for `scene`, parsed from `raw`; `installed` lists the usable font faces. */
-export function sceneNotices(
-  raw: unknown,
+/**
+ * The notices every writer gives about scene content (082/D6): fonts and weights the project
+ * lacks, elements off the canvas, easings that shape nothing, shot problems and text widths
+ * that are estimated. With the `previous` scene a write replaces, only what it did not already
+ * say: a write never repeats a notice about content it left as it was, whatever that content is
+ * (an element, one of its tracks, a shot). One assembly for `saveScene`, `buildCompact` and
+ * `sceneNotices`, so a writer cannot lack one the others give.
+ */
+export function contentNotices(
   scene: Scene,
   installed: readonly Face[],
+  previous?: Scene,
 ): SceneNotice[] {
-  const ignored = ignoredFields(raw, scene).map((field) => {
+  const now = stateNotices(scene, installed);
+  if (!previous) return now;
+  const said = new Set(stateNotices(previous, installed).map((n) => n.message));
+  return now.filter((n) => !said.has(n.message));
+}
+
+/** One notice per key of `raw` that `scene`, parsed from it, dropped; an element is named by the id `raw` gave it. */
+export function ignoredSceneNotices(raw: unknown, scene: Scene): SceneNotice[] {
+  return ignoredFields(raw, scene).map((field) => {
     const index = /^elements\.(\d+)/.exec(field.path)?.[1];
     return {
       // the element named as errors name it, by the id the input gave (080/D6)
@@ -259,5 +262,16 @@ export function sceneNotices(
         index === undefined ? undefined : scene.elements[Number(index)]?.id,
     };
   });
-  return [...ignored, ...contentNotices(scene, installed)];
+}
+
+/** The notices for `scene`, parsed from `raw`; `installed` lists the usable font faces. */
+export function sceneNotices(
+  raw: unknown,
+  scene: Scene,
+  installed: readonly Face[],
+): SceneNotice[] {
+  return [
+    ...ignoredSceneNotices(raw, scene),
+    ...contentNotices(scene, installed),
+  ];
 }

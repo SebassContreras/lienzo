@@ -158,7 +158,13 @@ export async function buildCompact(
           ignoredNotice({ ...f, path: join("compact", idPath(input, f.path)) }),
         ),
         ...ignoredFields(full.scene, scene).map(ignoredNotice),
-        ...full.notices,
+        // the expansion's own notices start with the element's index path
+        ...full.notices.map((n) =>
+          n.replace(
+            /^((?:elements|symbols)\.[^\s:]*): /,
+            (_m, path: string) => `${join("compact", idPath(input, path))}: `,
+          ),
+        ),
         ...(scene.shots ?? []).flatMap((sh) => cameraOutsideShot(sh) ?? []),
       ];
     } catch (err: unknown) {

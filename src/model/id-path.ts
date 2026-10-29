@@ -6,10 +6,16 @@
  */
 export function idPath(data: unknown, path: string): string {
   const parts = path.split(".");
-  if (parts[0] !== "elements") return path;
+  const symbol = parts[0] === "symbols" && parts[2] === "children";
+  if (parts[0] !== "elements" && !symbol) return path;
+  const head = symbol ? parts.slice(0, 3) : parts.slice(0, 1);
   const ids: string[] = [];
-  let list = (data as { elements?: unknown })?.elements;
-  let i = 1;
+  let list = symbol
+    ? (data as { symbols?: Record<string, { children?: unknown }> })?.symbols?.[
+        parts[1] as string
+      ]?.children
+    : (data as { elements?: unknown })?.elements;
+  let i = head.length;
   while (Array.isArray(list) && /^\d+$/.test(parts[i] ?? "")) {
     const id = (list[Number(parts[i])] as { id?: unknown } | undefined)?.id;
     const twice = (list as { id?: unknown }[]).filter((el) => el?.id === id);
@@ -21,5 +27,5 @@ export function idPath(data: unknown, path: string): string {
     i++;
   }
   if (ids.length === 0) return path;
-  return ["elements", ids.join("/"), ...parts.slice(i)].join(".");
+  return [...head, ids.join("/"), ...parts.slice(i)].join(".");
 }
