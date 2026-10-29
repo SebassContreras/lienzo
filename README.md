@@ -270,7 +270,7 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
   `font_list`,
   `font_install` (a Google family, or a local `file`, which is one weight)
 
-Rules every writer applies (spec 081): element ids are unique in a scene; a shot lasts (`end` is
+Rules every writer applies (spec 081): element ids are unique in a scene and a shot or element id is not empty, not padded with spaces and has no `/` or control character (only ids a write adds or changes are checked, so a stored scene still opens); a shot lasts (`end` is
 after `start`) and its id is unique; a scene is at most 7680 px a side, 60 fps and 600 s; an
 asset keeps its type on `asset_rename`, and `asset_add` takes audio only with an audio header;
 a user preset cannot take a built-in preset's name; a failing call lists every problem it finds,
