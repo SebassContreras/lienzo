@@ -37,3 +37,9 @@ Anything worth doing later. (The two earlier ideas are specs 083 and 084.)
 - `scene_inspect_layout` boxes at t=0 are `w: 0` / `h: 0` for an `in` animation that starts at
   scale 0, which reads as a layout fault. Mark the box as animating, or also return its resting
   box. (QA 2026-10-29)
+- A gap between two shots (a part of the scene no shot owns) gives no notice; it may be wanted
+  (a still background) or a slip. Decide whether it is noticed, or only listed by
+  `scene_inspect_layout`. (QA 2026-10-29)
+- The notice about a shot's tracks that `shot_set remove` moves names the group, not the
+  child whose keys were cut at the scene's start (a key placed before its shot's start).
+  (QA 2026-10-29)
