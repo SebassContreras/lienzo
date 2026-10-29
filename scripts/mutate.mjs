@@ -8,8 +8,8 @@ if (targets.length === 0) {
   console.error("Usage: pnpm test:mutate <folder|file>… (e.g. src/model)");
   process.exit(2);
 }
-const mutate = [...targets, "!src/**/*.test.{ts,tsx}"].join(",");
-const run = spawnSync("pnpm", ["exec", "stryker", "run", "--mutate", mutate], {
+const mutate = [...targets, "!src/**/*.test.ts", "!src/**/*.test.tsx"].join(",");
+const run = spawnSync("pnpm", ["exec", "stryker", "run", "--mutate", mutate, "--concurrency", process.env.STRYKER_CONCURRENCY ?? "15"], {
   stdio: "inherit",
   shell: true,
 });
