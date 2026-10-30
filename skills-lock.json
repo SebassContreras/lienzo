@@ -5,19 +5,25 @@
       "source": "SebassContreras/spectrace",
       "sourceType": "github",
       "skillPath": "skills/spectrace-change/SKILL.md",
-      "computedHash": "92a60ae82138028c6f6feaaa8e0043656185e196caf0be2dd8d5014fb4b11047"
+      "computedHash": "43a76353d56b6b4ef93bd9c15cc7ebceba86896c900e13714cbf070c58e02a37"
+    },
+    "spectrace-init": {
+      "source": "SebassContreras/spectrace",
+      "sourceType": "github",
+      "skillPath": "skills/spectrace-init/SKILL.md",
+      "computedHash": "2b110316c1e7251979efaf6768311d2cc21a510fa1c50b44b018552b81e7e488"
     },
     "spectrace-plan": {
       "source": "SebassContreras/spectrace",
       "sourceType": "github",
       "skillPath": "skills/spectrace-plan/SKILL.md",
-      "computedHash": "b19cf646ae9e4815245dcc48ef7190f398df8dd4e2d7d3e620dc0e14e0682e60"
+      "computedHash": "4cd5dab0029371791c4df243a5f367dfc411f03f37b5eda8c20c9278b8815c54"
     },
     "spectrace-review": {
       "source": "SebassContreras/spectrace",
       "sourceType": "github",
       "skillPath": "skills/spectrace-review/SKILL.md",
-      "computedHash": "674c9995b86b2688698b17646cca1574e18aec21b9962e04c1849ac8672ddc53"
+      "computedHash": "906d28112ca481b7f586374a0fba4bcb55c35b2bd204b89271956efe3f4c5b95"
     }
   }
 }
