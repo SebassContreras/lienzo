@@ -133,7 +133,7 @@ contract test that walks the tools with the same wrong inputs.
 - [x] 074/T001 [agent] Sizes: `parseSize` in `src/model/size.ts`, ratios, reject unknown — covers R1, R2, D2
 - [x] 074/T002 [agent] Scene defaults from the project in `scene_create` and `scene_build` — covers R3, D3
 - [x] 074/T003 [agent] Reject unknown shots, icons and loose line ends (`checkReferences`); icon case normalized — covers R1, D1
-- [x] 074/T004 [agent] Preset tracks start at the element's shot — covers R4, D4
+- [x] 074/T004 [agent] Handle the generalized equivalence class of missing project assets in `scene_export` and `scene_preview`: preset tracks start at the element's shot and missing assets render fallbacks with notices — covers R4, D4
 - [x] 074/T005 [agent] Asset refs stored in one form — covers R5, D5
 - [x] 074/T006 [agent] One `slugify` with accents folded, legacy read fallback — covers R6, D6
 - [x] 074/T007 [agent] Compact `from`/`to` per kind — covers R7, D7

@@ -6,19 +6,19 @@ This document defines the craftsmanship, code quality standards, and software en
 
 ## ⚙️ Core Engineering Principles
 
-### 1. KISS / YAGNI — No Over-Engineering
+### 1. KISS / YAGNI — No Over-Engineering & Avoid Speculative Generality
 - Apply every principle with proportionality.
 - Do not create premature interfaces, adapters, or abstractions for a single use case or a hypothetical future.
 - Introduce an abstraction **only** when there are 2+ concrete uses, 2+ distinct vendors/implementations, or when automated testing genuinely requires a boundary seam.
 - **Simple > clever:** Prefer readable, straightforward code over complex metaprogramming or speculative design patterns.
 
 ### 2. SRP / Separation of Concerns
-- One file / module / class = one single responsibility.
+- One file / module / class / task = one single responsibility.
 - Maximize cohesion, minimize coupling. If a unit does two unrelated things, split it cleanly.
 - Keep business domain logic, data persistence, and transport/presentation layers strictly separated.
 
 ### 3. DRY via Composition, Not Inheritance
-- Avoid code duplication by extracting shared logic into small, injectable utilities, services, or helper functions.
+- Avoid code duplication by extracting shared logic into small, injectable utilities, services, or pure helper functions.
 - Avoid deep inheritance hierarchies. Default to **composition + dependency injection**.
 
 ### 4. Service Layer + Anti-Corruption / Dependency Inversion (DIP)
@@ -26,18 +26,37 @@ This document defines the craftsmanship, code quality standards, and software en
 - Place an anti-corruption layer in `services/` or `adapters/` declaring your own project-scoped interface wrapper.
 - Inject that interface into domain logic. Vendors must be swappable without altering domain code.
 
-### 5. Follow the Stack's Standards
-- Strictly adhere to official conventions, idiomatic patterns, and style guides of the language and framework in use.
+### 5. Simplicity / Small Interfaces / Pure Functions (Doubt)
+- Prefer small, minimal seams. Every state transformation should be pure and deterministic where feasible.
+- Functions take plain data and return plain data without hidden context or ambient side-effects.
+
+### 6. Systematic Input Partitioning, Contracts & Invariants
+- (Governed in detail by [TESTING.md](./TESTING.md)) Cover nominal cases, boundary values, malformed/empty inputs, and compound errors.
+- Contract test suites over fragmented tests; root-cause regressions assert generalized equivalence classes rather than isolated payloads.
+
+### 7. Test Hygiene & Parameterization
+- (Governed in detail by [TESTING.md](./TESTING.md)) AAA / Given-When-Then structure with descriptive behavioral names.
+- Parameterized table-driven tests (`test.each`) over copy-pasted blocks; no conditional branches (`if`/`else`) or manual loops in test execution blocks.
+- Boundary mocking only: never mock the unit under test.
+
+### 8. Follow the Stack's Standards
+- Strictly adhere to official conventions, idiomatic patterns, and style guides of the language and framework in use (TypeScript, Vite, Vitest, Biome).
 - Harmonize with the existing codebase before introducing external stylistic preferences.
 - Standard casing:
   - `kebab-case`: files, directories, Markdown documents.
   - `PascalCase`: classes, types, interfaces, components.
   - `camelCase`: functions, methods, variables, properties.
+  - `snake_case`: MCP tool names, JSON response error codes.
   - `UPPER_SNAKE_CASE`: true constants, configuration globals, enum keys.
+- Language policy: UI text and error messages in Spanish (A16); code, docs, and commits in English.
 
-### 6. Document Trade-offs
+### 9. Research & Cite Sources for Non-Obvious Decisions
+- Base non-obvious architecture, protocol, and format choices on official specifications, RFCs, issue trackers, or domain standards (e.g. NLE timeline conventions, SMPTE, Vite chunking).
+- Cite documentation URLs or issue references directly in the spec's Design section or code comments.
+
+### 10. Document Trade-offs (Pros, Cons, and Mitigations)
 - Every significant technical choice has trade-offs.
-- Document pros, cons, and active mitigations directly in the relevant spec, code comments, or `CHANGES.md`.
+- Document pros, cons, and active mitigations directly in the relevant spec (`D<n>`), code comments, or `CHANGES.md`.
 
 ---
 

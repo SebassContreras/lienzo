@@ -17,7 +17,7 @@ A QA run of the tools on a scratch project found seven rough edges. When this sp
 - D2 (R2, R3): `impliedFields(el, input)` (`src/service/compact/implied.ts`) runs after the input is merged into a kind's default element, in `buildElement` and `element_add`: any object of the input holding `color` whose element counterpart has a boolean `gradient`, with no gradient key in the input, gets `gradient: false`; a group with no `cw`/`ch` in the input takes its `w`/`h`. Presets are left alone, their look is the recipe's.
   - _Trade-offs_: A compact rect with only a color no longer shows the library's default gradient.
   - _Mitigation_: Writing `gradient: true` (or `color2`/`stops`) keeps it; the editor library is unchanged.
-- D3 (R4): `element_add` checks `boxOf` of the placed top-level element against the scene size and adds a notice with the box.
+- D3 (R4): Off-canvas bounding checks are extracted to a pure helper in `src/model/bounds.ts`; `element_add` and writer tools compose this shared helper to return notices.
 - D4 (R5): `element_add` sets the element's id from `patch.id`, failing with `duplicate_id` if any element at any depth has it.
 - D5 (R6): `placeAt` and `layoutBoxes` round with `round2`.
 - D6 (R7): `scene_create` deep-merges an object `data.background` onto the defaults' background before validating.
@@ -25,7 +25,7 @@ A QA run of the tools on a scratch project found seven rough edges. When this sp
 ## Tasks
 - [x] 068/T001 [agent] Ordered gradient stops — covers R1, D1
 - [x] 068/T002 [agent] Implied flat fill and group content size — covers R2, R3, D2
-- [x] 068/T003 [agent] element_add: out-of-canvas notice and `patch.id` — covers R4, R5, D3, D4
+- [x] 068/T003 [agent] In `element_add`, enforce the equivalence class of explicit element identifiers (`patch.id` preserved across element kinds) and calculate boundary notices for off-canvas coordinates — covers R4, R5, D3, D4
 - [x] 068/T004 [agent] Rounded placement and boxes; partial background in scene_create — covers R6, R7, D5, D6
 - [x] 068/T005 [agent] Verify: typecheck, lint of touched files, tests — covers R1, R2, R3, R4, R5, R6, R7
       verified: `pnpm typecheck`, biome on the touched files, `pnpm test` (1119 tests) — found one `at` centre test off by 0.004 px from the rounding, loosened to two decimals in the T004 commit

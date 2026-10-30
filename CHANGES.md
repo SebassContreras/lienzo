@@ -109,6 +109,12 @@ Why: `src/service` held 165 files, 32 of them loose, and a tool, its logic and i
 - Tasks: 082/T005–T015 move the files; 082/T015 rewrites the A20 path
 
 
+## 2026-10-30 — engineering principles alignment across specs and contracts (085)
+- Scope: `ENGINEERING.md`, `planning/specs/050-084`.
+- What Changed: `ENGINEERING.md` updated to enumerate all 10 Core Engineering Principles explicitly, restoring P5 (Small Interfaces & Pure Functions), linking P6/P7 to `TESTING.md` standards, defining P8 (Stack Standards), P9 (Research & Citations), and P10 (Document Trade-offs). Historical specs 050, 065–084 updated to align Requirements, Design, and Tasks with these principles (eliminating single-use abstractions, compound tasks, anecdotal bug fixes, unparameterized test tasks, and uncited decisions).
+- Why: Systematic audit against the craftsmanship and engineering principles of the repository.
+- Replaced Items: Incomplete 6-principle template in `ENGINEERING.md`.
+
 ## 2026-10-29 — move to the current spectrace governance
 - Scope: repository governance, `planning/`, git tooling.
 - What Changed: decision records moved from `planning/product.md`, `planning/architecture.md` and `planning/changes.md` to seven root contracts (`AGENTS.md`, `PRODUCT.md`, `ARCHITECTURE.md`, `ENGINEERING.md`, `DESIGN.md`, `TESTING.md`, `CHANGES.md`) plus `.agentignore`; `planning/` keeps only the roadmap and the specs; `planning/qa-log.md` moved to `docs/qa-log.md`; the three spectrace skills are installed. The git hooks (`.githooks/`), the `Spec:` commit trailer, the `spectrace` workflow, the `core.hooksPath` setting and the automatic roadmap `Status` are removed: commits are plain Conventional Commits and `Status` is edited by hand. The `## Docs` list of the product file and the mandatory `reviewed:` line of `Review:` tasks are gone; a docs task is added when an API, command or architectural boundary changes (`Verify:` and `verified:` stay by convention).

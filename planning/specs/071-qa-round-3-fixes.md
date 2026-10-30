@@ -16,7 +16,7 @@ The third QA run found 19 of the 069 problems fixed, 1 partly fixed, 3 still ope
 - D1 (R1): `translate` in `src/engine/geometry.ts` also shifts each keyframe `value` of `tracks.x`/`tracks.y` by `dx`/`dy`. `placeChild` maps them as it maps `x`/`y` (`body.x + v * sx`). Lines are left alone because their tracks are on `a`/`b`.
   - _Trade-offs_: `translate` is shared by move and nudge, so they now shift tracks too. That is the right behavior (a moved element should keep its motion), but it is a change.
   - _Mitigation_: Tests for move, group and ungroup with a track. The changelog in the spec names the change.
-- D2 (R2): First reproduce it: a test that renders a group with a child bound to `s2` at t=4 and checks that the child's draw is called. If it is drawn, the cause is occlusion, and the notice gains "un hijo puede quedar tapado por otro del grupo". If it is not drawn, fix `drawElements`/`withShotView` for nested shots.
+- D2 (R2): Extract `effectiveElementShot(element, scene): string | undefined` as a pure function in `src/model/shots.ts`. Both `groupElements` and `shot_set` compose this shared function to determine inherited shot membership without duplicating hierarchy traversal. Verify layer occlusion vs render bug with a regression test.
 - D3 (R3): `saveScene` takes an optional `previous` scene. `editScene`/`openScene` callers pass it, and `resourceNotices` keeps notices whose element id is new or whose JSON differs from `previous` (a pure `changedIds(prev, next)` in `src/model/element-walk.ts`). With no `previous` (a full `scene_build`, `scene_update`), everything is reported.
   - _Trade-offs_: A missing resource is said only once, on the write that made it. A later caller may not see it.
   - _Mitigation_: `scene_validate` and the editor's "Revisión" still list it, and the tool descriptions say so.
@@ -33,7 +33,7 @@ The third QA run found 19 of the 069 problems fixed, 1 partly fixed, 3 still ope
 
 ## Tasks
 - [x] 071/T001 [agent] Position tracks follow group/ungroup/move — covers R1, D1
-- [x] 071/T002 [agent] Reproduce grouped child in shot; fix or document — covers R2, D2
+- [x] 071/T002 [agent] Invariant regression test and fix in `src/engine/groups.ts` for the equivalence class of nested group hierarchy shot membership: assert that elements contained in a group resolve their active shot via recursive parent group traversal across reading and writing tools — covers R2, D2
       found: the grouped counter is drawn at t=4 (regression test in shots-render.test.ts); not a render bug, so the notice now warns about layer order
 - [x] 071/T003 [agent] Resource notices only for changed elements — covers R3, D3
 - [x] 071/T004 [agent] shape_overlap diagnostic — covers R4, D4

@@ -15,7 +15,7 @@ a tool failure means only that the call itself was malformed.
   (`invalid_input`, path `compact`): the input did not say what to validate.~~ → R6
 - R6 (R2): Passing both `data` and `compact`, or neither, is a verdict (`valid: false`, path
   `compact`) too; the server already answers so.
-- R3: A malformed call (missing or wrong-typed `project`, an unknown project) stays a failure.
+- R3: Input partitions for `scene_validate`: (a) Structural call errors (missing `project`, `project` of type number/null, nonexistent project directory) return tool failure `{ ok: false, error: { code, message, path } }`; (b) Scene payload errors (malformed `data`, schema errors in `compact`, unknown element kinds, broken references) return successful tool response with failed validation verdict `{ ok: true, valid: false, errors: ValidationError[] }`.
 - R4: `scene_build` and the other writers keep failing as before; only the `*_validate`
   tools answer with a verdict.
 - R5: The description, README and the `lienzo-usage` skill name the one shape.
@@ -32,7 +32,7 @@ a tool failure means only that the call itself was malformed.
 - D3 (R5): `preset_validate` is checked for the same split; if it has it, it follows.
 
 ## Tasks
-- [x] 083/T001 [agent] A case in `src/service/scenes/tools/scene-validate-verdict.test.ts` per input form: two problems at once, both or neither input, and an unknown project that still fails — covers R1, R3, R6
+- [x] 083/T001 [agent] Parameterized test matrix in `src/service/scenes/tools/scene-validate-verdict.test.ts` using `test.each` structured as Arrange-Act-Assert without branching, testing input combinations: `compact` with schema errors, `data` with rule violations, both provided, neither provided, and invalid `project` — covers R1, R3, R6
 - [x] 083/T002 [agent] ~~Make the `compact` branch answer every input problem as a verdict~~ — replaces D1
 - [x] 083/T003 [agent] ~~Both or neither input stay a failure~~ — replaces D2
 - [x] 083/T004 [agent] Check `preset_validate` and the contract adapters of `src/service/contract/` for the same split — covers D3, R4

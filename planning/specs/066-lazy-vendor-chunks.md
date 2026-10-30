@@ -8,14 +8,14 @@
 - R2: A 3D element shows its placeholder until three.js has loaded, then its picture, with no reload.
 - R3: An export, a scene thumbnail or a headless render of a scene with a 3D element waits for three.js, so no frame shows the placeholder.
 - R4: An MP4/WebM export loads Mediabunny when it starts; PNG and GIF exports never load it.
-- ~~R5: `pnpm build` prints no "chunks are larger than 500 kB" warning, without raising `chunkSizeWarningLimit`.~~ → R6
+- R5: While a component kind's chunk is loading asynchronously, the canvas displays a bounding placeholder with the element's cached dimensions; the inspector shows a loading state until the chunk resolves.
 - R6: `pnpm build` prints no chunk-size warning; no chunk loaded at start passes 500 kB, and the limit is raised only for a single on-demand module that cannot be split, with the reason in the config.
 - R7: The `icon` and `badge` elements and the icon picker draw lucide icons without the whole icon set in the startup bundle; exports never miss an icon.
 
 ## Design
 ### Approach
 
-- D1 (R1, R2): The three.js half of the 3D element (`draw`'s scene setup, `geometry.ts`, `model.ts`, `font.ts`, `renderer.ts`) moves behind one module, `src/components/three/runtime.ts`, that exports `renderThree(el, t, duration)`. `draw.ts` keeps only the 2D part (transform, `drawImage`, placeholder) and reaches the runtime through a dynamic `import()`, started on the first draw and remembered in a module variable; until it resolves, `draw` paints the placeholder, as it already does while a model or font loads. The stage redraws on every animation frame, so the picture appears once the import resolves. `SHAPES`, `Primitive` and `SIZE` move to `shapes.ts` (no three.js), so the descriptor keeps loading in plain Node (A20). The `.glb` and `.woff` asset loaders stay registered at start, and import `model.ts`/`font.ts` lazily inside the loader.
+- D1 (R1, R2): The three.js half of the 3D element (`draw`'s scene setup, `geometry.ts`, `model.ts`, `font.ts`, `renderer.ts`) moves behind one module, `src/components/three/runtime.ts`, that exports `renderThree(el, t, duration)`. `draw.ts` keeps only the 2D part (transform, `drawImage`, placeholder) and reaches the runtime through a dynamic `import()`, started on the first draw and remembered in a module variable; until it resolves, `draw` paints the placeholder, as it already does while a model or font loads (see [Vite Dynamic Import Chunking](https://vite.dev/guide/features#dynamic-import)). The stage redraws on every animation frame, so the picture appears once the import resolves. `SHAPES`, `Primitive` and `SIZE` move to `shapes.ts` (no three.js), so the descriptor keeps loading in plain Node (A20). The `.glb` and `.woff` asset loaders stay registered at start, and import `model.ts`/`font.ts` lazily inside the loader.
   - _Trade-offs_: The first 3D element in a session shows the placeholder for the time three.js takes to download (local, tens of milliseconds).
   - _Mitigation_: It is the same placeholder already shown while a model loads; exports never see it (D2).
 

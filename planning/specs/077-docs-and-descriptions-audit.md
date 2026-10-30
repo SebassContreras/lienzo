@@ -30,7 +30,10 @@ tool description matches the code, checked one by one.
   `docs/components.md`, the usage skill, `schemas/compact-scene.json` and `planning/`.
 
 ## Tasks
-- [x] 077/T001 [agent] Tool descriptions read one by one and fixed — covers R1, D1
+- [x] 077/T001a [agent] Audit and update descriptions for scene tools (`scene_*`) — covers R1, D1
+- [x] 077/T001b [agent] Audit and update descriptions for element tools (`element_*`) — covers R1, D1
+- [x] 077/T001c [agent] Audit and update descriptions for shot and keyframe tools (`shot_*`, `keyframe_*`) — covers R1, D1
+- [x] 077/T001d [agent] Audit and update descriptions for project, preset and asset tools (`project_*`, `preset_*`, `asset_*`) — covers R1, D1
 - [x] 077/T002 [agent] README, usage skill, docs/components.md read and fixed — covers R2, D2
 - [x] 077/T003 [agent] architecture.md A7@4 and A27, changes.md, product.md, AGENTS.md — covers R2, R3, R4, D3, D4
 - [x] 077/T004 [agent] Verify: typecheck, lint on touched files, tests, the description dump re-read, every tool named in README and the skill — covers R1, R2, R3, R4

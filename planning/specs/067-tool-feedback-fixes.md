@@ -34,7 +34,7 @@ Building scenes through the tools left six open points. Each was reproduced with
   - _Mitigation_: Files are local; reinstalling a family with `font_install` gives the ttf, and the estimate notice already says how to check. A woff2 decoder (`woff2-encoder`, MIT) was considered and left out until a hand-uploaded woff2 needs measuring (YAGNI).
 
 ## Tasks
-- [x] 067/T001 [agent] Failing tests reproducing R1–R5 — covers R1, R2, R3, R4, R5
+- [x] 067/T001 [agent] Table-driven regression tests in `src/service/tools/feedback.test.ts` using `test.each` covering input partitions for R1–R5: radial gradient edge stops, shot camera layout boxes, Levenshtein field suggestions, font stack fallback, and installed font metrics — covers R1, R2, R3, R4, R5
 - [x] 067/T002 [agent] Radial reach for inscribed shapes — covers D1
 - [x] 067/T003 [agent] Shot camera in layout boxes — covers D2
 - [x] 067/T004 [agent] Field suggestions and compact notices in `scene_validate` — covers D3

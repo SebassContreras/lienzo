@@ -6,7 +6,7 @@ User feedback showed friction in tool ergonomics and defaults: `scene_create` re
 ## Requirements
 - R1: `scene_create` accepts a partial background (a color string or an object with any subset of fields) and merges it onto the resolved base background instead of failing with missing required field errors.
 - R2: A new scene inheriting project defaults (`scene_create` without a custom background and `openBlankScene` in the editor) uses the project palette's background color as a solid background (no unwanted gradient or dots) when `palette.background` is configured.
-- R3: The `counter` component descriptor defaults to `suffix: ""` (clean number) instead of `"+"`.
+- R3: The `counter` component descriptor specifies `suffix: ""` as default. Invariant: when `suffix` is omitted or explicitly `""`, rendered output displays the formatted number without trailing characters; custom strings (e.g. `"+"`, `"%"`, `" USD"`, `"🚀"`) append without additional spacing.
 - R4: An easing specified on the last keyframe of any element track emits an explanatory notice in `scene_validate`, `scene_build`, `keyframe_set` and inspector review explaining that easings in Lienzo apply to the segment leading to the next keyframe.
 
 ## Design
