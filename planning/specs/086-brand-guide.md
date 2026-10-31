@@ -174,6 +174,6 @@ the same text; `scene_generate_speech` writes into `voice/<scene>/`; `pnpm test`
 - [x] 086/T013 [human] Approve or correct the T012 draft — covers R4
 - [x] 086/T014 [agent] `ringana`: save the approved guide with `project_update` → `guide` — covers R4, D4
 - [x] 086/T015 [agent] `ringana`: move the 6 clips used by `omega`/`omega-v2` to `voice/omega-v2/` with `asset_rename` and list the 10 clips no scene uses — covers R4, R5, D4
-- [ ] 086/T016 [human] Confirm which of the 10 unused clips to delete — covers R4
+- [x] 086/T016 [human] Confirm which of the 10 unused clips to delete — covers R4
 - [x] 086/T017 [agent] Delete the clips confirmed in T016 with `asset_delete` — covers R4, D4
 - [x] 086/T018 [agent] Verify: `project_inspect` on `ringana` shows the guide, no font notices and only `voice/omega-v2/` audio; `pnpm test` and `pnpm typecheck` pass — covers Goal, R4
