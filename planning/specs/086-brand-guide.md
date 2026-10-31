@@ -62,11 +62,11 @@ the same text; `scene_generate_speech` writes into `voice/<scene>/`; `pnpm test`
   Invariant: each notice names the family and, for weights, the missing weights.
 - R3: `scene_generate_speech` saves its clips in `assets/voice/<scene>/`, where `<scene>` is the
   scene's stored name (a slug, so always a valid asset segment: `slugify`, 074/D6). The `assetId`
-  it returns, and the `src` it writes into `scene.audio` (default) or the new `audioTracks` entry
-  (`asTrack: true`), include the folder.
+  it returns, and writes into `scene.audio` (default) or the new `audioTracks` entry
+  (`asTrack: true`), includes the folder.
   Partitions: `asTrack` absent / `true`; scene name given as stored / given in a form that folds
   (`Caja Ámbar` → `voice/caja-ambar/`).
-  Invariants: every `src` written resolves to a file under `assets/voice/<scene>/`; the same
+  Invariants: every `assetId` written resolves to a file under `assets/voice/<scene>/`; the same
   script and voice for the same scene yield the same path and one file.
 - R4: The `ringana` project is clean: the manifest's `description` names the brand and no video;
   `canvas` is 1080×1920 / 30 fps / 20 s (D6); `fonts` declares Montserrat 800 (heading) and 500
@@ -96,12 +96,13 @@ the same text; `scene_generate_speech` writes into `voice/<scene>/`; `pnpm test`
     the guide first and the manifest second. Residual risk: an I/O failure after `brand.md` is
     written leaves the new guide with the old manifest; the error says which file was written,
     and repeating the call converges.
-- D2 (R2): A pure function `brandFontNotices(declared, installed)` in
+- D2 (R2): A pure function `brandFontNotices(declared, available, own)` in
   `src/service/fonts/font-check.ts` composes `missingFontNotice` (declared, not installed) and
   `missingBrandWeightNotices` (declared weight missing) and adds the one new class, an installed
-  project family not declared. `installed` is the project's own faces
-  (`availableFonts(ctx.fonts, project)` restricted to `projects/<project>/fonts/`), so bundled
-  fonts never produce an "installed not declared" notice. `project_update` replaces its inline
+  project family not declared. `available` is every face the project can use
+  (`availableFonts`, bundled and global included) and `own` the files in
+  `projects/<project>/fonts/`, so bundled fonts never produce an "installed not declared"
+  notice; `projectFontNotices` (`font-install.ts`) reads both from the font store. `project_update` replaces its inline
   notice code with it and `project_inspect` adds it to `notices`, so one rule has one place (075).
   _(source: 070/D2 `missingFontNotice`, 081/D8 `missingBrandWeightNotices`)_
   - _Pros_: the gap seen in `ringana` is reported on every read and write, with no new tool and
@@ -158,15 +159,15 @@ the same text; `scene_generate_speech` writes into `voice/<scene>/`; `pnpm test`
     real retention can retune it.
 
 ## Tasks
-- [ ] 086/T001 [agent] `ProjectStore`: read `brand.md` into `get(...).guide` (`null` when missing) and add `writeGuide(slug, text | null)` (`null` removes the file); it applies no content rules — covers R1, D1
-- [ ] 086/T002 [agent] Pure `guideValue(input)` (`""` → `null`, `guide_too_long` over 20 000 code units); `project_create` and `project_update` take optional `guide`, validate every input before writing, write guide then manifest, and return `guide`; update both tool descriptions, `README.md` and the `lienzo-usage` skill — covers R1, R6, D1
-- [ ] 086/T003 [agent] `project_inspect`: return `guide` (`null` when missing); update its description, `README.md` and the `lienzo-usage` skill — covers R1, R6, D1
-- [ ] 086/T004 [agent] Table test (`test.each`) in `project-tools.test.ts`, real `ProjectStore` on a temp dir, no mocks: rows absent / `null` / `""` / whitespace only / normal / 19 999 / 20 000 / 20 001 / non-BMP at the limit, across create, update and inspect; asserts the R1 invariants: round-trip, absent keeps, an invalid call writes nothing (compound row: long guide + invalid palette), create with `null` or `""` makes no file. Schema-type errors stay in `inputs.test.ts` — covers R1
-- [ ] 086/T005 [agent] `brandFontNotices` in `font-check.ts`, composed from `missingFontNotice` and `missingBrandWeightNotices` plus the "installed not declared" class over the project's own faces; `project_update` replaces its inline notice code with it and `project_inspect` adds it to `notices`; update both tool descriptions, `README.md` and the `lienzo-usage` skill — covers R2, R6, D2
-- [ ] 086/T006 [agent] Table test (`test.each`) in `font-check.test.ts`: declared & installed, declared not installed, installed not declared, neither, declared weight missing, installed weight not declared, case-only difference, bundled not declared; asserts each notice names the family and missing weights; one row runs `project_update` and `project_inspect` on the same state and expects equal notices — covers R2
-- [ ] 086/T007 [agent] `saveAudioAsset(dir, bytes, format)`; `scene_generate_speech` resolves `assets/voice/<scene>/` with `ctx.projects.resolvePath` and the scene's stored name; update its description, `README.md` and the `lienzo-usage` skill — covers R3, R6, D3
-- [ ] 086/T008 [agent] Table test (`test.each`) of speech output paths, with only the injected `TtsService` stubbed: rows `asTrack` absent / `true`, scene name as stored / folded (`Caja Ámbar`); asserts `assetId` and the `src` written into `scene.audio` or `audioTracks` include `voice/<scene>/` and resolve to a file, and that the same script twice yields one path and one file — covers R3
-- [ ] 086/T009 [agent] Update `ARCHITECTURE.md` A7 and the project layout (`brand.md`, the asset folder convention) and the convention section of the `lienzo-usage` skill; log the change in `CHANGES.md` — covers R5, R6, D5
+- [x] 086/T001 [agent] `ProjectStore`: read `brand.md` into `get(...).guide` (`null` when missing) and add `writeGuide(slug, text | null)` (`null` removes the file); it applies no content rules — covers R1, D1
+- [x] 086/T002 [agent] Pure `guideValue(input)` (`""` → `null`, `guide_too_long` over 20 000 code units); `project_create` and `project_update` take optional `guide`, validate every input before writing, write guide then manifest, and return `guide`; update both tool descriptions, `README.md` and the `lienzo-usage` skill — covers R1, R6, D1
+- [x] 086/T003 [agent] `project_inspect`: return `guide` (`null` when missing); update its description, `README.md` and the `lienzo-usage` skill — covers R1, R6, D1
+- [x] 086/T004 [agent] Table test (`test.each`) in `guide.test.ts` (beside `guide.ts`), real `ProjectStore` on a temp dir, no mocks: rows absent / `null` / `""` / whitespace only / normal / 19 999 / 20 000 / 20 001 / non-BMP at the limit, across create, update and inspect; asserts the R1 invariants: round-trip, absent keeps, an invalid call writes nothing (compound row: long guide + invalid palette), create with `null` or `""` makes no file. Schema-type errors stay in `inputs.test.ts` — covers R1
+- [x] 086/T005 [agent] `brandFontNotices` in `font-check.ts`, composed from `missingFontNotice` and `missingBrandWeightNotices` plus the "installed not declared" class over the project's own faces; `project_update` replaces its inline notice code with it and `project_inspect` adds it to `notices`; update both tool descriptions, `README.md` and the `lienzo-usage` skill — covers R2, R6, D2
+- [x] 086/T006 [agent] Table test (`test.each`) in `font-check.test.ts`: declared & installed, declared not installed, installed not declared, neither, declared weight missing, installed weight not declared, case-only difference, bundled not declared; asserts each notice names the family and missing weights; one row runs `project_update` and `project_inspect` on the same state and expects equal notices — covers R2
+- [x] 086/T007 [agent] `saveAudioAsset(dir, bytes, format)`; `scene_generate_speech` resolves `assets/voice/<scene>/` with `ctx.projects.resolvePath` and the scene's stored name; update its description, `README.md` and the `lienzo-usage` skill — covers R3, R6, D3
+- [x] 086/T008 [agent] Table test (`test.each`) of speech output paths, with only the injected `TtsService` stubbed: rows `asTrack` absent / `true`, scene name as stored / folded (`Caja Ámbar`); in `speech-folder.test.ts`; asserts the `assetId` returned and written into `scene.audio` or `audioTracks` includes `voice/<scene>/` and resolve to a file, and that the same script twice yields one path and one file — covers R3
+- [x] 086/T009 [agent] Update `ARCHITECTURE.md` A7 and the project layout (`brand.md`, the asset folder convention) and the convention section of the `lienzo-usage` skill; log the change in `CHANGES.md` — covers R5, R6, D5
 - [ ] 086/T010 [human] Give the RINGANA brand palette (hex per role) and any official logo file, or the page to take them from — covers R4
 - [ ] 086/T011 [agent] `ringana`: `project_update` with a brand description, canvas defaults 1080×1920 / 30 fps / 20 s, fonts Montserrat heading 800 and body 500, and the T010 palette — covers R4, D4, D6
 - [ ] 086/T012 [agent] `ringana`: draft `brand.md` from the omega brief (audience, tone, on-screen language English, "RINGANA BEYOND omega" naming, the food-supplement disclaimer, attributing RINGANA's own study, text-only brand mark until a logo exists, preferred style "Bright science", reel length 15–30 s by default and 45–60 s only when reach is the goal, never over 90 s) and show it to the user — covers R4, D4, D6

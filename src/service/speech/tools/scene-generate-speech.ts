@@ -1,4 +1,6 @@
+import { join } from "node:path";
 import { z } from "zod";
+import { slugify } from "../../../presets/slug.ts";
 import { inProject, PROJECT } from "../../core/project-scope.ts";
 import { defineTool, fail } from "../../core/registry.ts";
 import { round2 } from "../../core/round.ts";
@@ -36,7 +38,9 @@ export function createSceneGenerateSpeechTool(
       "`startOffset` (keeping `scene.audio` and other tracks) and appends its cues, so a " +
       "voice-over with one clip per shot is one call per clip. Cues fill the clip, from " +
       "`startOffset` to `startOffset` plus the audio's length, and keep unique ids when clips are " +
-      "appended. The audio is stored with its project prefix. `audioDuration` is measured " +
+      "appended. The clip is saved in assets/voice/<scene>/ (the scene's stored name, e.g. " +
+      "voice/caja-ambar/) named by its content hash; `assetId` is its `src`, with the project " +
+      "prefix. `audioDuration` is measured " +
       "from the MP3/WAV frames.",
     input: z.object({
       scene: z.string().min(1),
@@ -142,15 +146,16 @@ export function createSceneGenerateSpeechTool(
               )),
       );
 
-      // 5. Save audio buffer into projects/<slug>/assets/
+      // 5. Save the clip into assets/voice/<scene>/, the scene's stored name (086/D3)
+      const folder = `voice/${slugify(input.scene)}`;
       let assetId: string;
       try {
-        assetId = await saveAudioAsset(
-          ctx.root,
+        const file = await saveAudioAsset(
+          join(ctx.projects.resolvePath(input.project, "assets"), folder),
           speechResult.audioBuffer,
           speechResult.format,
-          effectiveCtx.project,
         );
+        assetId = `/projects/${input.project}/assets/${folder}/${file}`;
       } catch (err) {
         return fail(
           "asset_save_failed",

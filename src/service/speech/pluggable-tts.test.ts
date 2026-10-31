@@ -194,6 +194,7 @@ describe("Pluggable TTS Providers & Local Adapter", () => {
         },
         projects: {
           get: async () => ({}),
+          resolvePath: () => "/tmp/test/assets",
           checkAsset: async () => ({ ok: true }),
           projectStore: async () => ({
             animPresets: async () => [],
@@ -257,6 +258,7 @@ describe("Pluggable TTS Providers & Local Adapter", () => {
         },
         projects: {
           get: async () => ({}),
+          resolvePath: () => "/tmp/test/assets",
           checkAsset: async () => ({ ok: true }),
           projectStore: async () => ({
             animPresets: async () => [],

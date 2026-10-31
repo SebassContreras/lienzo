@@ -30,6 +30,8 @@ export type ProjectSummary = {
 
 export type ProjectDetails = {
   manifest: ProjectManifest;
+  /** The brand guide, `brand.md` (086/D1), or `null` when there is none. */
+  guide: string | null;
   assets: string[];
   presets: string[];
   scenes: string[];
@@ -50,6 +52,9 @@ export type ProjectStore = {
     slug: string,
     config: Partial<ProjectConfig>,
   ): Promise<ProjectManifest>;
+
+  /** Write the brand guide (`brand.md`, 086/D1) as given; `null` removes it. No content rules. */
+  writeGuide(slug: string, text: string | null): Promise<void>;
 
   /** Delete a project workspace directory cleanly. */
   delete(slug: string): Promise<boolean>;
@@ -88,6 +93,7 @@ export function createProjectStore(root: string): ProjectStore {
   const projectPath = (slug: string) => join(projectsDir, slug);
   const manifestPath = (slug: string) =>
     join(projectPath(slug), "project.json");
+  const guidePath = (slug: string) => join(projectPath(slug), "brand.md");
 
   return {
     resolvePath(slug: string, subfolder?: "assets" | "presets" | "scenes") {
@@ -163,16 +169,23 @@ export function createProjectStore(root: string): ProjectStore {
           .sort();
       };
 
-      const [assets, presets, scenes] = await Promise.all([
+      const readGuide = async () =>
+        (await exists(guidePath(slug)))
+          ? readFile(guidePath(slug), "utf8")
+          : null;
+
+      const [assets, presets, scenes, guide] = await Promise.all([
         listAssets(),
         listDir("presets").then((files) =>
           files.filter((f) => f.endsWith(".json")),
         ),
         listDir("scenes"),
+        readGuide(),
       ]);
 
       return {
         manifest: parsed.manifest,
+        guide,
         assets,
         presets,
         scenes,
@@ -234,6 +247,12 @@ export function createProjectStore(root: string): ProjectStore {
         "utf8",
       );
       return updated;
+    },
+
+    async writeGuide(slug: string, text: string | null): Promise<void> {
+      ProjectSlugSchema.parse(slug);
+      if (text === null) await rm(guidePath(slug), { force: true });
+      else await writeFile(guidePath(slug), text, "utf8");
     },
 
     async delete(slug: string): Promise<boolean> {

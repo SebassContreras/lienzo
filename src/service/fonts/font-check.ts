@@ -138,7 +138,7 @@ export function missingBrandWeightNotices(
 ): string[] {
   return fonts.flatMap((f) => {
     const have = installed
-      .filter((i) => i.family === f.family)
+      .filter((i) => sameFamily(i.family, f.family))
       .map((i) => i.weight);
     const lacking = f.weights.filter((w) => !have.includes(w));
     return have.length > 0 && lacking.length > 0
@@ -152,3 +152,35 @@ export function missingBrandWeightNotices(
 /** The notice for a font family that is not installed (070/D2). */
 export const missingFontNotice = (family: string) =>
   `La fuente «${family}» no está instalada; se dibujará con otra. Usa font_install`;
+
+const sameFamily = (a: string, b: string) =>
+  a.toLowerCase() === b.toLowerCase();
+
+/** The notice for a project font family `manifest.fonts` does not declare (086/D2). */
+export const undeclaredFontNotice = (family: string) =>
+  `La fuente «${family}» está instalada en el proyecto pero no es fuente de marca; decláralo con project_update y \`fonts\``;
+
+/**
+ * Every brand font notice (086/D2), the one rule `project_update` and `project_inspect` share:
+ * a declared family not installed, a declared weight not installed, and a family in the
+ * project's own `fonts/` (`own`) that is not declared. `available` is every font the project
+ * can use, bundled and global included. Families match ignoring letter case.
+ */
+export function brandFontNotices(
+  declared: readonly { family: string; weights: readonly number[] }[],
+  available: readonly Face[],
+  own: readonly Face[],
+): string[] {
+  const has = (list: readonly { family: string }[], family: string) =>
+    list.some((f) => sameFamily(f.family, family));
+  const undeclared = [...new Set(own.map((f) => f.family))].filter(
+    (family) => !has(declared, family),
+  );
+  return [
+    ...declared
+      .filter((f) => !has(available, f.family))
+      .map((f) => missingFontNotice(f.family)),
+    ...missingBrandWeightNotices(declared, available),
+    ...undeclared.map(undeclaredFontNotice),
+  ];
+}

@@ -203,6 +203,7 @@ describe("Environment resolution in scene_generate_speech tool", () => {
       },
       projects: {
         get: async () => ({}),
+        resolvePath: () => "/tmp/test/assets",
         checkAsset: async () => ({ ok: true }),
         projectStore: async () => ({
           animPresets: async () => [],
@@ -264,6 +265,7 @@ describe("Environment resolution in scene_generate_speech tool", () => {
       },
       projects: {
         get: async () => ({}),
+        resolvePath: () => "/tmp/test/assets",
         checkAsset: async () => ({ ok: true }),
         projectStore: async () => ({
           animPresets: async () => [],

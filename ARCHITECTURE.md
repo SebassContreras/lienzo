@@ -106,7 +106,7 @@ These decisions come from the canvas prototype the user validated on 2026-10-07 
 - A4: A scene is plain JSON (size, loop duration, fps, background, ordered element list) defined by TypeScript types in `src/model/` — why: JSON is what presets and scenes are stored as; no translation layer.
 - A5: Each canvas component kind lives in its own folder `src/components/<kind>/` (its descriptor and its draw function, see A23); shared painting helpers (glow, shadow, gradients, animation state, `animate`) live in `src/engine/` — why: adding a component means adding a folder.
 - A6: Animations are a function of time within one loop; looping animations use a whole number of cycles per loop so exported GIF and MP4 loops are seamless — why: validated in the prototype.
-- A7: No database. Built-in presets and animation presets are JSON files in `presets/`; everything a post uses lives in a project workspace `projects/<project>/` (`project.json` with the brand guide and canvas defaults, `scenes/`, `assets/` named by content hash, `presets/`, `exports/`, `fonts/`), read and written through a small Vite dev-server middleware (`/api/projects`, `/api/presets`, `/api/animations`, `/api/fonts`) and by the tools; only `projects/mi-proyecto/` is versioned as the default template; the current scene is also autosaved to `localStorage` — why: files are easy to inspect, copy and version, and a project keeps its scenes and the files they use together, never borrowing another project's.
+- A7: No database. Built-in presets and animation presets are JSON files in `presets/`; everything a post uses lives in a project workspace `projects/<project>/` (`project.json` with the brand's palette, fonts and canvas defaults, `brand.md` with the written brand guide (086), `scenes/`, `assets/` named by content hash in folders by convention — `brand/` for the brand's own files, `voice/<scene>/` for generated speech, `<scene>/` for any other file one scene uses (086) —, `presets/`, `exports/`, `fonts/`), read and written through a small Vite dev-server middleware (`/api/projects`, `/api/presets`, `/api/animations`, `/api/fonts`) and by the tools; only `projects/mi-proyecto/` is versioned as the default template; the current scene is also autosaved to `localStorage` — why: files are easy to inspect, copy and version, and a project keeps its scenes and the files they use together, never borrowing another project's.
 
 ### Stack
 
@@ -161,7 +161,7 @@ Where each decision lives in the code, grouped by area. A spec number in parenth
 - Time is applied only by `animate(el, t, scene)` (`src/engine/animate.ts`) before a component
   draws; components get the result as a transform (A24)
 - Looping animations use whole cycles per loop (A6)
-- Presets in `presets/`, and project workspaces in `projects/<project>/` containing `project.json`,
+- Presets in `presets/`, and project workspaces in `projects/<project>/` containing `project.json`, `brand.md` (the brand guide, 086),
   `scenes/`, `assets/`, `presets/`, and `exports/`; no database (A7, spec 040)
 - The default workspace template is `projects/mi-proyecto/`, which is the only project tracked in Git
 - Reusable styling = traits in `src/traits/`; presets are JSON recipes of traits (A19)

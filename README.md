@@ -242,7 +242,7 @@ The same options work in compact scenes (`scene_build`) and through the element 
   `defaults: "flat"` turns off the default gradient, shadow, border and border glow of shapes and paths.
 - **Background:** a background preset name, a color (`"#111827"`, solid) or an object that
   starts solid and adds only what it turns on (`{ "color": "#050b1a", "spotlight": 0.5 }`).
-- **Voice and audio:** `scene_generate_speech` with `asTrack: true` and `startOffset`
+- **Voice and audio:** `scene_generate_speech` saves each clip in `assets/voice/<scene>/`; with `asTrack: true` and `startOffset` it
   appends one voice track per shot instead of replacing `scene.audio`; `scene_build` keeps
   existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not
   installed (`font_install`, which stores Google fonts as ttf so their text is measured);
@@ -269,8 +269,8 @@ desde el grupo** turns a group into a symbol, and **Símbolos → Editar** opens
 
 `pnpm lienzo --help` (or the MCP tool list) shows each one with its input. By area:
 
-- Projects: `project_list`, `project_create`, `project_inspect` (assets, scenes, presets,
-  animation presets and fonts), `project_update`,
+- Projects: `project_list`, `project_create`, `project_inspect` (manifest, brand guide, assets,
+  scenes, presets, animation presets, fonts, and brand font notices), `project_update`,
   `project_delete`, `asset_add`, `asset_rename`, `asset_delete`
 - Scenes: `scene_list`, `scene_get`, `scene_create`, `scene_build`, `scene_update`,
   `scene_rename`, `scene_delete`, `scene_validate`,
@@ -288,7 +288,16 @@ after `start`) and its id is unique; a scene is at most 7680 px a side, 60 fps a
 asset keeps its type on `asset_rename`, and `asset_add` takes audio only with an audio header;
 a user preset cannot take a built-in preset's name; a failing call lists every problem it finds,
 in Spanish, each at the path of what you sent. `project_inspect` names scenes and presets the
-way the other tools take them (no `.json`). `scene_generate_speech` needs a TTS service: a
+way the other tools take them (no `.json`). A project's written brand guide (tone, audience,
+mandatory text, claim rules, preferred style) is `brand.md`, Markdown up to 20 000 characters:
+`project_create` and `project_update` take it as `guide` (`""` or `null` deletes it, left out it
+is kept) and `project_inspect` returns it. `project_inspect` and `project_update` give the same
+`notices` about brand fonts: a declared family or weight not installed, and a family installed
+in the project but not declared. Asset folders: `brand/` for the brand's own files (logos,
+images, jingles), `voice/<scene>/` for generated speech, `<scene>/` for any other file one scene
+uses; a clip lives in the folder of one scene that uses it and other scenes may reference it
+there. `scene_generate_speech` saves its clips in `assets/voice/<scene>/` (the scene's stored
+name) and needs a TTS service: a
 Kokoro-compatible server at `http://localhost:8880` (provider `local`) or an OpenRouter key
 (`OPENROUTER_API_KEY` or `apiKey`).
 

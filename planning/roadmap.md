@@ -28,7 +28,7 @@ Specs 050 and 065–084 are **retired**: they were all `done` under the previous
 | 083 | one-validate-verdict | done (retired) | 082 |
 | 084 | id-charset | done (retired) | 082 |
 | 085 | engineering-principles-alignment | done | 084 |
-| 086 | brand-guide | todo | 085 |
+| 086 | brand-guide | in progress | 085 |
 
 ## Ideas
 

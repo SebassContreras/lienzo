@@ -15,6 +15,7 @@ import {
   resolveFonts,
 } from "../../model/font-files.ts";
 import { FONTS } from "../../model/fonts.ts";
+import { brandFontNotices } from "./font-check.ts";
 import type { FontScope, FontStore } from "./font-store.ts";
 import { downloadGoogleFont } from "./google-fonts.ts";
 
@@ -28,6 +29,19 @@ export async function availableFonts(
     project ? store.list(project) : [],
   ]);
   return resolveFonts(FONTS, global, own, project);
+}
+
+/** The brand font notices of `project` for its declared `fonts` (086/D2). */
+export async function projectFontNotices(
+  store: FontStore,
+  project: string,
+  fonts: readonly { family: string; weights: readonly number[] }[],
+): Promise<string[]> {
+  const [available, own] = await Promise.all([
+    availableFonts(store, project),
+    store.list(project),
+  ]);
+  return brandFontNotices(fonts, available, own);
 }
 
 /**

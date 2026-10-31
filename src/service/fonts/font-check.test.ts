@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "../../components/index.ts";
 import { defaultScene, type Scene } from "../../model/model.ts";
-import { fontNotices, missingFonts } from "./font-check.ts";
+import { brandFontNotices, fontNotices, missingFonts } from "./font-check.ts";
 
 function text(font: string) {
   return { ...createElement("text"), font };
@@ -74,5 +74,70 @@ describe("fontNotices weights", () => {
     };
 
     expect(fontNotices(sceneWith([semi]), poppins)).toEqual([]);
+  });
+});
+
+describe("brandFontNotices", () => {
+  const face = (family: string, weight: number) => ({ family, weight });
+  const brand = (family: string, ...weights: number[]) => ({ family, weights });
+  const montserrat = [face("Montserrat", 500), face("Montserrat", 800)];
+
+  it.each([
+    {
+      label: "declared and installed",
+      declared: [brand("Montserrat", 500, 800)],
+      available: montserrat,
+      own: montserrat,
+      notices: [],
+    },
+    {
+      label: "declared, not installed",
+      declared: [brand("Nope Sans", 400)],
+      available: [],
+      own: [],
+      notices: [/«Nope Sans» no está instalada/],
+    },
+    {
+      label: "installed in the project, not declared",
+      declared: [],
+      available: montserrat,
+      own: montserrat,
+      notices: [
+        /«Montserrat» está instalada en el proyecto pero no es fuente de marca/,
+      ],
+    },
+    { label: "neither", declared: [], available: [], own: [], notices: [] },
+    {
+      label: "a declared weight not installed",
+      declared: [brand("Montserrat", 500, 800, 900)],
+      available: montserrat,
+      own: montserrat,
+      notices: [/«Montserrat» declara los pesos 900/],
+    },
+    {
+      label: "an installed weight not declared",
+      declared: [brand("Montserrat", 500)],
+      available: montserrat,
+      own: montserrat,
+      notices: [],
+    },
+    {
+      label: "a family differing only in letter case",
+      declared: [brand("montserrat", 500, 800)],
+      available: montserrat,
+      own: montserrat,
+      notices: [],
+    },
+    {
+      label: "a bundled font not declared",
+      declared: [],
+      available: [face("Inter", 400)],
+      own: [],
+      notices: [],
+    },
+  ])("$label", ({ declared, available, own, notices }) => {
+    const result = brandFontNotices(declared, available, own);
+
+    expect(result).toEqual(notices.map((n) => expect.stringMatching(n)));
   });
 });

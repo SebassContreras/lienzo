@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -56,4 +56,33 @@ describe("project_update", () => {
       await errorCode("project_update", { project: "nope", name: "x" }),
     ).toBe("not_found");
   });
+});
+
+describe("brand font notices", () => {
+  it.each([
+    { label: "installed, not declared", fonts: [] },
+    {
+      label: "a declared weight missing",
+      fonts: [{ family: "Montserrat", weights: [500, 900], role: "body" }],
+    },
+  ])(
+    "project_update and project_inspect give the same: $label",
+    async ({ fonts }) => {
+      await mkdir(join(root, "projects", project, "fonts"), {
+        recursive: true,
+      });
+      await writeFile(
+        join(root, "projects", project, "fonts", "Montserrat-500.ttf"),
+        "",
+      );
+
+      const updated = await ok("project_update", { project, fonts });
+      const inspected = await ok("project_inspect", { project });
+
+      expect([
+        (updated.notices as string[]).length > 0,
+        updated.notices,
+      ]).toEqual([true, inspected.notices]);
+    },
+  );
 });

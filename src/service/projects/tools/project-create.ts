@@ -7,6 +7,7 @@ import {
 } from "../../../model/project.ts";
 import { projectSlug } from "../../../presets/slug.ts";
 import { defineTool, fail } from "../../core/registry.ts";
+import { GuideInputSchema, guideValue } from "../guide.ts";
 import { asToolProject, ToolProjectSchema } from "../project-result.ts";
 
 export const projectCreate = defineTool({
@@ -16,7 +17,10 @@ export const projectCreate = defineTool({
     "Create a new isolated project workspace in projects/<project>/ with its brand guide, " +
     "color palette, and directories for assets, presets, and scenes. `project` (lowercase " +
     "letters, digits and `-`) defaults to `name` made into one (accents folded: «Café Norte» " +
-    "→ cafe-norte); the result names it; an existing id fails with `exists`. `canvas` fields not given take 1080x1080, 30 fps, 5 s.",
+    "→ cafe-norte); the result names it; an existing id fails with `exists`. `canvas` fields not given take 1080x1080, 30 fps, 5 s. " +
+    "`guide` is the written brand guide (Markdown up to 20 000 characters: tone, audience, " +
+    'mandatory text, claim rules, preferred style), stored as brand.md; `""` or `null` leaves none. ' +
+    "The result returns `guide` as stored (`null` when none).",
   input: z.object({
     project: ProjectSlugSchema.optional(),
     name: z.string().min(1, "El nombre del proyecto es obligatorio"),
@@ -31,9 +35,11 @@ export const projectCreate = defineTool({
         duration: durationValue().optional(),
       })
       .optional(),
+    guide: GuideInputSchema,
   }),
-  output: ToolProjectSchema,
-  async run({ project, name, description, palette, canvas }, ctx) {
+  output: ToolProjectSchema.extend({ guide: z.string().nullable() }),
+  async run({ project, name, description, palette, canvas, guide }, ctx) {
+    const text = guideValue(guide) ?? null;
     // one slug rule for every name (074/D6, 076/D4)
     const id = project ?? projectSlug(name).slice(0, 64).replace(/-+$/, "");
     if (!id)
@@ -67,7 +73,9 @@ export const projectCreate = defineTool({
         canvas,
       });
 
-      return asToolProject(await ctx.projects.create(id, config));
+      const manifest = await ctx.projects.create(id, config);
+      if (text !== null) await ctx.projects.writeGuide(id, text);
+      return { ...asToolProject(manifest), guide: text };
     } catch (error) {
       fail(
         "project_create_failed",

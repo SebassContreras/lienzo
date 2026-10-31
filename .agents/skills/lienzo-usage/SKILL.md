@@ -39,7 +39,10 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
 
 1. **Project:** `project_list`, or `project_create` with a `name` (the `project` id is made
    from it, `Café Norte` → `cafe-norte`, or give one) (`project_delete` removes one). `project_inspect` lists its assets,
-   scenes, presets, animation presets, fonts and brand; `project_update` changes the brand, `asset_add` copies a local
+   scenes, presets, animation presets, fonts and brand, with the written brand guide (`guide`, `brand.md`: tone,
+   audience, mandatory text, claim rules, preferred style; `null` when none) and `notices` about brand fonts (a declared
+   family or weight not installed, a project font not declared); `project_update` changes the brand (`guide` replaces the
+   guide, `""` or `null` deletes it, up to 20 000 characters) and gives the same font notices, `asset_add` copies a local
    file into `assets/`, `asset_rename` moves one (scenes follow) and `asset_delete` removes
    one (refused while a scene uses it, unless `force`).
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
@@ -90,7 +93,7 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
      position shifted (`x`/`y`).
    - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
      shared edge or center and set `x`/`y` on each element with `element_update`.
-7. **Voice:** `scene_generate_speech`; for one clip per shot use `asTrack: true` and
+7. **Voice:** `scene_generate_speech` saves each clip in `assets/voice/<scene>/` (the scene's stored name); for one clip per shot use `asTrack: true` and
    `startOffset` (the shot's start) so each call appends a track. Subtitles follow the cues.
 8. **Export:** `scene_export` (`png`, `gif`, `mp4`) into `projects/<project>/exports/`.
 
@@ -140,6 +143,9 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
   points at `patch.…`. `scene_validate` returns every problem in `errors`, always as a verdict; paths name an element by the
   `id` you gave, else by its index. Notices name what is valid but draws a placeholder: an
   image `src` that is not a project asset yet, a line end whose element a write removed.
+  Asset folders (convention, not enforced): `brand/` for the brand's own files (logos, images, jingles),
+  `voice/<scene>/` for generated speech, `<scene>/` for any other file one scene uses; a clip lives in the
+  folder of one scene that uses it, other scenes may reference it there; `asset_rename` moves a misplaced file.
   A bare asset path (`logos/x.png`, `asset_add`'s `filename`) is stored as
   `/projects/<project>/assets/logos/x.png`, so `asset_rename` follows it. `asset_add` refuses a
   file that is not the image its extension says. An image given `src` and no `aspect`
