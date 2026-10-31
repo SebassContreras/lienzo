@@ -28,11 +28,16 @@ Specs 050 and 065–084 are **retired**: they were all `done` under the previous
 | 083 | one-validate-verdict | done (retired) | 082 |
 | 084 | id-charset | done (retired) | 082 |
 | 085 | engineering-principles-alignment | done | 084 |
+| 086 | brand-guide | todo | 085 |
 
 ## Ideas
 
 Anything worth doing later. (The two earlier ideas are specs 083 and 084.)
 
+- Brand data is not versioned: `projects/*` is git-ignored except `mi-proyecto` (A7), so a
+  project's brand guide, palette and assets live only on this disk. Decide whether the projects
+  root can point at another folder (a private brands repo) or a project can be exported/imported.
+  (Brand audit 2026-10-31, spec 086)
 - `shape_overlap` fires only when two boxes cover half of the smaller one (`shapesStack`), so
   two composites (chart, table, steps, list) that overlap by a third pass clean though their
   text collides. Decide whether a composite kind gets a lower threshold, or the check also
