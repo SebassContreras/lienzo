@@ -168,12 +168,12 @@ the same text; `scene_generate_speech` writes into `voice/<scene>/`; `pnpm test`
 - [x] 086/T007 [agent] `saveAudioAsset(dir, bytes, format)`; `scene_generate_speech` resolves `assets/voice/<scene>/` with `ctx.projects.resolvePath` and the scene's stored name; update its description, `README.md` and the `lienzo-usage` skill — covers R3, R6, D3
 - [x] 086/T008 [agent] Table test (`test.each`) of speech output paths, with only the injected `TtsService` stubbed: rows `asTrack` absent / `true`, scene name as stored / folded (`Caja Ámbar`); in `speech-folder.test.ts`; asserts the `assetId` returned and written into `scene.audio` or `audioTracks` includes `voice/<scene>/` and resolve to a file, and that the same script twice yields one path and one file — covers R3
 - [x] 086/T009 [agent] Update `ARCHITECTURE.md` A7 and the project layout (`brand.md`, the asset folder convention) and the convention section of the `lienzo-usage` skill; log the change in `CHANGES.md` — covers R5, R6, D5
-- [ ] 086/T010 [human] Give the RINGANA brand palette (hex per role) and any official logo file, or the page to take them from — covers R4
-- [ ] 086/T011 [agent] `ringana`: `project_update` with a brand description, canvas defaults 1080×1920 / 30 fps / 20 s, fonts Montserrat heading 800 and body 500, and the T010 palette — covers R4, D4, D6
+- [x] 086/T010 [human] Give the RINGANA brand palette (hex per role) and any official logo file, or the page to take them from — covers R4 (done: the user asked to take it from ringana.com; computed styles on 2026-10-31 give black #000000, #2D2D2D, orange #ED691C, white, #F7F7F7, #E5E5E5, #666666; no logo file)
+- [x] 086/T011 [agent] `ringana`: `project_update` with a brand description, canvas defaults 1080×1920 / 30 fps / 20 s, fonts Montserrat heading 800 and body 500, and the T010 palette — covers R4, D4, D6
 - [x] 086/T012 [agent] `ringana`: draft `brand.md` from the omega brief (audience, tone, on-screen language English, "RINGANA BEYOND omega" naming, the food-supplement disclaimer, attributing RINGANA's own study, text-only brand mark until a logo exists, preferred style "Bright science", reel length 15–30 s by default and 45–60 s only when reach is the goal, never over 90 s) and show it to the user — covers R4, D4, D6
-- [ ] 086/T013 [human] Approve or correct the T012 draft — covers R4
-- [ ] 086/T014 [agent] `ringana`: save the approved guide with `project_update` → `guide` — covers R4, D4
+- [x] 086/T013 [human] Approve or correct the T012 draft — covers R4
+- [x] 086/T014 [agent] `ringana`: save the approved guide with `project_update` → `guide` — covers R4, D4
 - [x] 086/T015 [agent] `ringana`: move the 6 clips used by `omega`/`omega-v2` to `voice/omega-v2/` with `asset_rename` and list the 10 clips no scene uses — covers R4, R5, D4
 - [ ] 086/T016 [human] Confirm which of the 10 unused clips to delete — covers R4
-- [ ] 086/T017 [agent] Delete the clips confirmed in T016 with `asset_delete` — covers R4, D4
-- [ ] 086/T018 [agent] Verify: `project_inspect` on `ringana` shows the guide, no font notices and only `voice/omega-v2/` audio; `pnpm test` and `pnpm typecheck` pass — covers Goal, R4
+- [x] 086/T017 [agent] Delete the clips confirmed in T016 with `asset_delete` — covers R4, D4
+- [x] 086/T018 [agent] Verify: `project_inspect` on `ringana` shows the guide, no font notices and only `voice/omega-v2/` audio; `pnpm test` and `pnpm typecheck` pass — covers Goal, R4
