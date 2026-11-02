@@ -244,7 +244,7 @@ The same options work in compact scenes (`scene_build`) and through the element 
 - **Background:** a background preset name, a color (`"#111827"`, solid) or an object that
   starts solid and adds only what it turns on (`{ "color": "#050b1a", "spotlight": 0.5 }`).
 - **Voice and audio:** `scene_generate_speech` saves each clip in `assets/voice/<scene>/`; with `asTrack: true` and `startOffset` it
-  appends one voice track per shot instead of replacing `scene.audio`; `scene_build` keeps
+  appends one voice track per shot instead of replacing `scene.audio`; `speechStart` and `speechEnd` report the detected voiced span, and `trimSilence: true` sets `trimOffset` to skip leading silence while subtitle cues align to the audible portion (the clip still ends with its trailing silence); `scene_build` keeps
   existing `audioTracks` on overwrite (or takes them). A notice names fonts that are not
   installed (`font_install`, which stores Google fonts as ttf so their text is measured);
   until then they draw in Inter. A weight an installed family lacks (Poppins 900) gets a
