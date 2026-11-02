@@ -138,3 +138,9 @@ Why: `src/service` held 165 files, 32 of them loose, and a tool, its logic and i
 - What Changed: `ENGINEERING.md` lists the seven spectrace principles in template order: 1 KISS/YAGNI, 2 SRP, 3 DRY via composition, 4 anti-corruption layer / DIP, 5 stack standards, 6 trade-offs, 7 research. The old §6 (partitioning, contracts, invariants) and §7 (test hygiene) are dropped: `TESTING.md` already states both in full. The old §5 (small interfaces, pure functions) becomes the "Pure functions" bullet of Project Standards, tied to A3, A24 and A27. Old §8, §10 and §9 are now §5, §6 and §7 with unchanged wording.
 - Why: spectrace audits cite principles by number (`ENG-1` … `ENG-7`); with ten sections numbered differently, a citation such as `ENG-7` pointed at test hygiene instead of research, and spec audits had to stop. No spec or contract cited a principle number, so nothing else needed renumbering.
 - Replaced Items: the ten-principle layout recorded by 085 ("engineering principles alignment across specs and contracts").
+
+## 2026-11-02 — compact trailing easing normalization (091)
+- Scope: `src/service/compact/expand.ts`, `planning/specs/091-compact-trailing-easing-normalization.md`.
+- What Changed: compact shorthand track expansion normalizes trailing keyframe easing to `"auto"`.
+- Why: Generator-driven and agentic callers (such as Animator) frequently express symmetric easing across all keyframes in compact shorthand arrays. Auto-normalizing inoperative trailing easing during compact expansion prevents false-positive notices while keeping strict checks for full-schema scene validation.
+- Replaced Items: None (enhancement to shorthand expansion).

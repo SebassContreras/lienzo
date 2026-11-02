@@ -33,6 +33,7 @@ Specs 050 and 065–084 are **retired**: they were all `done` under the previous
 | 088 | axis-scale-channels | done | — |
 | 089 | speech-voiced-span | todo | — |
 | 090 | build-from-file | todo | — |
+| 091 | compact-trailing-easing-normalization | todo | — |
 
 ## Ideas
 
