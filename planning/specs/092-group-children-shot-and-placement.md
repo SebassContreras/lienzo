@@ -73,12 +73,18 @@ Agent tasks.
 - D3. Pros: keeps tool descriptions and agent usage documentation synchronized with runtime behavior as required by AGENTS.md. Cons: none. Mitigation: covered by tool description and doc assertions.
 
 ## Tasks
-- [ ] 092/T001 [agent] Parameterized tests in `src/service/compact/expand.test.ts` and `src/service/elements/tools/counter-count-up.test.ts` (`test.each` tables with shape `[description, { input, parent?, shot?, expectedStart }]` covering R1 partitions: top-level counter, 1-level group child, 2-level nested group child, presets with tracks, explicit tracks preserved, start 0 boundary), plus replay corpus case for `F-03` — covers R1
-- [ ] 092/T002 [agent] Parameterized tests in `src/service/elements/tools/nested-elements.test.ts` and `src/service/elements/tools/element-update.test.ts` (`test.each` tables with shape `[description, { id, at, expectedPos }]` covering R2 partitions: top-level element, slash path group child, bare id group child, 2-level nested group child, 9 anchors + offset, custom cw × ch box), plus replay corpus case for `F-04` — covers R2
-- [ ] 092/T003 [agent] Implement inherited `shot` timing for group children in `src/service/compact/expand.ts:291-293,319-331,481-484` and `src/service/elements/tools/element-add.ts:120-124` (D1) — covers R1, D1
-- [ ] 092/T004 [agent] Implement parent group content box resolution for `at` in `src/service/elements/tools/element-update.ts:65` (D2) — covers R2, D2
-- [ ] 092/T005 [agent] Docs: update `element_update` description in `src/service/elements/tools/element-update.ts`, update `.agents/skills/lienzo-usage/SKILL.md`, and update `docs/qa-log.md` entries for `F-03` and `F-04` (D3) — covers R3, D3
-- [ ] 092/T006 [agent] Verify: run `pnpm test`, `pnpm replay`, and `pnpm typecheck`, confirming all R1–R3 partitions and replay corpus cases pass; record `verified:` — covers R1, R2, R3, D1, D2, D3
+- [x] 092/T001 [agent] Parameterized tests in `src/service/compact/expand.test.ts` and `src/service/elements/tools/counter-count-up.test.ts` (`test.each` tables with shape `[description, { input, parent?, shot?, expectedStart }]` covering R1 partitions: top-level counter, 1-level group child, 2-level nested group child, presets with tracks, explicit tracks preserved, start 0 boundary), plus replay corpus case for `F-03` — covers R1
+      verified: expand.test.ts and counter-count-up.test.ts pass with F-03 replay corpus entry
+- [x] 092/T002 [agent] Parameterized tests in `src/service/elements/tools/nested-elements.test.ts` and `src/service/elements/tools/element-update.test.ts` (`test.each` tables with shape `[description, { id, at, expectedPos }]` covering R2 partitions: top-level element, slash path group child, bare id group child, 2-level nested group child, 9 anchors + offset, custom cw × ch box), plus replay corpus case for `F-04` — covers R2
+      verified: nested-elements.test.ts and element-update.test.ts pass with F-04 replay corpus entry
+- [x] 092/T003 [agent] Implement inherited `shot` timing for group children in `src/service/compact/expand.ts:291-293,319-331,481-484` and `src/service/elements/tools/element-add.ts:120-124` (D1) — covers R1, D1
+      verified: expandScene and element_add inherit ancestor shot timing without persisting shot on child elements
+- [x] 092/T004 [agent] Implement parent group content box resolution for `at` in `src/service/elements/tools/element-update.ts:65` (D2) — covers R2, D2
+      verified: element_update resolves at against immediate parent group's cw/ch content area
+- [x] 092/T005 [agent] Docs: update `element_update` description in `src/service/elements/tools/element-update.ts`, update `.agents/skills/lienzo-usage/SKILL.md`, and update `docs/qa-log.md` entries for `F-03` and `F-04` (D3) — covers R3, D3
+      verified: tool description in element-update.ts, lienzo-usage skill, and qa-log.md updated with closed status
+- [x] 092/T006 [agent] Verify: run `pnpm test`, `pnpm replay`, and `pnpm typecheck`, confirming all R1–R3 partitions and replay corpus cases pass; record `verified:` — covers R1, R2, R3, D1, D2, D3
+      verified: pnpm typecheck, pnpm replay (35/35 passing), pnpm test (227 files, 2509 tests passing)
 
 ## Changes
 - 2026-11-02: Audit corrections applied before task execution (F1–F7):
