@@ -101,12 +101,18 @@ Agent tasks.
   Mitigation: subsequent clips start at their scheduled `startOffset`, so trailing silence does not cause audible overlap.
 
 ## Tasks
-- [ ] 089/T001 [agent] Tests, written first, in `src/service/speech/voiced-span.test.ts`: `test.each` table over R1 partitions (speech at start, leading/trailing silence, pause inside speech, all-silent, empty samples, sample rate 24kHz and 44.1kHz) asserting `{ start, end }` or `null`, and invariant `0 <= start < end <= duration` — covers R1, D2
-- [ ] 089/T002 [agent] Tests, written first, in `src/service/speech/tools/speech-tools.test.ts`: `test.each` table over tool outputs (WAV clip with silence returning `speechStart`/`speechEnd`, `trimSilence: true` writing `trimOffset` and adjusting cues, `trimSilence: false` preserving 0/unset, `asTrack: true` vs `scene.audio`, all-silent WAV emitting notice, non-WAV buffer emitting notice) — covers R1, R2, D1, D3
-- [ ] 089/T003 [agent] Pure `voicedSpan` function in `src/service/speech/voiced-span.ts` and `readWavSamples` helper in `src/service/speech/audio-duration.ts` (or `wav-samples.ts`) — covers R1, D1, D2
-- [ ] 089/T004 [agent] Wire WAV request format and `speechStart`/`speechEnd` into `scene_generate_speech` output; wire `trimSilence` option and cue adjustment into `attachSpeechToScene` (D1, D3) — covers R1, R2, D1, D3
-- [ ] 089/T005 [agent] Docs: update `scene_generate_speech` tool description, `README.md`, and `.agents/skills/lienzo-usage/SKILL.md` (R3) — covers R3
-- [ ] 089/T006 [agent] Verify: call `scene_generate_speech` (CLI or integration test with synthetic WAV fixture matching Goal's 0.4s leading and 0.6s trailing silence); verify `speechStart ≈ 0.4`, `speechEnd ≈ audioDuration - 0.6`, `trimOffset` set, cues shifted; run `pnpm test` and `pnpm typecheck`; record `verified:` — covers R1, R2
+- [x] 089/T001 [agent] Tests, written first, in `src/service/speech/voiced-span.test.ts`: `test.each` table over R1 partitions (speech at start, leading/trailing silence, pause inside speech, all-silent, empty samples, sample rate 24kHz and 44.1kHz) asserting `{ start, end }` or `null`, and invariant `0 <= start < end <= duration` — covers R1, D2
+  verified: 2026-11-02, unit test suite with 7 table-driven tests passed covering R1 partitions, boundaries, and dBFS thresholds.
+- [x] 089/T002 [agent] Tests, written first, in `src/service/speech/tools/speech-tools.test.ts`: `test.each` table over tool outputs (WAV clip with silence returning `speechStart`/`speechEnd`, `trimSilence: true` writing `trimOffset` and adjusting cues, `trimSilence: false` preserving 0/unset, `asTrack: true` vs `scene.audio`, all-silent WAV emitting notice, non-WAV buffer emitting notice) — covers R1, R2, D1, D3
+  verified: 2026-11-02, contract tests covering all tool output partitions, trimOffset calculations, cues shifting, and notice emission pass.
+- [x] 089/T003 [agent] Pure `voicedSpan` function in `src/service/speech/voiced-span.ts` and `readWavSamples` helper in `src/service/speech/audio-duration.ts` (or `wav-samples.ts`) — covers R1, D1, D2
+  verified: 2026-11-02, pure voicedSpan and readWavSamples implemented with 10 ms window RMS math and RIFF/WAVE parsing; unit tests in voiced-span.test.ts and wav-samples.test.ts pass.
+- [x] 089/T004 [agent] Wire WAV request format and `speechStart`/`speechEnd` into `scene_generate_speech` output; wire `trimSilence` option and cue adjustment into `attachSpeechToScene` (D1, D3) — covers R1, R2, D1, D3
+  verified: 2026-11-02, scene-generate-speech requests format: 'wav', parses PCM samples, sets speechStart/speechEnd, applies trimSilence to trimOffset and subtitles cues in scene-audio.ts; pnpm test src/service/speech/ passes 80 tests.
+- [x] 089/T005 [agent] Docs: update `scene_generate_speech` tool description, `README.md`, and `.agents/skills/lienzo-usage/SKILL.md` (R3) — covers R3
+  verified: 2026-11-02, documented speechStart, speechEnd, trimSilence option and trailing silence behavior; descriptions.test.ts passed.
+- [x] 089/T006 [agent] Verify: call `scene_generate_speech` (CLI or integration test with synthetic WAV fixture matching Goal's 0.4s leading and 0.6s trailing silence); verify `speechStart ≈ 0.4`, `speechEnd ≈ audioDuration - 0.6`, `trimOffset` set, cues shifted; run `pnpm test` and `pnpm typecheck`; record `verified:` — covers R1, R2
+  verified: 2026-11-02, verified with synthetic WAV fixture (0.4s leading, 0.6s trailing) that speechStart=0.4, speechEnd=1.4, trimOffset=0.35, cues shifted; full test suite (2525 tests), pnpm typecheck, and pnpm build:cli pass cleanly.
 
 ## Changes
 - 2026-11-02: Audit corrections applied before task execution (F1–F9):

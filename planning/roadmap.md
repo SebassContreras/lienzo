@@ -31,7 +31,7 @@ Specs 050 and 065–084 are **retired**: they were all `done` under the previous
 | 086 | brand-guide | done | 085 |
 | 087 | contrast-unframed-groups | done | — |
 | 088 | axis-scale-channels | done | — |
-| 089 | speech-voiced-span | todo | — |
+| 089 | speech-voiced-span | done | — |
 | 090 | build-from-file | done | — |
 | 091 | compact-trailing-easing-normalization | done | — |
 | 092 | group-children-shot-and-placement | done | — |
