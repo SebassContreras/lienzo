@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { groupElements, ungroupElement } from "../../../engine/groups.ts";
 import { defaultRect, defaultScene } from "../../../model/model.ts";
 import { fails, toolSuite } from "../../contract/support.ts";
@@ -313,4 +313,51 @@ it("element_group says a child path is not top-level", async () => {
     ids: ["r", "card/anything"],
   });
   expect(r).toMatchObject(fails(/ruta de un hijo.*primer nivel/));
+});
+
+describe("element_add ID path mapping to patch.id (093/R3)", () => {
+  const cases: [
+    string,
+    { parent?: string; patch: Record<string, unknown> },
+    { expectedCode?: string; expectedPath: string },
+  ][] = [
+    [
+      "empty string id on root element reports patch.id",
+      { patch: { id: "", kind: "rect", w: 100, h: 100 } },
+      { expectedPath: "patch.id" },
+    ],
+    [
+      "whitespace padded id on root element reports patch.id",
+      { patch: { id: " padded ", kind: "rect", w: 100, h: 100 } },
+      { expectedPath: "patch.id" },
+    ],
+    [
+      "slash containing id on root element reports patch.id",
+      { patch: { id: "a/b", kind: "rect", w: 100, h: 100 } },
+      { expectedPath: "patch.id" },
+    ],
+    [
+      "duplicate id of existing root element reports duplicate_id at patch.id",
+      { patch: { id: "r", kind: "rect", w: 100, h: 100 } },
+      { expectedCode: "duplicate_id", expectedPath: "patch.id" },
+    ],
+  ];
+
+  it.each(cases)(
+    "%s",
+    async (_name, { parent, patch }, { expectedCode, expectedPath }) => {
+      const r = (await call("element_add", {
+        scene: "s",
+        parent,
+        ...patch,
+        patch,
+      })) as { ok: boolean; error?: { code?: string; path?: string } };
+
+      expect(r.ok).toBe(false);
+      if (expectedCode) {
+        expect(r.error?.code).toBe(expectedCode);
+      }
+      expect(r.error?.path).toBe(expectedPath);
+    },
+  );
 });

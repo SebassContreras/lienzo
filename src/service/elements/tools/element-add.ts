@@ -30,12 +30,17 @@ import {
   trackOverridesAt,
 } from "../elements.ts";
 
-/** `elements.<id>.…` (or `elements.<group>/<id>.…`) of the element `id` as `patch.…`. */
+/** `elements.<id>.…` (or `elements.<index>.…` or group child path) of the added element as `patch.…`. */
 const atPatch =
-  (id: string) =>
+  (id?: string, newIndex?: number) =>
   (path: string): string => {
     const m = /^elements\.([^.]+)(\..*)?$/.exec(path);
-    return m && m[1]?.split("/").at(-1) === id ? `patch${m[2] ?? ""}` : path;
+    if (!m) return path;
+    const tail = m[2] ?? "";
+    const seg = m[1];
+    if (id && seg.split("/").at(-1) === id) return `patch${tail}`;
+    if (newIndex !== undefined && seg === String(newIndex)) return `patch${tail}`;
+    return path;
   };
 
 export const elementAdd = defineTool({
@@ -116,7 +121,9 @@ export const elementAdd = defineTool({
     const added = el;
     if (at && hasPositionTrack(added)) notices.push(trackOverridesAt(added.id));
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
+    let insertionIndex: number | undefined;
     const write = editScene(effectiveCtx, scene, (s) => {
+      insertionIndex = s.elements.length;
       const ancestorShot =
         parent !== undefined ? findAncestorShot(s.elements, parent, "parent") : undefined;
       const timingElement =
@@ -149,9 +156,9 @@ export const elementAdd = defineTool({
       return { ...s, elements: [...s.elements, out] };
     });
     const result = await write.catch((err: unknown) => {
-      // a failure about the new element points at what the caller gave: `patch.…` (078/D4)
+      // a failure about the new element points at what the caller gave: `patch.…` (078/D4, 093/D3)
       if (err instanceof ToolFailure)
-        throw new ToolFailure(remapFailure(err.error, atPatch(added.id)));
+        throw new ToolFailure(remapFailure(err.error, atPatch(added.id, insertionIndex)));
       throw err;
     });
     return {

@@ -74,12 +74,39 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
   const shots = (scene.shots ?? []).map((sh) => sh.id);
   const symbols = Object.keys(scene.symbols ?? {});
   const placed = placedElements(scene);
-  const ids = new Set(placed.map(({ el }) => el.id));
   const changed = changedSince(previous);
   const changedSymbols = changedSymbolNames(scene, previous);
   const out: Dangling[] = [];
   const checked = ({ el }: { el: Element }) =>
     changed(el) || (el.kind === "use" && changedSymbols.has(el.symbol));
+
+  // Build container-scoped ID sets for line target resolution (093/D2)
+  const sceneIds = new Set<string>();
+  const walkScene = (list: readonly Element[]) => {
+    for (const el of list) {
+      if (el.id) sceneIds.add(el.id);
+      if (el.kind === "group" && Array.isArray(el.children)) {
+        walkScene(el.children);
+      }
+    }
+  };
+  walkScene(scene.elements ?? []);
+
+  const symbolScopedIds = new Map<string, Set<string>>();
+  for (const [name, sym] of Object.entries(scene.symbols ?? {})) {
+    const sIds = new Set<string>();
+    const walkSym = (list: readonly Element[]) => {
+      for (const el of list) {
+        if (el.id) sIds.add(el.id);
+        if (el.kind === "group" && Array.isArray(el.children)) {
+          walkSym(el.children);
+        }
+      }
+    };
+    if (Array.isArray(sym?.children)) walkSym(sym.children);
+    symbolScopedIds.set(name, sIds);
+  }
+
   for (const { el, path } of placed.filter(checked)) {
     if (typeof el.shot === "string" && !shots.includes(el.shot))
       out.push({
@@ -132,16 +159,23 @@ export function danglingReferences(scene: Scene, previous?: Scene): Dangling[] {
             path: `${path}.overrides.${key}`,
           });
     }
-    if (el.kind === "line")
+    if (el.kind === "line") {
+      const isSymbolLine = path.startsWith("symbols.");
+      const symName = isSymbolLine ? path.split(".")[1] : undefined;
+      const containerIds =
+        symName !== undefined
+          ? (symbolScopedIds.get(symName) ?? new Set<string>())
+          : sceneIds;
       for (const end of ["a", "b"] as const) {
         const attach = (el[end] as { attach?: unknown } | undefined)?.attach;
-        if (typeof attach === "string" && attach && !ids.has(attach))
+        if (typeof attach === "string" && attach && !containerIds.has(attach))
           out.push({
             code: "unknown_target",
-            message: `El extremo ${end === "a" ? "inicial (from)" : "final (to)"} se conecta a «${attach}», que no existe (ids: ${list([...ids].filter((id) => id !== el.id))})`,
+            message: `El extremo ${end === "a" ? "inicial (from)" : "final (to)"} se conecta a «${attach}», que no existe (ids: ${list([...containerIds].filter((id) => id !== el.id))})`,
             path: `${path}.${end}.attach`,
           });
       }
+    }
   }
   return out;
 }

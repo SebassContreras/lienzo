@@ -22,7 +22,7 @@
   {
     "id": "A4-fps", "source": "081 report A4",
     "call": { "tool": "scene_validate", "input": { "compact": { "fps": 500 } } },
-    "expect": { "message": "Demasiado grande" }
+    "expect": { "ok": true, "valid": false, "message": "Demasiado grande" }
   },
   {
     "id": "A4-duration", "source": "081 report A4",

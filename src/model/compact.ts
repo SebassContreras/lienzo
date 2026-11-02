@@ -395,18 +395,11 @@ export type CompactScene = z.infer<typeof CompactSceneSchema>;
 export type CompactElement = z.infer<typeof CompactElementSchema>;
 
 /**
- * The `compact` parameter as `scene_build` and `scene_validate` take it (080/D5): elements and
- * symbol children are any values here; `buildCompact` checks them, so their problems come
- * back with the rules', named by id, in one list.
+ * The `compact` parameter as `scene_build` and `scene_validate` take it (080/D5, 093/D1): any
+ * compact object is accepted at the tool boundary so `buildCompact` validates top-level fields,
+ * elements, and symbols uniformly, reporting all issues as structured verdicts/errors identically
+ * to `compactFile`.
  */
-export const CompactSceneInputSchema = CompactSceneSchema.extend({
-  symbols: z
-    .record(
-      z.string(),
-      CompactSymbolSchema.extend({ children: z.array(z.unknown()) }),
-    )
-    .optional(),
-  elements: z.array(z.unknown()).default([]),
-});
+export const CompactSceneInputSchema = z.record(z.string(), z.unknown());
 
 export type CompactSceneInput = z.infer<typeof CompactSceneInputSchema>;

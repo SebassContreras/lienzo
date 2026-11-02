@@ -1044,4 +1044,18 @@ describe("inherited shot timing for group children (092/R1)", () => {
       { t: 5.6, value: 80, easing: "auto" },
     ]);
   });
+
+  describe("compact duplicate IDs single error code (093/R4)", () => {
+    it("reports duplicate ID in elements without throwing in expandScene", async () => {
+      const compact: CompactScene = {
+        elements: [
+          { id: "dup", kind: "rect", w: 100, h: 100 },
+          { id: "dup", kind: "rect", w: 100, h: 100 },
+        ],
+      };
+      // expandScene should not throw a duplicate seenIds error that masks checkUniqueIds
+      const res = await expandScene(compact);
+      expect(res.scene.elements).toHaveLength(2);
+    });
+  });
 });

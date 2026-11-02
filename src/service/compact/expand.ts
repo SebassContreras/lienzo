@@ -398,7 +398,6 @@ export async function expandScene(
   );
 
   const elements: Element[] = [];
-  const seenIds = new Set<string>();
 
   if (compact.symbols) {
     scene.symbols = {};
@@ -450,15 +449,7 @@ export async function expandScene(
       continue;
     }
 
-    if (rawEl.id) {
-      if (seenIds.has(el.id)) {
-        failures.push(
-          `elements.${i}.id: ID duplicado «${el.id}» en la escena compacta`,
-        );
-        continue;
-      }
-      seenIds.add(el.id);
-    } else if (!el.id) {
+    if (!el.id) {
       el.id = newId();
     }
 

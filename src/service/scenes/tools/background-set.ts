@@ -24,8 +24,8 @@ export const backgroundSet = defineTool({
       patch: z.record(z.string(), z.unknown()).optional(),
     })
     .refine((i) => i.preset !== undefined || i.patch !== undefined, {
-      message: "Indica un preset o valores",
-      path: ["preset"],
+      message: "Indica preset o patch",
+      path: ["patch"],
     }),
   output: SceneResult,
   async run({ scene, project, preset, patch }, ctx) {

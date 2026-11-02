@@ -188,5 +188,144 @@
       }
     },
     "expect": { "ok": true }
+  },
+  {
+    "id": "F05-compact-inline-error-parity",
+    "source": "spec 093 / 2026-11-02 QA finding F-05",
+    "call": {
+      "tool": "scene_validate",
+      "input": {
+        "compact": {
+          "duration": 601,
+          "fps": 61,
+          "elements": [{ "id": "bad-el", "kind": "unknown_kind_xyz" }]
+        }
+      }
+    },
+    "expect": {
+      "ok": true,
+      "value": {
+        "valid": false,
+        "errors": [
+          { "path": "compact.duration" },
+          { "path": "compact.fps" },
+          { "path": "compact.elements.bad-el.kind" }
+        ]
+      }
+    }
+  },
+  {
+    "id": "F06-line-attach-symbol-child-scope",
+    "source": "spec 093 / 2026-11-02 QA finding F-06",
+    "setup": [
+      {
+        "tool": "scene_create",
+        "input": {
+          "scene": "repro-sym-line",
+          "data": {
+            "symbols": {
+              "solardrop": {
+                "w": 100,
+                "h": 100,
+                "children": [{ "id": "drop-shade", "kind": "rect" }]
+              }
+            },
+            "elements": [{ "id": "box", "kind": "rect" }]
+          }
+        }
+      }
+    ],
+    "call": {
+      "tool": "element_add",
+      "input": {
+        "scene": "repro-sym-line",
+        "kind": "line",
+        "patch": {
+          "id": "l1",
+          "a": { "attach": "drop-shade" }
+        }
+      }
+    },
+    "expect": {
+      "ok": false,
+      "error": {
+        "code": "unknown_target",
+        "message": "conecta a «drop-shade», que no existe (ids: «box»)"
+      }
+    }
+  },
+  {
+    "id": "F11-element-add-bad-id-path",
+    "source": "spec 093 / 2026-11-02 QA finding F-11",
+    "setup": [
+      {
+        "tool": "scene_create",
+        "input": {
+          "scene": "repro-f11",
+          "data": {
+            "elements": [{ "id": "s1-title", "kind": "rect" }]
+          }
+        }
+      }
+    ],
+    "call": {
+      "tool": "element_add",
+      "input": {
+        "scene": "repro-f11",
+        "kind": "rect",
+        "patch": { "id": "s1-title" }
+      }
+    },
+    "expect": {
+      "ok": false,
+      "error": {
+        "code": "duplicate_id",
+        "path": "patch.id"
+      }
+    }
+  },
+  {
+    "id": "F12-compact-duplicate-id-single-code",
+    "source": "spec 093 / 2026-11-02 QA finding F-12",
+    "call": {
+      "tool": "scene_build",
+      "input": {
+        "compact": {
+          "elements": [
+            { "id": "dup", "kind": "rect" },
+            { "id": "dup", "kind": "rect" }
+          ]
+        }
+      }
+    },
+    "expect": {
+      "ok": false,
+      "error": {
+        "code": "duplicate_id"
+      }
+    }
+  },
+  {
+    "id": "F15-background-set-misplaced-hint",
+    "source": "spec 093 / 2026-11-02 QA finding F-15",
+    "setup": [
+      {
+        "tool": "scene_create",
+        "input": { "scene": "repro-f15", "data": {} }
+      }
+    ],
+    "call": {
+      "tool": "background_set",
+      "input": {
+        "scene": "repro-f15",
+        "values": { "color": "#0F172A" }
+      }
+    },
+    "expect": {
+      "ok": false,
+      "error": {
+        "message": "¿van dentro de «patch»?"
+      }
+    }
   }
 ]

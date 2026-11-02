@@ -63,12 +63,18 @@ function asRuleData(input: CompactSceneInput, duration: number): unknown {
     return out;
   };
   // a compact shot's name defaults to its id, as the expansion writes it
-  const shots = input.shots?.map((sh) => ({ ...sh, name: sh.name ?? sh.id }));
+  const rawShots = Array.isArray(input.shots)
+    ? (input.shots as Record<string, unknown>[])
+    : undefined;
+  const shots = rawShots?.map((sh) => ({ ...sh, name: sh.name ?? sh.id }));
+  const rawElements = Array.isArray(input.elements)
+    ? (input.elements as Record<string, unknown>[])
+    : [];
   return {
     ...input,
-    duration: input.duration ?? duration,
+    duration: typeof input.duration === "number" ? input.duration : duration,
     shots,
-    elements: input.elements.map(view),
+    elements: rawElements.map(view),
   };
 }
 
@@ -84,7 +90,10 @@ function compactProblems(
   duration: number,
 ): Problem[] {
   const named = (path: string) => join("compact", idPath(input, path));
-  const size = input.size === undefined ? undefined : parseSize(input.size);
+  const size =
+    typeof input.size === "string" || Array.isArray(input.size)
+      ? parseSize(input.size as string | readonly [number, number])
+      : undefined;
   const problems: Problem[] = [
     ...(size && "error" in size
       ? [{ path: "compact.size", message: size.error }]
@@ -240,7 +249,10 @@ async function laterProblems(
     if (head === "elements" && typeof index === "number") bad.add(index);
     else if (typeof head === "string") delete rest[head];
   }
-  rest.elements = (input.elements ?? []).map((el, i) =>
+  const rawInputElements = Array.isArray(input.elements)
+    ? (input.elements as unknown[])
+    : [];
+  rest.elements = rawInputElements.map((el, i) =>
     bad.has(i)
       ? {
           kind: "rect",

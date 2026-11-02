@@ -21,3 +21,20 @@ it("tells a value below its range in Spanish", async () => {
 
   expect(r).toMatchObject(fails(/Demasiado pequeño/));
 });
+
+it("background_set suggests patch when an unknown object parameter is passed (093/R5)", async () => {
+  const r = await call("background_set", {
+    scene: "s",
+    values: { color: "#0F172A" },
+  });
+
+  expect(r).toMatchObject(fails(/¿van dentro de «patch»\?/));
+});
+
+it("background_set refinement message reads Indica preset o patch (093/R5)", async () => {
+  const r = await call("background_set", {
+    scene: "s",
+  });
+
+  expect(r).toMatchObject(fails(/Indica preset o patch/));
+});

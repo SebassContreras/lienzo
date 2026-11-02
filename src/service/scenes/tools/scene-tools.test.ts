@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { fails, invalid, toolSuite } from "../../contract/support.ts";
 
 const suite = toolSuite();
@@ -465,4 +465,120 @@ it("scene_update notices a long transition and a camera channel the camera lacks
       ]),
     },
   });
+});
+
+describe("compact validation and error paths (093/R1)", () => {
+  const cases: [
+    string,
+    { input: Record<string, unknown>; isFile: boolean },
+    {
+      expectedValid: boolean;
+      expectedCode?: string;
+      expectedErrorPaths: string[];
+    },
+  ][] = [
+    [
+      "nominal valid compact",
+      {
+        input: {
+          duration: 4,
+          fps: 30,
+          elements: [{ id: "el1", kind: "rect", w: 100, h: 100 }],
+        },
+        isFile: false,
+      },
+      { expectedValid: true, expectedErrorPaths: [] },
+    ],
+    [
+      "boundary valid limits duration: 600, fps: 60",
+      {
+        input: {
+          duration: 600,
+          fps: 60,
+          elements: [{ id: "el1", kind: "rect", w: 100, h: 100 }],
+        },
+        isFile: false,
+      },
+      { expectedValid: true, expectedErrorPaths: [] },
+    ],
+    [
+      "compound top-level schema and element errors via inline compact",
+      {
+        input: {
+          duration: 601,
+          fps: 61,
+          elements: [{ id: "bad-el", kind: "unknown_kind_xyz" }],
+        },
+        isFile: false,
+      },
+      {
+        expectedValid: false,
+        expectedCode: "invalid_scene",
+        expectedErrorPaths: [
+          "compact.duration",
+          "compact.fps",
+          "compact.elements.bad-el.kind",
+        ],
+      },
+    ],
+    [
+      "compound top-level schema and element errors via compactFile parity",
+      {
+        input: {
+          duration: 601,
+          fps: 61,
+          elements: [{ id: "bad-el", kind: "unknown_kind_xyz" }],
+        },
+        isFile: true,
+      },
+      {
+        expectedValid: false,
+        expectedCode: "invalid_scene",
+        expectedErrorPaths: [
+          "compact.duration",
+          "compact.fps",
+          "compact.elements.bad-el.kind",
+        ],
+      },
+    ],
+  ];
+
+  it.each(cases)(
+    "%s in scene_validate and scene_build",
+    async (_name, { input, isFile }, { expectedValid, expectedCode, expectedErrorPaths }) => {
+      let callInput: Record<string, unknown>;
+      if (isFile) {
+        const filePath = join(suite.ctx().root, "test-compact.json");
+        await writeFile(filePath, JSON.stringify(input));
+        callInput = { compactFile: filePath };
+      } else {
+        callInput = { compact: input };
+      }
+
+      const valRes = (await call("scene_validate", callInput)) as {
+        ok: boolean;
+        value: { valid: boolean; errors?: { path: string }[] };
+      };
+
+      expect(valRes.ok).toBe(true);
+      expect(valRes.value.valid).toBe(expectedValid);
+      if (!expectedValid) {
+        const paths = (valRes.value.errors ?? []).map((e) => e.path);
+        for (const expectedPath of expectedErrorPaths) {
+          expect(paths).toContain(expectedPath);
+        }
+
+        const buildRes = (await call("scene_build", callInput)) as {
+          ok: boolean;
+          error?: { code: string; errors?: { path: string }[] };
+        };
+        expect(buildRes.ok).toBe(false);
+        expect(buildRes.error?.code).toBe(expectedCode);
+        const buildPaths = (buildRes.error?.errors ?? []).map((e) => e.path);
+        for (const expectedPath of expectedErrorPaths) {
+          expect(buildPaths).toContain(expectedPath);
+        }
+      }
+    },
+  );
 });
