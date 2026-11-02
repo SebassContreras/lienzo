@@ -16,6 +16,8 @@ import { createTtsService } from "../factory.ts";
 import { attachSpeechToScene } from "../scene-audio.ts";
 import { alignScriptToCues } from "../speech-alignment.ts";
 import type { TtsService } from "../types.ts";
+import { voicedSpan } from "../voiced-span.ts";
+import { readWavSamples } from "../wav-samples.ts";
 
 export interface SceneGenerateSpeechOptions {
   ttsService?: TtsService;
@@ -41,7 +43,8 @@ export function createSceneGenerateSpeechTool(
       "appended. The clip is saved in assets/voice/<scene>/ (the scene's stored name, e.g. " +
       "voice/caja-ambar/) named by its content hash; `assetId` is its `src`, with the project " +
       "prefix. `audioDuration` is measured " +
-      "from the MP3/WAV frames.",
+      "from the MP3/WAV frames. Returns `speechStart` and `speechEnd` for the detected voiced span. " +
+      "With `trimSilence: true`, `trimOffset` is set to skip leading silence, and subtitle cues align to audible speech.",
     input: z.object({
       scene: z.string().min(1),
       project: PROJECT,
@@ -54,6 +57,7 @@ export function createSceneGenerateSpeechTool(
       apiKey: z.string().optional(),
       volume: z.number().min(0).max(1).default(1.0),
       startOffset: z.number().min(0).default(0),
+      trimSilence: z.boolean().optional(),
       adjustSceneDuration: z.boolean().default(true),
       subtitles: z.boolean().default(true),
       asTrack: z.boolean().optional(),
@@ -61,6 +65,8 @@ export function createSceneGenerateSpeechTool(
     output: SceneResult.extend({
       assetId: z.string(),
       audioDuration: z.number(),
+      speechStart: z.number().nullable(),
+      speechEnd: z.number().nullable(),
       cuesCount: z.number(),
     }),
     async run(input, ctx) {
@@ -112,7 +118,7 @@ export function createSceneGenerateSpeechTool(
           voice,
           model,
           speed: input.speed,
-          format: "mp3",
+          format: "wav",
           apiKey,
           baseUrl,
         });
@@ -146,7 +152,25 @@ export function createSceneGenerateSpeechTool(
               )),
       );
 
-      // 5. Save the clip into assets/voice/<scene>/, the scene's stored name (086/D3)
+      // 4. Extract voiced span (speechStart / speechEnd) from PCM WAV samples if available (089/D1, D2)
+      let speechStart: number | null = null;
+      let speechEnd: number | null = null;
+      const wav = readWavSamples(speechResult.audioBuffer);
+      if (wav) {
+        const span = voicedSpan(wav.samples, wav.sampleRate);
+        if (span) {
+          speechStart = span.start;
+          speechEnd = span.end;
+        }
+      }
+
+      // 5. Compute trimOffset if trimSilence is requested and speechStart is valid (089/R2, D3)
+      const trimOffset =
+        input.trimSilence && speechStart !== null
+          ? Math.max(0, round2(speechStart - 0.05))
+          : 0;
+
+      // 6. Save the clip into assets/voice/<scene>/, the scene's stored name (086/D3)
       const folder = `voice/${slugify(input.scene)}`;
       let assetId: string;
       try {
@@ -164,31 +188,46 @@ export function createSceneGenerateSpeechTool(
         );
       }
 
-      // 6. Generate subtitle cues if requested
+      // 7. Generate subtitle cues if requested (adjusted for trimOffset if trimSilence is true)
+      const cuesDuration =
+        trimOffset > 0
+          ? Math.max(0.1, round2(estimatedDuration - trimOffset))
+          : estimatedDuration;
       const cues = input.subtitles
         ? alignScriptToCues(input.script, {
-            totalDuration: estimatedDuration,
+            totalDuration: cuesDuration,
             startOffset: input.startOffset,
           })
         : undefined;
 
-      // 7. Attach audio and subtitles to scene within effective project context
+      // 8. Attach audio and subtitles to scene within effective project context
       const editResult = await editScene(effectiveCtx, input.scene, (scene) =>
         attachSpeechToScene(scene, {
           assetId,
           audioDuration: estimatedDuration,
           volume: input.volume,
           startOffset: input.startOffset,
+          trimOffset,
           adjustSceneDuration: input.adjustSceneDuration,
           cues,
           asTrack: input.asTrack,
         }),
       );
 
+      const notices = [...(editResult.notices ?? [])];
+      if (input.trimSilence && speechStart === null) {
+        notices.push(
+          "No se pudo recortar silencio inicial: el audio no contiene muestras de voz identificables.",
+        );
+      }
+
       return {
         ...editResult,
+        notices,
         assetId,
         audioDuration: estimatedDuration,
+        speechStart,
+        speechEnd,
         cuesCount: cues ? cues.length : 0,
       };
     },

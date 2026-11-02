@@ -16,6 +16,8 @@ export interface AttachSpeechOptions {
   volume?: number;
   /** Start offset in seconds relative to scene timeline (default: 0). */
   startOffset?: number;
+  /** Trim offset in seconds to skip leading silence (default: 0). */
+  trimOffset?: number;
   /** Whether to adjust scene.duration to match speech length (default: true). */
   adjustSceneDuration?: boolean;
   /** Optional generated subtitle cues to attach to a subtitles element. */
@@ -58,6 +60,7 @@ export function attachSpeechToScene(
     audioDuration,
     volume = 1.0,
     startOffset = 0,
+    trimOffset = 0,
     adjustSceneDuration = true,
     cues,
     asTrack = false,
@@ -65,18 +68,31 @@ export function attachSpeechToScene(
 
   let newDuration = scene.duration;
   if (adjustSceneDuration && audioDuration > 0) {
+    const audibleDuration = Math.max(0, audioDuration - trimOffset);
     const requiredDuration =
-      Math.round((startOffset + audioDuration + 0.2) * 10) / 10;
+      Math.round((startOffset + audibleDuration + 0.2) * 10) / 10;
     newDuration = Math.max(scene.duration, requiredDuration);
   }
 
   // Playback ignores `scene.audio` once `audioTracks` has entries, so a legacy single
   // track is carried into the list by `getSceneAudioTracks` before appending.
-  const audio = asTrack ? scene.audio : { assetId, volume, startOffset };
+  const audio = asTrack
+    ? scene.audio
+    : {
+        assetId,
+        volume,
+        startOffset,
+        ...(trimOffset > 0 ? { trimOffset } : {}),
+      };
   const audioTracks = asTrack
     ? [
         ...getSceneAudioTracks(scene),
-        createAudioTrack(assetId, { name: "Voz", volume, startOffset }),
+        createAudioTrack(assetId, {
+          name: "Voz",
+          volume,
+          startOffset,
+          ...(trimOffset > 0 ? { trimOffset } : {}),
+        }),
       ]
     : scene.audioTracks;
 
