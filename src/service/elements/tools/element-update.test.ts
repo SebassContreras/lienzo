@@ -31,3 +31,16 @@ it("rejects a negative width in an element_update patch", async () => {
 
   expect(r).toMatchObject({ ok: false, error: { path: "elements.r.w" } });
 });
+
+it("places a top-level element against the scene canvas when at is provided", async () => {
+  await call("scene_update", { scene: "s", patch: { width: 1000, height: 800 } });
+  await call("element_update", {
+    scene: "s",
+    id: "r",
+    patch: { w: 200, h: 100 },
+    at: "center",
+  });
+  const res = (await call("scene_get", { scene: "s" })) as any;
+  const el = res.value.elements.find((e: any) => e.id === "r");
+  expect(el).toMatchObject({ x: 400, y: 350 });
+});

@@ -1,7 +1,7 @@
 import { cp, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { type Ctx, createCtx } from "../../core/ctx.ts";
 import { fakeRenderer } from "../../render/fake-renderer.ts";
 import { registry } from "../../tools/index.ts";
@@ -112,5 +112,58 @@ it("ends an added counter's count-up with its shot", async () => {
         { t: 4, value: 1 },
       ],
     },
+  });
+});
+
+describe("group child counter shot timing (092/R1)", () => {
+  it("times count-up from ancestor group's shot start when added with parent", async () => {
+    await call("scene_update", { scene: "s", patch: { duration: 8 } });
+    await call("shot_set", { scene: "s", id: "s2", start: 4, end: 8 });
+    await call("element_add", {
+      scene: "s",
+      kind: "group",
+      patch: { id: "g2", shot: "s2" },
+    });
+    await call("element_add", {
+      scene: "s",
+      kind: "counter",
+      parent: "g2",
+      patch: { id: "cnt" },
+    });
+
+    const res = (await call("scene_get", { scene: "s" })) as any;
+    const group = res.value.elements.find((el: any) => el.id === "g2");
+    const counter = group.children.find((el: any) => el.id === "cnt");
+
+    expect(counter).toMatchObject({
+      tracks: {
+        progress: [
+          { t: 4, value: 0 },
+          { t: 5.5, value: 1 },
+        ],
+      },
+    });
+  });
+
+  it("times preset tracks from ancestor group's shot start when added with parent", async () => {
+    await call("scene_update", { scene: "s", patch: { duration: 8 } });
+    await call("shot_set", { scene: "s", id: "s2", start: 4, end: 8 });
+    await call("element_add", {
+      scene: "s",
+      kind: "group",
+      patch: { id: "g2", shot: "s2" },
+    });
+    await call("element_add", {
+      scene: "s",
+      preset: "Barra de progreso",
+      parent: "g2",
+      patch: { id: "bar" },
+    });
+
+    const res = (await call("scene_get", { scene: "s" })) as any;
+    const group = res.value.elements.find((el: any) => el.id === "g2");
+    const bar = group.children.find((el: any) => el.id === "bar");
+
+    expect(bar.tracks.value[0].t).toBe(4);
   });
 });

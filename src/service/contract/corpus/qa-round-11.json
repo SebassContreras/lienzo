@@ -114,5 +114,79 @@
       "input": { "scene": "s", "id": "t1", "patch": { "opacity": 0.5 } }
     },
     "expect": { "ok": true, "noNotices": ["peso 500"] }
+  },
+  {
+    "id": "F03-group-child-counter-shot-start",
+    "source": "spec 092 / 2026-11-02 QA finding F-03",
+    "call": {
+      "tool": "scene_build",
+      "input": {
+        "compact": {
+          "duration": 8,
+          "shots": [
+            { "id": "s1", "start": 0, "end": 4 },
+            { "id": "s2", "start": 4, "end": 8 }
+          ],
+          "elements": [
+            {
+              "id": "g2",
+              "kind": "group",
+              "shot": "s2",
+              "children": [{ "id": "cnt", "kind": "counter" }]
+            }
+          ]
+        }
+      }
+    },
+    "expect": { "ok": true }
+  },
+  {
+    "id": "F04-group-child-element-update-at-box",
+    "source": "spec 092 / 2026-11-02 QA finding F-04",
+    "setup": [
+      {
+        "tool": "scene_build",
+        "input": {
+          "compact": {
+            "duration": 4,
+            "width": 1000,
+            "height": 800,
+            "elements": [
+              {
+                "id": "g",
+                "kind": "group",
+                "x": 100,
+                "y": 100,
+                "w": 400,
+                "h": 300,
+                "cw": 400,
+                "ch": 300,
+                "children": [
+                  {
+                    "id": "child",
+                    "kind": "rect",
+                    "w": 50,
+                    "h": 50,
+                    "at": "center"
+                  }
+                ]
+              }
+            ]
+          },
+          "save": "repro-group-at",
+          "overwrite": true
+        }
+      }
+    ],
+    "call": {
+      "tool": "element_update",
+      "input": {
+        "scene": "repro-group-at",
+        "id": "g/child",
+        "at": "center",
+        "patch": {}
+      }
+    },
+    "expect": { "ok": true }
   }
 ]

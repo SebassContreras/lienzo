@@ -213,4 +213,103 @@ describe("nested element tools and group parent insertion", () => {
       { t: 1, value: 360, easing: "auto" },
     ]);
   });
+
+  describe("group child at placement resolution in element_update (092/R2)", () => {
+    it.each([
+      [
+        "direct group child via slash path with at: center",
+        {
+          id: "g/pill",
+          at: "center",
+          expected: { x: 200, y: 90 }, // cw: 700, ch: 260; pill: 300x80 -> (700-300)/2=200, (260-80)/2=90
+        },
+      ],
+      [
+        "direct group child via bare id with at: center",
+        {
+          id: "pill",
+          at: "center",
+          expected: { x: 200, y: 90 },
+        },
+      ],
+      [
+        "nested group child via slash path with at: bottom-right",
+        {
+          id: "g/sub/inner-pill",
+          at: "bottom-right",
+          // sub group cw: 400, ch: 200; inner-pill: 100x50. Shorter side is 200, 5% margin = 10px.
+          // x: 400 - 100 - 10 = 290, y: 200 - 50 - 10 = 140
+          expected: { x: 290, y: 140 },
+        },
+      ],
+      [
+        "direct group child with { anchor, offset }",
+        {
+          id: "g/pill",
+          at: { anchor: "top-left", offset: [15, 25] },
+          // cw: 700, ch: 260. Shorter side: 260, 5% = 13px margin.
+          // x = 13 + 15 = 28, y = 13 + 25 = 38
+          expected: { x: 28, y: 38 },
+        },
+      ],
+      [
+        "direct group child with point { x, y }",
+        {
+          id: "g/pill",
+          at: { x: 350, y: 130 }, // centered on (350, 130) -> x = 350 - 150 = 200, y = 130 - 40 = 90
+          expected: { x: 200, y: 90 },
+        },
+      ],
+    ])("%s", async (_desc, { id, at, expected }) => {
+      await ok("scene_build", {
+        compact: {
+          size: "1080x1920",
+          duration: 4,
+          elements: [
+            {
+              id: "g",
+              kind: "group",
+              x: 100,
+              y: 100,
+              w: 700,
+              h: 260,
+              cw: 700,
+              ch: 260,
+              children: [
+                { id: "pill", kind: "rect", w: 300, h: 80, x: 0, y: 0 },
+                {
+                  id: "sub",
+                  kind: "group",
+                  w: 400,
+                  h: 200,
+                  cw: 400,
+                  ch: 200,
+                  children: [
+                    { id: "inner-pill", kind: "rect", w: 100, h: 50, x: 0, y: 0 },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        save: "repro-at",
+      });
+
+      await ok("element_update", {
+        scene: "repro-at",
+        id,
+        patch: {},
+        at,
+      });
+
+      const scene = await onDisk("repro-at");
+      const rootG = scene.elements[0] as any;
+      const target =
+        id === "g/sub/inner-pill"
+          ? rootG.children.find((c: any) => c.id === "sub").children[0]
+          : rootG.children.find((c: any) => c.id === "pill");
+
+      expect(target).toMatchObject(expected);
+    });
+  });
 });

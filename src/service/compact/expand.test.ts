@@ -830,3 +830,218 @@ describe("placement defaults", () => {
     expect(notices.some((n) => n.includes("elements.2"))).toBe(true);
   });
 });
+
+describe("inherited shot timing for group children (092/R1)", () => {
+  type ShotCase = [
+    description: string,
+    payload: {
+      input: CompactScene;
+      childPath: (scene: { elements: any[] }) => any;
+      expectedStart: number;
+      expectedEnd: number;
+    },
+  ];
+
+  const cases: ShotCase[] = [
+    [
+      "top-level counter with shot: s2 (start: 4)",
+      {
+        input: {
+          duration: 8,
+          shots: [
+            { id: "s1", start: 0, end: 4 },
+            { id: "s2", start: 4, end: 8 },
+          ],
+          elements: [{ kind: "counter", id: "cnt", shot: "s2" }],
+        },
+        childPath: (s) => s.elements.find((e) => e.id === "cnt"),
+        expectedStart: 4,
+        expectedEnd: 5.5,
+      },
+    ],
+    [
+      "child counter inside group with shot: s2 (start: 4)",
+      {
+        input: {
+          duration: 8,
+          shots: [
+            { id: "s1", start: 0, end: 4 },
+            { id: "s2", start: 4, end: 8 },
+          ],
+          elements: [
+            {
+              kind: "group",
+              id: "g",
+              shot: "s2",
+              children: [{ kind: "counter", id: "cnt" }],
+            },
+          ],
+        },
+        childPath: (s) => s.elements[0].children[0],
+        expectedStart: 4,
+        expectedEnd: 5.5,
+      },
+    ],
+    [
+      "2-level nested group child (gOuter[s2] -> gInner -> cnt)",
+      {
+        input: {
+          duration: 8,
+          shots: [
+            { id: "s1", start: 0, end: 4 },
+            { id: "s2", start: 4, end: 8 },
+          ],
+          elements: [
+            {
+              kind: "group",
+              id: "gOuter",
+              shot: "s2",
+              children: [
+                {
+                  kind: "group",
+                  id: "gInner",
+                  children: [{ kind: "counter", id: "cnt" }],
+                },
+              ],
+            },
+          ],
+        },
+        childPath: (s) => s.elements[0].children[0].children[0],
+        expectedStart: 4,
+        expectedEnd: 5.5,
+      },
+    ],
+    [
+      "child counter inside unbound group starts at 0",
+      {
+        input: {
+          duration: 8,
+          shots: [{ id: "s1", start: 2, end: 6 }],
+          elements: [
+            {
+              kind: "group",
+              id: "g",
+              children: [{ kind: "counter", id: "cnt" }],
+            },
+          ],
+        },
+        childPath: (s) => s.elements[0].children[0],
+        expectedStart: 0,
+        expectedEnd: 1.5,
+      },
+    ],
+    [
+      "child with explicit shot overrides ancestorShot",
+      {
+        input: {
+          duration: 8,
+          shots: [
+            { id: "s1", start: 1, end: 4 },
+            { id: "s2", start: 4, end: 8 },
+          ],
+          elements: [
+            {
+              kind: "group",
+              id: "g",
+              shot: "s2",
+              children: [{ kind: "counter", id: "cnt", shot: "s1" }],
+            },
+          ],
+        },
+        childPath: (s) => s.elements[0].children[0],
+        expectedStart: 1,
+        expectedEnd: 2.5,
+      },
+    ],
+  ];
+
+  it.each(cases)("%s", async (_desc, { input, childPath, expectedStart, expectedEnd }) => {
+    const { scene } = await expandScene(input);
+    const child = childPath(scene);
+    expect(child).toBeDefined();
+    expect(child.tracks?.progress).toEqual([
+      { t: expectedStart, value: 0, easing: "auto" },
+      { t: expectedEnd, value: 1, easing: "auto" },
+    ]);
+  });
+
+  it("preserves explicit tracks.progress provided by caller without overriding timing", async () => {
+    const { scene } = await expandScene({
+      duration: 8,
+      shots: [{ id: "s2", start: 4, end: 8 }],
+      elements: [
+        {
+          kind: "group",
+          id: "g",
+          shot: "s2",
+          children: [
+            {
+              kind: "counter",
+              id: "cnt",
+              tracks: {
+                progress: [
+                  { t: 0.2, value: 0 },
+                  { t: 0.8, value: 1 },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const group = scene.elements[0] as any;
+    const child = group.children[0];
+    expect(child.tracks.progress).toEqual([
+      { t: 0.2, value: 0, easing: "auto" },
+      { t: 0.8, value: 1, easing: "auto" },
+    ]);
+  });
+
+  it("shifts preset with default tracks inside a shot-bound group", async () => {
+    const fakePreset: PresetRecipe = {
+      name: "progress-bar",
+      kind: "rect",
+      traits: [],
+      set: {
+        tracks: {
+          w: [
+            { t: 0, value: 0, easing: "ease-out" },
+            { t: 1.6, value: 80, easing: "auto" },
+          ],
+        },
+      },
+    };
+    const { scene } = await expandScene(
+      {
+        duration: 8,
+        shots: [
+          { id: "s1", start: 0, end: 4 },
+          { id: "s2", start: 4, end: 8 },
+        ],
+        elements: [
+          {
+            kind: "group",
+            id: "g",
+            shot: "s2",
+            children: [
+              {
+                preset: "progress-bar",
+                id: "p1",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        findPreset: async (name) =>
+          name === "progress-bar" ? fakePreset : undefined,
+      },
+    );
+    const group = scene.elements[0] as any;
+    const child = group.children[0];
+    expect(child.tracks.w).toEqual([
+      { t: 4, value: 0, easing: "ease-out" },
+      { t: 5.6, value: 80, easing: "auto" },
+    ]);
+  });
+});
