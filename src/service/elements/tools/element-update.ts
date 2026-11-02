@@ -10,7 +10,7 @@ import { placeAt } from "../../compact/layout.ts";
 import { inProject, PROJECT } from "../../core/project-scope.ts";
 import { defineTool } from "../../core/registry.ts";
 import { editScene, SceneResult } from "../../scenes/scenes.ts";
-import { updateElement } from "../element-tree.ts";
+import { findParent, updateElement } from "../element-tree.ts";
 import {
   COORDINATES,
   hasPositionTrack,
@@ -33,7 +33,7 @@ export const elementUpdate = defineTool({
     "far), except tracks given in the same patch, which are taken as given. " +
     ANIM_RULES +
     AT_RULES +
-    "It places the patched element against the scene and wins over an `x`/`y` in the patch. " +
+    "It places the patched element against the scene (or the parent group's content area when id addresses a group child) and wins over an `x`/`y` in the patch. " +
     COORDINATES +
     OPTIONS_TEXT,
   input: z.object({
@@ -49,22 +49,32 @@ export const elementUpdate = defineTool({
     const result = await editScene(
       await inProject(ctx, project),
       scene,
-      (s) => ({
-        ...s,
-        elements: updateElement(s.elements, id, (el) => {
-          notices.push(...patchNotices(el, patch));
-          // a new shot carries the tracks along; tracks in the patch are taken as given (075/D1)
-          const rebound =
-            typeof patch.shot === "string" && patch.shot !== el.shot
-              ? rebindShot(el, patch.shot, s.shots)
-              : { el, delta: 0 };
-          const moved = movedNotice([{ id, delta: rebound.delta }]);
-          if (moved) notices.push(moved);
-          const out = patched(rebound.el, patch);
-          if (at && hasPositionTrack(out)) notices.push(trackOverridesAt(id));
-          return at ? placeAt(out, at, s) : out;
-        }),
-      }),
+      (s) => {
+        const parent = at ? findParent(s.elements, id) : undefined;
+        const box =
+          parent && parent.kind === "group"
+            ? {
+                width: typeof (parent as any).cw === "number" ? (parent as any).cw : parent.w,
+                height: typeof (parent as any).ch === "number" ? (parent as any).ch : parent.h,
+              }
+            : s;
+        return {
+          ...s,
+          elements: updateElement(s.elements, id, (el) => {
+            notices.push(...patchNotices(el, patch));
+            // a new shot carries the tracks along; tracks in the patch are taken as given (075/D1)
+            const rebound =
+              typeof patch.shot === "string" && patch.shot !== el.shot
+                ? rebindShot(el, patch.shot, s.shots)
+                : { el, delta: 0 };
+            const moved = movedNotice([{ id, delta: rebound.delta }]);
+            if (moved) notices.push(moved);
+            const out = patched(rebound.el, patch);
+            if (at && hasPositionTrack(out)) notices.push(trackOverridesAt(id));
+            return at ? placeAt(out, at, box) : out;
+          }),
+        };
+      },
     );
     return { ...result, notices: [...notices, ...result.notices] };
   },
