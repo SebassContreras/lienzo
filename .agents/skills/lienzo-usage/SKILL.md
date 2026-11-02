@@ -127,7 +127,8 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
 
 - `at` places an element the same way in every tool (`scene_build`, `element_add`,
   `element_update`): `"center"` or another anchor, `{ anchor, offset: [dx, dy] }`, or a
-  point `{ x, y }` it is centred on; `fit: "canvas"` fills the canvas; lines join elements with `from` / `to`.
+  point `{ x, y }` it is centred on; inside a group, placement is relative to the parent group's
+  content box (`cw × ch`); `fit: "canvas"` fills the canvas; lines join elements with `from` / `to`.
   Edge anchors (`"top"`, `"bottom-left"`, …) keep 5% of the shorter side from the edge
   (54 px on 1080); `offset` moves from there. A top-level element with no `at`, `x`, `y`
   or `fit` is centred. `at` with a track on `x`/`y` comes back as a notice: the track's
