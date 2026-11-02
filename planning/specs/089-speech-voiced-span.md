@@ -21,29 +21,48 @@ and `pnpm typecheck` pass.
 ## Principles applied
 | Principle | How it shows here |
 |---|---|
-| 1 KISS / YAGNI | Measure and report; trim only the start, through the existing `trimOffset`; no audio re-encoding. |
-| 2 SRP | A pure function finds the voiced span from samples; the tool only reports and writes `trimOffset`. |
-| 5 Pure functions | `voicedSpan(samples, sampleRate, threshold)` has no I/O. |
-| 9 Research | T001 settles how to get PCM samples from each provider before any design is final. |
+| 1 KISS / YAGNI | Measure and report start/end; trim only the start through existing `trimOffset`; no audio re-encoding. |
+| 2 SRP | Pure `voicedSpan` calculates boundaries from PCM samples; WAV parser extracts samples; tool only wires output and writes `trimOffset`. |
+| 3 DRY by composition | Reuses existing `audioDuration` WAV parsing, `SceneAudio` / `AudioTrackItem` pipeline, and `round2` helper. |
+| 5 Stack standards | Spanish error messages and notices, `snake_case` codes, docs travel with behavior. |
+| 6 Document Trade-offs | Documented pros, cons, and mitigations in Design. |
+| 7 Validate with Research | Cites OpenAI-compatible audio API specification for `response_format: "wav"`. |
+| TESTING.md | Parameterized table tests over R1 partitions and boundaries; timing and golden render invariants. |
 
 ## Requirements
 - R1: `scene_generate_speech` returns `speechStart` and `speechEnd` (seconds from the clip's
-  start): the first and last instant the signal is above a silence threshold (−40 dBFS,
-  assumed), for every provider whose audio the tool can decode.
-  Partitions: speech from the first sample (`speechStart` 0); leading and trailing silence;
-  all-silent clip (both `null`, with a notice); a short pause inside the speech (not a boundary).
-  Invariant: 0 ≤ `speechStart` < `speechEnd` ≤ `audioDuration`.
-- R2: With `trimSilence: true` (default `false`), the written track gets `trimOffset` =
-  `speechStart` (minus a 0.05 s margin, at least 0), and the cues start at `startOffset` instead
-  of covering the skipped silence. Without it, nothing changes.
-- R3: The tool description, README and `lienzo-usage` explain both fields and the option, and
-  that the clip still ends with its trailing silence (harmless when clips overlap only in silence).
+  start, rounded to hundredths via `round2`): the first and last instant the signal is above a
+  silence threshold of −40 dBFS, for every provider whose audio provides PCM samples (WAV).
+  Partitions:
+  - speech from the first sample (`speechStart: 0`);
+  - leading and trailing silence (0 < `speechStart` < `speechEnd` < `audioDuration`);
+  - speech ending at the final sample (`speechEnd == audioDuration`);
+  - pauses inside speech (RMS dips below threshold inside speech do not split the span);
+  - all-silent clip (both `speechStart` and `speechEnd` are `null`, with a notice);
+  - audio format without PCM decoding (e.g. MP3 fallback: both `null`, with a notice);
+  - empty or malformed audio buffer (both `null`, with a notice).
+  Invariant: when both numbers are present, 0 ≤ `speechStart` < `speechEnd` ≤ `audioDuration`.
+  Output schema: `speechStart: z.number().nullable()`, `speechEnd: z.number().nullable()`.
+- R2: With `trimSilence: true` (default `false`), the written track (`audioTracks` entry when
+  `asTrack: true`, or `scene.audio` when `asTrack: false`) gets `trimOffset` = `speechStart`
+  (minus a 0.05 s margin, at least 0, rounded to hundredths), and subtitle cues start at `startOffset`
+  with duration matching the audible portion (`totalDuration = Math.max(0.1, round2(estimatedDuration - effectiveTrimOffset))`).
+  Partitions:
+  - `trimSilence: false` or omitted: `trimOffset` is unset/0, cues span `estimatedDuration` (unchanged);
+  - `trimSilence: true` with valid `speechStart`: `trimOffset = Math.max(0, round2(speechStart - 0.05))`, cues shifted;
+  - `trimSilence: true` when `speechStart` is `null` (all-silent or non-PCM): `trimOffset` is unset/0, cues span `estimatedDuration`, notice emitted;
+  - `asTrack: true` writes `trimOffset` on the appended `audioTracks` item;
+  - `asTrack: false` writes `trimOffset` on `scene.audio`.
+  Invariant: `trimOffset` is never negative and never exceeds `audioDuration`.
+- R3: The tool description, README and `lienzo-usage` explain `speechStart`, `speechEnd`, and
+  the `trimSilence` option, and document that the clip still ends with its trailing silence
+  (harmless when subsequent clips start at their scheduled `startOffset`).
 
 ### Who it serves
 Agents writing one voice clip per shot (Animator's `lienzo-animate` step 3).
 
 ### Out of scope
-- Cutting the trailing silence (tracks have no end trim) and re-encoding audio.
+- Cutting trailing silence (tracks have no end trim) and re-encoding audio files.
 - Word-level alignment.
 
 ### Dependencies
@@ -53,22 +72,50 @@ Agents writing one voice clip per shot (Animator's `lienzo-animate` step 3).
 Agent tasks.
 
 ## Design
-- D1 (R1) (assumed): get PCM by asking the provider for WAV when it supports it (the local
-  adapter sends `response_format`, `local-adapter.ts:157–168`) and reading the samples; keep
-  saving the format the caller asked for. T001 confirms per provider; a provider without WAV
-  returns no span and a notice.
-- D2 (R1): `voicedSpan` = first and last 10 ms window whose RMS is above the threshold.
-- D3 (R2): `trimOffset` is written on the new `audioTracks` entry; in `scene.audio` mode it is
-  written there too if that field supports it (T001 checks).
+- D1 (R1): Synthesize audio requesting `response_format: "wav"` from local/Kokoro/OpenRouter TTS
+  services (supported by OpenAI-compatible audio API). Standard 16-bit PCM RIFF/WAVE bytes are
+  received in a single request. `readWavSamples(audioBuffer)` extracts the 16-bit PCM samples
+  (`Int16Array`) and sample rate from the `"fmt "` and `"data"` chunks. If the provider returns
+  non-WAV bytes (e.g. MP3), `speechStart` and `speechEnd` return `null` with a Spanish notice.
+  Source: https://platform.openai.com/docs/api-reference/audio/createSpeech (accessed 2026-11-02).
+- D2 (R1): Pure function `voicedSpan(samples, sampleRate, thresholdDbfs = -40, windowMs = 10)` in
+  `src/service/speech/voiced-span.ts`: evaluates non-overlapping or sliding 10 ms windows
+  (`Math.floor(sampleRate * 0.010)` samples); computes RMS in dBFS (`20 * Math.log10(rms / 32767)`);
+  identifies the start time of the first window and end time of the last window where RMS ≥ `thresholdDbfs`.
+  Returns `{ start: number; end: number } | null`.
+- D3 (R2): `trimOffset` is written to `audioTracks` when `asTrack: true` or `scene.audio` when
+  `asTrack: false`, using `Math.max(0, round2(speechStart - 0.05))`. Both schemas already declare
+  `trimOffset: z.number().min(0).optional()` (`src/model/schema.ts:36,45`). When `trimSilence: true`
+  and `speechStart` is present, `alignScriptToCues` is called with duration adjusted by `trimOffset`
+  so subtitle cues start at `startOffset` and match audible speech.
 
-### Trade-offs
-- D1. Pros: no decoder dependency. Cons: one more request format per call. Mitigation: if T001
-  finds the provider can return both in one call, or that MP3 decoding is already available,
-  use that instead and strike D1.
+### Trade-offs & Mitigations
+- D1. Pros: zero external decoder dependencies; uncompressed PCM samples read directly in memory; single HTTP call.
+  Cons: WAV files are larger than MP3 in local disk storage (~10x for raw PCM).
+  Mitigation: clips are short per-shot phrases (2–5 s, ~100–300 KB); local storage in `projects/<project>/assets/` handles this easily. Non-WAV formats fail gracefully to `null` with a notice.
+- D2. Pros: 10 ms RMS window at −40 dBFS matches standard audio processing (`ffmpeg silencedetect`).
+  Cons: continuous background noise above −40 dBFS could prevent silence detection.
+  Mitigation: synthetic TTS speech produces digital silence (< −60 dBFS); −40 dBFS is established by measured Kokoro audio context.
+- D3. Pros: reuses existing `trimOffset` pipeline already implemented across schema, export, player, and timing math.
+  Cons: leaves trailing silence on disk.
+  Mitigation: subsequent clips start at their scheduled `startOffset`, so trailing silence does not cause audible overlap.
 
 ## Tasks
-- [ ] 089/T001 [agent] Verify: which providers return WAV/PCM, whether a decoder is already in the stack, and whether `scene.audio` takes `trimOffset`; record `verified:` and revise D1/D3 through CHANGES if needed — covers R1, D1, D3
-- [ ] 089/T002 [agent] `voicedSpan` with table tests on the R1 partitions (synthetic PCM) — covers R1, D2
-- [ ] 089/T003 [agent] Tool returns `speechStart` / `speechEnd`; `trimSilence` writes `trimOffset` and shifts the cues — covers R1, R2
-- [ ] 089/T004 [agent] Docs (R3) — covers R3
-- [ ] 089/T005 [agent] Verify: Kokoro `af_bella` clip "Tested in a RINGANA study." on a test scene: span within 0.05 s of `ffmpeg silencedetect`; record `verified:` — covers R1
+- [ ] 089/T001 [agent] Tests, written first, in `src/service/speech/voiced-span.test.ts`: `test.each` table over R1 partitions (speech at start, leading/trailing silence, pause inside speech, all-silent, empty samples, sample rate 24kHz and 44.1kHz) asserting `{ start, end }` or `null`, and invariant `0 <= start < end <= duration` — covers R1, D2
+- [ ] 089/T002 [agent] Tests, written first, in `src/service/speech/tools/speech-tools.test.ts`: `test.each` table over tool outputs (WAV clip with silence returning `speechStart`/`speechEnd`, `trimSilence: true` writing `trimOffset` and adjusting cues, `trimSilence: false` preserving 0/unset, `asTrack: true` vs `scene.audio`, all-silent WAV emitting notice, non-WAV buffer emitting notice) — covers R1, R2, D1, D3
+- [ ] 089/T003 [agent] Pure `voicedSpan` function in `src/service/speech/voiced-span.ts` and `readWavSamples` helper in `src/service/speech/audio-duration.ts` (or `wav-samples.ts`) — covers R1, D1, D2
+- [ ] 089/T004 [agent] Wire WAV request format and `speechStart`/`speechEnd` into `scene_generate_speech` output; wire `trimSilence` option and cue adjustment into `attachSpeechToScene` (D1, D3) — covers R1, R2, D1, D3
+- [ ] 089/T005 [agent] Docs: update `scene_generate_speech` tool description, `README.md`, and `.agents/skills/lienzo-usage/SKILL.md` (R3) — covers R3
+- [ ] 089/T006 [agent] Verify: call `scene_generate_speech` (CLI or integration test with synthetic WAV fixture matching Goal's 0.4s leading and 0.6s trailing silence); verify `speechStart ≈ 0.4`, `speechEnd ≈ audioDuration - 0.6`, `trimOffset` set, cues shifted; run `pnpm test` and `pnpm typecheck`; record `verified:` — covers R1, R2
+
+## Changes
+- 2026-11-02: Audit corrections applied before task execution (F1–F9):
+  - F1: Replaced retired 10-principle references (`5 Pure functions`, `9 Research`) with the 7 Core Engineering Principles from `ENGINEERING.md` and `TESTING.md`.
+  - F2: Removed speculative "assumed" threshold from R1; specified exact −40 dBFS threshold, comprehensive input partitions (all-silent, non-PCM, boundaries), and `round2` hundredths invariant.
+  - F3: Specified concrete behavior and partitions for `trimSilence` in R2 (`trimOffset` margin calculation, subtitle cue length adjustment, all-silent fallback notice, `asTrack` vs `scene.audio`).
+  - F4: Replaced speculative "(assumed)" two-request model in D1 with single-request `response_format: "wav"` architecture; added official OpenAI audio API specification citation (ENG-7).
+  - F5: Specified exact mathematical formulation for `voicedSpan` in D2 (10 ms window RMS in dBFS relative to 16-bit full scale).
+  - F6: Replaced speculative "if that field supports it (T001 checks)" in D3 with concrete schema confirmation of `trimOffset` across `scene.audio` and `audioTracks`.
+  - F7: Renamed section to `### Trade-offs & Mitigations` and expanded pros, cons, and mitigations for D1, D2, and D3.
+  - F8: Replaced discovery task T001 with test-first tasks (T001 unit, T002 integration), decomposed compound tasks, and added Goal verification task T006.
+  - F9: Added `## Changes` entry documenting audit findings.
