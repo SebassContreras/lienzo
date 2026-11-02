@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CompactSceneInputSchema } from "../../../model/compact.ts";
 import type { Scene } from "../../../model/model.ts";
 import { buildCompact } from "../../compact/build-compact.ts";
+import { readCompactFile } from "../../compact/compact-file.ts";
 import { inProject, PROJECT } from "../../core/project-scope.ts";
 import { defineTool, fail } from "../../core/registry.ts";
 import { Verdict, verdictOf } from "../../core/verdict.ts";
@@ -27,19 +28,39 @@ export const sceneValidate = defineTool({
     "project (it would draw with a fallback; run font_install) or a weight its family lacks (the notice names the weight drawn), an easing on a track's last keyframe (it shapes nothing), or a text whose width is " +
     "estimated because its font has no metrics here (check it with scene_preview). " +
     "Pass either `data` (a scene as scene_get returns it; missing scene fields take the project's " +
-    "canvas and an element's missing fields its kind's defaults) or `compact` (the compact form scene_build takes, " +
+    "canvas and an element's missing fields its kind's defaults) or `compact` (or `compactFile`, the compact form scene_build takes, " +
     "checked as scene_build would build it, with the same notices). Every problem with the input, " +
     "also passing both or neither, is a verdict (`valid: false`); only a wrong `project` fails the call.",
   input: z.object({
     data: z.unknown().optional(),
     compact: CompactSceneInputSchema.optional(),
+    compactFile: z.string().min(1).optional(),
     project: PROJECT,
   }),
   output: Verdict.extend({ notices: z.array(z.string()).optional() }),
-  run: async ({ data, compact, project }, ctx) => {
+  run: async ({ data, compact, compactFile, project }, ctx) => {
     const projectCtx = await inProject(ctx, project);
     const fonts = await availableFonts(ctx.fonts, project);
     await measureInstalledFonts(ctx.fonts, project);
+
+    if (compactFile !== undefined) {
+      let built: { notices: string[] } | undefined;
+      const verdict = await verdictOf(async () => {
+        if (data !== undefined || compact !== undefined) {
+          fail(
+            "invalid_input",
+            "Pasa `data`, `compact` o `compactFile`, no varios",
+            "compactFile",
+          );
+        }
+        const resolved = await readCompactFile(compactFile);
+        built = await buildCompact(projectCtx, resolved, fonts);
+      });
+      return built && built.notices.length > 0
+        ? { ...verdict, notices: built.notices }
+        : verdict;
+    }
+
     if (compact !== undefined) {
       let built: { notices: string[] } | undefined;
       const verdict = await verdictOf(async () => {

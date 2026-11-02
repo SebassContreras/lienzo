@@ -178,8 +178,7 @@ export function misplacedHint(
   const missing = issues
     .filter(
       (i) =>
-        i.code === "invalid_type" &&
-        i.expected === "object" &&
+        (i.code === "invalid_type" || i.code === "custom") &&
         i.path.length === 1 &&
         given[String(i.path[0])] === undefined,
     )

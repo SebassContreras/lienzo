@@ -9,6 +9,7 @@ import { OPTIONS_TEXT } from "../../../model/options.ts";
 import { parseScene, SceneSchema } from "../../../model/schema.ts";
 import { slugify } from "../../../presets/slug.ts";
 import { buildCompact } from "../../compact/build-compact.ts";
+import { readCompactFile } from "../../compact/compact-file.ts";
 import { FLAT_KINDS } from "../../compact/defaults.ts";
 import { keepAudio } from "../../compact/keep-audio.ts";
 import { inProject, PROJECT } from "../../core/project-scope.ts";
@@ -24,8 +25,8 @@ export const sceneBuild = defineTool({
   name: "scene_build",
   effects: ["scene"],
   description:
-    "Build a full scene from a compact description given in `compact` (size, elements, " +
-    "shots… go inside it, not at the top level), over the project's canvas (size, " +
+    "Build a full scene from a compact description given in `compact` (or a JSON file path in `compactFile`; " +
+    "size, elements, shots… go inside it, not at the top level), over the project's canvas (size, " +
     'duration, fps, palette background) for what it leaves out. `size` is "WxH", [w, h], a ' +
     'ratio ("9:16", "4:5", "1:1", "16:9") or a format ("Story"); anything else fails. ' +
     "Expands background (a background " +
@@ -55,13 +56,23 @@ export const sceneBuild = defineTool({
     "A notice also names any text or subtitles font that is not installed (run font_install), a weight its family lacks (and the one drawn instead) and an easing on a track's last keyframe, which shapes nothing. " +
     SHOT_RULES +
     OPTIONS_TEXT,
-  input: z.object({
-    compact: CompactSceneInputSchema,
-    project: PROJECT,
-    save: z.string().optional(),
-    overwrite: z.boolean().optional(),
-    response_format: z.enum(["concise", "detailed"]).optional(),
-  }),
+  input: z
+    .object({
+      compact: CompactSceneInputSchema.optional(),
+      compactFile: z.string().min(1).optional(),
+      project: PROJECT,
+      save: z.string().optional(),
+      overwrite: z.boolean().optional(),
+      response_format: z.enum(["concise", "detailed"]).optional(),
+    })
+    .refine((data) => !(data.compact !== undefined && data.compactFile !== undefined), {
+      message: "Pasa `compact` o `compactFile`, no ambos",
+      path: ["compactFile"],
+    })
+    .refine((data) => !(data.compact === undefined && data.compactFile === undefined), {
+      message: "Falta `compact` o `compactFile`",
+      path: ["compact"],
+    }),
   output: z.object({
     scene: SceneSchema.optional(),
     elements: z
@@ -70,12 +81,20 @@ export const sceneBuild = defineTool({
     saved: z.string().optional(),
     notices: z.array(z.string()),
   }),
-  async run({ compact, project, save, overwrite, response_format }, ctx) {
+  async run(
+    { compact, compactFile, project, save, overwrite, response_format },
+    ctx,
+  ) {
+    const resolvedCompact =
+      compactFile !== undefined
+        ? await readCompactFile(compactFile)
+        : compact!;
+
     const effectiveCtx = await inProject(ctx, project);
 
     const fonts = await availableFonts(ctx.fonts, project);
     await measureInstalledFonts(ctx.fonts, project);
-    const built = await buildCompact(effectiveCtx, compact, fonts, {
+    const built = await buildCompact(effectiveCtx, resolvedCompact, fonts, {
       resources: !save,
     });
     let expanded = built.scene;

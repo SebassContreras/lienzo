@@ -47,8 +47,8 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
    one (refused while a scene uses it, unless `force`).
 2. **Catalog:** `component_list` (kinds, fields and animatable paths), `preset_list` /
    `preset_get`, `preset_validate` (checks a recipe before `preset_save`), `font_list` (then `font_install` for a Google font you need).
-3. **Build:** `scene_build` takes the scene inside `compact` (`{ compact: { size, elements,
-   … }, project, save? }`; scene keys at the top level fail, saying they go in `compact`);
+3. **Build:** `scene_build` takes the scene inside `compact` or from a JSON file in `compactFile` (`{ compact: { size, elements,
+   … }, project, save? }` or `{ compactFile: "<path>", project, save? }`; scene keys at the top level fail, saying they go in `compact`);
    texts use `text` and `size`, not `content` or `fontSize` (notices suggest the field).
    With no `save` it returns the expanded scene and
    `notices` without writing anything. What `compact` leaves out (size, duration, fps,
@@ -154,7 +154,7 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
   preset's own tracks (counter, charts, progress) also start at its shot's `start`, and a
   counter's `from`/`to` in compact are its numbers (on a line they are target ids); `list.items` takes `"a\nb"` or `["a", "b"]`.
 - Italic text is `italic: true` (`fontStyle` is not a field and comes back as ignored).
-- Only `scene_build` and `scene_validate` (with `compact`) take the compact form;
+- Only `scene_build` and `scene_validate` (with `compact` or `compactFile`) take the compact form;
   `scene_create` and `scene_validate` `data` take scenes whose elements may be partial
   (filled from their kind's defaults) and a partial `background`; `scene_update` takes scene
   settings.

@@ -167,7 +167,7 @@ automatic canvas fitting (`fit`), readable IDs, line connections (`from`/`to`), 
 animations and keyframe tracks (`[t, value, easing?]`) on a field path or a channel (`@rotate`,
 `@scale`, and `@scaleX` / `@scaleY` to scale one axis around the element's origin).
 
-You can build and preview or save any compact post with the `scene_build` tool:
+You can build and preview or save any compact post with the `scene_build` tool (pass the compact description inline in `compact` or read it from a JSON file path in `compactFile`):
 
 ```sh
 pnpm lienzo scene_build --json '{
