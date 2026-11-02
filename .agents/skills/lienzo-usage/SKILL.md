@@ -160,7 +160,7 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
   settings.
 - Two animation models: `anim` is the kind's motion (`{ in, loop, out }`; `anim: "fade"` is
   short for `{ in: { kind: "fade" } }`, a looping kind such as `"float"` for `loop`), timed
-  from the element's shot; `tracks` are keyframes `[t, value, easing?]` by field path or
+  from the element's shot; `tracks` are keyframes `[t, value, easing?]` (an easing on a tuple's last keyframe has no next segment, so compact expansion sets it to `auto` and raises no dead-easing notice; `{ t, value, easing }` objects keep it) by field path or
   `@rotate` / `@scale` / `@scaleX` / `@scaleY`, with `repeat: "loop" | "pingpong"` and `until`,
   in scene time. `@scaleX` / `@scaleY` grow or squash one axis around `origin` (a bar filling,
   a stem growing up: `"@scaleX": [[0, 0], [1, 1]]` with `origin: "left"`); unlike `w` / `h` they

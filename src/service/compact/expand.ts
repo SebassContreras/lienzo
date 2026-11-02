@@ -150,6 +150,32 @@ function normalizeAnim(rawAnim: unknown): unknown {
   return rawAnim;
 }
 
+/**
+ * Trailing easing of shorthand tracks (091/D1, D2): the last keyframe has no next segment, so
+ * an easing written on a `[t, value, easing]` tuple there is set to `"auto"`. Explicit
+ * `{ t, value, easing }` keyframes are left alone so their notice (065/R4) still fires.
+ */
+function autoTrailingEasing(tracks: unknown): unknown {
+  if (!tracks || typeof tracks !== "object" || Array.isArray(tracks))
+    return tracks;
+  const fix = (keys: unknown): unknown => {
+    if (!Array.isArray(keys) || keys.length === 0) return keys;
+    const last = keys[keys.length - 1];
+    if (!Array.isArray(last) || last.length < 3) return keys;
+    return [...keys.slice(0, -1), [last[0], last[1], "auto"]];
+  };
+  return Object.fromEntries(
+    Object.entries(tracks).map(([path, track]) => [
+      path,
+      Array.isArray(track)
+        ? fix(track)
+        : track && typeof track === "object" && "keys" in track
+          ? { ...track, keys: fix((track as { keys: unknown }).keys) }
+          : track,
+    ]),
+  );
+}
+
 /** Builds an element from preset or kind, applying deepMerge and children expansion */
 async function buildElement(
   raw: CompactElement,
@@ -260,7 +286,7 @@ async function buildElement(
   const presetTracks =
     rawPreset && !tracks ? Object.keys(element.tracks ?? {}) : [];
   if (tracks) {
-    element.tracks = TracksSchema.parse(tracks);
+    element.tracks = TracksSchema.parse(autoTrailingEasing(tracks));
   }
   element = rawPreset
     ? fromShotStart(element, presetTracks, state.timing.shots)
@@ -475,7 +501,10 @@ export async function expandScene(
       end: sh.end,
       transition: sh.transition,
       camera: sh.camera?.tracks
-        ? { ...sh.camera, tracks: TracksSchema.parse(sh.camera.tracks) }
+        ? {
+            ...sh.camera,
+            tracks: TracksSchema.parse(autoTrailingEasing(sh.camera.tracks)),
+          }
         : sh.camera,
     }));
   }

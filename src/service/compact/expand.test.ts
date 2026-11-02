@@ -163,7 +163,7 @@ describe("expandScene pure expansion", () => {
     ]);
     expect(rect.tracks?.["@rotate"]).toEqual([
       { t: 0, value: 0, easing: "auto" },
-      { t: 2, value: 360, easing: "ease-in-out" },
+      { t: 2, value: 360, easing: "auto" },
     ]);
 
     const txt = scene.elements[1] as Extract<
@@ -447,7 +447,7 @@ describe("expandScene pure expansion", () => {
     expect(rect.tracks?.y).toEqual({
       keys: [
         { t: 0, value: 10, easing: "step" },
-        { t: 2, value: 50, easing: "hold" },
+        { t: 2, value: 50, easing: "auto" },
       ],
       repeat: "pingpong",
     });
@@ -661,6 +661,122 @@ describe("expandScene pure expansion", () => {
       >;
       expect(rect.shot).toBe("s1");
     });
+  });
+});
+
+describe("compact trailing easing normalization (091)", () => {
+  const cases: [string, unknown, unknown][] = [
+    [
+      "2+ keys",
+      [
+        [0, 0, "linear"],
+        [1, 100, "ease-out"],
+      ],
+      [
+        { t: 0, value: 0, easing: "linear" },
+        { t: 1, value: 100, easing: "auto" },
+      ],
+    ],
+    ["single key", [[0, 10, "ease-in"]], [{ t: 0, value: 10, easing: "auto" }]],
+    [
+      "no trailing easing",
+      [
+        [0, 0],
+        [1, 100],
+      ],
+      [
+        { t: 0, value: 0, easing: "auto" },
+        { t: 1, value: 100, easing: "auto" },
+      ],
+    ],
+    [
+      "object-wrapped",
+      {
+        keys: [
+          [0, 0, "linear"],
+          [1, 100, "ease-out"],
+        ],
+        repeat: "loop",
+      },
+      {
+        keys: [
+          { t: 0, value: 0, easing: "linear" },
+          { t: 1, value: 100, easing: "auto" },
+        ],
+        repeat: "loop",
+      },
+    ],
+    [
+      "explicit objects keep it",
+      [
+        { t: 0, value: 0 },
+        { t: 1, value: 100, easing: "ease-out" },
+      ],
+      [
+        { t: 0, value: 0, easing: "auto" },
+        { t: 1, value: 100, easing: "ease-out" },
+      ],
+    ],
+    ["empty", [], []],
+  ];
+
+  it.each(cases)("element track: %s", async (_n, track, expected) => {
+    const { scene } = await expandScene({
+      elements: [{ kind: "rect", tracks: { x: track } }],
+    } as unknown as CompactScene);
+    expect((scene.elements[0] as { tracks?: unknown }).tracks).toEqual({
+      x: expected,
+    });
+    const { deadKeyframeEasingNotices } = await import(
+      "../scenes/scene-notices.ts"
+    );
+    const dead = deadKeyframeEasingNotices(scene);
+    expect(dead.length > 0).toBe(
+      JSON.stringify(track).includes('"easing":"ease-out"'),
+    );
+  });
+
+  it("normalizes camera tracks and group children", async () => {
+    const { scene } = await expandScene({
+      elements: [
+        {
+          kind: "group",
+          children: [
+            {
+              kind: "rect",
+              tracks: {
+                x: [
+                  [0, 0],
+                  [1, 5, "ease-in"],
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      shots: [
+        {
+          id: "s1",
+          start: 0,
+          end: 2,
+          camera: {
+            tracks: {
+              "@scale": [
+                [0, 1],
+                [1, 2, "ease-out"],
+              ],
+            },
+          },
+        },
+      ],
+    } as unknown as CompactScene);
+    type Tr = Record<string, { easing: string }[]>;
+    const child = (
+      scene.elements[0] as unknown as { children: { tracks: Tr }[] }
+    ).children[0];
+    expect(child.tracks.x[1].easing).toBe("auto");
+    const cam = scene.shots?.[0].camera as unknown as { tracks: Tr };
+    expect(cam.tracks["@scale"][1].easing).toBe("auto");
   });
 });
 
