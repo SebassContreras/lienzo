@@ -6,7 +6,9 @@ import {
 } from "../../model/model.ts";
 import { ToolFailure } from "../core/registry.ts";
 import {
+  findAncestorShot,
   findElement,
+  findParent,
   insertChild,
   updateElement,
   updateSiblings,
@@ -138,5 +140,20 @@ describe("element-tree", () => {
       code: "not_a_group",
       path: "parent",
     });
+  });
+
+  it("finds immediate parent and ancestor shot of nested elements", () => {
+    const child = makeRect("leaf");
+    const subGroup = makeGroup("sub", [child]);
+    const rootGroup = { ...makeGroup("root", [subGroup]), shot: "s2" };
+    const tree: Element[] = [rootGroup];
+
+    expect(findParent(tree, "root/sub/leaf")).toBe(subGroup);
+    expect(findParent(tree, "leaf")).toBe(subGroup);
+    expect(findParent(tree, "root")).toBeUndefined();
+
+    expect(findAncestorShot(tree, "root")).toBe("s2");
+    expect(findAncestorShot(tree, "root/sub")).toBe("s2");
+    expect(findAncestorShot(tree, "leaf")).toBe("s2");
   });
 });

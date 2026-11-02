@@ -20,7 +20,7 @@ import {
   ToolFailure,
 } from "../../core/registry.ts";
 import { editScene, findPreset, SceneResult } from "../../scenes/scenes.ts";
-import { findElement, insertChild } from "../element-tree.ts";
+import { findAncestorShot, findElement, insertChild } from "../element-tree.ts";
 import {
   COORDINATES,
   checkKind,
@@ -117,10 +117,15 @@ export const elementAdd = defineTool({
     if (at && hasPositionTrack(added)) notices.push(trackOverridesAt(added.id));
     const placed = patch && ["x", "y", "a", "b"].some((k) => k in patch);
     const write = editScene(effectiveCtx, scene, (s) => {
-      const fresh =
+      const ancestorShot =
+        parent !== undefined ? findAncestorShot(s.elements, parent, "parent") : undefined;
+      const timingElement =
+        ancestorShot && !added.shot ? { ...added, shot: ancestorShot } : added;
+      const timed =
         preset === undefined
-          ? withCountUp(added, patch ?? {}, s)
-          : fromShotStart(added, presetTracks, s.shots);
+          ? withCountUp(timingElement, patch ?? {}, s)
+          : fromShotStart(timingElement, presetTracks, s.shots);
+      const fresh = !added.shot && timed.shot ? { ...timed, shot: undefined } : timed;
       if (parent !== undefined) {
         const group = findElement(s.elements, parent, "parent");
         if (group.kind !== "group") {

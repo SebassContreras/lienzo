@@ -181,6 +181,7 @@ async function buildElement(
   raw: CompactElement,
   state: ExpandState,
   path: string,
+  inheritedShot?: string,
 ): Promise<Element> {
   const { findPreset } = state;
   let element: Element;
@@ -288,9 +289,14 @@ async function buildElement(
   if (tracks) {
     element.tracks = TracksSchema.parse(autoTrailingEasing(tracks));
   }
+  const effectiveShot = element.shot ?? inheritedShot;
+  const timingElement = effectiveShot ? { ...element, shot: effectiveShot } : element;
   element = rawPreset
-    ? fromShotStart(element, presetTracks, state.timing.shots)
-    : withCountUp(element, raw, state.timing);
+    ? fromShotStart(timingElement, presetTracks, state.timing.shots)
+    : withCountUp(timingElement, raw, state.timing);
+  if (element.shot !== overrides.shot && !overrides.shot) {
+    delete (element as { shot?: string }).shot;
+  }
 
   if (origin !== undefined) {
     element.origin = resolveOrigin(
@@ -318,12 +324,14 @@ async function buildElement(
   // Handle nested children for groups
   if (element.kind === "group" && Array.isArray(children)) {
     const builtChildren: Element[] = [];
+    const groupShot = element.shot ?? inheritedShot;
     for (const [i, child] of children.entries()) {
       builtChildren.push(
         await buildElement(
           child as CompactElement,
           state,
           `${path}.children.${i}`,
+          groupShot,
         ),
       );
     }
@@ -340,6 +348,7 @@ async function buildElement(
       template as CompactElement,
       state,
       `${path}.template`,
+      inheritedShot,
     );
   }
 
@@ -477,10 +486,10 @@ export async function expandScene(
         items[i] = el;
       }
       if (el.kind === "group" && Array.isArray(el.children)) {
-        const size = el as { w?: unknown; h?: unknown };
+        const size = el as { w?: unknown; h?: unknown; cw?: unknown; ch?: unknown };
         applyLayoutPass(el.children, {
-          width: typeof size.w === "number" ? size.w : container.width,
-          height: typeof size.h === "number" ? size.h : container.height,
+          width: typeof size.cw === "number" ? size.cw : typeof size.w === "number" ? size.w : container.width,
+          height: typeof size.ch === "number" ? size.ch : typeof size.h === "number" ? size.h : container.height,
         });
       }
     }

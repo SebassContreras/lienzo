@@ -101,6 +101,39 @@ export function findElement(
   return getAt(elements, resolvePath(elements, target, path));
 }
 
+/**
+ * Returns the immediate parent element of `target` if nested inside a group, or `undefined`
+ * if `target` is at the root of `elements`.
+ */
+export function findParent(
+  elements: readonly Element[],
+  target: string,
+  path = "id",
+): Element | undefined {
+  const indices = resolvePath(elements, target, path);
+  if (indices.length <= 1) return undefined;
+  return getAt(elements, indices.slice(0, -1));
+}
+
+/**
+ * Resolves the effective shot inherited from an element's ancestor chain, if any.
+ */
+export function findAncestorShot(
+  elements: readonly Element[],
+  target: string,
+  path = "id",
+): string | undefined {
+  const indices = resolvePath(elements, target, path);
+  let current: readonly Element[] = elements;
+  let effectiveShot: string | undefined;
+  for (const idx of indices) {
+    const el = current[idx] as Element;
+    if (el.shot) effectiveShot = el.shot;
+    if (el.kind === "group") current = el.children;
+  }
+  return effectiveShot;
+}
+
 /** Immutably updates the element at `target` (`id` or slash path), cloning only its ancestor chain. */
 export function updateElement(
   elements: readonly Element[],
