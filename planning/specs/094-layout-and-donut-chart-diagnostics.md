@@ -109,7 +109,8 @@ Agent tasks.
       verified: animOutsideShotNotices registered in RULES, passing scene-notices, matrix, and silence tests
 - [x] 094/T008 [agent] Shift `anim.in.delay` and `anim.out.delay` in `src/model/shot-timing.ts:63-97` on shot rebind / move (D4) — covers R4, D4
       verified: shiftElementTracks shifts anim in/out delays and rebindShot returns delta when element has anim, passing shot-timing and shot-tools test suites
-- [ ] 094/T009 [agent] Docs: update `docs/components.md` for chart `showValues` formatting, update `docs/qa-log.md` status for `F-08`, `F-10`, `F-14`, and `F-17` to Closed, and verify `.agents/skills/lienzo-usage/SKILL.md` (D5) — covers R5, D5
+- [x] 094/T009 [agent] Docs: update `docs/components.md` for chart `showValues` formatting, update `docs/qa-log.md` status for `F-08`, `F-10`, `F-14`, and `F-17` to Closed, and verify `.agents/skills/lienzo-usage/SKILL.md` (D5) — covers R5, D5
+      verified: docs/components.md and docs/qa-log.md updated with Closed status for F-08, F-10, F-14, F-17, and skill checked
 - [ ] 094/T010 [agent] Verify: run `pnpm test` (including `matrix.test.ts` and `silence.test.ts`), `pnpm replay`, and `pnpm typecheck`, confirming all test suites and replay corpus cases pass; record `verified:` — covers R1–R5, D1–D5
 
 ## Changes

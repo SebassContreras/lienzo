@@ -137,7 +137,9 @@ in over time (`typed`).
 
 **Gráfico.** A data chart (bars and other types, with a palette) that grows in with
 `progress`; axis and donut `hole` options. A chart preset's `progress` track starts at its
-shot's start.
+shot's start. When `showValues` is true on `pie` or `donut` charts, slice labels are formatted
+with their values as `${label} (${short(value)})` unless the label already contains the formatted
+value, and all slice paths are drawn before labels so labels are never occluded.
 
 ## `path`
 
