@@ -420,7 +420,13 @@ const contains = (outer: Box, inner: Box) =>
  * as unplaced elements stacked at the centre do; a card under its content is held (071/D4),
  * two boxes of (almost) the same size are not (072/D2).
  */
-export function shapesStack(a: Box, b: Box): boolean {
+export function shapesStack(a: Box, b: Box, maxCanvasArea?: number): boolean {
+  if (
+    maxCanvasArea !== undefined &&
+    (area(a) >= 0.9 * maxCanvasArea || area(b) >= 0.9 * maxCanvasArea)
+  ) {
+    return false;
+  }
   if (contains(a, b) || contains(b, a)) return false;
   const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
   const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
@@ -532,7 +538,8 @@ export function inspectLayout(
       }
     }
 
-    // 3b. Check shapes stacked on each other (071/D4)
+    // 3b. Check shapes stacked on each other (071/D4, 094/D2)
+    const canvasArea = scene.width * scene.height;
     const shapes = placed.filter(
       (item) => topLevel(item) && !NOT_SHAPES.has(item.el.kind),
     );
@@ -540,7 +547,7 @@ export function inspectLayout(
       for (let j = i + 1; j < shapes.length; j++) {
         const a = shapes[i];
         const b = shapes[j];
-        if (!a || !b || !shapesStack(a.box, b.box)) continue;
+        if (!a || !b || !shapesStack(a.box, b.box, canvasArea)) continue;
         diagnostics.push({
           code: "shape_overlap",
           elementId: a.el.id,

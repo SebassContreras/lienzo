@@ -101,7 +101,8 @@ Agent tasks.
       verified: scene-notices.test.ts and shot-timing.test.ts parameterized tests added, and F17 added to qa-round-11.json
 - [x] 094/T004 [agent] Exclude `"particles"` and `"subtitles"` from `NOT_SHAPES` in `src/service/layout/layout.ts:404` (D1) — covers R1, D1
       verified: NOT_SHAPES includes particles and subtitles, passing R1 layout overlap exclusion tests
-- [ ] 094/T005 [agent] Skip `shape_overlap` on full-canvas backdrops (`>= 90%` canvas area) in `src/service/layout/layout.ts:411-429,536-551` (D2) — covers R2, D2
+- [x] 094/T005 [agent] Skip `shape_overlap` on full-canvas backdrops (`>= 90%` canvas area) in `src/service/layout/layout.ts:411-429,536-551` (D2) — covers R2, D2
+      verified: shapesStack accepts maxCanvasArea and skips boxes >= 90% canvas area, passing R2 layout overlap tests
 - [ ] 094/T006 [agent] Separate slice fill pass and text pass in `pie()` in `src/components/chart/draw.ts:143-166` and format label text with value when `showValues: true` (D3) — covers R3, D3
 - [ ] 094/T007 [agent] Add `animOutsideShotNotices` in `src/service/scenes/scene-notices.ts:159-196` and register in `RULES` in `src/service/contract/rules.ts` (D4) — covers R4, D4
 - [ ] 094/T008 [agent] Shift `anim.in.delay` and `anim.out.delay` in `src/model/shot-timing.ts:63-97` on shot rebind / move (D4) — covers R4, D4
