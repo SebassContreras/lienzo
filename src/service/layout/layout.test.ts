@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { createElement } from "../../components/index.ts";
 import type { Element, GroupEl } from "../../model/model.ts";
 import {
@@ -431,6 +431,138 @@ describe("shape_overlap", () => {
     ]);
 
     expect(codes).toContain("shape_overlap");
+  });
+
+  describe("R1 and R2 layout overlap exclusions (094/R1, 094/R2)", () => {
+    test.each([
+      [
+        "nominal full-frame particles over rect plate",
+        {
+          scene: { ...defaultScene(), width: 1080, height: 1920 },
+          elements: [
+            rectAt("s1-bg", 0, 0, 1080, 1920),
+            {
+              ...defaultElement("particles"),
+              id: "s1-particles",
+              x: 0,
+              y: 0,
+              w: 1080,
+              h: 1920,
+            },
+          ],
+        },
+        { expectedOverlap: false, expectedCodes: [] },
+      ],
+      [
+        "partial-frame particles overlapping card",
+        {
+          scene: { ...defaultScene(), width: 1080, height: 1920 },
+          elements: [
+            rectAt("card", 100, 100, 400, 400),
+            {
+              ...defaultElement("particles"),
+              id: "particles-field",
+              x: 100,
+              y: 100,
+              w: 400,
+              h: 400,
+            },
+          ],
+        },
+        { expectedOverlap: false, expectedCodes: [] },
+      ],
+      [
+        "subtitles over lower-third rect",
+        {
+          scene: { ...defaultScene(), width: 1080, height: 1920 },
+          elements: [
+            rectAt("lower-third", 100, 1500, 880, 200),
+            {
+              ...defaultElement("subtitles"),
+              id: "subs",
+              x: 100,
+              y: 1500,
+              w: 880,
+              h: 200,
+            },
+          ],
+        },
+        { expectedOverlap: false, expectedCodes: [] },
+      ],
+      [
+        "nominal canvas backdrop with in-bounds card",
+        {
+          scene: { ...defaultScene(), width: 1080, height: 1920 },
+          elements: [
+            rectAt("s2-bg", 0, 0, 1080, 1920),
+            rectAt("card", 100, 100, 400, 200),
+          ],
+        },
+        { expectedOverlap: false, expectedCodes: [] },
+      ],
+      [
+        "canvas backdrop with out-of-bounds protruding card",
+        {
+          scene: { ...defaultScene(), width: 1080, height: 1920 },
+          elements: [
+            rectAt("s2-bg", 0, 0, 1080, 1920),
+            rectAt("s2-oob-card", 860, 1360, 360, 160),
+          ],
+        },
+        { expectedOverlap: false, expectedCodes: ["out_of_bounds"] },
+      ],
+      [
+        "boundary threshold 90% canvas area backdrop plate",
+        {
+          scene: { ...defaultScene(), width: 1000, height: 1000 },
+          elements: [
+            rectAt("bg-90", 0, 0, 1000, 900), // area = 900,000 = 0.90 * canvasArea
+            rectAt("card", 200, 200, 400, 400),
+          ],
+        },
+        { expectedOverlap: false, expectedCodes: [] },
+      ],
+      [
+        "boundary threshold 89% canvas area plate overlapping card",
+        {
+          scene: { ...defaultScene(), width: 1000, height: 1000 },
+          elements: [
+            rectAt("bg-89", 0, 0, 1000, 890), // area = 890,000 = 0.89 * canvasArea
+            rectAt("card", 500, 400, 600, 600), // intersection: [500..1000] x [400..890] = 500 x 490 = 245,000 >= 0.5 * 360,000 (180,000). Neither contains the other.
+          ],
+        },
+        { expectedOverlap: true, expectedCodes: ["shape_overlap"] },
+      ],
+      [
+        "two foreground shapes overlapping by >50%",
+        {
+          scene: { ...defaultScene(), width: 1080, height: 1920 },
+          elements: [
+            rectAt("card-a", 200, 200, 400, 200),
+            rectAt("card-b", 250, 220, 400, 200),
+          ],
+        },
+        { expectedOverlap: true, expectedCodes: ["shape_overlap"] },
+      ],
+    ])(
+      "%s",
+      (
+        _name,
+        { scene, elements },
+        { expectedOverlap, expectedCodes },
+      ) => {
+        const diagnostics = inspectLayout({ ...scene, elements }, [0]);
+        const codes = diagnostics.map((d) => d.code);
+        if (expectedOverlap) {
+          expect(codes).toContain("shape_overlap");
+        } else {
+          expect(codes).not.toContain("shape_overlap");
+        }
+        for (const expected of expectedCodes) {
+          expect(codes).toContain(expected);
+        }
+      },
+    );
   });
 });
 

@@ -327,5 +327,62 @@
         "message": "¿van dentro de «patch»?"
       }
     }
+  },
+  {
+    "id": "F08-layout-particles-shape-overlap",
+    "source": "spec 094 / 2026-11-02 QA finding F-08",
+    "setup": [
+      {
+        "tool": "scene_create",
+        "input": {
+          "scene": "repro-f08",
+          "data": {
+            "width": 1080,
+            "height": 1920,
+            "elements": [
+              { "id": "s1-bg", "kind": "rect", "x": 0, "y": 0, "w": 1080, "h": 1920 },
+              { "id": "s1-particles", "kind": "particles", "x": 0, "y": 0, "w": 1080, "h": 1920 }
+            ]
+          }
+        }
+      }
+    ],
+    "call": {
+      "tool": "scene_inspect_layout",
+      "input": { "scene": "repro-f08" }
+    },
+    "expect": {
+      "ok": true,
+      "noCodes": ["shape_overlap"]
+    }
+  },
+  {
+    "id": "F14-layout-backdrop-plate-shape-overlap",
+    "source": "spec 094 / 2026-11-02 QA finding F-14",
+    "setup": [
+      {
+        "tool": "scene_create",
+        "input": {
+          "scene": "repro-f14",
+          "data": {
+            "width": 1080,
+            "height": 1920,
+            "elements": [
+              { "id": "s2-bg", "kind": "rect", "x": 0, "y": 0, "w": 1080, "h": 1920 },
+              { "id": "s2-oob-card", "kind": "rect", "x": 860, "y": 1360, "w": 360, "h": 160 }
+            ]
+          }
+        }
+      }
+    ],
+    "call": {
+      "tool": "scene_inspect_layout",
+      "input": { "scene": "repro-f14" }
+    },
+    "expect": {
+      "ok": true,
+      "noCodes": ["shape_overlap"],
+      "codes": ["out_of_bounds"]
+    }
   }
 ]
