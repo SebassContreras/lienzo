@@ -384,5 +384,36 @@
       "noCodes": ["shape_overlap"],
       "codes": ["out_of_bounds"]
     }
+  },
+  {
+    "id": "F10-donut-chart-slice-overpaint",
+    "source": "spec 094 / 2026-11-02 QA finding F-10",
+    "setup": [
+      {
+        "tool": "scene_create",
+        "input": {
+          "scene": "repro-f10",
+          "data": {
+            "elements": [
+              {
+                "id": "chart-donut",
+                "kind": "chart",
+                "type": "donut",
+                "showValues": true,
+                "data": "Solar: 6.9\nRenew: 25.1\nOther: 68",
+                "progress": 1
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "call": {
+      "tool": "scene_preview",
+      "input": { "scene": "repro-f10", "t": 0 }
+    },
+    "expect": {
+      "ok": true
+    }
   }
 ]
