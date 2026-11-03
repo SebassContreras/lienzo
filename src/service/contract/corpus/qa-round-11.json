@@ -445,5 +445,24 @@
       "ok": true,
       "notices": ["«el-f17».*«s2»"]
     }
+  },
+  {
+    "id": "F07-speech-custom-provider-requires-baseurl",
+    "source": "spec 095 / 2026-10-29 QA finding F-07",
+    "call": {
+      "tool": "scene_generate_speech",
+      "input": {
+        "scene": "s",
+        "script": "Texto de prueba sin baseUrl",
+        "provider": "custom"
+      }
+    },
+    "expect": {
+      "ok": false,
+      "error": {
+        "code": "invalid_input",
+        "path": "baseUrl"
+      }
+    }
   }
 ]

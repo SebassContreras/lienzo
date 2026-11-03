@@ -1,3 +1,17 @@
+const ascii = (b: Uint8Array, i: number) =>
+  String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
+
+/**
+ * Detects whether the audio buffer begins with a RIFF WAVE header.
+ * Pure; defaults to "mp3" for non-WAV buffers or buffers shorter than 12 bytes (095/D2).
+ */
+export function detectAudioFormat(bytes: Uint8Array): "wav" | "mp3" {
+  if (bytes.length >= 12 && ascii(bytes, 0) === "RIFF" && ascii(bytes, 8) === "WAVE") {
+    return "wav";
+  }
+  return "mp3";
+}
+
 /**
  * Measures synthesized audio from its own bytes (060/D2): MP3 by walking every MPEG audio
  * frame (a Xing/Info count can describe only part of a merged clip), WAV from its RIFF
@@ -5,10 +19,11 @@
  */
 export function audioDuration(
   bytes: Uint8Array,
-  format: string,
+  format?: string,
 ): number | undefined {
-  if (format === "mp3") return mp3Duration(bytes);
-  if (format === "wav") return wavDuration(bytes);
+  const resolved = format ?? detectAudioFormat(bytes);
+  if (resolved === "mp3") return mp3Duration(bytes);
+  if (resolved === "wav") return wavDuration(bytes);
   return undefined;
 }
 
@@ -81,9 +96,6 @@ function mp3Duration(b: Uint8Array): number | undefined {
   }
   return frames > 0 ? seconds : undefined;
 }
-
-const ascii = (b: Uint8Array, i: number) =>
-  String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
 
 function wavDuration(b: Uint8Array): number | undefined {
   if (b.length < 12 || ascii(b, 0) !== "RIFF" || ascii(b, 8) !== "WAVE") {

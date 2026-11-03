@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createCtx } from "../core/ctx.ts";
 import { fakeRenderer } from "../render/fake-renderer.ts";
 import { registry } from "../tools/index.ts";
-import { audioDuration } from "./audio-duration.ts";
+import { audioDuration, detectAudioFormat } from "./audio-duration.ts";
 import type { TtsService } from "./types.ts";
 
 /** MPEG-1 Layer III, 64 kbps, 44.1 kHz, no padding: 208 bytes, 1152 samples. */
@@ -139,5 +139,49 @@ describe("scene_generate_speech duration", () => {
     const res = await generate(new Uint8Array(32000), "opus");
 
     expect(res.audioDuration).toBe(2);
+  });
+
+  describe("detectAudioFormat (R2, F-16)", () => {
+    it.each([
+      [
+        "nominal WAV: RIFF....WAVE buffer returns wav",
+        wav(4.0, 44100),
+        "wav" as const,
+      ],
+      [
+        "nominal MP3: MPEG1 frames return mp3",
+        frames(10, MPEG1_64K),
+        "mp3" as const,
+      ],
+      [
+        "ID3 MP3 header returns mp3",
+        new Uint8Array([0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
+        "mp3" as const,
+      ],
+      [
+        "short buffer < 12 bytes (empty 0 bytes) falls back to mp3",
+        new Uint8Array(0),
+        "mp3" as const,
+      ],
+      [
+        "short buffer < 12 bytes (4 bytes RIFF) falls back to mp3",
+        new Uint8Array([0x52, 0x49, 0x46, 0x46]),
+        "mp3" as const,
+      ],
+      [
+        "short buffer 11 bytes falls back to mp3",
+        new Uint8Array(11),
+        "mp3" as const,
+      ],
+      [
+        "non-WAVE RIFF (e.g. RIFF....WEBP) returns mp3",
+        new Uint8Array([
+          0x52, 0x49, 0x46, 0x46, 0x20, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+        ]),
+        "mp3" as const,
+      ],
+    ])("%s", (_name, buffer, expected) => {
+      expect(detectAudioFormat(buffer)).toBe(expected);
+    });
   });
 });

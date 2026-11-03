@@ -6,7 +6,7 @@ import { defineTool, fail } from "../../core/registry.ts";
 import { round2 } from "../../core/round.ts";
 import { editScene, openScene, SceneResult } from "../../scenes/scenes.ts";
 import { saveAudioAsset } from "../asset-store.ts";
-import { audioDuration } from "../audio-duration.ts";
+import { audioDuration, detectAudioFormat } from "../audio-duration.ts";
 import {
   resolveDefaultTtsModel,
   resolveDefaultTtsVoice,
@@ -34,8 +34,9 @@ export function createSceneGenerateSpeechTool(
     name: "scene_generate_speech",
     effects: ["scene", "asset"],
     description:
-      "Generate synthetic voiceover narration from a text script using OpenRouter or local/Kokoro TTS " +
-      "and attach the resulting audio and synchronized subtitle cues to a scene. By default it " +
+      "Generate synthetic voiceover narration from a text script using OpenRouter, local/Kokoro TTS, or custom endpoint " +
+      "and attach the resulting audio and synchronized subtitle cues to a scene. `provider: \"custom\"` requires `baseUrl`. " +
+      "By default it " +
       "replaces `scene.audio`; with `asTrack: true` it appends a new `audioTracks` entry at " +
       "`startOffset` (keeping `scene.audio` and other tracks) and appends its cues, so a " +
       "voice-over with one clip per shot is one call per clip. Cues fill the clip, from " +
@@ -61,6 +62,14 @@ export function createSceneGenerateSpeechTool(
       adjustSceneDuration: z.boolean().default(true),
       subtitles: z.boolean().default(true),
       asTrack: z.boolean().optional(),
+    }).superRefine((val, ctx) => {
+      if (val.provider === "custom" && !val.baseUrl?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["baseUrl"],
+          message: "Indica baseUrl para el proveedor «custom»",
+        });
+      }
     }),
     output: SceneResult.extend({
       assetId: z.string(),
@@ -142,8 +151,9 @@ export function createSceneGenerateSpeechTool(
       // 3. Measure the audio itself; the provider's figure and a byte-rate estimate
       // (~16 KB/s at 128 kbps) are fallbacks for formats we can't parse (060/D2)
       // rounded to hundredths, as every computed number tools return (069/D14)
+      const detectedFormat = detectAudioFormat(speechResult.audioBuffer);
       const estimatedDuration = round2(
-        audioDuration(speechResult.audioBuffer, speechResult.format) ??
+        audioDuration(speechResult.audioBuffer, detectedFormat) ??
           (speechResult.durationSeconds && speechResult.durationSeconds > 0
             ? speechResult.durationSeconds
             : Math.max(
@@ -177,7 +187,7 @@ export function createSceneGenerateSpeechTool(
         const file = await saveAudioAsset(
           join(ctx.projects.resolvePath(input.project, "assets"), folder),
           speechResult.audioBuffer,
-          speechResult.format,
+          detectedFormat,
         );
         assetId = `/projects/${input.project}/assets/${folder}/${file}`;
       } catch (err) {

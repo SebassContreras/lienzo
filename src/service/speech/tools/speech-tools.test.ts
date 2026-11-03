@@ -291,4 +291,113 @@ describe("scene_generate_speech voiced span and trimSilence (R1, R2, D1, D3)", (
     expect(res.value.speechStart).toBeNull();
     expect(res.value.speechEnd).toBeNull();
   });
+
+  describe("provider custom baseUrl validation (R1, F-07)", () => {
+    it.each([
+      [
+        "fails when provider is custom and baseUrl is omitted",
+        { provider: "custom" as const, baseUrl: undefined },
+        { ok: false, code: "invalid_input", path: "baseUrl" },
+      ],
+      [
+        "fails when provider is custom and baseUrl is empty string",
+        { provider: "custom" as const, baseUrl: "" },
+        { ok: false, code: "invalid_input", path: "baseUrl" },
+      ],
+      [
+        "fails when provider is custom and baseUrl is whitespace only",
+        { provider: "custom" as const, baseUrl: "   " },
+        { ok: false, code: "invalid_input", path: "baseUrl" },
+      ],
+      [
+        "passes input validation when provider is custom and baseUrl is provided",
+        { provider: "custom" as const, baseUrl: "http://127.0.0.1:18880" },
+        { ok: true, code: undefined, path: undefined },
+      ],
+      [
+        "passes input validation when provider is local and baseUrl is omitted",
+        { provider: "local" as const, baseUrl: undefined },
+        { ok: true, code: undefined, path: undefined },
+      ],
+      [
+        "passes input validation when provider is omitted",
+        { provider: undefined, baseUrl: undefined },
+        { ok: true, code: undefined, path: undefined },
+      ],
+    ])(
+      "%s",
+      async (_name, inputParams, expected) => {
+        suite.ctx().tts = {
+          synthesizeSpeech: async () => ({
+            audioBuffer: new Uint8Array(100),
+            format: "wav",
+            mimeType: "audio/wav",
+          }),
+          listModels: async () => [],
+        };
+
+        const res = (await call("scene_generate_speech", {
+          scene: "s",
+          script: "Texto de prueba de proveedor",
+          ...inputParams,
+        })) as { ok: boolean; error?: { code: string; path: string; message: string } };
+
+        if (!expected.ok) {
+          expect(res.ok).toBe(false);
+          expect(res.error?.code).toBe(expected.code);
+          expect(res.error?.path).toBe(expected.path);
+          expect(res.error?.message).toMatch(/baseUrl/i);
+        } else {
+          expect(res.ok).toBe(true);
+        }
+      },
+    );
+  });
+
+  describe("audio format auto-detection and duration (R2, F-16)", () => {
+    it.each([
+      [
+        "WAV buffer from local TTS is saved as .wav with exact header duration",
+        {
+          audioBuffer: createWavBuffer({
+            sampleRate: 22050,
+            leadingSilenceSec: 0.5,
+            voiceSec: 3.0,
+            trailingSilenceSec: 0.5,
+          }),
+          format: "mp3", // adapter returned mp3 or requested mp3, but buffer is WAV
+        },
+        { expectedExt: ".wav", expectedMinDuration: 3.99 },
+      ],
+      [
+        "MP3 buffer from TTS is saved as .mp3 with frame-measured duration",
+        {
+          audioBuffer: new Uint8Array([
+            0xff, 0xfb, 0x50, 0x00, ...new Array(204).fill(0),
+          ]),
+          format: "wav", // adapter requested wav, but server returned mp3
+        },
+        { expectedExt: ".mp3", expectedMinDuration: 0.01 },
+      ],
+    ])("%s", async (_name, synthesized, expected) => {
+      suite.ctx().tts = {
+        synthesizeSpeech: async () => ({
+          audioBuffer: synthesized.audioBuffer,
+          format: synthesized.format,
+          mimeType: "audio/mpeg",
+        }),
+        listModels: async () => [],
+      };
+
+      const res = (await call("scene_generate_speech", {
+        scene: "s",
+        script: "Format test script",
+        provider: "local",
+      })) as { ok: boolean; value: { assetId: string; audioDuration: number } };
+
+      expect(res.ok).toBe(true);
+      expect(res.value.assetId.endsWith(expected.expectedExt)).toBe(true);
+      expect(res.value.audioDuration).toBeGreaterThanOrEqual(expected.expectedMinDuration);
+    });
+  });
 });
