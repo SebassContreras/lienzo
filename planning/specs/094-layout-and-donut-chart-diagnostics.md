@@ -105,7 +105,8 @@ Agent tasks.
       verified: shapesStack accepts maxCanvasArea and skips boxes >= 90% canvas area, passing R2 layout overlap tests
 - [x] 094/T006 [agent] Separate slice fill pass and text pass in `pie()` in `src/components/chart/draw.ts:143-166` and format label text with value when `showValues: true` (D3) — covers R3, D3
       verified: pie/donut draws all fills before labels, and formats label text with value when showValues is true
-- [ ] 094/T007 [agent] Add `animOutsideShotNotices` in `src/service/scenes/scene-notices.ts:159-196` and register in `RULES` in `src/service/contract/rules.ts` (D4) — covers R4, D4
+- [x] 094/T007 [agent] Add `animOutsideShotNotices` in `src/service/scenes/scene-notices.ts:159-196` and register in `RULES` in `src/service/contract/rules.ts` (D4) — covers R4, D4
+      verified: animOutsideShotNotices registered in RULES, passing scene-notices, matrix, and silence tests
 - [ ] 094/T008 [agent] Shift `anim.in.delay` and `anim.out.delay` in `src/model/shot-timing.ts:63-97` on shot rebind / move (D4) — covers R4, D4
 - [ ] 094/T009 [agent] Docs: update `docs/components.md` for chart `showValues` formatting, update `docs/qa-log.md` status for `F-08`, `F-10`, `F-14`, and `F-17` to Closed, and verify `.agents/skills/lienzo-usage/SKILL.md` (D5) — covers R5, D5
 - [ ] 094/T010 [agent] Verify: run `pnpm test` (including `matrix.test.ts` and `silence.test.ts`), `pnpm replay`, and `pnpm typecheck`, confirming all test suites and replay corpus cases pass; record `verified:` — covers R1–R5, D1–D5

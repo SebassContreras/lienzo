@@ -583,4 +583,27 @@ export const RULES: readonly Rule[] = [
       },
     ],
   },
+  {
+    id: "an element animation outside its shot gets a notice",
+    outcome: "notice",
+    message: /La animación de entrada de «.*» \[.*\] cae fuera de su toma «.*» \[.*\]/,
+    violations: [
+      {
+        label: "anim in outside shot",
+        names: "x",
+        onCanvas: true,
+        shots: [{ id: "s1", start: 2, end: 4 }],
+        elements: [
+          {
+            id: "x",
+            kind: "rect",
+            shot: "s1",
+            anim: {
+              in: { kind: "fade", delay: 0.5, duration: 0.5 },
+            },
+          },
+        ],
+      },
+    ],
+  },
 ];

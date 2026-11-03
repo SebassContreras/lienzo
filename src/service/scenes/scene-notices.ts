@@ -197,6 +197,52 @@ export function shotNotices(
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
+/**
+ * A shot-bound element whose entrance or exit falls outside its shot (094/R4, 094/D4).
+ */
+export function animOutsideShotNotices(scene: Scene): SceneNotice[] {
+  const shots = new Map((scene.shots ?? []).map((s) => [s.id, s]));
+  const notices: SceneNotice[] = [];
+  const walk = (el: Element, topId?: string) => {
+    if (el.shot) {
+      const shot = shots.get(el.shot);
+      if (shot) {
+        const anim = el.anim;
+        if (anim) {
+          if (anim.in && anim.in.kind !== "none") {
+            const start = anim.in.delay;
+            const end = anim.in.delay + anim.in.duration;
+            if (end <= shot.start || start >= shot.end) {
+              notices.push({
+                elementId: topId ?? el.id,
+                message: `La animación de entrada de «${el.id}» [${round(start)}, ${round(end)}s] cae fuera de su toma «${shot.id}» [${round(shot.start)}, ${round(shot.end)}s]`,
+              });
+            }
+          }
+
+          if (anim.out && anim.out.kind !== "none") {
+            const start = anim.out.delay;
+            const end = anim.out.delay + anim.out.duration;
+            if (end <= shot.start || start >= shot.end) {
+              notices.push({
+                elementId: topId ?? el.id,
+                message: `La animación de salida de «${el.id}» [${round(start)}, ${round(end)}s] cae fuera de su toma «${shot.id}» [${round(shot.start)}, ${round(shot.end)}s]`,
+              });
+            }
+          }
+        }
+      }
+    }
+    const children = (el as { children?: unknown }).children;
+    if (Array.isArray(children)) {
+      for (const child of children as Element[]) walk(child, topId ?? el.id);
+    }
+  };
+
+  for (const el of scene.elements) walk(el, el.id);
+  return notices;
+}
+
 /** The notices `scene` has, whatever write made them. */
 function stateNotices(scene: Scene, installed: readonly Face[]): SceneNotice[] {
   const named = (
@@ -220,6 +266,7 @@ function stateNotices(scene: Scene, installed: readonly Face[]): SceneNotice[] {
       })),
     ),
     ...deadKeyframeEasingNotices(scene),
+    ...animOutsideShotNotices(scene),
     ...offCanvas(scene),
     ...lineShotNotices(scene),
     ...shotNotices(scene),

@@ -290,6 +290,8 @@ export const NOT_CARRIED: Record<string, Record<string, string>> = {
       "scene_update fills symbol bodies; a `use` placed on the scene is not in its input",
     "a line with no shot between elements of different shots gets a notice — two shots":
       "scene_update fills symbol bodies; a line between two shot-bound elements of the scene is not in its input",
+    "an element animation outside its shot gets a notice — anim in outside shot":
+      "scene_update fills symbol bodies; an element bound to a shot of the scene is not in its input",
   },
   "scene_validate (compact)": {
     "an id can be addressed by a tool — empty element id":
