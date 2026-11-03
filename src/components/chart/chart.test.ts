@@ -101,7 +101,7 @@ describe("pie / donut chart slice and label rendering (094/R3)", () => {
         h: 400,
       };
 
-      drawChart(ctx as unknown as CanvasRenderingContext2D, el, dummyState);
+      drawChart(ctx as unknown as CanvasRenderingContext2D, el, dummyState as any);
 
       const fills = ctx.log
         .map((entry, idx) => ({ entry, idx }))

@@ -113,8 +113,9 @@ describe("rebindShot shifts anim.in and anim.out delays (094/R4)", () => {
     (
       _name,
       { fromShot, toShot, anim },
-      { expectedDelta, expectedInDelay, expectedOutDelay },
+      expected: { expectedDelta: number; expectedInDelay?: number; expectedOutDelay?: number },
     ) => {
+      const { expectedDelta, expectedInDelay, expectedOutDelay } = expected;
       const el: Element = {
         ...defaultRect(),
         id: "r",

@@ -219,7 +219,12 @@ describe("deadKeyframeEasingNotices", () => {
       ],
     ])(
       "%s",
-      (_name, { shot, anim }, { expectedNotice, expectedPattern, expectedCount }) => {
+      (
+        _name,
+        { shot, anim },
+        expected: { expectedNotice: boolean; expectedPattern?: RegExp; expectedCount?: number },
+      ) => {
+        const { expectedNotice, expectedPattern, expectedCount } = expected;
         const el: Element = {
           ...createElement("rect"),
           id: "el1",
@@ -231,7 +236,7 @@ describe("deadKeyframeEasingNotices", () => {
         };
         const scene = {
           ...defaultScene(),
-          shots: shot ? [shot] : [],
+          shots: shot ? [{ name: shot.id, ...shot }] : [],
           elements: [el],
         };
         const notices = animOutsideShotNotices(scene);

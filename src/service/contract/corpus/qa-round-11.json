@@ -419,34 +419,27 @@
   {
     "id": "F17-anim-outside-shot-notice",
     "source": "spec 094 / 2026-11-02 QA finding F-17",
-    "setup": [
-      {
-        "tool": "scene_create",
-        "input": {
-          "scene": "repro-f17",
-          "data": {
-            "duration": 12,
-            "shots": [
-              { "id": "s1", "start": 0, "end": 5 },
-              { "id": "s2", "start": 5, "end": 10 }
-            ],
-            "elements": [
-              {
-                "id": "el-f17",
-                "kind": "rect",
-                "shot": "s2",
-                "anim": {
-                  "in": { "kind": "fade", "delay": 0.5, "duration": 0.5 }
-                }
-              }
-            ]
-          }
-        }
-      }
-    ],
     "call": {
       "tool": "scene_validate",
-      "input": { "scene": "repro-f17" }
+      "input": {
+        "data": {
+          "duration": 12,
+          "shots": [
+            { "id": "s1", "start": 0, "end": 5 },
+            { "id": "s2", "start": 5, "end": 10 }
+          ],
+          "elements": [
+            {
+              "id": "el-f17",
+              "kind": "rect",
+              "shot": "s2",
+              "anim": {
+                "in": { "kind": "fade", "delay": 0.5, "duration": 0.5 }
+              }
+            }
+          ]
+        }
+      }
     },
     "expect": {
       "ok": true,
