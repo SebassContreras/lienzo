@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { defaultGroup, defaultRect, type Element } from "./model.ts";
 import { rebindShot, shiftTracks } from "./shot-timing.ts";
 
@@ -58,4 +58,80 @@ it("lands keys pushed below 0 on 0, keeping the later one", () => {
   const tracks = { x: [key(0, 0), key(1, 5), key(4, 9)] };
 
   expect(shiftTracks(tracks, -2)).toEqual({ x: [key(0, 5), key(2, 9)] });
+});
+
+describe("rebindShot shifts anim.in and anim.out delays (094/R4)", () => {
+  test.each([
+    [
+      "shifts anim.in.delay and anim.out.delay forward when shot moves forward",
+      {
+        fromShot: "s1", // start 0
+        toShot: "s2",   // start 3 (delta = +3)
+        anim: {
+          in: { kind: "fade" as const, delay: 0.5, duration: 0.5, from: "left" as const, easing: "linear" as const, amount: 0 },
+          out: { kind: "fade" as const, delay: 2.0, duration: 0.5, from: "left" as const, easing: "linear" as const, amount: 0 },
+        },
+      },
+      {
+        expectedDelta: 3,
+        expectedInDelay: 3.5,
+        expectedOutDelay: 5.0,
+      },
+    ],
+    [
+      "shifts anim delays backward and bounds at 0",
+      {
+        fromShot: "s2", // start 3
+        toShot: "s1",   // start 0 (delta = -3)
+        anim: {
+          in: { kind: "fade" as const, delay: 2.0, duration: 0.5, from: "left" as const, easing: "linear" as const, amount: 0 },
+          out: { kind: "fade" as const, delay: 5.0, duration: 0.5, from: "left" as const, easing: "linear" as const, amount: 0 },
+        },
+      },
+      {
+        expectedDelta: -3,
+        expectedInDelay: 0,
+        expectedOutDelay: 2.0,
+      },
+    ],
+    [
+      "unbinding moves anim delays back to 0-origin",
+      {
+        fromShot: "s2", // start 3
+        toShot: undefined, // origin 0 (delta = -3)
+        anim: {
+          in: { kind: "fade" as const, delay: 4.5, duration: 0.5, from: "left" as const, easing: "linear" as const, amount: 0 },
+        },
+      },
+      {
+        expectedDelta: -3,
+        expectedInDelay: 1.5,
+      },
+    ],
+  ])(
+    "%s",
+    (
+      _name,
+      { fromShot, toShot, anim },
+      { expectedDelta, expectedInDelay, expectedOutDelay },
+    ) => {
+      const el: Element = {
+        ...defaultRect(),
+        id: "r",
+        ...(fromShot ? { shot: fromShot } : {}),
+        anim: {
+          ...defaultRect().anim,
+          ...anim,
+        },
+      };
+      const result = rebindShot(el, toShot, shots);
+      expect(result.delta).toBe(expectedDelta);
+      if (expectedInDelay !== undefined) {
+        expect(result.el.anim?.in?.delay).toBe(expectedInDelay);
+      }
+      if (expectedOutDelay !== undefined) {
+        expect(result.el.anim?.out?.delay).toBe(expectedOutDelay);
+      }
+    },
+  );
 });
