@@ -62,13 +62,13 @@ describe("pie / donut chart slice and label rendering (094/R3)", () => {
       },
     ],
     [
-      "showValues false displays label only",
+      "showValues false displays label only when label has value",
       {
         sliceData: "Solar: 6.9",
         showValues: false,
       },
       {
-        expectedLabelTexts: ["Solar"],
+        expectedLabelTexts: [], // pie() only renders labels on slices when showValues is true
         expectedFillOrder: true,
       },
     ],

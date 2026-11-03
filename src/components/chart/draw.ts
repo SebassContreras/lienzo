@@ -140,6 +140,14 @@ function pie(
   let a = -Math.PI / 2;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+
+  const slices: {
+    d: Datum;
+    startAngle: number;
+    sweep: number;
+  }[] = [];
+
+  // Pass 1: Draw and fill all slice arcs (094/D3)
   data.forEach((d, i) => {
     const sweep = (Math.max(0, d.value) / total) * Math.PI * 2;
     const b = Math.min(a + sweep, end);
@@ -152,16 +160,27 @@ function pie(
       ctx.closePath();
       ctx.fill();
     }
+    slices.push({ d, startAngle: a, sweep });
+    a += sweep;
+  });
+
+  // Pass 2: Draw all slice labels on top of fills (094/D3)
+  for (const { d, startAngle, sweep } of slices) {
     if (el.showValues && k >= 1 && sweep > 0.25) {
-      const mid = a + sweep / 2;
+      const mid = startAngle + sweep / 2;
       const at = inner > 0 ? (r + inner) / 2 : r * 0.62;
       ctx.fillStyle = "#ffffff";
+      const valStr = short(d.value);
+      const labelText = d.label
+        ? el.showValues && !d.label.includes(valStr)
+          ? `${d.label} (${valStr})`
+          : d.label
+        : valStr;
       ctx.fillText(
-        d.label || short(d.value),
+        labelText,
         cx + Math.cos(mid) * at,
         cy + Math.sin(mid) * at,
       );
     }
-    a += sweep;
-  });
+  }
 }
