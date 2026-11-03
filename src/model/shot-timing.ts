@@ -59,20 +59,45 @@ export function shiftTracks(
   return out;
 }
 
-/** `el` and everything inside it with every track moved by `delta` seconds. */
+/** `el` and everything inside it with every track and anim delay moved by `delta` seconds. */
 export function shiftElementTracks(el: Element, delta: number): Element {
   if (delta === 0) return el;
-  const [out] = mapElementsDeep([el], (e) =>
-    e.tracks ? { ...e, tracks: shiftTracks(e.tracks, delta) } : e,
-  );
+  const shiftAnim = (e: Element): Element => {
+    let anim = e.anim;
+    if (anim) {
+      let changed = false;
+      let nextIn = anim.in;
+      if (nextIn && nextIn.kind !== "none") {
+        nextIn = { ...nextIn, delay: at(nextIn.delay + delta) };
+        changed = true;
+      }
+      let nextOut = anim.out;
+      if (nextOut && nextOut.kind !== "none") {
+        nextOut = { ...nextOut, delay: at(nextOut.delay + delta) };
+        changed = true;
+      }
+      if (changed) {
+        anim = { ...anim, ...(nextIn ? { in: nextIn } : {}), ...(nextOut ? { out: nextOut } : {}) };
+      }
+    }
+    const withTracks = e.tracks ? { ...e, tracks: shiftTracks(e.tracks, delta) } : e;
+    return anim !== e.anim ? { ...withTracks, anim } : withTracks;
+  };
+  const [out] = mapElementsDeep([el], shiftAnim);
   return out as Element;
 }
 
-/** Whether `el` or anything inside it has a keyframe (080/D12): only then can a move show. */
+/** Whether `el` or anything inside it has a keyframe or animation (080/D12, 094/D4): only then can a move show. */
 export function hasKeys(el: Element): boolean {
   let found = false;
   mapElementsDeep([el], (e) => {
     if (e.tracks && Object.keys(e.tracks).length > 0) found = true;
+    if (
+      e.anim &&
+      ((e.anim.in && e.anim.in.kind !== "none") ||
+        (e.anim.out && e.anim.out.kind !== "none"))
+    )
+      found = true;
     return e;
   });
   return found;
