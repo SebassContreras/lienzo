@@ -94,7 +94,7 @@ Messages are Spanish; the server's `instructions` repeat these rules for every t
    - **Align** (no tool of its own): `scene_inspect_layout` gives each drawn box; compute the
      shared edge or center and set `x`/`y` on each element with `element_update`.
 7. **Voice:** `scene_generate_speech` saves each clip in `assets/voice/<scene>/` (the scene's stored name); for one clip per shot use `asTrack: true` and
-   `startOffset` (the shot's start) so each call appends a track. Returns `speechStart` and `speechEnd` for the voiced span; `trimSilence: true` sets `trimOffset` to skip leading silence and syncs cues to audible speech (trailing silence remains, harmless when clips overlap only in silence). Subtitles follow the cues.
+   `startOffset` (the shot's start) so each call appends a track. TTS providers: `local` (default `http://localhost:8880`), `openrouter`, or `custom` (requires `baseUrl`). Returns `speechStart` and `speechEnd` for the voiced span; `trimSilence: true` sets `trimOffset` to skip leading silence and syncs cues to audible speech (trailing silence remains, harmless when clips overlap only in silence). Subtitles follow the cues.
 8. **Export:** `scene_export` (`png`, `gif`, `mp4`) into `projects/<project>/exports/`.
 
 ## Compact scene, by example

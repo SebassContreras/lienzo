@@ -299,8 +299,8 @@ images, jingles), `voice/<scene>/` for generated speech, `<scene>/` for any othe
 uses; a clip lives in the folder of one scene that uses it and other scenes may reference it
 there. `scene_generate_speech` saves its clips in `assets/voice/<scene>/` (the scene's stored
 name) and needs a TTS service: a
-Kokoro-compatible server at `http://localhost:8880` (provider `local`) or an OpenRouter key
-(`OPENROUTER_API_KEY` or `apiKey`).
+Kokoro-compatible server at `http://localhost:8880` (provider `local`), an OpenRouter key
+(`OPENROUTER_API_KEY` or `apiKey`), or an OpenAI-compatible custom endpoint (`provider: "custom"` with `baseUrl`).
 
 Everything the editor saves has a tool, and the editor's "Revisión" section runs the same
 layout check as `scene_inspect_layout`.

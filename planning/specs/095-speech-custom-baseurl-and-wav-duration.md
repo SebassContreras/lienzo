@@ -71,12 +71,18 @@ Agent tasks.
 - D3. Pros: keeps tool documentation, agent usage guides, and QA log findings status synchronized with code behavior per AGENTS.md. Cons: requires updating markdown documents alongside code. Mitigation: verified as part of the standard test and typecheck cycle.
 
 ## Tasks
-- [ ] 095/T001 [agent] Parameterized tests in `src/service/speech/tools/speech-tools.test.ts` (`test.each` tables with shape `[name, { provider, baseUrl }, { expectedOk, expectedCode, expectedPath }]` covering R1 partitions: custom missing baseUrl, custom empty string, custom whitespace, custom with valid baseUrl, local without baseUrl, and default provider), plus replay corpus case for `F-07` in `src/service/contract/corpus/qa-round-11.json` — covers R1
-- [ ] 095/T002 [agent] Parameterized tests in `src/service/speech/audio-duration.test.ts` and `src/service/speech/tools/speech-tools.test.ts` (`test.each` tables with shape `[name, { buffer, format }, { expectedFormat, expectedDuration, expectedExt }]` covering R2 partitions: nominal WAV buffer, nominal MP3 buffer, short buffers `< 12` bytes, non-WAVE RIFF headers, ID3 MP3 headers, and end-to-end `.wav` vs `.mp3` asset saving) — covers R2
-- [ ] 095/T003 [agent] Add `provider === "custom"` `baseUrl` validation in `src/service/speech/tools/scene-generate-speech.ts:48-64` (D1) — covers R1, D1
-- [ ] 095/T004 [agent] Implement `detectAudioFormat(bytes: Uint8Array)` in `src/service/speech/audio-duration.ts:88-105` and wire detected format into `audioDuration` and `saveAudioAsset` in `src/service/speech/tools/scene-generate-speech.ts:145-185` (D2) — covers R2, D2
-- [ ] 095/T005 [agent] Docs: update `README.md`, tool description in `src/service/speech/tools/scene-generate-speech.ts`, and `.agents/skills/lienzo-usage/SKILL.md` for `provider: "custom"` and `baseUrl`; update `docs/qa-log.md` status for `F-07` and `F-16` to Closed upon verification (D3) — covers R3, D3
-- [ ] 095/T006 [agent] Verify: run `pnpm test`, `pnpm replay`, and `pnpm typecheck`, confirming all test suites and replay corpus cases pass; record `verified:` — covers R1–R3, D1–D3
+- [x] 095/T001 [agent] Parameterized tests in `src/service/speech/tools/speech-tools.test.ts` (`test.each` tables with shape `[name, { provider, baseUrl }, { expectedOk, expectedCode, expectedPath }]` covering R1 partitions: custom missing baseUrl, custom empty string, custom whitespace, custom with valid baseUrl, local without baseUrl, and default provider), plus replay corpus case for `F-07` in `src/service/contract/corpus/qa-round-11.json` — covers R1
+      verified: speech-tools.test.ts added parameterized table for custom baseUrl partitions and qa-round-11.json added F07 case (failing prior to implementation)
+- [x] 095/T002 [agent] Parameterized tests in `src/service/speech/audio-duration.test.ts` and `src/service/speech/tools/speech-tools.test.ts` (`test.each` tables with shape `[name, { buffer, format }, { expectedFormat, expectedDuration, expectedExt }]` covering R2 partitions: nominal WAV buffer, nominal MP3 buffer, short buffers `< 12` bytes, non-WAVE RIFF headers, ID3 MP3 headers, and end-to-end `.wav` vs `.mp3` asset saving) — covers R2
+      verified: parameterized tables in audio-duration.test.ts and speech-tools.test.ts added covering R2 partitions (failing prior to implementation)
+- [x] 095/T003 [agent] Add `provider === "custom"` `baseUrl` validation in `src/service/speech/tools/scene-generate-speech.ts:48-64` (D1) — covers R1, D1
+      verified: superRefine added to input schema, passing parameterized tests in speech-tools.test.ts and replay corpus case F07
+- [x] 095/T004 [agent] Implement `detectAudioFormat(bytes: Uint8Array)` in `src/service/speech/audio-duration.ts:88-105` and wire detected format into `audioDuration` and `saveAudioAsset` in `src/service/speech/tools/scene-generate-speech.ts:145-185` (D2) — covers R2, D2
+      verified: detectAudioFormat implemented and wired into scene_generate_speech, passing audio-duration.test.ts and speech-tools.test.ts
+- [x] 095/T005 [agent] Docs: update `README.md`, tool description in `src/service/speech/tools/scene-generate-speech.ts`, and `.agents/skills/lienzo-usage/SKILL.md` for `provider: "custom"` and `baseUrl`; update `docs/qa-log.md` status for `F-07` and `F-16` to Closed upon verification (D3) — covers R3, D3
+      verified: README.md, tool description, skill, and docs/qa-log.md updated and consistent
+- [x] 095/T006 [agent] Verify: run `pnpm test`, `pnpm replay`, and `pnpm typecheck`, confirming all test suites and replay corpus cases pass; record `verified:` — covers R1–R3, D1–D3
+      verified: pnpm typecheck (0 errors), pnpm replay (45/45 pass), pnpm test (230 test files, 2599 tests pass)
 
 ## Changes
 - 2026-11-03: Audit corrections applied before task execution (F1–F6):
