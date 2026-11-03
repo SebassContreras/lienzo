@@ -111,7 +111,8 @@ Agent tasks.
       verified: shiftElementTracks shifts anim in/out delays and rebindShot returns delta when element has anim, passing shot-timing and shot-tools test suites
 - [x] 094/T009 [agent] Docs: update `docs/components.md` for chart `showValues` formatting, update `docs/qa-log.md` status for `F-08`, `F-10`, `F-14`, and `F-17` to Closed, and verify `.agents/skills/lienzo-usage/SKILL.md` (D5) — covers R5, D5
       verified: docs/components.md and docs/qa-log.md updated with Closed status for F-08, F-10, F-14, F-17, and skill checked
-- [ ] 094/T010 [agent] Verify: run `pnpm test` (including `matrix.test.ts` and `silence.test.ts`), `pnpm replay`, and `pnpm typecheck`, confirming all test suites and replay corpus cases pass; record `verified:` — covers R1–R5, D1–D5
+- [x] 094/T010 [agent] Verify: run `pnpm test` (including `matrix.test.ts` and `silence.test.ts`), `pnpm replay`, and `pnpm typecheck`, confirming all test suites and replay corpus cases pass; record `verified:` — covers R1–R5, D1–D5
+      verified: pnpm typecheck (0 errors), pnpm replay (44/44 pass), and full pnpm test (230 test files, 2583 tests pass) pass cleanly
 
 ## Changes
 - 2026-11-03: Audit corrections applied before task execution (F1–F8):

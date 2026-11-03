@@ -36,7 +36,7 @@ Specs 050 and 065–084 are **retired**: they were all `done` under the previous
 | 091 | compact-trailing-easing-normalization | done | — |
 | 092 | group-children-shot-and-placement | done | — |
 | 093 | compact-validation-and-error-paths | done | — |
-| 094 | layout-and-donut-chart-diagnostics | todo | — |
+| 094 | layout-and-donut-chart-diagnostics | done | — |
 | 095 | speech-custom-baseurl-and-wav-duration | todo | — |
 
 ## Ideas
