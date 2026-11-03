@@ -400,8 +400,8 @@ function checkTextContrast(
 /**
  * Default inspection times: loop start (0), middle, and end (scene.duration).
  */
-/** Kinds `shape_overlap` leaves out: text has its own check, lines and groups have no body. */
-const NOT_SHAPES = new Set(["text", "line", "group"]);
+/** Kinds `shape_overlap` leaves out: text has its own check, lines and groups have no body, particles and subtitles are non-solid / overlay. */
+const NOT_SHAPES = new Set(["text", "line", "group", "particles", "subtitles"]);
 
 /** A held box this much of its holder's area or more is stacked on it, not held by it (072/D2). */
 const HELD_AREA = 0.9;
